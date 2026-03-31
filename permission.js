@@ -1,34 +1,31 @@
-import { getToken } from '@/utils/auth'
+import { useUserStore } from '@/store/modules/user'
+import { isLoggedIn } from '@/utils/token'
 
-// 登录页面
-const loginPage = "/pages/login"
-  
-// 页面白名单
 const whiteList = [
-  '/pages/login', '/pages/register', '/pages/common/webview/index'
+  '/pages/login/index',
+  '/pages/common/webview/index',
+  '/pages/common/textview/index'
 ]
 
-// 检查地址白名单
-function checkWhite(url) {
-  const path = url.split('?')[0]
-  return whiteList.indexOf(path) !== -1
-}
-
-// 页面跳转验证拦截器
-let list = ["navigateTo", "redirectTo", "reLaunch", "switchTab"]
+// 拦截路由跳转
+const list = ['navigateTo', 'redirectTo', 'reLaunch', 'switchTab']
 list.forEach(item => {
   uni.addInterceptor(item, {
-    invoke(to) {
-      if (getToken()) {
-        if (to.url === loginPage) {
-          uni.reLaunch({ url: "/" })
+    invoke(e) {
+      const userStore = useUserStore()
+      const url = e.url.split('?')[0]
+
+      if (isLoggedIn()) {
+        if (url === '/pages/login/index') {
+          uni.switchTab({ url: '/pages/index/index' })
+          return false
         }
         return true
       } else {
-        if (checkWhite(to.url)) {
+        if (whiteList.includes(url)) {
           return true
         }
-        uni.reLaunch({ url: loginPage })
+        uni.redirectTo({ url: '/pages/login/index' })
         return false
       }
     },
