@@ -1,13 +1,9 @@
 {
-  "pages": [{
-    "path": "pages/login",
+  "pages": [ {
+    "path": "pages/login/index",
     "style": {
-      "navigationBarTitleText": "登录"
-    }
-  }, {
-    "path": "pages/register",
-    "style": {
-      "navigationBarTitleText": "注册"
+      "navigationStyle": "custom",
+      "enablePullDownRefresh": false
     }
   }, {
     "path": "pages/index",
@@ -97,6 +93,10 @@
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "RuoYi",
-    "navigationBarBackgroundColor": "#FFFFFF"
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F8F8F8",
+    "enablePullDownRefresh": false,
+    "backgroundColorTop": "#FFFFFF",
+    "backgroundColorBottom": "#F8F8F8"
   }
 }
