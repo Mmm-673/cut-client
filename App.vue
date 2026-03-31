@@ -1,6 +1,6 @@
 <script setup>
   import config from './config'
-  import { getToken } from '@/utils/auth'
+  import { isLoggedIn } from '@/utils/token'
   import { useConfigStore } from '@/store'
   import { getCurrentInstance } from "vue"
   import { onLaunch } from '@dcloudio/uni-app'
@@ -15,10 +15,8 @@
   function initApp() {
     // 初始化应用配置
     initConfig()
-    // 检查用户登录状态
-    //#ifdef H5
+    // 检查用户登录状态（全平台）
     checkLogin()
-    //#endif
   }
 
   function initConfig() {
@@ -26,12 +24,35 @@
   }
 
   function checkLogin() {
-    if (!getToken()) {
-      proxy.$tab.reLaunch('/pages/login') 
+    // 全平台都检查登录状态
+    if (!isLoggedIn()) {
+      // 避免在页面未加载时跳转
+      setTimeout(() => {
+        proxy.$tab.reLaunch('/pages/login/index')
+      }, 100)
     }
   }
 </script>
 
 <style lang="scss">
-  @import '@/static/scss/index.scss'
+  @import '@/static/scss/index.scss';
+
+  /* 全局样式 - 安全区域适配 */
+  page {
+    /* 适配底部安全区域 */
+    padding-bottom: constant(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* 顶部安全区域适配 */
+  .safe-area-top {
+    padding-top: constant(safe-area-inset-top);
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* 底部安全区域适配 */
+  .safe-area-bottom {
+    padding-bottom: constant(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 </style>
