@@ -1,117 +1,190 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import config from '@/config'
-import storage from '@/utils/storage'
-import constant from '@/utils/constant'
-import { isHttp, isEmpty } from "@/utils/validate"
-import { getInfo, login, logout } from '@/api/login'
-import { getToken, removeToken, setToken } from '@/utils/auth'
+import {
+  getAccessToken,
+  getRefreshToken,
+  getExpiresTime,
+  getUserId,
+  getNickname,
+  getAvatar,
+  getMobile,
+  setAuthInfo,
+  clearAuthInfo,
+  isLoggedIn
+} from '@/utils/token'
+import {
+  sendSmsCode,
+  smsLogin,
+  passwordLogin,
+  logout as logoutApi,
+  resetPassword,
+  updatePassword,
+  updateMobile
+} from '@/api/auth'
 import defAva from '@/static/images/profile.jpg'
 
-const baseUrl = config.baseUrl
-
 export const useUserStore = defineStore('user', () => {
-  const token = ref(getToken())
-  const id = ref(storage.get(constant.id))
-  const name = ref(storage.get(constant.name))
-  const avatar = ref(storage.get(constant.avatar))
-  const roles = ref(storage.get(constant.roles))
-  const permissions = ref(storage.get(constant.permissions))
+  // 状态
+  const accessToken = ref(getAccessToken())
+  const refreshToken = ref(getRefreshToken())
+  const expiresTime = ref(getExpiresTime())
+  const userId = ref(getUserId())
+  const nickname = ref(getNickname())
+  const avatar = ref(getAvatar() || defAva)
+  const mobile = ref(getMobile())
 
-  const SET_TOKEN = (val) => {
-    token.value = val
-  }
-  const SET_ID = (val) => {
-    id.value = val
-    storage.set(constant.id, val)
-  }
-  const SET_NAME = (val) => {
-    name.value = val
-    storage.set(constant.name, val)
-  }
-  const SET_AVATAR = (val) => {
-    avatar.value = val
-    storage.set(constant.avatar, val)
-  }
-  const SET_ROLES = (val) => {
-    roles.value = val
-    storage.set(constant.roles, val)
-  }
-  const SET_PERMISSIONS = (val) => {
-    permissions.value = val
-    storage.set(constant.permissions, val)
+  // 设置登录信息
+  const setLoginInfo = (data) => {
+    accessToken.value = data.accessToken || ''
+    refreshToken.value = data.refreshToken || ''
+    expiresTime.value = data.expiresTime ? new Date(data.expiresTime) : null
+    userId.value = data.userId || ''
+    nickname.value = data.nickname || ''
+    avatar.value = data.avatar || defAva
+    mobile.value = data.mobile || ''
+
+    setAuthInfo({
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      expiresTime: data.expiresTime,
+      userId: data.userId,
+      nickname: data.nickname,
+      avatar: data.avatar,
+      mobile: data.mobile
+    })
   }
 
-  // 登录
-  const loginAction = (userInfo) => {
-    const username = userInfo.username.trim()
-    const password = userInfo.password
-    const code = userInfo.code
-    const uuid = userInfo.uuid
+  // 发送短信验证码
+  const sendCodeAction = (mobile, scene = 1) => {
     return new Promise((resolve, reject) => {
-      login(username, password, code, uuid).then(res => {
-        setToken(res.token)
-        SET_TOKEN(res.token)
-        resolve()
+      sendSmsCode({ mobile, scene }).then(res => {
+        resolve(res.data)
       }).catch(error => {
         reject(error)
       })
     })
   }
 
-  // 获取用户信息
-  const getInfoAction = () => {
+  // 短信验证码登录
+  const smsLoginAction = (loginData) => {
     return new Promise((resolve, reject) => {
-      getInfo().then(res => {
-        const user = res.user
-        let avatar = user.avatar || ""
-        if (!isHttp(avatar)) {
-          avatar = (isEmpty(avatar)) ? defAva : baseUrl + avatar
-        }
-        const userid = (isEmpty(user) || isEmpty(user.userId)) ? "" : user.userId
-        const username = (isEmpty(user) || isEmpty(user.userName)) ? "" : user.userName
-        if (res.roles && res.roles.length > 0) {
-          SET_ROLES(res.roles)
-          SET_PERMISSIONS(res.permissions)
-        } else {
-          SET_ROLES(['ROLE_DEFAULT'])
-        }
-		SET_ID(userid)
-        SET_NAME(username)
-        SET_AVATAR(avatar)
-        resolve(res)
+      smsLogin(loginData).then(res => {
+        const data = res.data
+        setLoginInfo({
+          ...data,
+          userId: data.userId,
+          mobile: loginData.mobile
+        })
+        resolve(data)
       }).catch(error => {
         reject(error)
       })
     })
   }
 
-  // 退出系统
+  // 账号密码登录
+  const passwordLoginAction = (loginData) => {
+    return new Promise((resolve, reject) => {
+      passwordLogin(loginData).then(res => {
+        const data = res.data
+        setLoginInfo({
+          ...data,
+          userId: data.userId,
+          mobile: loginData.mobile
+        })
+        resolve(data)
+      }).catch(error => {
+        reject(error)
+      })
+    })
+  }
+
+  // 退出登录
   const logOutAction = () => {
     return new Promise((resolve, reject) => {
-      logout(token.value).then(() => {
-        SET_TOKEN('')
-        SET_ROLES([])
-        SET_PERMISSIONS([])
-        removeToken()
-        storage.clean()
+      logoutApi().then(() => {
+        clearLoginInfo()
         resolve()
+      }).catch(error => {
+        // 即使退出接口失败，也要清除本地数据
+        clearLoginInfo()
+        reject(error)
+      })
+    })
+  }
+
+  // 清除登录信息
+  const clearLoginInfo = () => {
+    accessToken.value = ''
+    refreshToken.value = ''
+    expiresTime.value = null
+    userId.value = ''
+    nickname.value = ''
+    avatar.value = defAva
+    mobile.value = ''
+    clearAuthInfo()
+  }
+
+  // 重置密码
+  const resetPasswordAction = (data) => {
+    return new Promise((resolve, reject) => {
+      resetPassword(data).then(res => {
+        resolve(res.data)
       }).catch(error => {
         reject(error)
       })
     })
+  }
+
+  // 修改密码
+  const updatePasswordAction = (data) => {
+    return new Promise((resolve, reject) => {
+      updatePassword(data).then(res => {
+        resolve(res.data)
+      }).catch(error => {
+        reject(error)
+      })
+    })
+  }
+
+  // 修改手机号
+  const updateMobileAction = (data) => {
+    return new Promise((resolve, reject) => {
+      updateMobile(data).then(res => {
+        if (data.mobile) {
+          mobile.value = data.mobile
+        }
+        resolve(res.data)
+      }).catch(error => {
+        reject(error)
+      })
+    })
+  }
+
+  // 检查是否已登录
+  const checkLoggedIn = () => {
+    return isLoggedIn()
   }
 
   return {
-    token,
-    id,
-    name,
+    // 状态
+    accessToken,
+    refreshToken,
+    expiresTime,
+    userId,
+    nickname,
     avatar,
-    roles,
-    permissions,
-    SET_AVATAR,
-    login: loginAction,
-    getInfo: getInfoAction,
-    logOut: logOutAction
+    mobile,
+    // 方法
+    setLoginInfo,
+    sendCode: sendCodeAction,
+    smsLogin: smsLoginAction,
+    passwordLogin: passwordLoginAction,
+    logOut: logOutAction,
+    clearLoginInfo,
+    resetPassword: resetPasswordAction,
+    updatePassword: updatePasswordAction,
+    updateMobile: updateMobileAction,
+    checkLoggedIn
   }
 })
