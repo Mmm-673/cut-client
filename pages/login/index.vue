@@ -9,48 +9,89 @@
       <text class="app-desc">专业台球陪练平台</text>
     </view>
 
+    <!-- Tab切换 -->
+    <view class="tab-section">
+      <view
+        class="tab-item"
+        :class="{ 'tab-active': activeTab === 'sms' }"
+        @click="switchTab('sms')"
+      >
+        验证码登录
+      </view>
+      <view
+        class="tab-item"
+        :class="{ 'tab-active': activeTab === 'password' }"
+        @click="switchTab('password')"
+      >
+        密码登录
+      </view>
+    </view>
+
     <!-- 表单区域 -->
     <view class="form-section">
       <!-- 手机号输入 -->
       <view class="input-group">
         <uni-icons type="phone" size="20" color="#00BB88" class="input-icon" />
         <input
-            class="input"
-            v-model="form.phone"
-            placeholder="请输入手机号"
-            placeholder-class="placeholder"
-            maxlength="11"
-            type="number"
+          class="input"
+          v-model="form.mobile"
+          placeholder="请输入手机号"
+          placeholder-class="placeholder"
+          maxlength="11"
+          type="number"
         />
       </view>
 
-      <!-- 验证码输入 + 获取按钮 -->
-      <view class="input-group input-group-row">
+      <!-- 验证码输入 + 获取按钮（短信登录Tab） -->
+      <view v-if="activeTab === 'sms'" class="input-group input-group-row">
         <view class="input-wrap">
           <uni-icons type="locked" size="20" color="#00BB88" class="input-icon" />
           <input
-              class="input"
-              v-model="form.code"
-              placeholder="请输入验证码"
-              placeholder-class="placeholder"
-              maxlength="6"
-              type="number"
+            class="input"
+            v-model="form.code"
+            placeholder="请输入验证码"
+            placeholder-class="placeholder"
+            maxlength="6"
+            type="number"
           />
         </view>
         <button
-            class="btn-code"
-            :class="{ 'btn-code-disabled': codeCountdown > 0 }"
-            @click="getCode"
+          class="btn-code"
+          :class="{ 'btn-code-disabled': codeCountdown > 0 }"
+          @click="getCode"
+          :disabled="codeCountdown > 0"
         >{{ codeCountdown > 0 ? `${codeCountdown}s重新获取` : '获取验证码' }}</button>
       </view>
 
-      <!-- 登录/注册按钮 -->
-      <button class="btn-submit" @click="handleSubmit">登录 / 注册</button>
-
-      <!-- 切换登录方式 -->
-      <view class="switch-login">
-        <text class="switch-text" @click="goToAccountLogin">账号密码登录</text>
+      <!-- 密码输入（密码登录Tab） -->
+      <view v-if="activeTab === 'password'" class="input-group">
+        <uni-icons type="locked" size="20" color="#00BB88" class="input-icon" />
+        <input
+          class="input"
+          v-model="form.password"
+          :password="!showPassword"
+          placeholder="请输入密码"
+          placeholder-class="placeholder"
+          maxlength="16"
+        />
+        <uni-icons
+          :type="showPassword ? 'eye' : 'eye-slash'"
+          size="20"
+          color="#9CA3AF"
+          class="password-eye"
+          @click="showPassword = !showPassword"
+        />
       </view>
+
+      <!-- 忘记密码（密码登录Tab） -->
+      <view v-if="activeTab === 'password'" class="forgot-password">
+        <text class="forgot-text" @click="goToForgotPassword">忘记密码？</text>
+      </view>
+
+      <!-- 登录按钮 -->
+      <button class="btn-submit" @click="handleSubmit" :disabled="isSubmitting">
+        {{ isSubmitting ? '登录中...' : '登录 / 注册' }}
+      </button>
 
       <!-- 其他登录方式分割线 -->
       <view class="divider">
@@ -61,9 +102,6 @@
       <view class="wechat-login" @click="wechatLogin">
         <view class="wechat-circle">
           <text class="wechat-icon">💬</text>
-          <!-- 如果有官方图标可以替换成image：
-          <image src="/static/wechat-icon.png" class="wechat-icon" mode="aspectFill"></image>
-          -->
         </view>
         <text class="wechat-text">微信一键登录</text>
       </view>
@@ -72,9 +110,9 @@
     <!-- 底部协议 -->
     <view class="agreement">
       <view
-          class="checkbox"
-          :class="{ 'checkbox-checked': agree }"
-          @click="agree = !agree"
+        class="checkbox"
+        :class="{ 'checkbox-checked': agree }"
+        @click="agree = !agree"
       >
         <uni-icons v-if="agree" type="check" size="16" color="#fff" />
       </view>
@@ -89,13 +127,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { ref, onUnload } from 'vue'
+import { useUserStore } from '@/store/modules/user'
+
+const userStore = useUserStore()
+
+// 当前Tab
+const activeTab = ref('sms')
 
 // 表单数据
 const form = ref({
-  phone: '',
-  code: ''
+  mobile: '',
+  code: '',
+  password: ''
 })
 
 // 验证码倒计时
@@ -105,14 +149,27 @@ let countdownTimer = null
 // 协议勾选
 const agree = ref(true)
 
+// 显示密码
+const showPassword = ref(false)
+
+// 提交中状态
+const isSubmitting = ref(false)
+
+// 切换Tab
+const switchTab = (tab) => {
+  activeTab.value = tab
+  form.value.code = ''
+  form.value.password = ''
+}
+
 // 验证手机号
 const checkPhone = () => {
   const phoneReg = /^1[3-9]\d{9}$/
-  if (!form.value.phone) {
+  if (!form.value.mobile) {
     uni.showToast({ title: '请输入手机号', icon: 'none' })
     return false
   }
-  if (!phoneReg.test(form.value.phone)) {
+  if (!phoneReg.test(form.value.mobile)) {
     uni.showToast({ title: '手机号格式不正确', icon: 'none' })
     return false
   }
@@ -124,15 +181,16 @@ const checkPhone = () => {
 }
 
 // 获取验证码
-const getCode = () => {
+const getCode = async () => {
   if (!checkPhone()) return
   if (codeCountdown.value > 0) return
 
-  // 调用后端接口获取验证码
-  uni.showLoading({ title: '发送中...' })
-  setTimeout(() => {
+  try {
+    uni.showLoading({ title: '发送中...' })
+    await userStore.sendCode(form.value.mobile, 1)
     uni.hideLoading()
     uni.showToast({ title: '验证码已发送', icon: 'success' })
+
     // 开始倒计时
     codeCountdown.value = 60
     countdownTimer = setInterval(() => {
@@ -141,35 +199,61 @@ const getCode = () => {
         clearInterval(countdownTimer)
       }
     }, 1000)
-  }, 1000)
+  } catch (error) {
+    uni.hideLoading()
+    console.error('发送验证码失败:', error)
+  }
 }
 
-// 提交登录/注册
-const handleSubmit = () => {
+// 提交登录
+const handleSubmit = async () => {
   if (!checkPhone()) return
-  if (!form.value.code) {
+  if (activeTab.value === 'sms' && !form.value.code) {
     uni.showToast({ title: '请输入验证码', icon: 'none' })
     return
   }
+  if (activeTab.value === 'password' && !form.value.password) {
+    uni.showToast({ title: '请输入密码', icon: 'none' })
+    return
+  }
 
-  // 调用后端登录接口，这里模拟
-  uni.showLoading({ title: '登录中...' })
-  setTimeout(() => {
+  try {
+    isSubmitting.value = true
+    uni.showLoading({ title: '登录中...' })
+
+    if (activeTab.value === 'sms') {
+      await userStore.smsLogin({
+        mobile: form.value.mobile,
+        code: form.value.code
+      })
+    } else {
+      await userStore.passwordLogin({
+        mobile: form.value.mobile,
+        password: form.value.password
+      })
+    }
+
     uni.hideLoading()
     uni.showToast({ title: '登录成功', icon: 'success' })
+
     // 登录成功跳首页
     setTimeout(() => {
       uni.switchTab({ url: '/pages/index/index' })
     }, 1000)
-  }, 1500)
+  } catch (error) {
+    uni.hideLoading()
+    console.error('登录失败:', error)
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
-// 跳转到账号密码登录
-const goToAccountLogin = () => {
-  uni.navigateTo({ url: '/pages/login/account-login' })
+// 跳转到忘记密码
+const goToForgotPassword = () => {
+  uni.showToast({ title: '忘记密码功能开发中', icon: 'none' })
 }
 
-// 微信一键登录（多端兼容）
+// 微信一键登录
 const wechatLogin = () => {
   if (!agree.value) {
     uni.showToast({ title: '请先同意用户协议和隐私政策', icon: 'none' })
@@ -177,12 +261,10 @@ const wechatLogin = () => {
   }
 
   // #ifdef MP-WEIXIN
-  // 小程序微信登录
   uni.login({
     success: (res) => {
-      // 拿code换后端openid，自行替换接口逻辑
       console.log('微信登录code', res.code)
-      uni.showLoading({ title: '登录中...' })
+      uni.showToast({ title: '微信登录开发中', icon: 'none' })
     },
     fail: () => {
       uni.showToast({ title: '微信登录失败', icon: 'none' })
@@ -190,24 +272,17 @@ const wechatLogin = () => {
   })
   // #endif
 
-  // #ifdef APP-PLUS
-  // APP微信登录，需要集成微信开放SDK，自行替换
-  uni.showToast({ title: '正在发起微信登录', icon: 'none' })
-  // #endif
-
-  // #ifdef H5
-  // H5微信登录
-  uni.showToast({ title: '正在发起微信登录', icon: 'none' })
+  // #ifndef MP-WEIXIN
+  uni.showToast({ title: '微信登录暂不可用', icon: 'none' })
   // #endif
 }
 
 // 跳转用户协议/隐私政策
 const goToAgree = (type) => {
-  // 可以换成你自己的协议页面
   uni.navigateTo({
     url: type === 'user'
-        ? '/pages/agreement/user'
-        : '/pages/agreement/privacy'
+      ? '/pages/common/textview/index?type=user'
+      : '/pages/common/textview/index?type=privacy'
   })
 }
 
@@ -228,12 +303,13 @@ onUnload(() => {
   align-items: center;
   padding-top: calc(120rpx + var(--status-bar-height));
   padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+  position: relative;
 }
 
 /* Logo区域 */
 .logo-section {
   text-align: center;
-  margin-bottom: 100rpx;
+  margin-bottom: 60rpx;
   .logo-circle {
     width: 160rpx;
     height: 160rpx;
@@ -269,6 +345,32 @@ onUnload(() => {
   }
 }
 
+/* Tab切换 */
+.tab-section {
+  display: flex;
+  width: 100%;
+  background: #2A3138;
+  border-radius: 48rpx;
+  padding: 8rpx;
+  margin-bottom: 40rpx;
+  box-sizing: border-box;
+}
+.tab-item {
+  flex: 1;
+  text-align: center;
+  height: 80rpx;
+  line-height: 80rpx;
+  font-size: 28rpx;
+  color: #9CA3AF;
+  border-radius: 40rpx;
+  transition: all 0.3s;
+}
+.tab-active {
+  background: #00BB88;
+  color: #fff;
+  font-weight: bold;
+}
+
 /* 表单区域 */
 .form-section {
   width: 100%;
@@ -282,6 +384,7 @@ onUnload(() => {
     padding: 0 32rpx;
     margin-bottom: 32rpx;
     box-sizing: border-box;
+    position: relative;
     .input-icon {
       margin-right: 16rpx;
     }
@@ -293,6 +396,9 @@ onUnload(() => {
     }
     .placeholder {
       color: #9CA3AF;
+    }
+    .password-eye {
+      margin-left: 16rpx;
     }
   }
   /* 行内输入（验证码+按钮） */
@@ -322,6 +428,16 @@ onUnload(() => {
     color: #ccc !important;
   }
 
+  /* 忘记密码 */
+  .forgot-password {
+    text-align: right;
+    margin-bottom: 24rpx;
+    .forgot-text {
+      font-size: 26rpx;
+      color: #00BB88;
+    }
+  }
+
   /* 提交按钮 */
   .btn-submit {
     width: 100%;
@@ -332,20 +448,12 @@ onUnload(() => {
     border-radius: 48rpx;
     font-size: 36rpx;
     font-weight: bold;
-    margin: 16rpx 0 24rpx;
+    margin: 16rpx 0 48rpx;
     border: none;
     box-shadow: 0 8rpx 24rpx rgba(0, 187, 136, 0.3);
     &::after { border: none; }
-  }
-
-  /* 切换登录方式 */
-  .switch-login {
-    text-align: right;
-    margin-bottom: 48rpx;
-    .switch-text {
-      font-size: 26rpx;
-      color: #9CA3AF;
-      text-decoration: underline;
+    &[disabled] {
+      opacity: 0.6;
     }
   }
 
@@ -389,12 +497,6 @@ onUnload(() => {
       font-size: 52rpx;
       color: #07C160;
     }
-    /* 如果用图片就用这个样式：
-    .wechat-icon {
-      width: 60rpx;
-      height: 50rpx;
-    }
-    */
     .wechat-text {
       font-size: 28rpx;
       color: #9CA3AF;
@@ -418,6 +520,7 @@ onUnload(() => {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
   }
   .checkbox-checked {
     background: #00BB88;
