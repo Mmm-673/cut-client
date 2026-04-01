@@ -36,22 +36,110 @@
                 ]
             },
             "ios" : {
-                "dSYMs" : false
+                "dSYMs" : false,
+                "plist" : {
+                    "NSCameraUsageDescription" : "需要访问您的相机进行拍照",
+                    "NSPhotoLibraryUsageDescription" : "需要访问您的相册选择图片",
+                    "NSPhotoLibraryAddUsageDescription" : "需要保存图片到您的相册"
+                },
+                "entitlements" : {
+                    "com.apple.security.application-groups" : []
+                }
             },
             "sdkConfigs" : {}
         }
     },
     "quickapp" : {},
     "mp-weixin" : {
-        "appid" : "wxccd7e2a0911b3397",
+        "appid" : "wxe62c721fa3a02194",
         "setting" : {
             "urlCheck" : false,
-            "es6" : false,
+            "es6" : true,
             "minified" : true,
             "postcss" : true
         },
         "optimization" : {
             "subPackages" : true
+        },
+        "usingComponents" : true
+    },
+    "mp-alipay" : {
+        "appid" : "",
+        "setting" : {
+            "urlCheck" : false,
+            "es6" : true,
+            "minified" : true,
+            "postcss" : true
+        },
+        "usingComponents" : true
+    },
+    "mp-baidu" : {
+        "appid" : "",
+        "setting" : {
+            "urlCheck" : false,
+            "es6" : true,
+            "minified" : true,
+            "postcss" : true
+        },
+        "usingComponents" : true
+    },
+    "mp-toutiao" : {
+        "appid" : "",
+        "setting" : {
+            "urlCheck" : false,
+            "es6" : true,
+            "minified" : true,
+            "postcss" : true
+        },
+        "usingComponents" : true
+    },
+    "mp-xhs" : {
+        "appid" : "",
+        "setting" : {
+            "urlCheck" : false,
+            "es6" : true,
+            "minified" : true,
+            "postcss" : true
+        },
+        "usingComponents" : true
+    },
+    "mp-kuaishou" : {
+        "appid" : "",
+        "setting" : {
+            "urlCheck" : false,
+            "es6" : true,
+            "minified" : true,
+            "postcss" : true
+        },
+        "usingComponents" : true
+    },
+    "mp-lark" : {
+        "appid" : "",
+        "setting" : {
+            "urlCheck" : false,
+            "es6" : true,
+            "minified" : true,
+            "postcss" : true
+        },
+        "usingComponents" : true
+    },
+    "mp-jd" : {
+        "appid" : "",
+        "setting" : {
+            "urlCheck" : false,
+            "es6" : true,
+            "minified" : true,
+            "postcss" : true
+        },
+        "usingComponents" : true
+    },
+    "harmony" : {
+        "appid" : "",
+        "setting" : {
+            "urlCheck" : false,
+            "es6" : true,
+            "minified" : true,
+            "postcss" : true
         },
         "usingComponents" : true
     },

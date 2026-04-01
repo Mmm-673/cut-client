@@ -1,6 +1,6 @@
 import config from '@/config'
 import { getAccessToken, getRefreshToken, shouldRefreshToken, setAuthInfo, clearAuthInfo, isLoggedIn } from '@/utils/token'
-import { getErrorMessage } from '@/utils/error-messages'
+import getErrorMessage from '@/utils/error-messages'
 import { toast } from '@/utils/common'
 import { isMP, isHarmony } from '@/utils/platform'
 
@@ -149,19 +149,30 @@ const request = async config => {
       enableCache: true,
       // #endif
     }).then(response => {
-      const res = response
-      const code = res.data.code || 0
-      const msg = getErrorMessage(code, res.data.msg)
+      // 兼容处理：部分版本返回 [err, res]
+      const res = Array.isArray(response) ? response : response;
+
+      // 安全获取 code，确保 res.data 存在
+      const resultData = res.data || {};
+      const code = resultData.code ?? 0; // 使用 ?? 处理 0 的情况
+      const msg = getErrorMessage(code, resultData.msg);
+
+      console.log('当前Code:', code, '返回数据:', resultData);
 
       if (code === 401) {
-        clearAuthInfo()
-        uni.reLaunch({ url: '/pages/login/index' })
-        reject(msg || '无效的会话，或者会话已过期，请重新登录。')
-      } else if (code !== 0) {
-        toast(msg)
-        reject(code)
+        clearAuthInfo();
+        uni.reLaunch({ url: '/pages/login/index' });
+        return reject(msg || '会话已过期');
       }
-      resolve(res.data)
+
+      if (code !== 0) {
+        toast(msg);
+        return reject(msg || '请求失败');
+      }
+
+      // 只有 code === 0 才会走到这里
+      resolve(resultData);
+
     })
     .catch(error => {
       let { message } = error

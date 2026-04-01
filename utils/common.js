@@ -1,18 +1,19 @@
 /**
-* 显示消息提示框
-* @param content 提示的标题
-*/
+ * 显示消息提示框
+ * @param content 提示的标题
+ */
 export function toast(content) {
   uni.showToast({
     icon: 'none',
-    title: content
+    title: content,
+    duration: 2000
   })
 }
 
 /**
-* 显示模态弹窗
-* @param content 提示的标题
-*/
+ * 显示模态弹窗
+ * @param content 提示的标题
+ */
 export function showConfirm(content) {
   return new Promise((resolve, reject) => {
     uni.showModal({
@@ -22,15 +23,36 @@ export function showConfirm(content) {
       confirmText: '确定',
       success: function(res) {
         resolve(res)
+      },
+      fail: function(err) {
+        reject(err)
       }
     })
   })
 }
 
 /**
-* 参数处理
-* @param params 参数
-*/
+ * 显示加载提示
+ * @param title 加载提示文字
+ */
+export function showLoading(title = '加载中...') {
+  uni.showLoading({
+    title: title,
+    mask: true
+  })
+}
+
+/**
+ * 隐藏加载提示
+ */
+export function hideLoading() {
+  uni.hideLoading()
+}
+
+/**
+ * 参数处理
+ * @param params 参数
+ */
 export function tansParams(params) {
   let result = ''
   for (const propName of Object.keys(params)) {
@@ -51,4 +73,21 @@ export function tansParams(params) {
     }
   }
   return result
+}
+
+/**
+ * 获取系统信息（安全封装）
+ */
+export function getSystemInfo() {
+  try {
+    return uni.getSystemInfoSync()
+  } catch (e) {
+    console.warn('获取系统信息失败:', e)
+    return {
+      platform: 'unknown',
+      windowWidth: 375,
+      windowHeight: 667,
+      statusBarHeight: 0
+    }
+  }
 }

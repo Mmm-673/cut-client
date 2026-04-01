@@ -19,7 +19,8 @@ import {
   logout as logoutApi,
   resetPassword,
   updatePassword,
-  updateMobile
+  updateMobile,
+  validateSmsCode
 } from '@/api/auth'
 import defAva from '@/static/images/profile.jpg'
 
@@ -65,17 +66,21 @@ export const useUserStore = defineStore('user', () => {
     })
   }
 
-  // 短信验证码登录
+  // 短信验证码登录 先去校验 然后再去登录
   const smsLoginAction = (loginData) => {
     return new Promise((resolve, reject) => {
-      smsLogin(loginData).then(res => {
-        const data = res.data
-        setLoginInfo({
-          ...data,
-          userId: data.userId,
-          mobile: loginData.mobile
+      validateSmsCode({...loginData, scene: 1}).then(resp=>{
+        smsLogin(loginData).then(res => {
+          const data = res.data
+          setLoginInfo({
+            ...data,
+            userId: data.userId,
+            mobile: loginData.mobile
+          })
+          resolve(data)
+        }).catch(error => {
+          reject(error)
         })
-        resolve(data)
       }).catch(error => {
         reject(error)
       })

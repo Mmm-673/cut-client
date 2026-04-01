@@ -88,9 +88,14 @@
         <text class="forgot-text" @click="goToForgotPassword">忘记密码？</text>
       </view>
 
-      <!-- 登录按钮 -->
-      <button class="btn-submit" @click="handleSubmit" :disabled="isSubmitting">
+      <!-- 验证码登录按钮 -->
+      <button v-if="activeTab === 'sms'" class="btn-submit" @click="handleSubmit" :disabled="isSubmitting">
         {{ isSubmitting ? '登录中...' : '登录 / 注册' }}
+      </button>
+
+      <!-- 密码登录按钮 -->
+      <button v-if="activeTab === 'password'" class="btn-submit" @click="handleSubmit" :disabled="isSubmitting">
+        {{ isSubmitting ? '登录中...' : '登录' }}
       </button>
 
       <!-- 其他登录方式分割线 -->
@@ -127,9 +132,9 @@
 </template>
 
 <script setup>
-import { ref, onUnload } from 'vue'
+import { ref } from 'vue'
 import { useUserStore } from '@/store/modules/user'
-
+import { onUnload, onHide } from '@dcloudio/uni-app';
 const userStore = useUserStore()
 
 // 当前Tab
@@ -238,7 +243,7 @@ const handleSubmit = async () => {
 
     // 登录成功跳首页
     setTimeout(() => {
-      uni.switchTab({ url: '/pages/index/index' })
+      uni.switchTab({ url: '/pages/home/index' })
     }, 1000)
   } catch (error) {
     uni.hideLoading()

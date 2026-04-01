@@ -1,3 +1,9 @@
+// 全局CSS变量
+:root {
+  --status-bar-height: 0px;
+  --nav-bar-height: 44px;
+}
+
 .text-center {
 	text-align: center;
 }
@@ -19,6 +25,17 @@
 }
 .text-grey2 {
 	color: #aaa;
+}
+
+// 统一的页面顶部间距
+.page-top-padding {
+  padding-top: var(--status-bar-height);
+}
+
+// 自定义导航栏容器
+.custom-nav-container {
+  padding-top: var(--status-bar-height);
+  height: calc(var(--status-bar-height) + var(--nav-bar-height));
 }
 
 .list-cell-arrow::before {

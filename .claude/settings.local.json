@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"D:/Jt-code/cut-client/用户端 \\(1\\)\")",
+      "Bash(dir \"D:\\\\Jt-code\\\\cut-client\\\\用户端 \\(1\\)\")"
+    ]
+  }
+}
