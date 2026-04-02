@@ -280,9 +280,11 @@ onMounted(() => {
     const query = uni.createSelectorQuery()
     query.select('#tabBar').boundingClientRect()
     query.exec((res) => {
-      const tabBarHeight = res[0]?.height || 0
-      // 减去系统导航栏、tabBar、底部安全区域
-      scrollHeight.value = systemInfo.windowHeight - tabBarHeight - (systemInfo.safeAreaInsets?.bottom || 0)
+      const pageTabBarHeight = res[0]?.height || 0
+      // 系统 tabBar 高度 (通常是50px) + 安全区域
+      // const systemTabBarHeight = 50 + (systemInfo.safeAreaInsets?.bottom || 0)
+      // 减去：顶部tabBar、系统tabBar
+      scrollHeight.value = systemInfo.windowHeight - pageTabBarHeight
     })
   }, 100)
 })

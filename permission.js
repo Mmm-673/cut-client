@@ -3,7 +3,7 @@ import { isLoggedIn } from '@/utils/token'
 
 const whiteList = [
   '/pages/login/index',
-  '/pages/home/index',
+  '/pages/login/resetPassword',
   '/pages/common/webview/index',
   '/pages/common/textview/index'
 ]

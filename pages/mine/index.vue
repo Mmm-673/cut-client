@@ -122,7 +122,7 @@ const goToEditInfo = () => {
 // 跳转修改密码
 const goToPwd = () => {
   uni.navigateTo({
-    url: '/pages/mine/pwd/index'
+    url: 'pages/login/resetPassword'
   })
 }
 

@@ -225,7 +225,7 @@ onLoad((options) => {
 
 /* 信息卡片 */
 .info-card {
-  margin: 20rpx 30rpx;
+  margin: 30rpx 30rpx;
   background: #1E252B;
   border-radius: 24rpx;
   padding: 30rpx;
@@ -315,8 +315,9 @@ onLoad((options) => {
   left: 0;
   right: 0;
   background: #1E252B;
-  padding: 20rpx 30rpx;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  padding: 30rpx 30rpx;
+
+  box-sizing: border-box;
   display: flex;
   gap: 16rpx;
   .action-btn {

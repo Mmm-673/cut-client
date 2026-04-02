@@ -7,6 +7,7 @@
         @refresherrefresh="onRefresh"
         :refresher-enabled="true"
         :refresher-triggered="isRefreshing"
+        :style="{ height: scrollHeight + 'px' }"
     >
       <!-- 教练信息 -->
       <view class="coach-info">
@@ -75,7 +76,7 @@
 
       <!-- 底部占位 -->
       <view class="bottom-placeholder"></view>
-    </scroll-view>  
+    </scroll-view>
 
     <!-- 底部打赏按钮 -->
     <view class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
@@ -97,6 +98,7 @@ import { onNavigationBarButtonTap, onBackPress } from '@dcloudio/uni-app'
 // 状态管理
 const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
+const scrollHeight = ref(0)
 const isRefreshing = ref(false)
 const isCustomAmount = ref(false)
 const selectedAmount = ref(10)
@@ -135,6 +137,17 @@ onMounted(() => {
   const systemInfo = uni.getSystemInfoSync()
   statusBarHeight.value = systemInfo.statusBarHeight || 0
   safeAreaBottom.value = systemInfo.safeAreaInsets?.bottom || 0
+
+  // 计算滚动区域高度
+  setTimeout(() => {
+    const query = uni.createSelectorQuery()
+    query.select('.bottom-bar').boundingClientRect()
+    query.exec((res) => {
+      const bottomBarHeight = res[0]?.height || 0
+      // 减去系统导航栏、底部栏、安全区域
+      scrollHeight.value = systemInfo.windowHeight - bottomBarHeight - (systemInfo.safeAreaInsets?.bottom || 0)
+    })
+  }, 100)
 
   // 获取传递的参数
   const pages = getCurrentPages()
@@ -265,7 +278,6 @@ const submitReward = () => {
 // 监听返回按钮
 onBackPress(() => {
   goBack()
-  return true
 })
 </script>
 
@@ -273,15 +285,12 @@ onBackPress(() => {
 .reward-page {
   min-height: 100vh;
   background-color: #1a1a1a;
-  display: flex;
-  flex-direction: column;
 }
 
 /* 滚动内容 */
 .scroll-content {
-  flex: 1;
-  height: 0;
-  padding: 20px 16px;
+  /* 高度通过内联样式动态设置 */
+  padding: 40rpx 32rpx;
 }
 
 /* 教练信息 */
@@ -289,38 +298,38 @@ onBackPress(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px 0;
+  padding: 40rpx 0;
 
   .coach-avatar {
-    width: 120px;
-    height: 120px;
-    border-radius: 60px;
-    border: 4px solid #f5a623;
+    width: 240rpx;
+    height: 240rpx;
+    border-radius: 120rpx;
+    border: 8rpx solid #f5a623;
   }
 
   .coach-name {
-    font-size: 24px;
+    font-size: 48rpx;
     font-weight: 700;
     color: #ffffff;
-    margin-top: 16px;
+    margin-top: 32rpx;
   }
 
   .coach-level {
     display: flex;
     align-items: center;
-    margin-top: 8px;
+    margin-top: 16rpx;
 
     .level-tag {
-      font-size: 12px;
+      font-size: 24rpx;
       color: #ffffff;
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      padding: 2px 10px;
-      border-radius: 4px;
-      margin-right: 8px;
+      padding: 4rpx 20rpx;
+      border-radius: 8rpx;
+      margin-right: 16rpx;
     }
 
     .rating {
-      font-size: 14px;
+      font-size: 28rpx;
       color: #f5a623;
     }
   }
@@ -329,28 +338,28 @@ onBackPress(() => {
 /* 提示文字 */
 .tip-text {
   text-align: center;
-  font-size: 15px;
+  font-size: 30rpx;
   color: #ffffff;
-  margin: 16px 0 32px;
+  margin: 32rpx 0 64rpx;
 }
 
 /* 金额选择 */
 .amount-section {
-  margin-bottom: 24px;
+  margin-bottom: 48rpx;
 
   .amount-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    gap: 24rpx;
 
     .amount-item {
       background-color: #2a2a2a;
-      border-radius: 12px;
-      padding: 20px 12px;
+      border-radius: 24rpx;
+      padding: 40rpx 24rpx;
       display: flex;
       flex-direction: column;
       align-items: center;
-      border: 2px solid transparent;
+      border: 4rpx solid transparent;
       transition: all 0.3s;
 
       &.active {
@@ -359,21 +368,21 @@ onBackPress(() => {
       }
 
       .amount-value {
-        font-size: 28px;
+        font-size: 56rpx;
         font-weight: 700;
         color: #ffffff;
       }
 
       .amount-label {
-        font-size: 12px;
+        font-size: 24rpx;
         color: #999999;
-        margin-top: 4px;
+        margin-top: 8rpx;
       }
 
       &.custom-item {
         .custom-icon {
-          font-size: 28px;
-          margin-bottom: 4px;
+          font-size: 56rpx;
+          margin-bottom: 8rpx;
         }
       }
     }
@@ -382,25 +391,25 @@ onBackPress(() => {
 
 /* 自定义金额输入 */
 .custom-input-section {
-  margin-bottom: 24px;
+  margin-bottom: 48rpx;
 
   .input-wrapper {
     display: flex;
     align-items: center;
     background-color: #2a2a2a;
-    border-radius: 12px;
-    padding: 16px 20px;
+    border-radius: 24rpx;
+    padding: 32rpx 40rpx;
 
     .currency-icon {
-      font-size: 20px;
+      font-size: 40rpx;
       color: #f5a623;
       font-weight: 600;
-      margin-right: 12px;
+      margin-right: 24rpx;
     }
 
     .custom-input {
       flex: 1;
-      font-size: 16px;
+      font-size: 32rpx;
       color: #ffffff;
 
       &::placeholder {
@@ -412,23 +421,23 @@ onBackPress(() => {
 
 /* 留言区域 */
 .message-section {
-  margin-bottom: 24px;
+  margin-bottom: 48rpx;
 
   .section-title {
-    font-size: 15px;
+    font-size: 30rpx;
     color: #ffffff;
-    margin-bottom: 12px;
+    margin-bottom: 24rpx;
   }
 
   .message-input-wrapper {
     background-color: #2a2a2a;
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: 24rpx;
+    padding: 32rpx;
 
     .message-input {
       width: 100%;
-      min-height: 80px;
-      font-size: 15px;
+      min-height: 160rpx;
+      font-size: 30rpx;
       color: #ffffff;
       line-height: 1.6;
 
@@ -441,27 +450,27 @@ onBackPress(() => {
 
 /* 底部占位 */
 .bottom-placeholder {
-  height: 100px;
+  height: 100rpx;
 }
 
 /* 底部栏 */
 .bottom-bar {
   background-color: #1a1a1a;
-  padding: 12px 16px;
+  padding: 24rpx 32rpx;
   display: flex;
   align-items: center;
-  border-top: 1px solid #2a2a2a;
+  border-top: 2rpx solid #2a2a2a;
 
   .total-amount {
     flex: 1;
 
     .total-label {
-      font-size: 14px;
+      font-size: 28rpx;
       color: #999999;
     }
 
     .total-value {
-      font-size: 24px;
+      font-size: 48rpx;
       font-weight: 700;
       color: #f5a623;
     }
@@ -470,13 +479,13 @@ onBackPress(() => {
   .reward-btn {
     background: linear-gradient(135deg, #f5a623 0%, #d98a00 100%);
     color: #1a1a1a;
-    font-size: 16px;
+    font-size: 32rpx;
     font-weight: 600;
-    border-radius: 24px;
-    padding: 0 32px;
-    height: 48px;
+    border-radius: 48rpx;
+    padding: 0 64rpx;
+    height: 96rpx;
     border: none;
-    line-height: 48px;
+    line-height: 96rpx;
 
     &.disabled {
       opacity: 0.5;

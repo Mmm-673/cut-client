@@ -1,4 +1,3 @@
-```html
 <template>
   <view class="detail-container">
     <!-- 下拉刷新区域 -->
@@ -135,12 +134,12 @@
         </view>
       </view>
 
-      <!-- 底部占位 -->
-      <view class="bottom-space"></view>
+      <!-- 底部安全区域留白 -->
+      <view class="safe-area-bottom"></view>
     </scroll-view>
 
     <!-- 底部操作栏 -->
-    <view class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
+    <view class="bottom-bar">
       <view class="price-info">
         <text class="price-symbol">¥</text>
         <text class="price">{{ coachInfo.price }}</text>
@@ -149,7 +148,9 @@
       <view class="book-btn" @click="bookNow">立即预约</view>
     </view>
   </view>
-</template><script setup>
+</template>
+
+<script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { onNavigationBarButtonTap } from '@dcloudio/uni-app'
 
@@ -322,14 +323,14 @@ onMounted(() => {
   statusBarHeight.value = systemInfo.statusBarHeight || 0
   safeAreaBottom.value = systemInfo.safeAreaInsets?.bottom || 0
 
-  // 计算 scroll-view 高度
-  const query = uni.createSelectorQuery()
-  query.select('.detail-container').boundingClientRect()
-  query.exec((res) => {
-    if (res[0]) {
-      scrollViewHeight.value = res[0].height - statusBarHeight.value - 44 - 60 - safeAreaBottom.value
-    }
-  })
+  // 计算 scroll-view 高度 - 需要减去底部栏高度和安全区域
+  // 底部栏高度约 80px，加上安全区域
+  const bottomBarHeight = 80 + safeAreaBottom.value
+
+  // 使用 setTimeout 确保 DOM 渲染完成
+  setTimeout(() => {
+    scrollViewHeight.value = systemInfo.windowHeight - bottomBarHeight
+  }, 100)
 })
 </script>
 
@@ -691,8 +692,12 @@ onMounted(() => {
   }
 }
 
-.bottom-space {
-  height: 100px;
+/* 适配底部安全区 */
+.safe-area-bottom {
+  /* constant 对应 iOS < 11.2，env 对应 iOS >= 11.2 */
+  height: constant(safe-area-inset-bottom);
+  height: env(safe-area-inset-bottom);
+  width: 100%;
 }
 
 .bottom-bar {
@@ -703,6 +708,8 @@ onMounted(() => {
   background-color: #252525;
   border-top: 1px solid #333333;
   padding: 12px 20px;
+  padding-bottom: calc(12px + constant(safe-area-inset-bottom));
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
   display: flex;
   align-items: center;
   justify-content: space-between;

@@ -38,6 +38,7 @@
         :refresher-triggered="refreshing"
         @refresherrefresh="onRefresh"
         @scrolltolower="loadMore"
+        :style="{ height: scrollHeight + 'px' }"
     >
       <view class="coach-list">
         <view
@@ -104,6 +105,7 @@
 import { ref, onMounted } from 'vue'
 
 const statusBarHeight = ref(0)
+const scrollHeight = ref(0)
 const currentTab = ref(0)
 const refreshing = ref(false)
 const loadingMore = ref(false)
@@ -117,12 +119,18 @@ const coachList = ref([
 
 onMounted(() => {
   const systemInfo = uni.getSystemInfoSync()
-  // 获取状态栏高度
-
-
-
-
   statusBarHeight.value = systemInfo.statusBarHeight || 0
+
+  // 计算滚动区域高度
+  setTimeout(() => {
+    const query = uni.createSelectorQuery()
+    query.select('.header-section').boundingClientRect()
+    query.exec((res) => {
+      const headerHeight = res[0]?.height || 0
+      // 减去系统导航栏、header、底部安全区域
+      scrollHeight.value = systemInfo.windowHeight - headerHeight - (systemInfo.safeAreaInsets?.bottom || 0)
+    })
+  }, 100)
 })
 
 const switchTab = (index) => { currentTab.value = index }
@@ -135,24 +143,29 @@ const loadMore = () => {
   loadingMore.value = true
   setTimeout(() => { loadingMore.value = false }, 1000)
 }
-const goToDetail = (id) => { console.log('详情', id) }
-const goToReward = (id) => { console.log('打赏', id) }
+const goToDetail = (id) => {
+  uni.navigateTo({
+    url: `/pages/coach/detail?id=${id}`
+  })
+}
+const goToReward = (id) => {
+    // 跳转到打赏页面
+    uni.navigateTo({
+      url: '/pages/coach/reward?id=' + id
+    })
+}
 </script>
 
 <style lang="scss" scoped>
-/* 全局容器：禁止页面溢出，使用 Flex 垂直布局 */
+/* 全局容器 */
 .coach-list-page {
-  display: flex;
-  flex-direction: column;
   width: 100%;
-  height: 100vh; /* 占满全屏视口 */
+  min-height: 100vh;
   background-color: #1a1a1a;
-  overflow: hidden;
 }
 
 /* 顶部固定区域 */
 .header-section {
-  flex-shrink: 0; /* 禁止被压缩 */
   background-color: #2a2a2a;
 }
 
@@ -201,10 +214,9 @@ const goToReward = (id) => { console.log('打赏', id) }
   }
 }
 
-/* 滚动区域：关键代码 */
+/* 滚动区域 */
 .list-scroll {
-  flex: 1; /* 占据除 header 之外的所有剩余空间 */
-  height: 0; /* 必须设置 height: 0，否则 flex 1 在 scroll-view 上可能失效 */
+  /* 高度通过内联样式动态设置 */
 
   .coach-list {
     padding: 20rpx 30rpx;

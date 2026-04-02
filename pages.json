@@ -8,6 +8,13 @@
       }
     },
     {
+      "path": "pages/login/resetPassword",
+      "style": {
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
       "path": "pages/home/index",
       "style": {
         "navigationBarTitleText": "首页",
