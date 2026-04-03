@@ -5,7 +5,6 @@
         scroll-y
         class="scroll-view"
         :style="{ height: scrollViewHeight + 'px' }"
-        @scrolltolower="onReachBottom"
         refresher-enabled
         :refresher-triggered="refreshing"
         @refresherrefresh="onRefresh"
@@ -18,18 +17,18 @@
           <image class="avatar" :src="coachInfo.avatar || '/static/default-avatar.png'" mode="aspectFill"></image>
           <view class="info">
             <view class="name-row">
-              <text class="name">{{ coachInfo.name }}</text>
+              <text class="name">{{ coachInfo.stageName || coachInfo.name }}</text>
               <view class="tag level" :class="'level-' + coachInfo.level">
-                {{ coachInfo.levelText }}
+                {{ getLevelText(coachInfo.level) }}
               </view>
             </view>
             <view class="stats-row">
               <view class="stat-item">
                 <uni-icons type="star" size="14" color="#ffc107"></uni-icons>
-                <text>{{ coachInfo.rating }}</text>
+                <text>{{ coachInfo.overallScore || coachInfo.rating }}</text>
               </view>
               <view class="stat-item">
-                <text>{{ coachInfo.orderCount }}单</text>
+                <text>{{ coachInfo.serviceCount || coachInfo.orderCount }}单</text>
               </view>
               <view class="stat-item">
                 <text>{{ coachInfo.distance }}</text>
@@ -53,7 +52,7 @@
           <text>个人介绍</text>
         </view>
         <view class="intro-content">
-          <text>{{ coachInfo.intro }}</text>
+          <text>{{ coachInfo.introduction || coachInfo.intro }}</text>
         </view>
       </view>
 
@@ -86,7 +85,7 @@
       </view>
 
       <!-- 个人相册 -->
-      <view class="section">
+      <view class="section" v-if="albumList.length > 0">
         <view class="section-title">
           <uni-icons type="image" size="18" color="#00c896"></uni-icons>
           <text>个人相册 ({{ albumList.length }})</text>
@@ -105,11 +104,11 @@
       </view>
 
       <!-- 用户评价 -->
-      <view class="section">
+      <view class="section" v-if="reviewList.length > 0">
         <view class="section-title">
           <uni-icons type="star" size="18" color="#00c896"></uni-icons>
           <text>用户评价 ({{ reviewList.length }})</text>
-          <text class="rating-text">{{ coachInfo.rating }}分</text>
+          <text class="rating-text">{{ coachInfo.overallScore || coachInfo.rating }}分</text>
         </view>
         <view class="review-list">
           <view class="review-item" v-for="(review, index) in reviewList" :key="index">
@@ -118,7 +117,7 @@
               <view class="review-user">
                 <text class="review-name">{{ review.name }}</text>
                 <view class="review-stars">
-                  <uni-icons type="star" size="12" color="#ffc107" v-for="n in 5" :key="n"></uni-icons>
+                  <uni-icons type="star-filled" size="12" color="#ffc107" v-for="n in review.rating" :key="n"></uni-icons>
                 </view>
               </view>
               <text class="review-time">{{ review.time }}</text>
@@ -151,102 +150,128 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
-import { onNavigationBarButtonTap } from '@dcloudio/uni-app'
+import { ref, reactive, onMounted } from 'vue'
+import { onLoad } from  "@dcloudio/uni-app"
+import { getCoachDetail } from '@/api/billiard/coach'
 
 // 状态栏和安全区域高度
 const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
 const scrollViewHeight = ref(0)
-
-// 下拉刷新和加载状态
-const refreshing = ref(false)
+const coachId = ref(null)
 const loading = ref(false)
 
-// 是否已收藏
-const isFavorited = ref(false)
+// 下拉刷新状态
+const refreshing = ref(false)
 
 // 教练信息
 const coachInfo = reactive({
-  id: 1,
-  name: '小雯',
-  avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop',
-  cover: 'https://images.unsplash.com/photo-1519368358672-25b03afee397?w=800&h=400&fit=crop',
-  level: 1,
-  levelText: '高级教练',
+  id: null,
+  name: '',
+  stageName: '',
+  avatar: '',
+  cover: '',
+  level: 0,
+  levelText: '',
   rating: 4.9,
-  orderCount: 128,
-  distance: '1.2km',
-  price: 99,
-  tags: ['免费出行', '斯诺克', '3年教龄'],
-  intro: '国家级台球运动员，毕业于体育大学台球专业，拥有3年专业教学经验。擅长斯诺克基础教学和进阶技巧指导，教学风格耐心细致，能够根据学员水平制定个性化训练方案，已帮助100+学员提升台球技术水平。'
+  overallScore: 4.9,
+  orderCount: 0,
+  serviceCount: 0,
+  distance: '',
+  price: 0,
+  tags: [],
+  intro: '',
+  introduction: ''
 })
 
 // 服务项目
-const services = ref([
-  {
-    id: 1,
-    name: '台球陪练',
-    desc: '2小时起步，包含基础动作指导、技术纠错、实战演练',
-    price: 99,
-    unit: '小时',
-    sales: 86,
-    hot: true
-  },
-  {
-    id: 2,
-    name: '陪游服务',
-    desc: '5小时起步，全天陪同打球+游玩，包含餐饮交通补贴',
-    price: 399,
-    unit: '天',
-    sales: 42,
-    hot: false
-  }
-])
+const services = ref([])
 
 // 相册列表
-const albumList = ref([
-  'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=300&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=300&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=300&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1533139502658-0198f920d8e8?w=300&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=300&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?w=300&h=300&fit=crop'
-])
+const albumList = ref([])
 
 // 评价列表
-const reviewList = ref([
-  {
-    id: 1,
-    name: '张先生',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-    rating: 5,
-    time: '2026-03-20',
-    content: '教练非常专业，耐心纠正了我很多错误动作，两个小时的学习收获很大，球技提升明显，强烈推荐！',
-    tags: ['专业', '耐心', '准时']
-  },
-  {
-    id: 2,
-    name: '李女士',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-    rating: 5,
-    time: '2026-03-18',
-    content: '第一次学台球，教练教的特别好，很有耐心，零基础也能很快上手，体验非常棒，下次还会约！',
-    tags: ['耐心', '负责任']
-  }
-])
+const reviewList = ref([])
 
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack()
+// 等级映射
+const levelMap = {
+  0: '初级教练',
+  1: '中级教练',
+  2: '高级教练'
+}
+
+const getLevelText = (level) => {
+  if (typeof level === 'string') {
+    return level
+  }
+  return levelMap[level] || '初级教练'
+}
+
+// 加载教练详情
+const loadCoachData = async () => {
+  if (!coachId.value) return
+
+  loading.value = true
+  try {
+    const res = await getCoachDetail({ id: coachId.value })
+    const data = res.data || {}
+
+    // 更新教练信息
+    Object.assign(coachInfo, {
+      id: data.id,
+      name: data.name,
+      stageName: data.stageName,
+      avatar: data.avatar,
+      cover: data.cover,
+      level: data.level,
+      levelText: data.levelText,
+      rating: data.rating || data.overallScore || 4.9,
+      overallScore: data.overallScore || data.rating || 4.9,
+      orderCount: data.orderCount || data.serviceCount || 0,
+      serviceCount: data.serviceCount || data.orderCount || 0,
+      distance: data.distance || '',
+      price: data.price || 0,
+      tags: data.tags || [],
+      intro: data.intro || data.introduction || '',
+      introduction: data.introduction || data.intro || ''
+    })
+
+    // 服务项目（如果接口返回）
+    if (data.serviceItems && Array.isArray(data.serviceItems)) {
+      services.value = data.serviceItems
+    }
+
+    // 相册（如果接口返回）
+    if (data.photos && Array.isArray(data.photos)) {
+      albumList.value = data.photos
+    }
+
+    // 评价（如果接口返回）
+    if (data.recentReviews && Array.isArray(data.recentReviews)) {
+      reviewList.value = data.recentReviews
+    }
+  } catch (error) {
+    console.error('加载教练详情失败:', error)
+    uni.showToast({
+      title: '加载失败',
+      icon: 'none'
+    })
+  } finally {
+    loading.value = false
+    refreshing.value = false
+  }
+}
+
+// 下拉刷新
+const onRefresh = () => {
+  refreshing.value = true
+  loadCoachData()
 }
 
 // 跳转到打赏页面
 const goToReward = () => {
   uni.navigateTo({
-    url: '/pages/coach/reward?id=' + coachInfo.id
+    url: '/pages/coach/reward?coachId=' + coachInfo.id
   })
 }
 
@@ -260,10 +285,12 @@ const selectService = (service) => {
 
 // 预览图片
 const previewImage = (index) => {
-  uni.previewImage({
-    urls: albumList.value,
-    current: index
-  })
+  if (albumList.value.length > 0) {
+    uni.previewImage({
+      urls: albumList.value,
+      current: index
+    })
+  }
 }
 
 // 查看相册
@@ -285,37 +312,18 @@ const viewAllReviews = () => {
 // 立即预约
 const bookNow = () => {
   uni.showToast({
-    title: '立即预约',
+    title: '预约功能开发中',
     icon: 'none'
   })
 }
 
-// 下拉刷新
-const onRefresh = () => {
-  refreshing.value = true
-  // 模拟刷新请求
-  setTimeout(() => {
-    refreshing.value = false
-    uni.showToast({
-      title: '刷新成功',
-      icon: 'success'
-    })
-  }, 1000)
-}
-
-// 上拉加载
-const onReachBottom = () => {
-  if (loading.value) return
-  loading.value = true
-  // 模拟加载更多
-  setTimeout(() => {
-    loading.value = false
-    uni.showToast({
-      title: '加载更多',
-      icon: 'none'
-    })
-  }, 1000)
-}
+// 获取页面参数
+onLoad((options) => {
+  console.log(options,'======options')
+  if (options.id) {
+    coachId.value = parseInt(options.id)
+  }
+})
 
 onMounted(() => {
   // 获取系统信息
@@ -324,13 +332,17 @@ onMounted(() => {
   safeAreaBottom.value = systemInfo.safeAreaInsets?.bottom || 0
 
   // 计算 scroll-view 高度 - 需要减去底部栏高度和安全区域
-  // 底部栏高度约 80px，加上安全区域
   const bottomBarHeight = 80 + safeAreaBottom.value
 
   // 使用 setTimeout 确保 DOM 渲染完成
   setTimeout(() => {
     scrollViewHeight.value = systemInfo.windowHeight - bottomBarHeight
   }, 100)
+
+  // 加载数据
+  if (coachId.value) {
+    loadCoachData()
+  }
 })
 </script>
 
@@ -407,13 +419,13 @@ onMounted(() => {
           padding: 4px 10px;
           border-radius: 20px;
 
-          &.level-1 {
-            background: linear-gradient(135deg, #ffd700 0%, #ffb800 100%);
+          &.level-0, &.level-1 {
+            background: linear-gradient(135deg, #c0c0c0 0%, #a0a0a0 100%);
             color: #1a1a1a;
           }
 
           &.level-2 {
-            background: linear-gradient(135deg, #c0c0c0 0%, #a0a0a0 100%);
+            background: linear-gradient(135deg, #ffd700 0%, #ffb800 100%);
             color: #1a1a1a;
           }
         }

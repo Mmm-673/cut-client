@@ -93,21 +93,9 @@
       }
     },
     {
-      "path": "pages/mine/avatar/index",
-      "style": {
-        "navigationBarTitleText": "修改头像"
-      }
-    },
-    {
       "path": "pages/mine/info/index",
       "style": {
         "navigationBarTitleText": "个人信息"
-      }
-    },
-    {
-      "path": "pages/mine/info/edit",
-      "style": {
-        "navigationBarTitleText": "编辑资料"
       }
     },
     {
@@ -128,12 +116,7 @@
         "navigationBarTitleText": "常见问题"
       }
     },
-    {
-      "path": "pages/mine/about/index",
-      "style": {
-        "navigationBarTitleText": "关于我们"
-      }
-    },
+
     {
       "path": "pages/common/webview/index",
       "style": {

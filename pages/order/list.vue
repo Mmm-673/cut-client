@@ -4,57 +4,65 @@
     <view class="tab-bar" id="tabBar">
       <view
         class="tab-item"
-        :class="{ active: activeTab === 'all' }"
-        @click="activeTab = 'all'"
+        :class="{ active: activeTab === '' }"
+        @click="switchTab('')"
       >
         全部
       </view>
       <view
         class="tab-item"
-        :class="{ active: activeTab === 'pending' }"
-        @click="activeTab = 'pending'"
+        :class="{ active: activeTab === 0 }"
+        @click="switchTab(0)"
       >
         待服务
       </view>
       <view
         class="tab-item"
-        :class="{ active: activeTab === 'completed' }"
-        @click="activeTab = 'completed'"
+        :class="{ active: activeTab === 1 }"
+        @click="switchTab(1)"
       >
         已完成
       </view>
       <view
         class="tab-item"
-        :class="{ active: activeTab === 'cancelled' }"
-        @click="activeTab = 'cancelled'"
+        :class="{ active: activeTab === 2 }"
+        @click="switchTab(2)"
       >
         已取消
       </view>
     </view>
 
     <!-- 订单列表 -->
-    <scroll-view class="order-scroll" scroll-y="true" :style="{ height: scrollHeight + 'px' }">
+    <scroll-view
+      class="order-scroll"
+      scroll-y="true"
+      :style="{ height: scrollHeight + 'px' }"
+      refresher-enabled="true"
+      :refresher-triggered="refreshing"
+      @refresherrefresh="onRefresh"
+      @scrolltolower="loadMore"
+    >
       <view class="order-container">
         <view
           class="order-card"
-          v-for="order in filteredOrderList"
+          v-for="order in orderList"
           :key="order.id"
           @click="goToDetail(order)"
         >
           <!-- 订单头部 -->
           <view class="order-header">
             <view class="order-type">
-              <text class="type-icon">{{ order.serviceIcon }}</text>
+              <text class="type-icon">{{ getServiceIcon(order.serviceName) }}</text>
               <text class="type-name">{{ order.serviceName }}</text>
             </view>
-            <view class="order-status" :class="order.statusClass">
-              {{ order.statusText }}
+            <view class="order-status" :class="getStatusClass(order.status)">
+              {{ getStatusText(order.status) }}
             </view>
           </view>
 
           <!-- 助教信息 -->
           <view class="coach-section">
-            <image class="coach-avatar" :src="order.coachAvatar" mode="aspectFill"></image>
+            <image class="coach-avatar" :src="order.coachAvatar || '/static/default-avatar.png'" mode="aspectFill"></image>
             <view class="coach-info">
               <text class="coach-name">{{ order.coachName }}</text>
               <text class="order-time">{{ order.date }} {{ order.time }}</text>
@@ -87,35 +95,35 @@
             </view>
             <view class="order-actions">
               <button
-                v-if="order.status === 'pending'"
+                v-if="order.status === 0"
                 class="action-btn cancel"
                 @click.stop="cancelOrder(order)"
               >
                 取消订单
               </button>
               <button
-                v-if="order.status === 'pending'"
+                v-if="order.status === 0"
                 class="action-btn contact"
                 @click.stop="contactCoach(order)"
               >
                 联系助教
               </button>
               <button
-                v-if="order.status === 'completed' && !order.isReviewed"
+                v-if="order.status === 1 && !order.isReviewed"
                 class="action-btn review"
                 @click.stop="goToReview(order)"
               >
                 去评价
               </button>
               <button
-                v-if="order.status === 'completed'"
+                v-if="order.status === 1"
                 class="action-btn reward"
                 @click.stop="goToReward(order)"
               >
                 打赏
               </button>
               <button
-                v-if="order.status === 'completed'"
+                v-if="order.status === 1"
                 class="action-btn book-again"
                 @click.stop="bookAgain(order)"
               >
@@ -127,102 +135,136 @@
       </view>
 
       <!-- 空状态 -->
-      <view v-if="filteredOrderList.length === 0" class="empty-state">
+      <view v-if="orderList.length === 0 && !loading && !refreshing" class="empty-state">
         <text class="empty-icon">📋</text>
         <text class="empty-text">暂无订单</text>
+      </view>
+
+      <!-- 加载状态 -->
+      <view class="loading-status">
+        <uni-load-more :status="loadMoreStatus"></uni-load-more>
       </view>
     </scroll-view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
+import { getOrderList } from '@/api/billiard/order'
 
 // 当前Tab
-const activeTab = ref('all')
+const activeTab = ref('')
 // 滚动区域高度
 const scrollHeight = ref(0)
+// 加载状态
+const refreshing = ref(false)
+const loading = ref(false)
+const loadMoreStatus = ref('more') // more: loading前, loading: 加载中, noMore: 没有更多数据
+const hasMore = ref(true)
+
+// 分页
+const pageNo = ref(1)
+const pageSize = ref(10)
 
 // 订单列表
-const orderList = ref([
-  {
-    id: 1,
-    orderNo: 'DD202403310001',
-    serviceName: '台球陪练',
-    serviceIcon: '🎱',
-    coachName: '小雯',
-    coachAvatar: 'https://picsum.photos/id/65/200/200',
-    date: '03月31日',
-    time: '14:00',
-    duration: 2,
-    hallName: '星空台球俱乐部（朝阳店）',
-    price: 198,
-    status: 'pending',
-    statusText: '待服务',
-    statusClass: 'pending',
-    isReviewed: false
-  },
-  {
-    id: 2,
-    orderNo: 'DD202403300002',
-    serviceName: '桌球教学',
-    serviceIcon: '🎓',
-    coachName: '阿杰',
-    coachAvatar: 'https://picsum.photos/id/103/200/200',
-    date: '03月30日',
-    time: '16:00',
-    duration: 1,
-    hallName: '8号台球会所',
-    price: 158,
-    status: 'completed',
-    statusText: '已完成',
-    statusClass: 'completed',
-    isReviewed: false
-  },
-  {
-    id: 3,
-    orderNo: 'DD202403280003',
-    serviceName: '台球陪练',
-    serviceIcon: '🎱',
-    coachName: '思思',
-    coachAvatar: 'https://picsum.photos/id/64/200/200',
-    date: '03月28日',
-    time: '19:00',
-    duration: 1,
-    hallName: '星空台球俱乐部（朝阳店）',
-    price: 99,
-    status: 'completed',
-    statusText: '已完成',
-    statusClass: 'completed',
-    isReviewed: true
-  },
-  {
-    id: 4,
-    orderNo: 'DD202403250004',
-    serviceName: '斯诺克教学',
-    serviceIcon: '🔴',
-    coachName: '大伟',
-    coachAvatar: 'https://picsum.photos/id/106/200/200',
-    date: '03月25日',
-    time: '15:00',
-    duration: 2,
-    hallName: '乔氏台球会所',
-    price: 396,
-    status: 'cancelled',
-    statusText: '已取消',
-    statusClass: 'cancelled',
-    isReviewed: false
-  }
-])
+const orderList = ref([])
 
-// 筛选后的订单列表
-const filteredOrderList = computed(() => {
-  if (activeTab.value === 'all') {
-    return orderList.value
+// 状态映射
+const statusMap = {
+  0: { text: '待服务', class: 'pending' },
+  1: { text: '已完成', class: 'completed' },
+  2: { text: '已取消', class: 'cancelled' }
+}
+
+// 获取状态文本
+const getStatusText = (status) => {
+  return statusMap[status]?.text || '未知'
+}
+
+// 获取状态样式
+const getStatusClass = (status) => {
+  return statusMap[status]?.class || ''
+}
+
+// 获取服务图标
+const getServiceIcon = (name) => {
+  if (name?.includes('斯诺克')) return '🔴'
+  if (name?.includes('教学')) return '🎓'
+  return '🎱'
+}
+
+// 加载数据
+const loadData = async (isRefresh = false) => {
+  if (loading.value) return
+
+  loading.value = true
+  if (isRefresh) {
+    loadMoreStatus.value = 'more'
+    hasMore.value = true
+    pageNo.value = 1
+  } else {
+    loadMoreStatus.value = 'loading'
   }
-  return orderList.value.filter(order => order.status === activeTab.value)
-})
+
+  try {
+    const params = {
+      pageNo: pageNo.value,
+      pageSize: pageSize.value
+    }
+
+    // 添加状态筛选
+    if (activeTab.value !== '') {
+      params.status = activeTab.value
+    }
+
+    const res = await getOrderList(params)
+    const data = res.data || {}
+    const list = data.list || data.records || []
+
+    if (isRefresh) {
+      orderList.value = list
+    } else {
+      orderList.value = [...orderList.value, ...list]
+    }
+
+    // 判断是否还有更多数据
+    hasMore.value = list.length >= pageSize.value
+    loadMoreStatus.value = hasMore.value ? 'more' : 'noMore'
+
+    if (!hasMore.value && pageNo.value > 1) {
+      uni.showToast({
+        title: '没有更多了',
+        icon: 'none'
+      })
+    }
+  } catch (error) {
+    console.error('加载订单列表失败:', error)
+    loadMoreStatus.value = 'more'
+  } finally {
+    loading.value = false
+    refreshing.value = false
+  }
+}
+
+// 下拉刷新
+const onRefresh = () => {
+  refreshing.value = true
+  loadData(true)
+}
+
+// 上拉加载更多
+const loadMore = () => {
+  if (loading.value || !hasMore.value) return
+  pageNo.value++
+  loadData(false)
+}
+
+// 切换Tab
+const switchTab = (tab) => {
+  activeTab.value = tab
+  loadData(true)
+}
 
 // 跳转详情
 const goToDetail = (order) => {
@@ -238,10 +280,9 @@ const cancelOrder = (order) => {
     content: '确定要取消这个订单吗？',
     success: (res) => {
       if (res.confirm) {
-        order.status = 'cancelled'
-        order.statusText = '已取消'
-        order.statusClass = 'cancelled'
         uni.showToast({ title: '订单已取消', icon: 'success' })
+        // TODO: 调用取消订单接口
+        loadData(true)
       }
     }
   })
@@ -254,15 +295,13 @@ const contactCoach = (order) => {
 
 // 去评价
 const goToReview = (order) => {
-  uni.navigateTo({
-    url: '/pages/order/review'
-  })
+  uni.showToast({ title: '评价功能开发中', icon: 'none' })
 }
 
 // 去打赏
 const goToReward = (order) => {
   uni.navigateTo({
-    url: `/pages/coach/reward?coachId=${order.id}&coachName=${order.coachName}`
+    url: `/pages/coach/reward?coachId=${order.coachId || order.id}&coachName=${order.coachName}`
   })
 }
 
@@ -281,16 +320,15 @@ onMounted(() => {
     query.select('#tabBar').boundingClientRect()
     query.exec((res) => {
       const pageTabBarHeight = res[0]?.height || 0
-      // 系统 tabBar 高度 (通常是50px) + 安全区域
-      // const systemTabBarHeight = 50 + (systemInfo.safeAreaInsets?.bottom || 0)
-      // 减去：顶部tabBar、系统tabBar
+      // 减去顶部tabBar
       scrollHeight.value = systemInfo.windowHeight - pageTabBarHeight
     })
   }, 100)
 })
 
 onLoad(() => {
-  console.log('订单列表页加载')
+  // 加载数据
+  loadData(true)
 })
 </script>
 
@@ -454,6 +492,7 @@ onLoad(() => {
   .order-actions {
     display: flex;
     gap: 12rpx;
+    flex-wrap: wrap;
     .action-btn {
       padding: 12rpx 24rpx;
       font-size: 24rpx;
@@ -500,5 +539,9 @@ onLoad(() => {
     color: #666;
     font-size: 28rpx;
   }
+}
+
+.loading-status {
+  padding: 20rpx 0;
 }
 </style>
