@@ -1,17 +1,5 @@
 <template>
   <view class="edit-page-wrapper">
-    <!-- 顶部导航栏 -->
-    <view class="nav-bar">
-      <view class="nav-back" @click="goBack">
-        <uni-icons type="left" size="24" color="#fff" />
-      </view>
-      <text class="nav-title">编辑资料</text>
-      <view class="nav-save" :class="{disabled: isSaving}" @click="saveInfo">
-        <text v-if="!isSaving">保存</text>
-        <uni-icons v-else type="spinner-cycle" size="20" color="#00BB88" style="animation: spin 1s linear infinite;"></uni-icons>
-      </view>
-    </view>
-
     <scroll-view
         scroll-y
         class="edit-scroll"
@@ -56,13 +44,22 @@
           </view>
         </view>
 
-        <view class="info-row" @click="showDatePicker = true">
-          <text class="label">生日</text>
-          <view class="value-wrap">
-            <text class="value">{{ userInfo.birthday }}</text>
-            <uni-icons type="right" size="20" color="#9CA3AF" />
+        <picker
+            mode="date"
+            :value="userInfo.birthday"
+            :start="startBirthday"
+            :end="endBirthday"
+            fields="day"
+            @change="onBirthdayChange"
+        >
+          <view class="info-row">
+            <text class="label">生日</text>
+            <view class="value-wrap">
+              <text class="value">{{ userInfo.birthday }}</text>
+              <uni-icons type="right" size="20" color="#9CA3AF" />
+            </view>
           </view>
-        </view>
+        </picker>
 
         <view class="info-row" @click="editCity">
           <text class="label">所在城市</text>
@@ -81,27 +78,9 @@
         </view>
       </view>
 
-      <!-- 退出登录 -->
-      <view class="logout-section">
-        <button class="logout-btn" @click="logout">退出登录</button>
-      </view>
-
       <!-- 底部安全区域 -->
       <view class="safe-area-bottom"></view>
     </scroll-view>
-
-    <!-- 生日日期选择器（小程序/App/H5兼容） -->
-    <picker
-        mode="date"
-        :value="userInfo.birthday"
-        :start="startBirthday"
-        :end="endBirthday"
-        fields="day"
-        @change="onBirthdayChange"
-    >
-      <!-- 透明占位层，通过上面的view点击触发 -->
-      <view class="picker-placeholder" v-if="showDatePicker"></view>
-    </picker>
   </view>
 </template>
 
@@ -111,8 +90,6 @@ import { onShow } from  "@dcloudio/uni-app"
 
 // 保存状态
 const isSaving = ref(false)
-// 控制picker点击触发的占位（简化写法，也可以直接把info-row放picker里，但要调整层级）
-const showDatePicker = ref(false)
 
 // 用户信息
 const userInfo = ref({
@@ -182,7 +159,7 @@ const uploadAvatar = async () => {
 
 // 3. 多端压缩图片（适配大小）
 const compressImage = (filePath) => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     // 直接返回H5的临时路径（H5的compressImage有时兼容性问题，chooseImage已经优先选compressed）
     // #ifdef H5
     resolve(filePath)
@@ -235,7 +212,6 @@ const chooseGender = () => {
 // 生日变化
 const onBirthdayChange = (e) => {
   userInfo.value.birthday = e.detail.value
-  showDatePicker.value = false // 重置占位状态
 }
 
 // 编辑城市（可替换为uni-city-picker或接口返回的城市选择器）
@@ -258,44 +234,7 @@ const editIntro = () => {
   })
 }
 
-// ---------------------- 保存与退出 ----------------------
-// 保存资料
-const saveInfo = () => {
-  if (isSaving.value) return
-  isSaving.value = true
-
-  // TODO: 调用后端保存资料接口
-  setTimeout(() => {
-    isSaving.value = false
-    // 保存到本地存储
-    uni.setStorageSync('userInfo', userInfo.value)
-    uni.showToast({ title: '保存成功', icon: 'success' })
-    setTimeout(() => uni.navigateBack(), 1500)
-  }, 1000)
-}
-
-// 退出登录
-const logout = () => {
-  uni.showModal({
-    title: '提示',
-    content: '确定要退出登录吗？',
-    success: (res) => {
-      if (res.confirm) {
-        // 清除本地存储
-        uni.removeStorageSync('token')
-        uni.removeStorageSync('userInfo')
-        // 跳转到登录页
-        uni.reLaunch({ url: '/pages/login/index' })
-      }
-    }
-  })
-}
-
 // ---------------------- 生命周期 ----------------------
-const goBack = () => {
-  uni.navigateBack()
-}
-
 onMounted(() => {
   // 加载本地存储的用户信息
   const localUserInfo = uni.getStorageSync('userInfo')
@@ -316,46 +255,6 @@ onShow(() => {
   display: flex;
   flex-direction: column;
   position: relative;
-}
-
-/* 顶部导航栏 */
-.nav-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20rpx 30rpx;
-  padding-top: calc(20rpx + constant(safe-area-inset-top));
-  padding-top: calc(20rpx + env(safe-area-inset-top));
-  .nav-back, .nav-save {
-    width: 80rpx;
-    height: 60rpx;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-  }
-  .nav-save {
-    justify-content: flex-end;
-    text {
-      color: #00BB88;
-      font-size: 32rpx;
-      font-weight: 600;
-    }
-    &.disabled {
-      opacity: 0.5;
-      pointer-events: none;
-    }
-  }
-  .nav-title {
-    color: #fff;
-    font-size: 36rpx;
-    font-weight: 600;
-  }
-}
-
-/* 旋转动画 */
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
 }
 
 .edit-scroll {
@@ -430,36 +329,6 @@ onShow(() => {
       }
     }
   }
-}
-
-/* 退出登录区域 */
-.logout-section {
-  margin: 60rpx 30rpx 30rpx;
-  .logout-btn {
-    width: 100%;
-    height: 96rpx;
-    line-height: 96rpx;
-    background: rgba(239, 68, 68, 0.15);
-    color: #EF4444;
-    border-radius: 48rpx;
-    font-size: 32rpx;
-    font-weight: 600;
-    border: none;
-    &::after {
-      border: none;
-    }
-  }
-}
-
-/* 日期选择器透明占位层 */
-.picker-placeholder {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: transparent;
-  z-index: 999;
 }
 
 /* 底部安全区域 */

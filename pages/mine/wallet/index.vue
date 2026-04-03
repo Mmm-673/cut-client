@@ -170,19 +170,19 @@ const goBack = () => {
 }
 
 const toRecharge = () => {
-  uni.navigateTo({ url: '/pages/wallet/recharge' })
+  uni.showToast({ title: '充值功能开发中', icon: 'none' })
 }
 
 const toWithdraw = () => {
-  uni.navigateTo({ url: '/pages/wallet/withdraw' })
+  uni.showToast({ title: '提现功能开发中', icon: 'none' })
 }
 
 const toAllRecord = () => {
-  uni.navigateTo({ url: '/pages/wallet/record' })
+  uni.navigateTo({ url: '/pages/mine/wallet/list' })
 }
 
 const toRecordDetail = (recordId) => {
-  uni.navigateTo({ url: `/pages/wallet/detail?id=${recordId}` })
+  uni.showToast({ title: '详情功能开发中', icon: 'none' })
 }
 
 onMounted(() => {

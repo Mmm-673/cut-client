@@ -54,9 +54,9 @@
       }
     },
     {
-      "path": "pages/booking/index",
+      "path": "pages/booking/hall",
       "style": {
-        "navigationBarTitleText": "预约",
+        "navigationBarTitleText": "选择球厅",
         "navigationBarBackgroundColor": "#121619",
         "navigationBarTextStyle": "white"
       }
@@ -64,7 +64,15 @@
     {
       "path": "pages/booking/confirm",
       "style": {
-        "navigationBarTitleText": "下单确认",
+        "navigationBarTitleText": "确认订单",
+        "navigationBarBackgroundColor": "#121619",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/booking/index",
+      "style": {
+        "navigationBarTitleText": "预约",
         "navigationBarBackgroundColor": "#121619",
         "navigationBarTextStyle": "white"
       }
@@ -114,6 +122,18 @@
       "path": "pages/mine/help/index",
       "style": {
         "navigationBarTitleText": "常见问题"
+      }
+    },
+    {
+      "path": "pages/mine/wallet/index",
+      "style": {
+        "navigationBarTitleText": "我的钱包"
+      }
+    },
+    {
+      "path": "pages/mine/wallet/list",
+      "style": {
+        "navigationBarTitleText": "交易记录"
       }
     },
 

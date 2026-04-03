@@ -489,27 +489,28 @@ $transition: all 0.3s ease;
   left: 0;
   right: 0;
   display: flex;
-  gap: 20rpx;
-  padding: 20rpx 30rpx 40rpx;
+  gap: 16rpx;
+  padding: 16rpx 24rpx 24rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   background-color: $bg-primary;
   z-index: 999;
 
   .reward-btn {
     flex: 1;
-    height: 96rpx;
+    height: 72rpx;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12rpx;
+    gap: 10rpx;
     background-color: transparent;
     border: 2rpx solid $accent-yellow;
-    border-radius: 48rpx;
-    font-size: 32rpx;
+    border-radius: 36rpx;
+    font-size: 28rpx;
     color: $accent-yellow;
     font-weight: 600;
 
     .iconfont {
-      font-size: 36rpx;
+      font-size: 32rpx;
     }
 
     &:active {
@@ -519,13 +520,13 @@ $transition: all 0.3s ease;
 
   .submit-btn {
     flex: 3;
-    height: 96rpx;
+    height: 72rpx;
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: $accent-green;
-    border-radius: 48rpx;
-    font-size: 32rpx;
+    border-radius: 36rpx;
+    font-size: 28rpx;
     color: $text-primary;
     font-weight: 600;
 

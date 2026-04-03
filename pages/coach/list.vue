@@ -74,7 +74,7 @@
           @click="goToDetail(coach.id)"
         >
           <view class="coach-avatar">
-            <image :src="coach.avatar || '/static/default-avatar.png'" mode="aspectFill" class="avatar-img"></image>
+            <image :src="coach.mainPhotoUrl || coach.avatar || '/static/default-avatar.png'" mode="aspectFill" class="avatar-img"></image>
           </view>
 
           <view class="coach-info">
@@ -84,18 +84,18 @@
                 <view class="level-tag" :class="getLevelClass(coach.level)">
                   {{ getLevelText(coach.level) }}
                 </view>
-                <view v-if="coach.isNew" class="new-tag">新人</view>
+                <view v-if="coach.tags && coach.tags.includes('新人')" class="new-tag">新人</view>
               </view>
-              <text class="distance">{{ coach.distance || '' }}</text>
+              <text class="distance">{{ formatDistance(coach.distance) }}</text>
             </view>
 
             <view class="rating-row">
               <uni-icons type="star-filled" size="14" color="#FFD700"></uni-icons>
-              <text class="rating">{{ coach.overallScore || coach.rating }}</text>
-              <text class="review-count">({{ coach.serviceCount || coach.reviewCount }}单)</text>
+              <text class="rating">{{ coach.overallScore || coach.rating || 5.0 }}</text>
+              <text class="review-count">({{ coach.serviceCount || coach.reviewCount || 0 }}单)</text>
               <view class="coach-tags">
                 <view
-                  v-for="(tag, tagIndex) in (coach.tags || [])"
+                  v-for="(tag, tagIndex) in (coach.tags || []).filter(t => t !== '新人')"
                   :key="tagIndex"
                   class="coach-tag"
                   :class="getTagClass(tag)"
@@ -104,13 +104,13 @@
             </view>
 
             <view class="desc-row">
-              <text class="coach-desc">{{ coach.introduction || coach.desc }}</text>
+              <text class="coach-desc">{{ coach.introduction || coach.desc || '暂无简介' }}</text>
             </view>
 
             <view class="bottom-row">
               <view class="price-row">
                 <text class="price-symbol">¥</text>
-                <text class="price">{{ coach.price }}</text>
+                <text class="price">{{ coach.price || 0 }}</text>
                 <text class="price-unit">/小时</text>
               </view>
               <view class="action-buttons">
@@ -195,6 +195,17 @@ const getTagClass = (tag) => {
   return tagClassMap[tag] || 'tag-default'
 }
 
+// 格式化距离显示
+const formatDistance = (distance) => {
+  if (distance === null || distance === undefined || distance === '') {
+    return ''
+  }
+  if (typeof distance === 'number') {
+    return distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`
+  }
+  return distance
+}
+
 // 加载数据
 const loadData = async (isRefresh = false) => {
   if (loading.value) return
@@ -233,7 +244,8 @@ const loadData = async (isRefresh = false) => {
 
     const res = await getCoachList(params)
     const data = res.data || {}
-    const list = data.list || data.records || []
+    // 兼容不同的返回结构：list / records / rows
+    const list = data.list || data.records || data.rows || []
 
     if (isRefresh) {
       coachList.value = list
@@ -241,8 +253,13 @@ const loadData = async (isRefresh = false) => {
       coachList.value = [...coachList.value, ...list]
     }
 
-    // 判断是否还有更多数据
-    hasMore.value = list.length >= pageSize.value
+    // 判断是否还有更多数据：优先看 total，其次看返回数量
+    const total = data.total || data.totalCount || 0
+    if (total > 0) {
+      hasMore.value = coachList.value.length < total
+    } else {
+      hasMore.value = list.length >= pageSize.value
+    }
     loadMoreStatus.value = hasMore.value ? 'more' : 'noMore'
 
     if (!hasMore.value && pageNo.value > 1) {
@@ -313,10 +330,9 @@ const goToReward = (id) => {
 
 // 预约
 const handleBook = (coach) => {
-  uni.showToast({
-    title: '预约功能开发中',
-    icon: 'none'
-  })
+  // 保存选中的助教信息
+  uni.setStorageSync('selectedCoach', coach)
+  uni.navigateTo({ url: '/pages/booking/hall' })
 }
 
 onMounted(() => {

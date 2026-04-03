@@ -1,13 +1,5 @@
 <template>
   <view class="setting-wrapper">
-    <!-- 统一的顶部导航栏 -->
-    <view class="nav-bar">
-      <view class="nav-back" @click="goBack">
-        <uni-icons type="left" size="24" color="#fff" />
-      </view>
-      <text class="nav-title">设置</text>
-      <view class="nav-placeholder"></view>
-    </view>
 
     <scroll-view
         scroll-y
@@ -94,10 +86,10 @@ const goBack = () => {
   uni.navigateBack()
 }
 
-// 跳转修改密码（路由路径和你的「设置新密码」或「修改密码」页一致）
+// 跳转修改密码
 const goToPwd = () => {
   uni.navigateTo({
-    url: '/pages/password/set' // 或者 '/pages/mine/pwd/index'
+    url: '/pages/mine/pwd/index'
   })
 }
 

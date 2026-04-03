@@ -1,15 +1,5 @@
 <template>
   <view class="help-page-wrapper">
-    <!-- 顶部导航栏 -->
-    <view class="nav-bar">
-      <view class="nav-back" @click="goBack">
-        <uni-icons type="left" size="24" color="#fff" />
-      </view>
-      <text class="nav-title">帮助中心</text>
-      <view class="nav-service" @click="toService">
-        <uni-icons type="chatbubble" size="24" color="#fff" />
-      </view>
-    </view>
 
     <scroll-view
         scroll-y

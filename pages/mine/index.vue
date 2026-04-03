@@ -1,28 +1,61 @@
 <template>
   <view class="my-page-wrapper">
+    <!-- ==========================================
+         1. 统一的自定义顶部导航栏（适配上安全区）
+         ========================================== -->
+    <view class="nav-bar">
+      <!-- 占位对称用（右侧没有按钮） -->
+      <view class="nav-placeholder"></view>
+      <text class="nav-title">我的</text>
+      <view class="nav-placeholder"></view>
+    </view>
+
+    <!-- ==========================================
+         2. 统一的滚动容器（撑满剩余+适配下安全区）
+         ========================================== -->
     <scroll-view
         scroll-y
         class="my-scroll"
         refresher-enabled
         :refresher-triggered="refreshing"
         @refresherrefresh="onRefresh"
+        :lower-threshold="50"
     >
-      <!-- 顶部个人信息卡片 -->
+      <!-- ==========================================
+           3. 顶部个人信息卡片（统一渐变+安全间距）
+           ========================================== -->
       <view class="user-card">
         <view class="user-header">
-          <image class="user-avatar" :src="userInfo.avatar || '/static/default-avatar.png'" mode="aspectFill"></image>
+          <!-- 头像 -->
+          <image
+              class="user-avatar"
+              :src="userInfo.avatar || '/static/default-avatar.png'"
+              mode="aspectFill"
+              @click="previewAvatar"
+          ></image>
+
+          <!-- 用户信息 -->
           <view class="user-info">
-            <view class="user-name">{{ userInfo.nickname }} <text class="edit-btn" @click="toEditInfo">编辑资料 <uni-icons type="right" size="16" color="#9CA3AF" /></text></view>
+            <view class="user-name-row">
+              <text class="user-name">{{ userInfo.nickname }}</text>
+              <text class="edit-btn" @click="toEditInfo">
+                编辑资料
+                <uni-icons type="right" size="14" color="#9CA3AF" />
+              </text>
+            </view>
             <view class="user-phone">{{ userInfo.phone }}</view>
             <text class="user-level" :class="userInfo.levelClass">{{ userInfo.level }}</text>
           </view>
+
+          <!-- 设置按钮 -->
           <view class="setting-btn" @click="toSetting">
-            <uni-icons type="gear" size="24" color="#fff" />
+            <uni-icons type="gear" size="22" color="#fff" />
           </view>
         </view>
 
+        <!-- 统计数据 -->
         <view class="user-stats">
-          <view class="stats-item">
+          <view class="stats-item" @click="toAllOrder">
             <text class="stats-num">{{ stats.totalOrder }}</text>
             <text class="stats-label">总订单</text>
           </view>
@@ -39,11 +72,13 @@
         </view>
       </view>
 
-      <!-- 钱包+优惠券模块 -->
-      <view class="func-card">
+      <!-- ==========================================
+           4. 钱包+优惠券双栏卡片（去掉:has()，加专门class兼容所有端）
+           ========================================== -->
+      <view class="func-card dual-card">
         <view class="dual-item" @click="toWallet">
           <view class="item-icon bg-green">
-            <uni-icons type="wallet" size="30" color="#fff" />
+            <uni-icons type="wallet" size="28" color="#fff" />
           </view>
           <text class="item-title">我的钱包</text>
           <text class="item-value text-green">¥{{ wallet.balance }}</text>
@@ -51,18 +86,23 @@
         <view class="dual-divider"></view>
         <view class="dual-item" @click="toCoupon">
           <view class="item-icon bg-yellow">
-            <uni-icons type="ticket" size="30" color="#fff" />
+            <uni-icons type="ticket" size="28" color="#fff" />
           </view>
           <text class="item-title">优惠券</text>
           <text class="item-value text-yellow">{{ coupon.availableCount }}张可用</text>
         </view>
       </view>
 
-      <!-- 我的订单模块 -->
+      <!-- ==========================================
+           5. 我的订单模块（独立的func-card！！之前嵌套错了）
+           ========================================== -->
       <view class="func-card">
         <view class="card-header">
           <text class="card-title">我的订单</text>
-          <text class="view-more" @click="toAllOrder">查看全部 <uni-icons type="right" size="16" color="#9CA3AF" /></text>
+          <text class="view-more" @click="toAllOrder">
+            查看全部
+            <uni-icons type="right" size="14" color="#9CA3AF" />
+          </text>
         </view>
 
         <!-- 订单分类标签 -->
@@ -75,62 +115,71 @@
               @click="switchOrderTab(tab.value)"
           >
             <view class="tab-icon" :style="{color: tab.color}">
-              <uni-icons :type="tab.icon" size="28" :color="tab.color" />
+              <uni-icons :type="tab.icon" size="24" :color="tab.color" />
               <text class="badge" v-if="tab.hasBadge"></text>
             </view>
             <text :style="{color: currentOrderTab === tab.value ? tab.color : '#9CA3AF'}">{{ tab.label }}</text>
           </view>
-          </div>
-
-          <!-- 订单列表 -->
-          <view class="order-list">
-            <view class="order-card" v-for="order in showOrders" :key="order.id" @click="toOrderDetail(order.id)">
-              <view class="order-left">
-                <image class="coach-avatar" :src="order.coachAvatar" mode="aspectFill"></image>
-                <view class="order-info">
-                  <view class="order-title">{{ order.coachName }} · {{ order.coachLevel }}</view>
-                  <view class="order-subtitle">{{ order.serviceName }} · {{ order.duration }}小时</view>
-                  <view class="order-time">{{ order.time }}</view>
-                </view>
-              </view>
-              <view class="order-right">
-                <text class="order-status" :style="{background: order.statusColor}">{{ order.statusText }}</text>
-                <button
-                    v-if="order.showAction"
-                    class="order-action-btn"
-                    :style="{background: order.actionColor}"
-                    @click.stop="toReview(order.id)"
-                >
-                  {{ order.actionText }}
-                </button>
-              </view>
-            </view>
-
-            <!-- 空状态 -->
-            <view class="empty-tip" v-if="showOrders.length === 0">
-              暂无对应订单
-            </view>
-          </view>
         </view>
 
-        <!-- 功能菜单列表 -->
-        <view class="func-card menu-card">
+        <!-- 订单列表（独立在order-tabs外面！！） -->
+        <view class="order-list">
           <view
-              class="menu-item"
-              v-for="item in menuList"
-              :key="item.key"
-              @click="toMenuPage(item)"
+              class="order-card"
+              v-for="order in showOrders"
+              :key="order.id"
+              @click="toOrderDetail(order.id)"
           >
-            <view class="menu-icon" :style="{background: item.bgColor, color: item.color}">
-              <uni-icons :type="item.icon" size="24" :color="item.color" />
+            <view class="order-left">
+              <image class="coach-avatar" :src="order.coachAvatar" mode="aspectFill"></image>
+              <view class="order-info">
+                <view class="order-title">{{ order.coachName }} · {{ order.coachLevel }}</view>
+                <view class="order-subtitle">{{ order.serviceName }} · {{ order.duration }}小时</view>
+                <view class="order-time">{{ order.time }}</view>
+              </view>
             </view>
-            <text class="menu-title">{{ item.title }}</text>
-            <uni-icons type="right" size="20" color="#9CA3AF" />
+            <view class="order-right">
+              <text class="order-status" :style="{background: order.statusColor}">{{ order.statusText }}</text>
+              <button
+                  v-if="order.showAction"
+                  class="order-action-btn"
+                  :style="{background: order.actionColor}"
+                  @click.stop="toReview(order.id)"
+              >
+                {{ order.actionText }}
+              </button>
+            </view>
+          </view>
+
+          <!-- 空状态 -->
+          <view class="empty-tip" v-if="showOrders.length === 0">
+            暂无对应订单
           </view>
         </view>
+      </view>
 
-        <!-- 底部安全区域 -->
-        <view class="safe-area-bottom"></view>
+      <!-- ==========================================
+           6. 功能菜单列表（独立的func-card！！之前嵌套错了）
+           ========================================== -->
+      <view class="func-card menu-card">
+        <view
+            class="menu-item"
+            v-for="item in menuList"
+            :key="item.key"
+            @click="toMenuPage(item)"
+        >
+          <view class="menu-icon" :style="{background: item.bgColor}">
+            <uni-icons :type="item.icon" size="22" :color="item.color" />
+          </view>
+          <text class="menu-title">{{ item.title }}</text>
+          <uni-icons type="right" size="18" color="#9CA3AF" />
+        </view>
+      </view>
+
+      <!-- ==========================================
+           7. 底部安全区域（单独放滚动容器最后）
+           ========================================== -->
+      <view class="safe-area-bottom"></view>
     </scroll-view>
   </view>
 </template>
@@ -139,6 +188,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
 
+// ---------------------- 状态定义 ----------------------
 // 刷新状态
 const refreshing = ref(false)
 // 当前订单分类
@@ -175,7 +225,7 @@ const orderTabs = ref([
   { value: 0, label: '待付款', icon: 'clock', color: '#FBBF24', hasBadge: true },
   { value: 1, label: '进行中', icon: 'play', color: '#00BB88', hasBadge: false },
   { value: 2, label: '待评价', icon: 'star', color: '#FBBF24', hasBadge: true },
-  { value: 3, label: '已完成', icon: 'checkmark', color: '#00BB88', hasBadge: false },
+  { value: 3, label: '已完成', icon: 'checkmarkempty', color: '#00BB88', hasBadge: false },
   { value: 4, label: '已取消', icon: 'close', color: '#EF4444', hasBadge: false },
 ])
 
@@ -203,19 +253,21 @@ const orderList = ref({
   4: [] // 已取消
 })
 
-// 功能菜单
+// 功能菜单（修正了跳转路径！！对应刚才整合的pages.json）
 const menuList = ref([
-  { key: 'collection', title: '我的收藏', icon: 'heart', bgColor: 'rgba(251, 191, 36, 0.2)', color: '#FBBF24', path: '/pages/user/collection' },
-  { key: 'follow', title: '关注教练', icon: 'personadd', bgColor: 'rgba(0, 187, 136, 0.2)', color: '#00BB88', path: '/pages/user/follow' },
-  { key: 'hall', title: '常用球厅', icon: 'location', bgColor: 'rgba(239, 68, 68, 0.2)', color: '#EF4444', path: '/pages/user/hall' },
-  { key: 'help', title: '帮助中心', icon: 'question', bgColor: 'rgba(107, 114, 128, 0.2)', color: '#6B7280', path: '/pages/help/index' },
+  { key: 'collection', title: '我的收藏', icon: 'heart', bgColor: 'rgba(251, 191, 36, 0.2)', color: '#FBBF24', path: '' },
+  { key: 'follow', title: '关注教练', icon: 'personadd', bgColor: 'rgba(0, 187, 136, 0.2)', color: '#00BB88', path: '' },
+  { key: 'hall', title: '常用球厅', icon: 'location', bgColor: 'rgba(239, 68, 68, 0.2)', color: '#EF4444', path: '' },
+  { key: 'help', title: '帮助中心', icon: 'question', bgColor: 'rgba(107, 114, 128, 0.2)', color: '#6B7280', path: '/subpkg-mine/pages/help' },
 ])
 
+// ---------------------- 计算属性 ----------------------
 // 当前展示的订单
 const showOrders = computed(() => {
   return orderList.value[currentOrderTab.value] || []
 })
 
+// ---------------------- 交互方法 ----------------------
 // 下拉刷新
 const onRefresh = () => {
   refreshing.value = true
@@ -226,30 +278,39 @@ const onRefresh = () => {
   }, 1000)
 }
 
+// 预览当前头像
+const previewAvatar = () => {
+  if (!userInfo.value.avatar) return
+  uni.previewImage({
+    urls: [userInfo.value.avatar],
+    current: userInfo.value.avatar
+  })
+}
+
 // 切换订单分类
 const switchOrderTab = (val) => {
   currentOrderTab.value = val
 }
 
-// 路由跳转方法
+// 路由跳转方法（全部修正为新pages.json的路径！！）
 const toEditInfo = () => {
-  uni.navigateTo({ url: '/pages/user/edit' })
+  uni.navigateTo({ url: '/pages/mine/info/index' })
 }
 
 const toSetting = () => {
-  uni.navigateTo({ url: '/pages/setting/index' })
+  uni.navigateTo({ url: '/pages/mine/setting/index' })
 }
 
 const toWallet = () => {
-  uni.navigateTo({ url: '/pages/user/wallet' })
+  uni.navigateTo({ url: '/pages/mine/wallet/index' })
 }
 
 const toCoupon = () => {
-  uni.navigateTo({ url: '/pages/user/coupon' })
+  uni.showToast({ title: '功能开发中', icon: 'none' })
 }
 
 const toAllOrder = () => {
-  uni.navigateTo({ url: '/pages/order/list' })
+  uni.switchTab({ url: '/pages/order/list' })
 }
 
 const toOrderDetail = (orderId) => {
@@ -257,13 +318,18 @@ const toOrderDetail = (orderId) => {
 }
 
 const toReview = (orderId) => {
-  uni.navigateTo({ url: `/pages/order/review?id=${orderId}` })
+  uni.navigateTo({ url: `/pages/evaluate/index?id=${orderId}` })
 }
 
 const toMenuPage = (item) => {
-  uni.navigateTo({ url: item.path })
+  if (item.path) {
+    uni.navigateTo({ url: item.path })
+  } else {
+    uni.showToast({ title: '功能开发中', icon: 'none' })
+  }
 }
 
+// ---------------------- 生命周期 ----------------------
 onMounted(() => {
   // 页面加载拉取用户数据，你可以替换为你的接口
 })
@@ -275,60 +341,134 @@ onShow(() => {
 </script>
 
 <style lang="scss" scoped>
+/* ==========================================
+   全局容器与布局（严格安全区+撑满）
+   ========================================== */
 .my-page-wrapper {
   min-height: 100vh;
   background: #121619;
-  padding-top: 20rpx;
+  display: flex;
+  flex-direction: column;
 }
 
+/* ==========================================
+   统一的自定义顶部导航栏（严格上安全区）
+   ========================================== */
+.nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 30rpx;
+  padding-top: calc(20rpx + constant(safe-area-inset-top));
+  padding-top: calc(20rpx + env(safe-area-inset-top));
+  background: transparent; /* 我的页面导航透明 */
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  .nav-placeholder {
+    width: 60rpx;
+    height: 60rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-title {
+    color: #fff;
+    font-size: 36rpx;
+    font-weight: 600;
+  }
+}
+
+/* ==========================================
+   统一的滚动容器（严格撑满剩余）
+   ========================================== */
 .my-scroll {
+  flex: 1;
   width: 100%;
-  min-height: 100vh;
 }
 
-/* 用户信息卡片 */
-.user-card {
+/* ==========================================
+   统一的通用卡片样式
+   ========================================== */
+.func-card {
   margin: 0 30rpx 30rpx;
-  background: linear-gradient(135deg, #00BB8833 0%, #1E252B 100%);
+  background: #1E252B;
+  border-radius: 24rpx;
+  padding: 30rpx;
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24rpx;
+    .card-title {
+      color: #fff;
+      font-size: 32rpx;
+      font-weight: 600;
+    }
+    .view-more {
+      color: #9CA3AF;
+      font-size: 26rpx;
+      display: flex;
+      align-items: center;
+      gap: 4rpx;
+    }
+  }
+}
+
+/* ==========================================
+   3. 顶部个人信息卡片
+   ========================================== */
+.user-card {
+  margin: 20rpx 30rpx 30rpx; /* 比通用卡片多20rpx的顶部间距 */
+  background: linear-gradient(135deg, rgba(0, 187, 136, 0.2) 0%, #1E252B 100%);
   border-radius: 40rpx;
   padding: 40rpx 30rpx;
   .user-header {
     display: flex;
-    align-items: center;
-    gap: 24rpx;
+    align-items: flex-start;
+    gap: 20rpx;
     position: relative;
     .user-avatar {
       width: 120rpx;
       height: 120rpx;
       border-radius: 50%;
       border: 4rpx solid #00BB88;
+      flex-shrink: 0;
     }
     .user-info {
       flex: 1;
-      .user-name {
-        color: #fff;
-        font-size: 40rpx;
-        font-weight: 600;
-        line-height: 1.4;
+      padding-top: 8rpx;
+      .user-name-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12rpx;
+        .user-name {
+          color: #fff;
+          font-size: 40rpx;
+          font-weight: 700;
+        }
         .edit-btn {
-          float: right;
           color: #9CA3AF;
-          font-size: 28rpx;
+          font-size: 26rpx;
           font-weight: normal;
           display: flex;
           align-items: center;
+          gap: 4rpx;
+          flex-shrink: 0;
         }
       }
       .user-phone {
         color: #9CA3AF;
-        font-size: 30rpx;
-        margin: 8rpx 0 16rpx;
+        font-size: 28rpx;
+        margin-bottom: 16rpx;
       }
       .user-level {
         display: inline-block;
         padding: 4rpx 24rpx;
         border-radius: 8rpx;
-        font-size: 26rpx;
+        font-size: 24rpx;
+        font-weight: 500;
         &.level-normal {
           background: rgba(251, 191, 36, 0.2);
           color: #FBBF24;
@@ -350,6 +490,7 @@ onShow(() => {
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
   }
 
@@ -362,57 +503,43 @@ onShow(() => {
       .stats-num {
         display: block;
         color: #fff;
-        font-size: 48rpx;
+        font-size: 44rpx;
         font-weight: bold;
         margin-bottom: 8rpx;
       }
       .stats-label {
         display: block;
         color: #9CA3AF;
-        font-size: 28rpx;
+        font-size: 26rpx;
       }
     }
     .stats-divider {
       width: 2rpx;
       background: rgba(255,255,255,0.1);
+      margin-top: 8rpx;
+      margin-bottom: 8rpx;
     }
   }
 }
 
-/* 通用双栏卡片 */
-.func-card {
-  margin: 0 30rpx 30rpx;
-  background: #1E252B;
-  border-radius: 24rpx;
-  padding: 30rpx;
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24rpx;
-    .card-title {
-      color: #fff;
-      font-size: 32rpx;
-      font-weight: 600;
-    }
-    .view-more {
-      color: #9CA3AF;
-      font-size: 28rpx;
-      display: flex;
-      align-items: center;
-      gap: 4rpx;
-    }
-  }
+/* ==========================================
+   4. 钱包+优惠券双栏卡片（兼容所有端！！去掉:has()）
+   ========================================== */
+.dual-card {
+  display: flex;
+  align-items: center;
+  gap: 30rpx;
+  padding: 30rpx 0; /* 上下留通用padding，左右不要因为flex撑宽变窄 */
+  padding-left: 0;
+  padding-right: 0;
 }
-
-/* 钱包优惠券双栏 */
 .dual-item {
   flex: 1;
   text-align: center;
-  padding: 10rpx 0;
+  padding: 0 10rpx; /* 左右留间距防溢出 */
   .item-icon {
-    width: 90rpx;
-    height: 90rpx;
+    width: 80rpx;
+    height: 80rpx;
     border-radius: 50%;
     margin: 0 auto 12rpx;
     display: flex;
@@ -422,12 +549,13 @@ onShow(() => {
   .item-title {
     display: block;
     color: #fff;
-    font-size: 32rpx;
+    font-size: 30rpx;
     font-weight: 600;
     margin-bottom: 8rpx;
   }
   .item-value {
-    font-size: 28rpx;
+    font-size: 26rpx;
+    font-weight: 600;
     &.text-green {
       color: #00BB88;
     }
@@ -444,19 +572,18 @@ onShow(() => {
 }
 .dual-divider {
   width: 2rpx;
+  height: 100rpx; /* 固定高度撑住双栏的视觉分隔 */
   background: rgba(255,255,255,0.1);
 }
-.func-card:has(.dual-item) {
-  display: flex;
-  align-items: center;
-  gap: 30rpx;
-}
 
-/* 订单分类标签 */
+/* ==========================================
+   5. 我的订单模块
+   ========================================== */
 .order-tabs {
   display: flex;
   justify-content: space-between;
   margin-bottom: 24rpx;
+  padding: 0 10rpx;
   .tab-item {
     display: flex;
     flex-direction: column;
@@ -465,15 +592,15 @@ onShow(() => {
     flex: 1;
     .tab-icon {
       position: relative;
-      width: 48rpx;
-      height: 48rpx;
+      width: 44rpx;
+      height: 44rpx;
       display: flex;
       align-items: center;
       justify-content: center;
       .badge {
         position: absolute;
-        top: 2rpx;
-        right: 2rpx;
+        top: 0;
+        right: 0;
         width: 16rpx;
         height: 16rpx;
         border-radius: 50%;
@@ -482,12 +609,12 @@ onShow(() => {
       }
     }
     text {
-      font-size: 28rpx;
+      font-size: 26rpx;
+      white-space: nowrap;
     }
   }
 }
 
-/* 订单卡片 */
 .order-list {
   .order-card {
     background: #2a3338;
@@ -496,30 +623,45 @@ onShow(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 16rpx;
+    &:last-child {
+      margin-bottom: 0;
+    }
     .order-left {
       display: flex;
       align-items: center;
       gap: 16rpx;
+      flex: 1;
+      min-width: 0; /* 防止flex子元素溢出 */
       .coach-avatar {
         width: 80rpx;
         height: 80rpx;
         border-radius: 12rpx;
+        flex-shrink: 0;
       }
       .order-info {
+        flex: 1;
+        min-width: 0; /* 防止flex子元素溢出 */
         .order-title {
           color: #fff;
-          font-size: 32rpx;
+          font-size: 30rpx;
           font-weight: 600;
           margin-bottom: 8rpx;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .order-subtitle {
           color: #9CA3AF;
-          font-size: 26rpx;
-          margin-bottom: 16rpx;
+          font-size: 24rpx;
+          margin-bottom: 12rpx;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .order-time {
-          color: #9CA3AF;
-          font-size: 28rpx;
+          color: #6B7280;
+          font-size: 24rpx;
         }
       }
     }
@@ -527,20 +669,23 @@ onShow(() => {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 16rpx;
+      gap: 12rpx;
+      flex-shrink: 0;
+      margin-left: 16rpx;
       .order-status {
-        padding: 4rpx 16rpx;
+        padding: 4rpx 14rpx;
         border-radius: 8rpx;
         color: #fff;
-        font-size: 26rpx;
+        font-size: 24rpx;
+        white-space: nowrap;
       }
       .order-action-btn {
-        width: 160rpx;
-        height: 60rpx;
-        line-height: 60rpx;
-        border-radius: 30rpx;
+        width: 150rpx;
+        height: 56rpx;
+        line-height: 56rpx;
+        border-radius: 28rpx;
         color: #fff;
-        font-size: 28rpx;
+        font-size: 26rpx;
         font-weight: 600;
         padding: 0;
         &::after {
@@ -551,20 +696,22 @@ onShow(() => {
   }
   .empty-tip {
     text-align: center;
-    color: #9CA3AF;
-    font-size: 28rpx;
-    padding: 60rpx 0;
+    color: #6B7280;
+    font-size: 26rpx;
+    padding: 60rpx 0 20rpx;
   }
 }
 
-/* 菜单列表 */
+/* ==========================================
+   6. 功能菜单列表
+   ========================================== */
 .menu-card {
-  padding: 0 !important;
+  padding: 0 !important; /* 去掉通用卡片的左右padding */
   .menu-item {
     display: flex;
     align-items: center;
     gap: 20rpx;
-    padding: 20rpx 30rpx;
+    padding: 28rpx 30rpx;
     border-bottom: 1rpx solid rgba(255,255,255,0.05);
     &:last-child {
       border-bottom: none;
@@ -576,20 +723,24 @@ onShow(() => {
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
     .menu-title {
       flex: 1;
       color: #fff;
-      font-size: 32rpx;
-      font-weight: 600;
+      font-size: 30rpx;
+      font-weight: 500;
     }
   }
 }
 
-/* 底部安全区域 */
+/* ==========================================
+   7. 底部安全区域
+   ========================================== */
 .safe-area-bottom {
   height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
   width: 100%;
+  margin-top: 10rpx; /* 多留一点底部间距更美观 */
 }
 </style>

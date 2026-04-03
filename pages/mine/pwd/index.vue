@@ -1,12 +1,5 @@
 <template>
   <view class="set-pwd-wrapper">
-    <!-- 顶部导航栏 -->
-    <view class="nav-bar">
-      <view class="nav-back" @click="goBack">
-        <uni-icons type="left" size="28" color="#fff" />
-      </view>
-      <view class="nav-placeholder"></view>
-    </view>
 
     <scroll-view
         scroll-y

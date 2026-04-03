@@ -456,7 +456,7 @@ onBackPress(() => {
 /* 底部栏 */
 .bottom-bar {
   background-color: #1a1a1a;
-  padding: 24rpx 32rpx;
+  padding: 16rpx 24rpx;
   display: flex;
   align-items: center;
   border-top: 2rpx solid #2a2a2a;
@@ -465,12 +465,12 @@ onBackPress(() => {
     flex: 1;
 
     .total-label {
-      font-size: 28rpx;
+      font-size: 24rpx;
       color: #999999;
     }
 
     .total-value {
-      font-size: 48rpx;
+      font-size: 38rpx;
       font-weight: 700;
       color: #f5a623;
     }
@@ -479,13 +479,13 @@ onBackPress(() => {
   .reward-btn {
     background: linear-gradient(135deg, #f5a623 0%, #d98a00 100%);
     color: #1a1a1a;
-    font-size: 32rpx;
+    font-size: 28rpx;
     font-weight: 600;
-    border-radius: 48rpx;
-    padding: 0 64rpx;
-    height: 96rpx;
+    border-radius: 36rpx;
+    padding: 0 48rpx;
+    height: 72rpx;
     border: none;
-    line-height: 96rpx;
+    line-height: 72rpx;
 
     &.disabled {
       opacity: 0.5;

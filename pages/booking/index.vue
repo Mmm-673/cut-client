@@ -400,37 +400,37 @@ onLoad(() => {
   left: 0;
   right: 0;
   background: #1E252B;
-  padding: 20rpx 30rpx;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  padding: 12rpx 24rpx;
+  padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
   display: flex;
   align-items: center;
   justify-content: space-between;
   .price-info {
     display: flex;
     align-items: baseline;
-    gap: 8rpx;
+    gap: 6rpx;
     .price-label {
       color: #fff;
-      font-size: 28rpx;
+      font-size: 24rpx;
     }
     .price-unit {
       color: #00BB88;
-      font-size: 28rpx;
+      font-size: 24rpx;
     }
     .price-num {
       color: #00BB88;
-      font-size: 44rpx;
+      font-size: 36rpx;
       font-weight: bold;
     }
   }
   .confirm-btn {
-    padding: 0 60rpx;
-    height: 88rpx;
-    line-height: 88rpx;
+    padding: 0 44rpx;
+    height: 72rpx;
+    line-height: 72rpx;
     background: #00BB88;
     color: #fff;
-    border-radius: 44rpx;
-    font-size: 32rpx;
+    border-radius: 36rpx;
+    font-size: 28rpx;
     font-weight: bold;
     border: none;
     &::after { border: none; }

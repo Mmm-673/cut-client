@@ -33,7 +33,6 @@
             <text class="count-num">{{ countDown.s }}</text>
             <text class="count-label">秒</text>
           </view>
-          </div>
 
           <text class="status-desc" v-if="orderInfo.statusDesc">
             {{ orderInfo.statusDesc }}
@@ -153,6 +152,7 @@
 
         <!-- 底部安全区域 -->
         <view class="safe-area-bottom"></view>
+      </view>
     </scroll-view>
 
     <!-- 底部操作栏 - 待服务(即将开始)对齐设计图顺序颜色 -->
@@ -708,18 +708,18 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   background: #1E252B;
-  padding: 30rpx 30rpx;
-  padding-bottom: calc(30rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
+  padding: 16rpx 20rpx;
+  padding-bottom: calc(16rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
   display: flex;
-  gap: 16rpx;
+  gap: 12rpx;
   .action-btn {
     flex: 1;
-    height: 88rpx;
-    line-height: 88rpx;
-    border-radius: 44rpx;
-    font-size: 30rpx;
+    height: 72rpx;
+    line-height: 72rpx;
+    border-radius: 36rpx;
+    font-size: 26rpx;
     font-weight: 500;
     border: none;
     &::after { border: none; }

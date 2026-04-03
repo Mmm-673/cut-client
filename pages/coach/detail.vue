@@ -63,7 +63,7 @@
           <text>服务项目</text>
         </view>
         <view class="service-list">
-          <view class="service-item" v-for="(service, index) in services" :key="index">
+          <view class="service-item" :class="{selected: selectedService?.id === service.id}" v-for="(service, index) in services" :key="index">
             <view class="service-left">
               <view class="service-name-row">
                 <text class="service-name">{{ service.name }}</text>
@@ -78,7 +78,9 @@
                 <text class="price">{{ service.price }}</text>
                 <text class="price-unit">/{{ service.unit }}</text>
               </view>
-              <view class="select-btn" @click="selectService(service)">选择</view>
+              <view class="select-btn" :class="{active: selectedService?.id === service.id}" @click="selectService(service)">
+                {{ selectedService?.id === service.id ? '已选择' : '选择' }}
+              </view>
             </view>
           </view>
         </view>
@@ -207,6 +209,31 @@ const getLevelText = (level) => {
   return levelMap[level] || '初级教练'
 }
 
+// 获取主图（从 photos 数组中找 isMain=true 的）
+const getMainPhoto = (photos) => {
+  if (!photos || !Array.isArray(photos) || photos.length === 0) {
+    return null
+  }
+  const mainPhoto = photos.find(p => p.isMain === true || p.is_main === true)
+  if (mainPhoto) {
+    return mainPhoto.photoUrl || mainPhoto.url || mainPhoto
+  }
+  // 如果没有主图，返回第一张
+  const first = photos[0]
+  return first.photoUrl || first.url || first
+}
+
+// 格式化距离显示
+const formatDistance = (distance) => {
+  if (distance === null || distance === undefined || distance === '') {
+    return ''
+  }
+  if (typeof distance === 'number') {
+    return distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`
+  }
+  return distance
+}
+
 // 加载教练详情
 const loadCoachData = async () => {
   if (!coachId.value) return
@@ -216,39 +243,55 @@ const loadCoachData = async () => {
     const res = await getCoachDetail({ id: coachId.value })
     const data = res.data || {}
 
-    // 更新教练信息
+    // 更新教练信息 - 完全按 API 文档字段处理
     Object.assign(coachInfo, {
       id: data.id,
-      name: data.name,
-      stageName: data.stageName,
-      avatar: data.avatar,
-      cover: data.cover,
-      level: data.level,
-      levelText: data.levelText,
-      rating: data.rating || data.overallScore || 4.9,
+      name: data.name || data.stageName,
+      stageName: data.stageName || data.name,
+      // 主图用 photos 中的 isMain=true 的图，或者用 avatar/cover 兜底
+      avatar: getMainPhoto(data.photos) || data.avatar || data.mainPhotoUrl || '/static/default-avatar.png',
+      cover: data.cover || getMainPhoto(data.photos) || '/static/default-cover.jpg',
+      level: data.level ?? 0,
+      levelText: getLevelText(data.level),
+      rating: data.overallScore || data.rating || 4.9,
       overallScore: data.overallScore || data.rating || 4.9,
-      orderCount: data.orderCount || data.serviceCount || 0,
+      orderCount: data.serviceCount || data.orderCount || 0,
       serviceCount: data.serviceCount || data.orderCount || 0,
-      distance: data.distance || '',
+      distance: formatDistance(data.distance),
       price: data.price || 0,
       tags: data.tags || [],
-      intro: data.intro || data.introduction || '',
-      introduction: data.introduction || data.intro || ''
+      intro: data.introduction || data.intro || '这位助教很神秘，什么都没写~',
+      introduction: data.introduction || data.intro || '这位助教很神秘，什么都没写~'
     })
 
     // 服务项目（如果接口返回）
     if (data.serviceItems && Array.isArray(data.serviceItems)) {
       services.value = data.serviceItems
+    } else if (data.services && Array.isArray(data.services)) {
+      services.value = data.services
+    } else {
+      // 默认服务项目（占位）
+      services.value = [
+        { id: 1, name: '台球陪练', desc: '基础陪练服务', sales: 128, price: 98, unit: '小时', hot: true },
+        { id: 2, name: '技术指导', desc: '进阶技术指导', sales: 68, price: 168, unit: '小时', hot: false }
+      ]
     }
 
-    // 相册（如果接口返回）
+    // 相册（从 photos 数组中提取 photoUrl）
     if (data.photos && Array.isArray(data.photos)) {
       albumList.value = data.photos
+        .sort((a, b) => (a.sort || 0) - (b.sort || 0))
+        .map(p => p.photoUrl || p.url || p)
+        .filter(Boolean)
+    } else if (data.albumList && Array.isArray(data.albumList)) {
+      albumList.value = data.albumList
     }
 
     // 评价（如果接口返回）
     if (data.recentReviews && Array.isArray(data.recentReviews)) {
       reviewList.value = data.recentReviews
+    } else if (data.reviews && Array.isArray(data.reviews)) {
+      reviewList.value = data.reviews
     }
   } catch (error) {
     console.error('加载教练详情失败:', error)
@@ -275,8 +318,13 @@ const goToReward = () => {
   })
 }
 
+// 选中的服务
+const selectedService = ref(null)
+
 // 选择服务
 const selectService = (service) => {
+  selectedService.value = service
+  coachInfo.price = service.price
   uni.showToast({
     title: '已选择' + service.name,
     icon: 'none'
@@ -311,10 +359,12 @@ const viewAllReviews = () => {
 
 // 立即预约
 const bookNow = () => {
-  uni.showToast({
-    title: '预约功能开发中',
-    icon: 'none'
+  // 保存教练信息和选中的服务
+  uni.setStorageSync('selectedCoach', {
+    ...coachInfo,
+    selectedService: selectedService.value
   })
+  uni.navigateTo({ url: '/pages/booking/hall' })
 }
 
 // 获取页面参数
@@ -332,7 +382,7 @@ onMounted(() => {
   safeAreaBottom.value = systemInfo.safeAreaInsets?.bottom || 0
 
   // 计算 scroll-view 高度 - 需要减去底部栏高度和安全区域
-  const bottomBarHeight = 80 + safeAreaBottom.value
+  const bottomBarHeight = 60 + safeAreaBottom.value
 
   // 使用 setTimeout 确保 DOM 渲染完成
   setTimeout(() => {
@@ -532,6 +582,13 @@ onMounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+
+    &.selected {
+      border-color: #00c896;
+      background-color: rgba(0, 200, 150, 0.1);
+    }
 
     .service-left {
       flex: 1;
@@ -605,6 +662,13 @@ onMounted(() => {
         font-size: 14px;
         font-weight: 600;
         border-radius: 20px;
+        transition: all 0.2s ease;
+
+        &.active {
+          background: #2a3338;
+          border: 1px solid #00c896;
+          color: #00c896;
+        }
       }
     }
   }
@@ -719,9 +783,9 @@ onMounted(() => {
   right: 0;
   background-color: #252525;
   border-top: 1px solid #333333;
-  padding: 12px 20px;
-  padding-bottom: calc(12px + constant(safe-area-inset-bottom));
-  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  padding: 8px 16px;
+  padding-bottom: calc(8px + constant(safe-area-inset-bottom));
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -732,30 +796,30 @@ onMounted(() => {
     align-items: baseline;
 
     .price-symbol {
-      font-size: 16px;
+      font-size: 14px;
       color: #00c896;
       font-weight: 600;
     }
 
     .price {
-      font-size: 28px;
+      font-size: 22px;
       color: #00c896;
       font-weight: 700;
     }
 
     .price-unit {
-      font-size: 14px;
+      font-size: 12px;
       color: #999999;
     }
   }
 
   .book-btn {
-    padding: 14px 40px;
+    padding: 10px 28px;
     background: linear-gradient(135deg, #00c896 0%, #00a87a 100%);
     color: #ffffff;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
-    border-radius: 28px;
+    border-radius: 22px;
     box-shadow: 0 4px 15px rgba(0, 200, 150, 0.3);
   }
 }
