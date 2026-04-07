@@ -70,3 +70,69 @@ export function getOrderDetail(params) {
     params
   })
 }
+
+/**
+ * 创建订单
+ * @param {Object} data - 请求参数
+ * @param {number} data.coachId - 助教ID（billiard_coach.id），必须为在线状态
+ * @param {number} data.serviceType - 服务类型：1=台球陪练 2=陪游
+ * @param {number} data.bookingTime - 预约服务开始时间（毫秒时间戳）
+ * @param {number} data.serviceDuration - 预定时长（分钟），台球陪练 >= 120，陪游 >= 300
+ * @param {number} data.quantity - 份数或小时数，用于金额计算
+ * @param {number} [data.venueId] - 台球陪练可传合作球厅ID；陪游不强制
+ * @param {string} [data.venueName] - 服务地址名称（球厅或陪游约定地点）
+ * @param {string} [data.venueAddress] - 服务地址文本，陪游场景可由前端约定地点回填
+ * @param {number} [data.venueLongitude] - 服务地址经度，用于导航与车费测算
+ * @param {number} [data.venueLatitude] - 服务地址纬度，用于导航与车费测算
+ * @param {number} [data.couponId] - 使用的优惠券ID；不使用则不传
+ * @param {string} [data.remark] - 备注，最长 500 字符
+ *
+ * @returns {Promise<Object>} 返回创建订单结果
+ * @returns {number} returns.data.orderId - billiard_order.id
+ * @returns {string} returns.data.orderNo - 订单号，展示用
+ * @returns {number} returns.data.payOrderId - pay_order.id（前端调用 /pay/order/submit 拉起支付时需要此 ID）
+ * @returns {number} returns.data.expireTime - 支付截止时间（毫秒时间戳），前端倒计时展示
+ * @returns {number} returns.data.serviceAmount - 服务时长费用（分）
+ * @returns {number} returns.data.travelAmount - 车费原价（分）
+ * @returns {number} returns.data.travelDiscountAmount - 车费优惠（分，开关关闭时大于0）
+ * @returns {number} returns.data.payAmount - 实际应付金额（分）
+ */
+export function createOrder(data) {
+  return request({
+    url: '/app-api/billiard/order/create',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 支付订单 - 提交支付
+ * @param {Object} data - 请求参数
+ * @param {number} data.payOrderId - 支付单ID（pay_order.id）
+ * @param {string} data.channelCode - 支付渠道编码：wx_pub（微信小程序）、wx_app（微信App）、alipay_app（支付宝App）、wallet（钱包）
+ *
+ * @returns {Promise<Object>} 返回支付参数
+ * @returns {Object} returns.data - 支付参数，根据不同渠道返回不同参数
+ */
+export function submitPayOrder(data) {
+  return request({
+    url: '/pay/order/submit',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 取消订单
+ * @param {Object} data - 请求参数
+ * @param {number} data.id - 订单ID
+ *
+ * @returns {Promise<Object>} 返回取消结果
+ */
+export function cancelOrder(data) {
+  return request({
+    url: '/app-api/billiard/order/cancel',
+    method: 'post',
+    data
+  })
+}

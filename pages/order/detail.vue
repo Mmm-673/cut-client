@@ -108,8 +108,49 @@
 
     <!-- 底部操作栏 -->
     <view class="bottom-bar" v-if="orderInfo.status === 10">
-      <button class="action-btn cancel" @click="cancelOrder">取消订单</button>
+      <button class="action-btn cancel" @click="cancelOrderFunc">取消订单</button>
       <button class="action-btn pay" @click="payOrder">去支付</button>
+    </view>
+
+    <!-- 支付方式选择弹窗 -->
+    <view class="pay-popup-mask" v-if="showPayPopup" @click="closePayPopup">
+      <view class="pay-popup-wrapper" @click.stop>
+        <view class="pay-popup-header">
+          <text class="close-btn" @click="closePayPopup">取消</text>
+          <text class="pay-popup-title">选择支付方式</text>
+          <text class="confirm-btn" @click="confirmPay" :class="{disabled: isPaying}">
+            {{ isPaying ? '支付中...' : '确认支付' }}
+          </text>
+        </view>
+
+        <view class="pay-popup-content">
+          <view class="pay-amount-row">
+            <text class="pay-label">支付金额</text>
+            <text class="pay-amount">¥{{ formatAmount(orderInfo.payAmount > 0 ? orderInfo.payAmount : orderInfo.totalAmount) }}</text>
+          </view>
+
+          <view class="pay-method-list">
+            <view
+                class="pay-method-item"
+                :class="{active: selectedPay === item.value}"
+                v-for="item in payList"
+                :key="item.value"
+                @click="selectPay(item.value)"
+            >
+              <view class="pay-method-left">
+                <view class="pay-method-icon" :style="{background: item.bgColor}">
+                  <uni-icons :type="item.icon" size="24" color="#fff" />
+                </view>
+                <text class="pay-method-name">{{ item.label }}</text>
+                <text class="pay-method-balance" v-if="item.balance">（可用余额：¥{{ item.balance }}）</text>
+              </view>
+              <view class="pay-method-radio">
+                <view class="radio-dot" v-if="selectedPay === item.value"></view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
     </view>
 
     <view class="bottom-bar" v-if="orderInfo.status === 50">
@@ -125,7 +166,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { onLoad } from  "@dcloudio/uni-app"
-import { getOrderDetail } from '@/api/billiard/order'
+import { getOrderDetail, cancelOrder } from '@/api/billiard/order'
+import { getAvailablePayChannels, executePayment } from '@/utils/payment'
 
 // 订单ID
 const orderId = ref(null)
@@ -133,6 +175,14 @@ const orderId = ref(null)
 const refreshing = ref(false)
 // 加载状态
 const loading = ref(false)
+// 支付弹窗显示状态
+const showPayPopup = ref(false)
+// 选中的支付方式
+const selectedPay = ref('wechat')
+// 支付中状态
+const isPaying = ref(false)
+// 创建订单时保存的支付订单ID
+const payOrderId = ref(null)
 
 /**
  * 订单信息 - 根据API文档定义完整字段
@@ -226,6 +276,19 @@ const formatAmount = (amount) => {
   return (amount / 100).toFixed(2)
 }
 
+// 支付方式列表
+const payList = getAvailablePayChannels()
+
+// 选择支付方式
+const selectPay = (val) => {
+  selectedPay.value = val
+}
+
+// 关闭支付弹窗
+const closePayPopup = () => {
+  showPayPopup.value = false
+}
+
 // 打开球厅导航
 const openHallNavigate = () => {
   if (!orderInfo.value.venueAddress) {
@@ -307,14 +370,21 @@ const goToCoachDetail = () => {
 }
 
 // 取消订单
-const cancelOrder = () => {
+const cancelOrderFunc = async () => {
   uni.showModal({
     title: '提示',
     content: '确定要取消这个订单吗？',
-    success: (res) => {
+    success: async (res) => {
       if (res.confirm) {
-        // TODO: 调用取消订单接口
-        uni.showToast({ title: '订单已取消', icon: 'success' })
+        try {
+          await cancelOrder({ id: orderId.value })
+          uni.showToast({ title: '订单已取消', icon: 'success' })
+          setTimeout(() => {
+            loadOrderDetail()
+          }, 1500)
+        } catch (error) {
+          console.error('取消订单失败:', error)
+        }
       }
     }
   })
@@ -322,7 +392,47 @@ const cancelOrder = () => {
 
 // 去支付
 const payOrder = () => {
-  uni.showToast({ title: '支付功能开发中', icon: 'none' })
+  // 显示支付弹窗
+  showPayPopup.value = true
+}
+
+// 确认支付
+const confirmPay = async () => {
+  if (!payOrderId.value) {
+    uni.showToast({ title: '支付订单信息缺失', icon: 'none' })
+    return
+  }
+
+  isPaying.value = true
+  try {
+    await executePayment({
+      payOrderId: payOrderId.value,
+      payValue: selectedPay.value,
+      onSuccess: (payResult) => {
+        // 支付成功
+        uni.showToast({ title: '支付成功', icon: 'success' })
+        showPayPopup.value = false
+        setTimeout(() => {
+          loadOrderDetail()
+        }, 1500)
+      },
+      onCancel: () => {
+        // 支付取消
+        uni.showToast({ title: '支付已取消', icon: 'none' })
+      },
+      onError: (error) => {
+        // 支付失败
+        uni.showToast({
+          title: error.message || '支付失败，请重试',
+          icon: 'none'
+        })
+      }
+    })
+  } catch (error) {
+    console.error('支付失败:', error)
+  } finally {
+    isPaying.value = false
+  }
 }
 
 // 去评价
@@ -560,6 +670,141 @@ onMounted(() => {
     &.book-again {
       background: #00BB88;
       color: #fff;
+    }
+  }
+}
+
+/* 支付弹窗遮罩 */
+.pay-popup-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.pay-popup-wrapper {
+  background: #1E252B;
+  border-radius: 32rpx 32rpx 0 0;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.pay-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx;
+  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  .close-btn {
+    color: #9CA3AF;
+    font-size: 30rpx;
+  }
+  .pay-popup-title {
+    color: #fff;
+    font-size: 32rpx;
+    font-weight: 600;
+  }
+  .confirm-btn {
+    color: #00BB88;
+    font-size: 30rpx;
+    font-weight: 600;
+    &.disabled {
+      color: rgba(0, 187, 136, 0.5);
+      pointer-events: none;
+    }
+  }
+}
+
+.pay-popup-content {
+  padding: 30rpx;
+  padding-bottom: calc(30rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
+}
+
+.pay-amount-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+  padding-bottom: 30rpx;
+  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  .pay-label {
+    color: #9CA3AF;
+    font-size: 28rpx;
+  }
+  .pay-amount {
+    color: #00BB88;
+    font-size: 40rpx;
+    font-weight: 700;
+  }
+}
+
+.pay-method-list {
+  .pay-method-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24rpx 0;
+    border-bottom: 1rpx solid rgba(255,255,255,0.05);
+    &:last-child {
+      border-bottom: none;
+    }
+    .pay-method-left {
+      display: flex;
+      align-items: center;
+      gap: 16rpx;
+      .pay-method-icon {
+        width: 70rpx;
+        height: 70rpx;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .pay-method-name {
+        color: #fff;
+        font-size: 30rpx;
+        font-weight: 500;
+      }
+      .pay-method-balance {
+        color: #9CA3AF;
+        font-size: 24rpx;
+      }
+    }
+    .pay-method-radio {
+      width: 40rpx;
+      height: 40rpx;
+      border: 3rpx solid #2a3338;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    &.active {
+      .pay-method-radio {
+        border-color: #00BB88;
+        .radio-dot {
+          width: 20rpx;
+          height: 20rpx;
+          border-radius: 50%;
+          background: #00BB88;
+        }
+      }
     }
   }
 }

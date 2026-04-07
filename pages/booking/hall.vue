@@ -16,14 +16,33 @@
       <!-- 搜索框 -->
       <view class="search-box">
         <uni-icons type="search" size="20" color="#9CA3AF" />
-        <input class="search-input" placeholder="搜索球厅名称" placeholder-class="search-placeholder" />
+        <input
+          class="search-input"
+          placeholder="搜索球厅名称"
+          placeholder-class="search-placeholder"
+          v-model="searchKeyword"
+          confirm-type="search"
+          @confirm="handleSearch"
+        />
+        <uni-icons
+          v-if="searchKeyword"
+          type="clear"
+          size="18"
+          color="#9CA3AF"
+          class="clear-icon"
+          @click="clearSearch"
+        />
       </view>
 
       <!-- 定位信息 -->
-      <view class="location-box">
+      <view class="location-box" @click="switchLocation">
         <uni-icons type="location" size="18" color="#00BB88" />
-        <text class="location-text">当前定位：北京市朝阳区</text>
-        <view class="location-switch" @click="switchLocation">
+        <text class="location-text">
+          <text v-if="locating">定位中...</text>
+          <text v-else-if="currentCity">{{ currentCity }}</text>
+          <text v-else>点击定位</text>
+        </text>
+        <view class="location-switch">
           <text>切换</text>
           <uni-icons type="right" size="14" color="#00BB88" />
         </view>
@@ -45,7 +64,7 @@
       </scroll-view>
 
       <!-- 球厅列表 -->
-      <view class="hall-list">
+      <view class="hall-list" v-if="hallList.length > 0">
         <view
             class="hall-card"
             v-for="hall in hallList"
@@ -53,9 +72,21 @@
         >
           <!-- 球厅图片 -->
           <view class="hall-image-wrap">
-            <image class="hall-image" :src="hall.image" mode="aspectFill"></image>
-            <view class="hall-tag" v-if="hall.tag" :style="{background: hall.tagBg}">{{ hall.tag }}</view>
-            <view class="hall-distance">{{ hall.distance }}</view>
+            <image
+              class="hall-image"
+              :src="hall.coverImageUrl || '/static/default-venue.jpg'"
+              mode="aspectFill"
+            ></image>
+            <view
+              class="hall-tag"
+              v-if="hall.tags && hall.tags.split(',').length > 0"
+              :style="{background: hall.tagBg || '#00BB88'}"
+            >
+              {{ hall.tags.split(',')[0] }}
+            </view>
+            <view class="hall-distance" v-if="hall.distance">
+              {{ formatDistance(hall.distance) }}
+            </view>
           </view>
 
           <!-- 球厅信息 -->
@@ -63,10 +94,16 @@
             <view class="hall-header">
               <view class="hall-name-wrap">
                 <text class="hall-name">{{ hall.name }}</text>
-                <view class="hall-badge" v-if="hall.badge" :style="{background: hall.badgeBg}">{{ hall.badge }}</view>
+                <view
+                  class="hall-badge"
+                  v-if="hall.advantage"
+                  :style="{background: 'rgba(0, 187, 136, 0.2)'}"
+                >
+                  {{ hall.advantage }}
+                </view>
               </view>
               <view class="hall-price">
-                <text class="price-num">¥{{ hall.price }}</text>
+                <text class="price-num">¥{{ formatPrice(hall.price) }}</text>
                 <text class="price-unit">/小时起</text>
               </view>
             </view>
@@ -83,13 +120,19 @@
               <text class="address-text">{{ hall.address }}</text>
             </view>
 
-            <view class="hall-tags">
-              <view class="tag-item" v-for="tag in hall.tags" :key="tag">{{ tag }}</view>
+            <view class="hall-tags" v-if="hall.facilityTags">
+              <view
+                class="tag-item"
+                v-for="(tag, index) in hall.facilityTags.split(',')"
+                :key="index"
+              >
+                {{ tag }}
+              </view>
             </view>
 
-            <view class="hall-promo" v-if="hall.promo">
+            <view class="hall-promo" v-if="hall.promotionText">
               <uni-icons type="gift" size="16" color="#00BB88" />
-              <text class="promo-text">{{ hall.promo }}</text>
+              <text class="promo-text">{{ hall.promotionText }}</text>
             </view>
 
             <view class="hall-actions">
@@ -109,11 +152,17 @@
         </view>
       </view>
 
+      <!-- 空状态 -->
+      <view class="empty-state" v-if="!loading && hallList.length === 0">
+        <uni-icons type="info" size="80" color="#374151" />
+        <text class="empty-text">暂无球厅</text>
+      </view>
+
       <!-- 加载提示 -->
       <view class="load-tip" v-if="!hasMore && hallList.length > 0">
         已加载全部球厅
       </view>
-      <view class="load-tip loading" v-if="loading">
+      <view class="load-tip loading" v-if="loading && page > 1">
         <uni-icons type="spinner-cycle" size="20" color="#9CA3AF" style="animation: spin 1s linear infinite; margin-right: 12rpx;"></uni-icons>
         加载中...
       </view>
@@ -126,20 +175,50 @@
     <view class="bottom-bar" v-if="selectedHall">
       <view class="selected-info">
         <view class="selected-hall">
-          <text class="selected-label">已选：</text><text class="selected-name">{{ selectedHall.name }}</text></view>
+          <text class="selected-label">已选：</text><text class="selected-name">{{ selectedHall.name }}</text>
+        </view>
         <view class="selected-price">
-          <text class="price-num">¥{{ selectedHall.price }}/小时起</text>
+          <text class="price-num">¥{{ formatPrice(selectedHall.price) }}/小时起</text>
         </view>
       </view>
 
       <button class="confirm-btn" @click="confirmChoose">确认选择</button>
     </view>
+
+    <!-- 城市选择弹窗 -->
+    <view class="city-picker-mask" v-if="showCityPicker" @click="closeCityPicker">
+      <view class="city-picker-wrapper" @click.stop>
+        <view class="city-picker-header">
+          <text class="cancel-btn" @click="closeCityPicker">取消</text>
+          <text class="picker-title">选择城市</text>
+          <text class="confirm-btn" @click="confirmCity">确定</text>
+        </view>
+        <picker-view
+          class="city-picker-view"
+          :value="cityPickerValue"
+          @change="onCityPickerChange"
+          indicator-style="height: 80rpx; border-top: 1rpx solid rgba(255,255,255,0.1); border-bottom: 1rpx solid rgba(255,255,255,0.1);"
+          mask-style="background-image: linear-gradient(to bottom, rgba(42, 51, 56, 0.95), rgba(42, 51, 56, 0.4), rgba(42, 51, 56, 0.95));"
+        >
+          <picker-view-column>
+            <view
+              v-for="(item, index) in cityList"
+              :key="index"
+              class="picker-item"
+            >
+              {{ item.name }}
+            </view>
+          </picker-view-column>
+        </picker-view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
+import { getVenueList } from '@/api/billiard/venue'
 
 // ---------------------- 状态定义 ----------------------
 // 刷新/加载状态
@@ -149,114 +228,254 @@ const hasMore = ref(true)
 const page = ref(1)
 const pageSize = ref(10)
 
+// 搜索关键词
+const searchKeyword = ref('')
+
 // 筛选状态
 const currentTab = ref('nearest')
 const selectedHall = ref(null)
 
-// ---------------------- 模拟数据 ----------------------
+// 定位相关
+const locating = ref(false)
+const currentLocation = ref({
+  longitude: null,
+  latitude: null
+})
+const currentCity = ref('')
+
+// 城市选择相关
+const showCityPicker = ref(false)
+const cityPickerValue = ref([0])
+const selectedCityIndex = ref(0)
+
+// 模拟城市列表
+const cityList = ref([
+  { name: '北京市', code: '110000' },
+  { name: '上海市', code: '310000' },
+  { name: '广州市', code: '440100' },
+  { name: '深圳市', code: '440300' },
+  { name: '杭州市', code: '330100' },
+  { name: '南京市', code: '320100' },
+  { name: '成都市', code: '510100' },
+  { name: '重庆市', code: '500000' },
+  { name: '武汉市', code: '420100' },
+  { name: '西安市', code: '610100' }
+])
+
+// 筛选标签
 const tabList = ref([
-  { value: 'nearest', label: '距离最近' },
-  { value: 'price', label: '价格最低' },
-  { value: 'score', label: '评分最高' },
-  { value: '24h', label: '24小时' },
-  { value: 'parking', label: '有停车位' }
+  { value: 'nearest', label: '距离最近', sortType: 1 },
+  { value: 'price', label: '价格最低', sortType: 2 },
+  { value: 'score', label: '评分最高', sortType: 3 }
 ])
 
-const hallList = ref([
-  {
-    id: 1,
-    name: '星牌台球俱乐部',
-    image: 'https://via.placeholder.com/800x400',
-    tag: '推荐',
-    tagBg: '#00BB88',
-    badge: '品牌认证',
-    badgeBg: 'rgba(0, 187, 136, 0.2)',
-    price: 38,
-    score: 4.8,
-    reviewCount: 1256,
-    address: '朝阳区建国路88号',
-    distance: '800m',
-    tags: ['24小时营业', '免费停车', '专业助教', '全新球桌'],
-    promo: '新用户首单立减20元，助教陪练享8折优惠'
-  },
-  {
-    id: 2,
-    name: '乔氏台球会所',
-    image: 'https://via.placeholder.com/800x400/2',
-    badge: '连锁品牌',
-    badgeBg: 'rgba(59, 130, 246, 0.2)',
-    price: 58,
-    score: 4.9,
-    reviewCount: 2341,
-    address: '朝阳区光华路1号',
-    distance: '1.2km',
-    tags: ['VIP包间', '酒水服务', '国家级助教', '定期赛事'],
-    promo: '充值500送200，会员享台费7折优惠'
-  },
-  {
-    id: 3,
-    name: '8号台球俱乐部',
-    image: 'https://via.placeholder.com/800x400/3',
-    tag: '新店优惠',
-    tagBg: '#EF4444',
-    price: 28,
-    score: 4.7,
-    reviewCount: 867,
-    address: '朝阳区青年路23号',
-    distance: '2.5km',
-    tags: ['新店开业', '桌游区', '美女助教', '平价消费'],
-    promo: '开业特惠，所有台费5折，助教陪练买2送1'
-  },
-  {
-    id: 4,
-    name: '精英台球会馆',
-    image: 'https://via.placeholder.com/800x400/4',
-    price: 68,
-    score: 4.9,
-    reviewCount: 1568,
-    address: '朝阳区东三环中路39号',
-    distance: '3.8km',
-    tags: ['职业球桌', '职业教练', '青少年培训', '专业赛事'],
-    promo: '会员充值享折扣，专业课程8折优惠'
+// 球厅列表
+const hallList = ref([])
+
+// ---------------------- 计算属性 ----------------------
+// 获取当前选中的排序类型
+const currentSortType = computed(() => {
+  const tab = tabList.value.find(t => t.value === currentTab.value)
+  return tab ? tab.sortType : 1
+})
+
+// ---------------------- 工具方法 ----------------------
+// 格式化价格（分转元）
+const formatPrice = (price) => {
+  if (price === null || price === undefined) return '0.00'
+  return (price / 100).toFixed(2)
+}
+
+// 格式化距离
+const formatDistance = (distance) => {
+  if (distance === null || distance === undefined) return ''
+  if (distance < 1) {
+    return `${Math.round(distance * 1000)}m`
   }
-])
+  return `${distance.toFixed(1)}km`
+}
 
-// ---------------------- 交互方法 ----------------------
+// ---------------------- 位置相关方法 ----------------------
+// 获取当前位置
+const getCurrentLocation = () => {
+  locating.value = true
+
+  uni.getLocation({
+    type: 'gcj02',
+    altitude: true,
+    success: (res) => {
+      console.log('定位成功:', res)
+      currentLocation.value = {
+        longitude: res.longitude,
+        latitude: res.latitude
+      }
+
+      // 尝试逆地理编码获取城市名
+      reverseGeocode(res.longitude, res.latitude)
+
+      // 重新加载球厅列表
+      page.value = 1
+      hallList.value = []
+      loadHallList()
+    },
+    fail: (err) => {
+      console.error('定位失败:', err)
+      uni.showToast({
+        title: '定位失败，请检查定位权限',
+        icon: 'none',
+        duration: 2000
+      })
+      locating.value = false
+    }
+  })
+}
+
+// 逆地理编码（获取城市名）
+const reverseGeocode = (longitude, latitude) => {
+  // #ifdef MP-WEIXIN
+  // 微信小程序使用内置地图逆地理编码
+  uni.request({
+    url: 'https://apis.map.qq.com/ws/geocoder/v1/',
+    data: {
+      location: `${latitude},${longitude}`,
+      key: 'your-tencent-map-key' // 需要替换为实际的腾讯地图Key
+    },
+    success: (res) => {
+      if (res.data && res.data.result && res.data.result.address_component) {
+        currentCity.value = res.data.result.address_component.city || res.data.result.address_component.province
+      }
+      locating.value = false
+    },
+    fail: () => {
+      currentCity.value = '定位城市'
+      locating.value = false
+    }
+  })
+  // #endif
+
+  // #ifndef MP-WEIXIN
+  // 其他平台简化处理
+  currentCity.value = '当前城市'
+  locating.value = false
+  // #endif
+}
+
+// 切换定位/城市
+const switchLocation = () => {
+  // 显示城市选择器
+  showCityPicker.value = true
+}
+
+// 城市选择器相关
+const onCityPickerChange = (e) => {
+  const val = e.detail.value
+  cityPickerValue.value = val
+  selectedCityIndex.value = val[0]
+}
+
+const confirmCity = () => {
+  const city = cityList.value[selectedCityIndex.value]
+  if (city) {
+    currentCity.value = city.name
+    // 这里可以根据选择的城市重新加载球厅列表
+    page.value = 1
+    hallList.value = []
+    loadHallList()
+  }
+  closeCityPicker()
+}
+
+const closeCityPicker = () => {
+  showCityPicker.value = false
+}
+
+// ---------------------- 搜索相关方法 ----------------------
+const handleSearch = () => {
+  page.value = 1
+  hallList.value = []
+  loadHallList()
+}
+
+const clearSearch = () => {
+  searchKeyword.value = ''
+  page.value = 1
+  hallList.value = []
+  loadHallList()
+}
+
+// ---------------------- 球厅列表方法 ----------------------
+// 加载球厅列表
+const loadHallList = async () => {
+  if (loading.value) return
+
+  loading.value = true
+  try {
+    const params = {
+      pageNo: page.value,
+      pageSize: pageSize.value,
+      sortType: currentSortType.value
+    }
+
+    // 添加搜索关键词
+    if (searchKeyword.value) {
+      params.keyword = searchKeyword.value
+    }
+
+    // 添加经纬度
+    if (currentLocation.value.longitude && currentLocation.value.latitude) {
+      params.longitude = currentLocation.value.longitude
+      params.latitude = currentLocation.value.latitude
+    }
+
+    const res = await getVenueList(params)
+    const list = res.data?.list || res.data || []
+
+    if (page.value === 1) {
+      hallList.value = list
+    } else {
+      hallList.value = [...hallList.value, ...list]
+    }
+
+    // 判断是否还有更多
+    hasMore.value = list.length >= pageSize.value
+  } catch (error) {
+    console.error('加载球厅列表失败:', error)
+    uni.showToast({
+      title: '加载失败，请重试',
+      icon: 'none'
+    })
+  } finally {
+    loading.value = false
+    refreshing.value = false
+  }
+}
+
 // 下拉刷新
 const onRefresh = () => {
   refreshing.value = true
   page.value = 1
   hasMore.value = true
-  loading.value = false
-  setTimeout(() => {
-    refreshing.value = false
-    uni.showToast({ title: '刷新成功', icon: 'success' })
-  }, 1000)
+  loadHallList()
 }
 
 // 上拉加载更多
 const onLoadMore = () => {
   if (!hasMore.value || loading.value) return
-  loading.value = true
-  setTimeout(() => {
-    loading.value = false
-    hasMore.value = false
-  }, 1500)
+  page.value++
+  loadHallList()
 }
 
 // 切换筛选标签
 const switchTab = (val) => {
   currentTab.value = val
+  page.value = 1
+  hallList.value = []
+  loadHallList()
 }
 
 // 打开筛选
 const openFilter = () => {
-  uni.showToast({ title: '筛选功能开发中', icon: 'none' })
-}
-
-// 切换定位
-const switchLocation = () => {
-  uni.showToast({ title: '定位功能开发中', icon: 'none' })
+  uni.showToast({ title: '高级筛选功能开发中', icon: 'none' })
 }
 
 // 导航
@@ -358,10 +577,14 @@ const openNativeMap = (hall) => {
 
 // 拨打电话
 const callPhone = (hall) => {
-  uni.makePhoneCall({
-    phoneNumber: '400-888-8888',
-    fail: () => uni.showToast({ title: '拨打失败', icon: 'none' })
-  })
+  if (hall.phone) {
+    uni.makePhoneCall({
+      phoneNumber: hall.phone,
+      fail: () => uni.showToast({ title: '拨打失败', icon: 'none' })
+    })
+  } else {
+    uni.showToast({ title: '暂无联系电话', icon: 'none' })
+  }
 }
 
 // 选择球厅
@@ -372,13 +595,34 @@ const chooseHall = (hall) => {
 // 确认选择
 const confirmChoose = () => {
   if (!selectedHall.value) return
-  // 保存选择的球厅信息，跳转到确认订单页
-  uni.setStorageSync('selectedHall', selectedHall.value)
-  uni.navigateTo({ url: '/pages/booking/confirm' })
+
+  // 保存选择的球厅信息
+  uni.setStorageSync('selectedHall', {
+    id: selectedHall.value.id,
+    name: selectedHall.value.name,
+    address: selectedHall.value.address,
+    longitude: selectedHall.value.longitude,
+    latitude: selectedHall.value.latitude,
+    price: selectedHall.value.price
+  })
+
+  // 检查是否从确认订单页跳转过来的
+  const fromConfirm = uni.getStorageSync('fromConfirm')
+  if (fromConfirm) {
+    uni.removeStorageSync('fromConfirm')
+    // 返回确认订单页
+    uni.navigateBack()
+  } else {
+    // 跳转到确认订单页
+    uni.navigateTo({ url: '/pages/booking/confirm' })
+  }
 }
 
 // ---------------------- 生命周期 ----------------------
 onMounted(() => {
+  // 自动获取定位
+  getCurrentLocation()
+
   // 检查是否有从确认订单页返回的选择需求
   const pages = getCurrentPages()
   const prevPage = pages[pages.length - 2]
@@ -445,6 +689,9 @@ onShow(() => {
   }
   .search-placeholder {
     color: #6B7280;
+  }
+  .clear-icon {
+    padding: 4rpx;
   }
 }
 
@@ -652,6 +899,20 @@ onShow(() => {
   }
 }
 
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 0;
+  .empty-text {
+    color: #6B7280;
+    font-size: 28rpx;
+    margin-top: 20rpx;
+  }
+}
+
 /* 加载提示 */
 .load-tip {
   text-align: center;
@@ -743,5 +1004,63 @@ onShow(() => {
   height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
   width: 100%;
+}
+
+/* 城市选择器遮罩 */
+.city-picker-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.city-picker-wrapper {
+  background: #1E252B;
+  border-radius: 32rpx 32rpx 0 0;
+  animation: slideUp 0.3s ease;
+}
+
+.city-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx;
+  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  .cancel-btn {
+    color: #9CA3AF;
+    font-size: 30rpx;
+  }
+  .picker-title {
+    color: #fff;
+    font-size: 32rpx;
+    font-weight: 600;
+  }
+  .confirm-btn {
+    color: #00BB88;
+    font-size: 30rpx;
+    font-weight: 600;
+  }
+}
+
+.city-picker-view {
+  width: 100%;
+  height: 500rpx;
+  background-color: #2a3338;
+}
+
+.picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF !important;
+  font-size: 32rpx;
+  height: 80rpx;
+  line-height: 80rpx;
 }
 </style>

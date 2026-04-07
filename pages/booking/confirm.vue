@@ -46,8 +46,8 @@
           <text class="label">服务时长</text>
           <view class="value-wrap">
             <view class="duration-control">
-              <view class="duration-btn" :class="{disabled: orderInfo.duration <= 1}" @click="decreaseDuration">
-                <uni-icons type="minus" size="20" :color="orderInfo.duration <= 1 ? '#2a3338' : '#9CA3AF'" />
+              <view class="duration-btn" :class="{disabled: orderInfo.duration <= minDuration}" @click="decreaseDuration">
+                <uni-icons type="minus" size="20" :color="orderInfo.duration <= minDuration ? '#2a3338' : '#9CA3AF'" />
               </view>
               <text class="duration-num">{{ orderInfo.duration }}小时</text>
               <view class="duration-btn" :class="{disabled: orderInfo.duration >= 8}" @click="increaseDuration">
@@ -102,9 +102,14 @@
           <text class="fee-value">¥{{ orderInfo.basePrice }}</text>
         </view>
 
-        <view class="fee-row">
-          <text class="fee-label">服务费</text>
-          <text class="fee-value">¥{{ orderInfo.serviceFee }}</text>
+        <view class="fee-row" v-if="orderInfo.travelAmount > 0">
+          <text class="fee-label">车费</text>
+          <text class="fee-value">¥{{ (orderInfo.travelAmount / 100).toFixed(2) }}</text>
+        </view>
+
+        <view class="fee-row" v-if="orderInfo.travelDiscountAmount > 0">
+          <text class="fee-label">车费优惠</text>
+          <text class="fee-value" style="color: #EF4444;">-¥{{ (orderInfo.travelDiscountAmount / 100).toFixed(2) }}</text>
         </view>
 
         <view class="fee-row" v-if="selectedCoupon">
@@ -230,7 +235,9 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { onShow } from  "@dcloudio/uni-app"
+import { onShow, onLoad } from  "@dcloudio/uni-app"
+import { createOrder } from '@/api/billiard/order'
+import { getAvailablePayChannels, executePayment } from '@/utils/payment'
 
 // ---------------------- 状态定义 ----------------------
 // 刷新/提交状态
@@ -249,6 +256,13 @@ const showTimePicker = ref(false)
 // 选择器样式
 const indicatorStyle = ref('height: 80rpx;')// picker-view的当前选中值
 const pickerValue = ref([0, 0, 0])
+// 创建订单后返回的数据
+const createdOrderData = ref(null)
+// 选中的预约时间（毫秒时间戳）
+const selectedBookingTime = ref(null)
+
+// 最小服务时长（根据服务类型动态设置）
+const minDuration = ref(2) // 默认2小时（台球陪练）
 
 // ---------------------- 时间选择器数据 ----------------------
 // 生成日期列（从今天开始往后7天）
@@ -286,7 +300,6 @@ const generateHourColumns = (dateIndex = 0) => {
   return columns
 }
 
-// 生成分钟列（5分钟间隔）
 // 生成分钟列（5分钟间隔）
 const generateMinuteColumns = (dateIndex = 0, hourIndex = 0) => {
   const columns = []
@@ -338,52 +351,55 @@ const selectedDateTime = ref({
   minuteIndex: 0
 })
 
-// ---------------------- 模拟数据 ----------------------
+// ---------------------- 教练和订单数据 ----------------------
 // 教练信息
 const coachInfo = ref({
-  name: '小雯',
-  avatar: 'https://via.placeholder.com/200',
-  badge: '高级教练',
+  id: null,
+  name: '',
+  avatar: '',
+  badge: '',
   badgeBg: 'rgba(0, 187, 136, 0.2)',
-  desc: '国家级台球运动员，擅长斯诺克教学',
-  orderCount: 128,
-  distance: '1.2km',
-  score: 4.9
+  desc: '',
+  orderCount: 0,
+  distance: '',
+  score: 0
 })
 
 // 订单信息
 const orderInfo = ref({
   serviceName: '台球陪练',
+  serviceType: 1, // 1=台球陪练 2=陪游
   duration: 2,
   timeText: '请选择服务时间',
-  hallName: '星牌台球俱乐部(中关村店)',
+  hallName: '请选择服务地点',
+  hallId: null,
   basePrice: 198,
-  serviceFee: 10
+  serviceFee: 10,
+  // 从创建订单接口返回的费用信息
+  serviceAmount: 0,
+  travelAmount: 0,
+  travelDiscountAmount: 0,
+  payAmount: 0
 })
 
-// 支付方式列表（根据平台动态显示）
+// 支付方式列表（使用支付工具动态获取）
 const payList = computed(() => {
-  // 判断是否是微信小程序
-  // #ifdef MP-WEIXIN
-  return [
-    { value: 'wechat', label: '微信支付', icon: 'chatbubble-filled', bgColor: '#07C160' },
-    { value: 'wallet', label: '钱包余额', icon: 'wallet', bgColor: '#00BB88', balance: 256.00 }
-  ]
-  // #endif
-
-  // 其他平台显示全部
-  // #ifndef MP-WEIXIN
-  return [
-    { value: 'wechat', label: '微信支付', icon: 'chatbubble-filled', bgColor: '#07C160' },
-    { value: 'alipay', label: '支付宝', icon: 'chatbubble', bgColor: '#1677FF' },
-    { value: 'wallet', label: '钱包余额', icon: 'wallet', bgColor: '#00BB88', balance: 256.00 }
-  ]
-  // #endif
+  const channels = getAvailablePayChannels()
+  // 默认选中第一个
+  if (channels.length > 0 && !selectedPay.value) {
+    selectedPay.value = channels[0].value
+  }
+  return channels
 })
 
 // ---------------------- 计算属性 ----------------------
 // 总价格
 const totalPrice = computed(() => {
+  // 如果已经创建了订单，使用返回的支付金额
+  if (createdOrderData.value && createdOrderData.value.payAmount !== undefined) {
+    return (createdOrderData.value.payAmount / 100).toFixed(2)
+  }
+  // 否则使用本地计算
   let total = orderInfo.value.basePrice + orderInfo.value.serviceFee
   if (selectedCoupon.value) {
     total -= selectedCoupon.value.value
@@ -393,7 +409,11 @@ const totalPrice = computed(() => {
 
 // 是否可以支付
 const canPay = computed(() => {
-  return userAgree.value && !isSubmitting.value && orderInfo.value.timeText !== '请选择服务时间'
+  return userAgree.value &&
+         !isSubmitting.value &&
+         orderInfo.value.timeText !== '请选择服务时间' &&
+         orderInfo.value.hallName !== '请选择服务地点' &&
+         coachInfo.value.id !== null
 })
 
 // ---------------------- 时间选择器方法 ----------------------
@@ -455,6 +475,8 @@ const confirmTime = () => {
   }
 
   const date = dateItem.date
+  date.setHours(hourItem.hour, minuteItem.minute, 0, 0)
+
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
   const hour = String(hourItem.hour).padStart(2, '0')
@@ -462,6 +484,9 @@ const confirmTime = () => {
 
   const weekDay = dateItem.isToday ? '今天' : dateItem.weekDay
   orderInfo.value.timeText = `${weekDay} ${month}.${day} ${hour}:${minute}`
+
+  // 保存选中的时间戳
+  selectedBookingTime.value = date.getTime()
 
   showTimePicker.value = false
 }
@@ -493,15 +518,19 @@ const toServiceSelect = () => {
 
 // 增减时长
 const decreaseDuration = () => {
-  if (orderInfo.value.duration <= 1) return
+  if (orderInfo.value.duration <= minDuration.value) return
   orderInfo.value.duration--
   orderInfo.value.basePrice = orderInfo.value.duration * 99
+  // 清除已创建的订单数据，需要重新创建
+  createdOrderData.value = null
 }
 
 const increaseDuration = () => {
   if (orderInfo.value.duration >= 8) return
   orderInfo.value.duration++
   orderInfo.value.basePrice = orderInfo.value.duration * 99
+  // 清除已创建的订单数据，需要重新创建
+  createdOrderData.value = null
 }
 
 // 选择球厅（跳转到选择球厅页）
@@ -522,6 +551,8 @@ const selectCoupon = () => {
   } else {
     selectedCoupon.value = null
   }
+  // 清除已创建的订单数据，需要重新创建
+  createdOrderData.value = null
 }
 
 // 选择支付方式
@@ -543,40 +574,116 @@ const submitOrder = async () => {
 
   isSubmitting.value = true
   try {
-    // TODO: 这里调用后端「创建订单」接口
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    // TODO: 根据选择的支付方式唤起支付
-    if (selectedPay.value === 'wechat') {
-      // 微信支付
-      uni.showToast({ title: '微信支付功能开发中', icon: 'none' })
-    } else if (selectedPay.value === 'alipay') {
-      // 支付宝支付
-      uni.showToast({ title: '支付宝支付功能开发中', icon: 'none' })
-    } else if (selectedPay.value === 'wallet') {
-      // 钱包余额支付
-      uni.showToast({ title: '钱包支付功能开发中', icon: 'none' })
+    // 1. 构建创建订单的请求参数
+    const createOrderParams = {
+      coachId: coachInfo.value.id,
+      serviceType: orderInfo.value.serviceType,
+      bookingTime: selectedBookingTime.value,
+      serviceDuration: orderInfo.value.duration * 60, // 转换为分钟
+      quantity: orderInfo.value.duration // 小时数
     }
 
-    // 支付成功后的逻辑
-    uni.showToast({ title: '支付成功', icon: 'success' })
-    setTimeout(() => {
-      uni.reLaunch({ url: '/pages/order/list' })
-    }, 1500)
+    // 添加场地信息
+    if (orderInfo.value.hallId) {
+      createOrderParams.venueId = orderInfo.value.hallId
+    }
+    if (orderInfo.value.hallName && orderInfo.value.hallName !== '请选择服务地点') {
+      createOrderParams.venueName = orderInfo.value.hallName
+    }
+
+    // 添加优惠券
+    if (selectedCoupon.value && selectedCoupon.value.id) {
+      createOrderParams.couponId = selectedCoupon.value.id
+    }
+
+    // 2. 调用创建订单接口
+    const createRes = await createOrder(createOrderParams)
+    createdOrderData.value = createRes.data
+
+    // 更新订单信息中的费用明细
+    if (createRes.data) {
+      orderInfo.value.serviceAmount = createRes.data.serviceAmount || 0
+      orderInfo.value.travelAmount = createRes.data.travelAmount || 0
+      orderInfo.value.travelDiscountAmount = createRes.data.travelDiscountAmount || 0
+      orderInfo.value.payAmount = createRes.data.payAmount || 0
+    }
+
+    // 3. 发起支付
+    await executePayment({
+      payOrderId: createRes.data.payOrderId,
+      payValue: selectedPay.value,
+      onSuccess: (payResult) => {
+        // 支付成功
+        uni.showToast({ title: '支付成功', icon: 'success' })
+        setTimeout(() => {
+          uni.reLaunch({ url: '/pages/order/list' })
+        }, 1500)
+      },
+      onCancel: () => {
+        // 支付取消
+        uni.showToast({ title: '支付已取消', icon: 'none' })
+      },
+      onError: (error) => {
+        // 支付失败
+        uni.showToast({
+          title: error.message || '支付失败，请重试',
+          icon: 'none'
+        })
+      }
+    })
+
   } catch (error) {
     console.error('订单提交失败:', error)
-    uni.showToast({ title: '订单提交失败，请重试', icon: 'none' })
+    uni.showToast({
+      title: error.message || '订单提交失败，请重试',
+      icon: 'none'
+    })
   } finally {
     isSubmitting.value = false
   }
 }
 
 // ---------------------- 生命周期 ----------------------
+onLoad((options) => {
+  // 从本地存储获取选择的教练
+  const selectedCoach = uni.getStorageSync('selectedCoach')
+  if (selectedCoach) {
+    coachInfo.value = {
+      id: selectedCoach.id,
+      name: selectedCoach.stageName || selectedCoach.name,
+      avatar: selectedCoach.avatar,
+      badge: selectedCoach.levelText || '初级教练',
+      badgeBg: 'rgba(0, 187, 136, 0.2)',
+      desc: selectedCoach.introduction || selectedCoach.intro || '',
+      orderCount: selectedCoach.serviceCount || selectedCoach.orderCount || 0,
+      distance: selectedCoach.distance || '',
+      score: selectedCoach.overallScore || selectedCoach.rating || 0
+    }
+
+    // 获取选中的服务
+    if (selectedCoach.selectedService) {
+      orderInfo.value.serviceName = selectedCoach.selectedService.name || '台球陪练'
+      orderInfo.value.basePrice = selectedCoach.selectedService.price * orderInfo.value.duration
+    }
+
+    // 根据服务类型设置最小时长
+    // 台球陪练 >= 120分钟(2小时)，陪游 >= 300分钟(5小时)
+    if (orderInfo.value.serviceType === 2) {
+      minDuration.value = 5
+      if (orderInfo.value.duration < 5) {
+        orderInfo.value.duration = 5
+        orderInfo.value.basePrice = orderInfo.value.duration * 99
+      }
+    }
+  }
+})
+
 onMounted(() => {
   // 从本地存储获取选择的球厅
   const selectedHall = uni.getStorageSync('selectedHall')
   if (selectedHall) {
     orderInfo.value.hallName = selectedHall.name
+    orderInfo.value.hallId = selectedHall.id
     uni.removeStorageSync('selectedHall')
   }
 
@@ -590,7 +697,10 @@ onShow(() => {
   const returnHall = uni.getStorageSync('returnHall')
   if (returnHall) {
     orderInfo.value.hallName = returnHall.name
+    orderInfo.value.hallId = returnHall.id
     uni.removeStorageSync('returnHall')
+    // 清除已创建的订单数据，需要重新创建
+    createdOrderData.value = null
   }
 })
 </script>
