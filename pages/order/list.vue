@@ -1,35 +1,60 @@
 <template>
   <view class="order-list-wrapper">
-    <!-- 顶部Tab -->
+    <!-- 顶部Tab - 根据API文档重新定义 -->
     <view class="tab-bar" id="tabBar">
-      <view
-        class="tab-item"
-        :class="{ active: activeTab === '' }"
-        @click="switchTab('')"
-      >
-        全部
-      </view>
-      <view
-        class="tab-item"
-        :class="{ active: activeTab === 0 }"
-        @click="switchTab(0)"
-      >
-        待服务
-      </view>
-      <view
-        class="tab-item"
-        :class="{ active: activeTab === 1 }"
-        @click="switchTab(1)"
-      >
-        已完成
-      </view>
-      <view
-        class="tab-item"
-        :class="{ active: activeTab === 2 }"
-        @click="switchTab(2)"
-      >
-        已取消
-      </view>
+      <scroll-view scroll-x="true" class="tab-scroll">
+        <view class="tab-list">
+          <view
+            class="tab-item"
+            :class="{ active: activeTab === null }"
+            @click="switchTab(null)"
+          >
+            全部
+          </view>
+          <view
+            class="tab-item"
+            :class="{ active: activeTab === 10 }"
+            @click="switchTab(10)"
+          >
+            待付款
+          </view>
+          <view
+            class="tab-item"
+            :class="{ active: activeTab === 'ongoing' }"
+            @click="switchTab('ongoing')"
+          >
+            进行中
+          </view>
+          <view
+            class="tab-item"
+            :class="{ active: activeTab === 50 }"
+            @click="switchTab(50)"
+          >
+            待评价
+          </view>
+          <view
+            class="tab-item"
+            :class="{ active: activeTab === 60 }"
+            @click="switchTab(60)"
+          >
+            已完成
+          </view>
+          <view
+            class="tab-item"
+            :class="{ active: activeTab === 70 }"
+            @click="switchTab(70)"
+          >
+            已取消
+          </view>
+          <view
+            class="tab-item"
+            :class="{ active: activeTab === 'refund' }"
+            @click="switchTab('refund')"
+          >
+            退款售后
+          </view>
+        </view>
+      </scroll-view>
     </view>
 
     <!-- 订单列表 -->
@@ -46,14 +71,14 @@
         <view
           class="order-card"
           v-for="order in orderList"
-          :key="order.id"
+          :key="order.orderId"
           @click="goToDetail(order)"
         >
           <!-- 订单头部 -->
           <view class="order-header">
             <view class="order-type">
-              <text class="type-icon">{{ getServiceIcon(order.serviceName) }}</text>
-              <text class="type-name">{{ order.serviceName }}</text>
+              <text class="type-icon">{{ getServiceIcon(order.serviceType) }}</text>
+              <text class="type-name">{{ getServiceTypeName(order.serviceType) }}</text>
             </view>
             <view class="order-status" :class="getStatusClass(order.status)">
               {{ getStatusText(order.status) }}
@@ -62,10 +87,10 @@
 
           <!-- 助教信息 -->
           <view class="coach-section">
-            <image class="coach-avatar" :src="order.coachAvatar || '/static/default-avatar.png'" mode="aspectFill"></image>
+            <image class="coach-avatar" :src="order.coachMainPhoto || '/static/default-avatar.png'" mode="aspectFill"></image>
             <view class="coach-info">
-              <text class="coach-name">{{ order.coachName }}</text>
-              <text class="order-time">{{ order.date }} {{ order.time }}</text>
+              <text class="coach-name">{{ order.coachStageName }}</text>
+              <text class="order-time">{{ formatBookingTime(order.bookingTime) }}</text>
             </view>
             <uni-icons type="right" size="20" color="#9CA3AF" />
           </view>
@@ -74,15 +99,15 @@
           <view class="order-info">
             <view class="info-item">
               <text class="info-label">时长</text>
-              <text class="info-value">{{ order.duration }}小时</text>
-            </view>
-            <view class="info-item">
-              <text class="info-label">球厅</text>
-              <text class="info-value">{{ order.hallName }}</text>
+              <text class="info-value">{{ order.serviceDuration }}分钟</text>
             </view>
             <view class="info-item">
               <text class="info-label">订单号</text>
               <text class="info-value">{{ order.orderNo }}</text>
+            </view>
+            <view class="info-item">
+              <text class="info-label">下单时间</text>
+              <text class="info-value">{{ formatCreateTime(order.createTime) }}</text>
             </view>
           </view>
 
@@ -91,39 +116,25 @@
             <view class="order-price">
               <text class="price-label">实付</text>
               <text class="price-unit">¥</text>
-              <text class="price-num">{{ order.price }}</text>
+              <text class="price-num">{{ formatAmount(order.totalAmount) }}</text>
             </view>
             <view class="order-actions">
               <button
-                v-if="order.status === 0"
+                v-if="order.status === 10"
                 class="action-btn cancel"
                 @click.stop="cancelOrder(order)"
               >
                 取消订单
               </button>
               <button
-                v-if="order.status === 0"
-                class="action-btn contact"
-                @click.stop="contactCoach(order)"
-              >
-                联系助教
-              </button>
-              <button
-                v-if="order.status === 1 && !order.isReviewed"
+                v-if="order.status === 50"
                 class="action-btn review"
                 @click.stop="goToReview(order)"
               >
                 去评价
               </button>
               <button
-                v-if="order.status === 1"
-                class="action-btn reward"
-                @click.stop="goToReward(order)"
-              >
-                打赏
-              </button>
-              <button
-                v-if="order.status === 1"
+                v-if="order.status === 60"
                 class="action-btn book-again"
                 @click.stop="bookAgain(order)"
               >
@@ -154,7 +165,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { getOrderList } from '@/api/billiard/order'
 
 // 当前Tab
-const activeTab = ref('')
+const activeTab = ref(null)
 // 滚动区域高度
 const scrollHeight = ref(0)
 // 加载状态
@@ -170,11 +181,24 @@ const pageSize = ref(10)
 // 订单列表
 const orderList = ref([])
 
-// 状态映射
+/**
+ * 状态映射 - 根据API文档
+ * 10=待付款
+ * 20,30,40=进行中（待接单+已接单+进行中）
+ * 50=待评价
+ * 60=已完成
+ * 70=已取消
+ * 70,80=退款售后
+ */
 const statusMap = {
-  0: { text: '待服务', class: 'pending' },
-  1: { text: '已完成', class: 'completed' },
-  2: { text: '已取消', class: 'cancelled' }
+  10: { text: '待付款', class: 'pending' },
+  20: { text: '待接单', class: 'ongoing' },
+  30: { text: '已接单', class: 'ongoing' },
+  40: { text: '进行中', class: 'ongoing' },
+  50: { text: '待评价', class: 'to-review' },
+  60: { text: '已完成', class: 'completed' },
+  70: { text: '已取消', class: 'cancelled' },
+  80: { text: '退款中', class: 'refund' }
 }
 
 // 获取状态文本
@@ -188,10 +212,45 @@ const getStatusClass = (status) => {
 }
 
 // 获取服务图标
-const getServiceIcon = (name) => {
-  if (name?.includes('斯诺克')) return '🔴'
-  if (name?.includes('教学')) return '🎓'
+const getServiceIcon = (type) => {
+  if (type === 1) return '🎱'
+  if (type === 2) return '🌆'
   return '🎱'
+}
+
+// 获取服务类型名称
+const getServiceTypeName = (type) => {
+  if (type === 1) return '台球陪练'
+  if (type === 2) return '陪游'
+  return '台球陪练'
+}
+
+// 格式化预约时间
+const formatBookingTime = (timestamp) => {
+  if (!timestamp) return ''
+  const date = new Date(timestamp)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hour = String(date.getHours()).padStart(2, '0')
+  const minute = String(date.getMinutes()).padStart(2, '0')
+  return `${month}-${day} ${hour}:${minute}`
+}
+
+// 格式化下单时间
+const formatCreateTime = (timestamp) => {
+  if (!timestamp) return ''
+  const date = new Date(timestamp)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// 格式化金额（分转元）
+const formatAmount = (amount) => {
+  if (amount === null || amount === undefined) return '0.00'
+  return (amount / 100).toFixed(2)
 }
 
 // 加载数据
@@ -213,8 +272,15 @@ const loadData = async (isRefresh = false) => {
       pageSize: pageSize.value
     }
 
-    // 添加状态筛选
-    if (activeTab.value !== '') {
+    // 添加状态筛选 - 根据API文档处理特殊Tab
+    if (activeTab.value === 'ongoing') {
+      // 进行中包含：20,30,40
+      // 这里传20作为代表，实际应根据后端支持的方式处理
+      params.status = 20
+    } else if (activeTab.value === 'refund') {
+      // 退款售后包含：70,80
+      params.status = 70
+    } else if (activeTab.value !== null) {
       params.status = activeTab.value
     }
 
@@ -229,7 +295,12 @@ const loadData = async (isRefresh = false) => {
     }
 
     // 判断是否还有更多数据
-    hasMore.value = list.length >= pageSize.value
+    const total = data.total || data.totalCount || 0
+    if (total > 0) {
+      hasMore.value = orderList.value.length < total
+    } else {
+      hasMore.value = list.length >= pageSize.value
+    }
     loadMoreStatus.value = hasMore.value ? 'more' : 'noMore'
 
     if (!hasMore.value && pageNo.value > 1) {
@@ -269,7 +340,7 @@ const switchTab = (tab) => {
 // 跳转详情
 const goToDetail = (order) => {
   uni.navigateTo({
-    url: `/pages/order/detail?id=${order.id}`
+    url: `/pages/order/detail?id=${order.orderId}`
   })
 }
 
@@ -295,13 +366,15 @@ const contactCoach = (order) => {
 
 // 去评价
 const goToReview = (order) => {
-  uni.showToast({ title: '评价功能开发中', icon: 'none' })
+  uni.navigateTo({
+    url: `/pages/evaluate/index?orderId=${order.orderId}`
+  })
 }
 
 // 去打赏
 const goToReward = (order) => {
   uni.navigateTo({
-    url: `/pages/coach/reward?coachId=${order.coachId || order.id}&coachName=${order.coachName}`
+    url: `/pages/coach/reward?coachId=${order.coachId || order.id}&coachName=${order.coachStageName}`
   })
 }
 
@@ -344,10 +417,17 @@ onLoad(() => {
 .tab-bar {
   display: flex;
   background: #1E252B;
-  padding: 20rpx 30rpx;
-  gap: 16rpx;
-  overflow-x: auto;
+  padding: 20rpx 0;
   flex-shrink: 0;
+  .tab-scroll {
+    width: 100%;
+    white-space: nowrap;
+  }
+  .tab-list {
+    display: flex;
+    padding: 0 30rpx;
+    gap: 16rpx;
+  }
   .tab-item {
     flex-shrink: 0;
     padding: 12rpx 32rpx;
@@ -403,8 +483,16 @@ onLoad(() => {
     padding: 8rpx 20rpx;
     border-radius: 20rpx;
     &.pending {
+      background: rgba(255, 149, 0, 0.2);
+      color: #FF9500;
+    }
+    &.ongoing {
       background: rgba(59, 130, 246, 0.2);
       color: #3B82F6;
+    }
+    &.to-review {
+      background: rgba(245, 158, 11, 0.2);
+      color: #F59E0B;
     }
     &.completed {
       background: rgba(0, 187, 136, 0.2);
@@ -413,6 +501,10 @@ onLoad(() => {
     &.cancelled {
       background: rgba(107, 114, 128, 0.2);
       color: #6B7280;
+    }
+    &.refund {
+      background: rgba(239, 68, 68, 0.2);
+      color: #EF4444;
     }
   }
 }
@@ -504,17 +596,9 @@ onLoad(() => {
         background: rgba(107, 114, 128, 0.2);
         color: #9CA3AF;
       }
-      &.contact {
-        background: rgba(59, 130, 246, 0.2);
-        color: #3B82F6;
-      }
       &.review {
         background: rgba(245, 158, 11, 0.2);
         color: #F59E0B;
-      }
-      &.reward {
-        background: rgba(236, 72, 153, 0.2);
-        color: #EC4899;
       }
       &.book-again {
         background: #00BB88;

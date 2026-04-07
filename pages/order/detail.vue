@@ -7,7 +7,7 @@
         :refresher-triggered="refreshing"
         @refresherrefresh="onRefresh"
     >
-      <!-- 顶部状态卡片 - 适配设计图的即将开始倒计时结构 -->
+      <!-- 顶部状态卡片 -->
       <view class="status-card">
         <view class="status-header">
           <view class="status-left">
@@ -17,29 +17,7 @@
           <text class="order-no">订单号: {{ orderInfo.orderNo }}</text>
         </view>
 
-        <!-- 倒计时: 仅即将开始(待服务)状态显示 -->
-        <view class="count-down-box" v-if="orderInfo.status === 0">
-          <view class="count-item">
-            <text class="count-num">{{ countDown.h }}</text>
-            <text class="count-label">小时</text>
-          </view>
-          <text class="count-colon">:</text>
-          <view class="count-item">
-            <text class="count-num">{{ countDown.m }}</text>
-            <text class="count-label">分钟</text>
-          </view>
-          <text class="count-colon">:</text>
-          <view class="count-item">
-            <text class="count-num">{{ countDown.s }}</text>
-            <text class="count-label">秒</text>
-          </view>
-
-          <text class="status-desc" v-if="orderInfo.statusDesc">
-            {{ orderInfo.statusDesc }}
-          </text>
-        </view>
-
-        <!-- 订单信息卡片 - 对应设计图结构 -->
+        <!-- 订单信息卡片 -->
         <view class="info-card">
           <view class="card-title">
             <text class="title-icon">🖥</text>
@@ -53,7 +31,12 @@
 
           <view class="info-row">
             <text class="label">服务时长</text>
-            <text class="value">{{ orderInfo.duration }}小时</text>
+            <text class="value">{{ orderInfo.serviceDuration }}分钟</text>
+          </view>
+
+          <view class="info-row">
+            <text class="label">服务类型</text>
+            <text class="value">{{ getServiceTypeName(orderInfo.serviceType) }}</text>
           </view>
 
           <view class="info-row">
@@ -62,17 +45,27 @@
           </view>
 
           <view class="info-row">
-            <text class="label">支付方式</text>
-            <text class="value">{{ orderInfo.payType }}</text>
+            <text class="label">支付状态</text>
+            <text class="value">{{ getPayStatusText(orderInfo.payStatus) }}</text>
           </view>
 
           <view class="info-row">
             <text class="label">订单金额</text>
-            <text class="value price">¥{{ orderInfo.price.toFixed(2) }}</text>
+            <text class="value price">¥{{ formatAmount(orderInfo.totalAmount) }}</text>
+          </view>
+
+          <view class="info-row" v-if="orderInfo.payAmount > 0">
+            <text class="label">实际支付</text>
+            <text class="value price">¥{{ formatAmount(orderInfo.payAmount) }}</text>
+          </view>
+
+          <view class="info-row" v-if="orderInfo.extraPayAmount > 0">
+            <text class="label">加钟支付</text>
+            <text class="value price">¥{{ formatAmount(orderInfo.extraPayAmount) }}</text>
           </view>
         </view>
 
-        <!-- 陪练教练卡片 - 对应设计图结构 -->
+        <!-- 陪练教练卡片 -->
         <view class="info-card">
           <view class="card-title">
             <text class="title-icon">👤</text>
@@ -81,72 +74,30 @@
           </view>
 
           <view class="coach-info">
-            <image class="coach-avatar" :src="orderInfo.coachAvatar || '/static/default-avatar.png'" mode="aspectFill"></image>
+            <image class="coach-avatar" :src="orderInfo.coachMainPhoto || '/static/default-avatar.png'" mode="aspectFill"></image>
             <view class="coach-info-right">
               <view class="coach-name-row">
-                <text class="coach-name">{{ orderInfo.coachName }}</text>
-                <text class="coach-level" v-if="orderInfo.coachLevel">{{ orderInfo.coachLevel }}</text>
-              </view>
-              <view class="coach-meta-row">
-                <text class="coach-score">⭐ {{ orderInfo.coachScore || 0 }}</text>
-                <text class="coach-finish">🗃 已完成{{ orderInfo.coachFinishCount || 0 }}单</text>
-              </view>
-              <view class="coach-tags">
-                <text class="tag" v-for="tag in orderInfo.coachSkills" :key="tag">{{ tag }}</text>
+                <text class="coach-name">{{ orderInfo.coachStageName }}</text>
               </view>
             </view>
           </view>
         </view>
 
-        <!-- 球厅信息卡片 - 对应设计图结构 -->
-        <view class="info-card">
+        <!-- 球厅信息卡片 -->
+        <view class="info-card" v-if="orderInfo.venueName">
           <view class="card-title">
             <text class="title-icon">📍</text>
             球厅信息
-            <button class="nav-btn" @click="openHallNavigate">
+            <button class="nav-btn" @click="openHallNavigate" v-if="orderInfo.venueLongitude && orderInfo.venueLatitude">
               <uni-icons type="navigation" size="16" color="#fff" />
               导航
             </button>
           </view>
 
-          <text class="hall-name">{{ orderInfo.hallName }}</text>
-          <view class="hall-address">
+          <text class="hall-name">{{ orderInfo.venueName }}</text>
+          <view class="hall-address" v-if="orderInfo.venueAddress">
             <uni-icons type="location" size="18" color="#9CA3AF" />
-            <text>{{ orderInfo.hallAddress }}</text>
-          </view>
-          <image class="hall-image" :src="orderInfo.hallImage || '/static/default-hall.jpg'" mode="aspectFill"></image>
-        </view>
-
-        <!-- 备注信息卡片 - 对应设计图结构 -->
-        <view class="info-card" v-if="orderInfo.remark">
-          <view class="card-title">
-            <text class="title-icon">📄</text>
-            备注信息
-          </view>
-          <view class="remark-content">
-            {{ orderInfo.remark }}
-          </view>
-        </view>
-
-        <!-- 已完成状态保留费用明细 -->
-        <view class="info-card" v-if="orderInfo.status === 1">
-          <view class="card-title">费用明细</view>
-
-          <view class="fee-row">
-            <text class="fee-label">{{ orderInfo.serviceName }} x{{ orderInfo.duration }}小时</text>
-            <text class="fee-value">¥{{ (orderInfo.servicePrice || orderInfo.price) * orderInfo.duration }}</text>
-          </view>
-
-          <view class="fee-row" v-if="orderInfo.couponDiscount > 0">
-            <text class="fee-label">优惠券</text>
-            <text class="fee-value minus">-¥{{ orderInfo.couponDiscount }}</text>
-          </view>
-
-          <view class="divider"></view>
-
-          <view class="fee-row total">
-            <text class="fee-label">实付金额</text>
-            <text class="fee-value total-price">¥{{ orderInfo.price }}</text>
+            <text>{{ orderInfo.venueAddress }}</text>
           </view>
         </view>
 
@@ -155,26 +106,24 @@
       </view>
     </scroll-view>
 
-    <!-- 底部操作栏 - 待服务(即将开始)对齐设计图顺序颜色 -->
-    <view class="bottom-bar" v-if="orderInfo.status === 0">
-      <button class="action-btn contact" @click="contactCoach">联系教练</button>
+    <!-- 底部操作栏 -->
+    <view class="bottom-bar" v-if="orderInfo.status === 10">
       <button class="action-btn cancel" @click="cancelOrder">取消订单</button>
+      <button class="action-btn pay" @click="payOrder">去支付</button>
     </view>
 
-    <view class="bottom-bar" v-if="orderInfo.status === 1">
-      <button class="action-btn reward" @click="goToReward">打赏教练</button>
-      <button v-if="!orderInfo.isReviewed" class="action-btn review" @click="goToReview">去评价</button>
+    <view class="bottom-bar" v-if="orderInfo.status === 50">
+      <button class="action-btn review" @click="goToReview">去评价</button>
+    </view>
+
+    <view class="bottom-bar" v-if="orderInfo.status === 60">
       <button class="action-btn book-again" @click="bookAgain">再约一次</button>
-    </view>
-
-    <view class="bottom-bar" v-if="orderInfo.status === 2">
-      <button class="action-btn book-again" @click="bookAgain">返回首页</button>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { onLoad } from  "@dcloudio/uni-app"
 import { getOrderDetail } from '@/api/billiard/order'
 
@@ -184,99 +133,115 @@ const orderId = ref(null)
 const refreshing = ref(false)
 // 加载状态
 const loading = ref(false)
-// 倒计时数据
-const countDown = ref({ h: 0, m: 0, s: 0 })
-// 倒计时定时器
-let countDownTimer = null
 
-// 订单信息 - 补充设计图需要的字段
+/**
+ * 订单信息 - 根据API文档定义完整字段
+ */
 const orderInfo = ref({
   id: null,
   orderNo: '',
-  serviceName: '',
-  servicePrice: 0,
-  serviceTime: '', // 服务时间范围字符串 如:2026-04-01 17:30-19:30
-  serviceStartTimeStamp: 0, // 服务开始时间戳(用于倒计时)
-  coachName: '',
-  coachAvatar: '',
   coachId: null,
-  coachLevel: '', // 教练等级 如:金牌教练
-  coachScore: 0, // 教练评分
-  coachFinishCount: 0, // 已完成订单数
-  coachSkills: [], // 教练擅长标签 如:['斯诺克','中式八球']
-  date: '',
-  time: '',
-  duration: 0,
-  hallName: '', // 球厅名称
-  hallAddress: '', // 球厅地址
-  hallImage: '', // 球厅展示图
-  price: 0,
-  couponDiscount: 0,
+  coachStageName: '',
+  coachMainPhoto: '',
+  venueName: '',
+  venueAddress: '',
+  venueLongitude: null,
+  venueLatitude: null,
+  serviceType: 1,
+  bookingTime: 0,
+  serviceDuration: 0,
   status: 0,
+  payAmount: 0,
+  extraPayAmount: 0,
+  totalAmount: 0,
+  createTime: 0,
+  payStatus: 0,
   statusText: '',
-  statusDesc: '',
-  createTime: '',
-  payType: '',
-  remark: '',
-  isReviewed: false
+  serviceTime: ''
 })
 
-// 状态映射
+/**
+ * 状态映射 - 根据API文档
+ */
 const statusMap = {
-  0: { text: '即将开始', desc: '请提前到达球厅，教练已在准备'},
-  1: { text: '已完成', desc: '服务已完成'},
-  2: { text: '已取消', desc: '订单已取消'}
+  10: { text: '待付款' },
+  20: { text: '待接单' },
+  30: { text: '已接单' },
+  40: { text: '进行中' },
+  50: { text: '待评价' },
+  60: { text: '已完成' },
+  70: { text: '已取消' },
+  80: { text: '退款中' }
 }
 
-// 启动倒计时
-const startCountDown = () => {
-  // 清除已有定时器
-  if (countDownTimer) clearInterval(countDownTimer)
-
-  // 已经过了开始时间直接不倒计时
-  if (orderInfo.value.serviceStartTimeStamp <= Date.now()) {
-    countDown.value = { h: 0, m: 0, s: 0 }
-    return
-  }
-
-  countDownTimer = setInterval(() => {
-    updateCountDown()
-  }, 1000)
+/**
+ * 支付状态映射
+ */
+const payStatusMap = {
+  0: '未支付',
+  10: '支付成功',
+  20: '已退款',
+  30: '支付关闭'
 }
 
-// 更新倒计时
-const updateCountDown = () => {
-  const diff = orderInfo.value.serviceStartTimeStamp - Date.now()
-  if (diff <= 0) {
-    clearInterval(countDownTimer)
-    countDown.value = { h: 0, m: 0, s: 0 }
-    // 时间到后可以刷新订单状态
-    loadOrderDetail()
-    return
-  }
+// 获取服务类型名称
+const getServiceTypeName = (type) => {
+  if (type === 1) return '台球陪练'
+  if (type === 2) return '陪游'
+  return '台球陪练'
+}
 
-  // 计算时分秒
-  const h = Math.floor(diff / (1000 * 60 * 60))
-  const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-  const s = Math.floor((diff % (1000 * 60)) / 1000)
+// 获取支付状态文本
+const getPayStatusText = (status) => {
+  return payStatusMap[status] || '未知'
+}
 
-  // 补零，和设计图显示一致
-  countDown.value = {
-    h: String(h).padStart(2, '0'),
-    m: String(m).padStart(2, '0'),
-    s: String(s).padStart(2, '0')
-  }
+// 格式化预约时间
+const formatBookingTime = (timestamp) => {
+  if (!timestamp) return ''
+  const date = new Date(timestamp)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hour = String(date.getHours()).padStart(2, '0')
+  const minute = String(date.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hour}:${minute}`
+}
+
+// 格式化下单时间
+const formatCreateTime = (timestamp) => {
+  if (!timestamp) return ''
+  const date = new Date(timestamp)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hour = String(date.getHours()).padStart(2, '0')
+  const minute = String(date.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hour}:${minute}`
+}
+
+// 格式化金额（分转元）
+const formatAmount = (amount) => {
+  if (amount === null || amount === undefined) return '0.00'
+  return (amount / 100).toFixed(2)
 }
 
 // 打开球厅导航
 const openHallNavigate = () => {
-  if (!orderInfo.value.hallAddress) {
+  if (!orderInfo.value.venueAddress) {
     uni.showToast({ title: '球厅地址不存在', icon: 'none' })
     return
   }
+  const params = {
+    name: orderInfo.value.venueName,
+    address: orderInfo.value.venueAddress
+  }
+  if (orderInfo.value.venueLongitude && orderInfo.value.venueLatitude) {
+    params.longitude = orderInfo.value.venueLongitude
+    params.latitude = orderInfo.value.venueLatitude
+  }
   uni.openLocation({
-    name: orderInfo.value.hallName,
-    address: orderInfo.value.hallAddress,
+    ...params,
     fail: () => uni.showToast({ title: '打开地图失败', icon: 'none' })
   })
 }
@@ -290,42 +255,30 @@ const loadOrderDetail = async () => {
     const res = await getOrderDetail({ id: orderId.value })
     const data = res.data || {}
 
-    // 更新订单信息
+    // 更新订单信息 - 完全按API文档字段处理
     Object.assign(orderInfo.value, {
       id: data.id,
       orderNo: data.orderNo,
-      serviceName: data.serviceName,
-      servicePrice: data.servicePrice || data.price,
-      serviceTime: data.serviceTime,
-      serviceStartTimeStamp: data.serviceStartTimeStamp,
-      coachName: data.coachName,
-      coachAvatar: data.coachAvatar,
       coachId: data.coachId,
-      coachLevel: data.coachLevel,
-      coachScore: data.coachScore,
-      coachFinishCount: data.coachFinishCount,
-      coachSkills: data.coachSkills || [],
-      date: data.date,
-      time: data.time,
-      duration: data.duration,
-      hallName: data.hallName,
-      hallAddress: data.hallAddress,
-      hallImage: data.hallImage,
-      price: data.price,
-      couponDiscount: data.couponDiscount || 0,
+      coachStageName: data.coachStageName,
+      coachMainPhoto: data.coachMainPhoto,
+      venueName: data.venueName,
+      venueAddress: data.venueAddress,
+      venueLongitude: data.venueLongitude,
+      venueLatitude: data.venueLatitude,
+      serviceType: data.serviceType,
+      bookingTime: data.bookingTime,
+      serviceDuration: data.serviceDuration,
       status: data.status,
-      statusText: statusMap[data.status]?.text || '未知',
-      statusDesc: statusMap[data.status]?.desc || '',
+      payAmount: data.payAmount,
+      extraPayAmount: data.extraPayAmount,
+      totalAmount: data.totalAmount,
       createTime: data.createTime,
-      payType: data.payType || '微信支付',
-      remark: data.remark,
-      isReviewed: data.isReviewed || false
+      payStatus: data.payStatus,
+      statusText: statusMap[data.status]?.text || '未知',
+      serviceTime: formatBookingTime(data.bookingTime),
+      createTime: formatCreateTime(data.createTime)
     })
-
-    // 待服务状态启动倒计时
-    if (orderInfo.value.status === 0) {
-      startCountDown()
-    }
   } catch (error) {
     console.error('加载订单详情失败:', error)
     uni.showToast({
@@ -361,31 +314,22 @@ const cancelOrder = () => {
     success: (res) => {
       if (res.confirm) {
         // TODO: 调用取消订单接口
-        orderInfo.value.status = 2
-        orderInfo.value.statusText = '已取消'
-        orderInfo.value.statusDesc = '订单已取消'
-        if (countDownTimer) clearInterval(countDownTimer)
         uni.showToast({ title: '订单已取消', icon: 'success' })
       }
     }
   })
 }
 
-// 联系教练
-const contactCoach = () => {
-  uni.showToast({ title: '联系教练功能开发中', icon: 'none' })
-}
-
-// 去打赏
-const goToReward = () => {
-  uni.navigateTo({
-    url: `/pages/coach/reward?coachId=${orderInfo.value.coachId || orderInfo.value.id}&coachName=${orderInfo.value.coachName}`
-  })
+// 去支付
+const payOrder = () => {
+  uni.showToast({ title: '支付功能开发中', icon: 'none' })
 }
 
 // 去评价
 const goToReview = () => {
-  uni.showToast({ title: '评价功能开发中', icon: 'none' })
+  uni.navigateTo({
+    url: `/pages/evaluate/index?orderId=${orderInfo.value.id}`
+  })
 }
 
 // 再约一次/返回首页
@@ -407,11 +351,6 @@ onMounted(() => {
     loadOrderDetail()
   }
 })
-
-// 页面卸载清除定时器，防止内存泄漏
-onUnmounted(() => {
-  if (countDownTimer) clearInterval(countDownTimer)
-})
 </script>
 
 <style lang="scss" scoped>
@@ -428,7 +367,7 @@ onUnmounted(() => {
   padding-bottom: 140rpx;
 }
 
-/* 顶部状态卡片 对齐设计图 */
+/* 顶部状态卡片 */
 .status-card {
   margin: 30rpx 30rpx;
   background: #1E252B;
@@ -460,58 +399,17 @@ onUnmounted(() => {
       font-size: 28rpx;
     }
   }
-  .count-down-box {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16rpx;
-    margin-bottom: 24rpx;
-    .count-item {
-      background: #2a3338;
-      padding: 16rpx 32rpx;
-      border-radius: 16rpx;
-      text-align: center;
-      min-width: 100rpx;
-      .count-num {
-        display: block;
-        color: #00BB88;
-        font-size: 60rpx;
-        font-weight: bold;
-        line-height: 1;
-      }
-      .count-label {
-        display: block;
-        color: #9CA3AF;
-        font-size: 24rpx;
-        margin-top: 4rpx;
-      }
-    }
-    .count-colon {
-      color: #fff;
-      font-size: 40rpx;
-      font-weight: bold;
-    }
-  }
-  .status-desc {
-    color: rgba(255,255,255,0.7);
-    font-size: 28rpx;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8rpx;
-    &::before {
-      content: '🕒';
-    }
-  }
 }
 
 /* 通用信息卡片 */
 .info-card {
-  margin: 30rpx 30rpx;
+  margin: 30rpx 0;
   background: #1E252B;
   border-radius: 24rpx;
   padding: 30rpx;
+  &:first-child {
+    margin-top: 0;
+  }
   .card-title {
     display: flex;
     align-items: center;
@@ -597,31 +495,6 @@ onUnmounted(() => {
         font-size: 36rpx;
         font-weight: 600;
       }
-      .coach-level {
-        background: rgba(0, 187, 136, 0.2);
-        color: #00BB88;
-        padding: 4rpx 16rpx;
-        border-radius: 8rpx;
-        font-size: 24rpx;
-      }
-    }
-    .coach-meta-row {
-      display: flex;
-      gap: 24rpx;
-      margin-bottom: 16rpx;
-      color: #9CA3AF;
-      font-size: 28rpx;
-    }
-    .coach-tags {
-      display: flex;
-      gap: 16rpx;
-      .tag {
-        background: #2a3338;
-        color: #ddd;
-        padding: 6rpx 20rpx;
-        border-radius: 8rpx;
-        font-size: 26rpx;
-      }
     }
   }
 }
@@ -641,57 +514,6 @@ onUnmounted(() => {
   color: #9CA3AF;
   font-size: 28rpx;
   margin-bottom: 20rpx;
-}
-.hall-image {
-  width: 100%;
-  height: 280rpx;
-  border-radius: 16rpx;
-}
-
-/* 备注信息 */
-.remark-content {
-  background: #2a3338;
-  padding: 20rpx;
-  border-radius: 12rpx;
-  color: #fff;
-  font-size: 28rpx;
-  line-height: 1.6;
-}
-
-/* 费用行 */
-.fee-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12rpx 0;
-  .fee-label {
-    color: #9CA3AF;
-    font-size: 28rpx;
-  }
-  .fee-value {
-    color: #fff;
-    font-size: 28rpx;
-    &.minus {
-      color: #EF4444;
-    }
-  }
-  &.total {
-    .fee-label {
-      color: #fff;
-      font-size: 32rpx;
-      font-weight: 600;
-    }
-    .total-price {
-      color: #00BB88;
-      font-size: 40rpx;
-      font-weight: bold;
-    }
-  }
-}
-.divider {
-  height: 1rpx;
-  background: rgba(255,255,255,0.1);
-  margin: 12rpx 0;
 }
 
 /* 底部安全区域 */
@@ -724,16 +546,12 @@ onUnmounted(() => {
     border: none;
     &::after { border: none; }
     &.cancel {
-      background: rgba(239, 68, 68, 0.15);
-      color: #EF4444;
+      background: rgba(107, 114, 128, 0.2);
+      color: #9CA3AF;
     }
-    &.contact {
-      background: rgba(0, 187, 136, 0.15);
-      color: #00BB88;
-    }
-    &.reward {
-      background: rgba(236, 72, 153, 0.2);
-      color: #EC4899;
+    &.pay {
+      background: #00BB88;
+      color: #fff;
     }
     &.review {
       background: rgba(245, 158, 11, 0.2);
