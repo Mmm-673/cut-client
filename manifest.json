@@ -32,7 +32,10 @@
                     "<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>",
                     "<uses-permission android:name=\"android.permission.FLASHLIGHT\"/>",
                     "<uses-feature android:name=\"android.hardware.camera\"/>",
-                    "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>"
+                    "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_LOCATION_EXTRA_COMMANDS\"/>"
                 ]
             },
             "ios" : {
@@ -40,7 +43,10 @@
                 "plist" : {
                     "NSCameraUsageDescription" : "需要访问您的相机进行拍照",
                     "NSPhotoLibraryUsageDescription" : "需要访问您的相册选择图片",
-                    "NSPhotoLibraryAddUsageDescription" : "需要保存图片到您的相册"
+                    "NSPhotoLibraryAddUsageDescription" : "需要保存图片到您的相册",
+                    "NSLocationWhenInUseUsageDescription" : "需要访问您的位置信息来提供位置服务",
+                    "NSLocationAlwaysUsageDescription" : "需要在后台访问您的位置信息",
+                    "NSLocationAlwaysAndWhenInUseUsageDescription" : "需要访问您的位置信息"
                 },
                 "entitlements" : {
                     "com.apple.security.application-groups" : []
@@ -61,7 +67,13 @@
         "optimization" : {
             "subPackages" : true
         },
-        "usingComponents" : true
+        "usingComponents" : true,
+        "permission" : {
+            "scope.userLocation" : {
+                "desc" : "您的位置信息将用于获取附近球厅"
+            }
+        },
+        "requiredPrivateInfos" : [ "getLocation", "chooseLocation" ]
     },
     "mp-alipay" : {
         "appid" : "",

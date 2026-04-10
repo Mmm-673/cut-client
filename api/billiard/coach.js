@@ -54,6 +54,34 @@ export function getCoachDetail(params) {
 }
 
 /**
+ * 获取新人助教列表
+ * @param {Object} params - 请求参数
+ * @param {number} [params.limit=10] - 返回数量，默认 10
+ * @returns {Promise<Object>} 返回新人助教列表
+ */
+export function getNewCoachList(params) {
+  return request({
+    url: '/app-api/billiard/coach/new-list',
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 获取热门助教列表
+ * @param {Object} params - 请求参数
+ * @param {number} [params.limit=10] - 返回数量，默认 10
+ * @returns {Promise<Object>} 返回热门助教列表
+ */
+export function getHotCoachList(params) {
+  return request({
+    url: '/app-api/billiard/coach/hot-list',
+    method: 'get',
+    params
+  })
+}
+
+/**
  * 助教列表单条数据结构（用于参考）
  * @typedef {Object} CoachItem
  * @property {number} id - 助教ID

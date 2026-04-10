@@ -213,25 +213,28 @@ function walletPay(payParams) {
  * @param {Object} options - 支付选项
  * @param {number} options.payOrderId - 支付单ID
  * @param {string} options.payValue - 支付方式值（wechat/alipay/wallet）
+ * @param {string} options.orderId - 订单id（
  * @param {Function} [options.onSuccess] - 支付成功回调
  * @param {Function} [options.onCancel] - 支付取消回调
  * @param {Function} [options.onError] - 支付失败回调
  * @returns {Promise} 支付结果
  */
 export async function executePayment(options) {
-  const { payOrderId, payValue, onSuccess, onCancel, onError } = options
+  const { payOrderId, payValue, orderId, onSuccess, onCancel, onError } = options
 
   try {
     // 1. 获取支付渠道编码
-    const channelCode = getChannelCode(payValue)
-    if (!channelCode) {
-      throw new Error('不支持的支付方式')
-    }
+    // 暂时先注释 后续会打开
+    // const channelCode = getChannelCode(payValue)
+    // if (!channelCode) {
+    //   throw new Error('不支持的支付方式')
+    // }
 
     // 2. 调用后端接口提交支付，获取支付参数
     const submitRes = await submitPayOrder({
       payOrderId,
-      channelCode
+      orderId,
+      // channelCode
     })
 
     const payParams = submitRes.data

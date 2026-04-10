@@ -3,6 +3,7 @@
     <scroll-view
         scroll-y
         class="detail-scroll"
+        :class="{ 'no-scroll': !needScroll }"
         refresher-enabled
         :refresher-triggered="refreshing"
         @refresherrefresh="onRefresh"
@@ -66,7 +67,7 @@
         </view>
 
         <!-- 陪练教练卡片 -->
-        <view class="info-card">
+        <view class="info-card coach-card">
           <view class="card-title">
             <text class="title-icon">👤</text>
             陪练教练
@@ -84,7 +85,7 @@
         </view>
 
         <!-- 球厅信息卡片 -->
-        <view class="info-card" v-if="orderInfo.venueName">
+        <view class="info-card hall-card" v-if="orderInfo.venueName">
           <view class="card-title">
             <text class="title-icon">📍</text>
             球厅信息
@@ -101,8 +102,8 @@
           </view>
         </view>
 
-        <!-- 底部安全区域 -->
-        <view class="safe-area-bottom"></view>
+        <!-- 底部安全区域 (仅在需要时显示) -->
+        <view class="safe-area-bottom" v-if="needScroll || showBottomBar"></view>
       </view>
     </scroll-view>
 
@@ -164,7 +165,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { onLoad } from  "@dcloudio/uni-app"
 import { getOrderDetail, cancelOrder } from '@/api/billiard/order'
 import { getAvailablePayChannels, executePayment } from '@/utils/payment'
@@ -183,6 +184,15 @@ const selectedPay = ref('wechat')
 const isPaying = ref(false)
 // 创建订单时保存的支付订单ID
 const payOrderId = ref(null)
+// 是否需要滚动
+const needScroll = ref(false)
+// 内容高度
+const contentHeight = ref(0)
+
+// 是否显示底部操作栏
+const showBottomBar = computed(() => {
+  return [10, 50, 60].includes(orderInfo.status)
+})
 
 /**
  * 订单信息 - 根据API文档定义完整字段
@@ -276,6 +286,21 @@ const formatAmount = (amount) => {
   return (amount / 100).toFixed(2)
 }
 
+// 检查内容高度决定是否需要滚动
+const checkContentHeight = () => {
+  const query = uni.createSelectorQuery()
+  query.select('.status-card').boundingClientRect()
+  query.selectViewport().boundingClientRect()
+  query.exec((res) => {
+    if (res[0] && res[1]) {
+      const contentH = res[0].height
+      const viewportH = res[1].height
+      const bottomBarH = showBottomBar.value ? 100 : 0
+      needScroll.value = contentH > (viewportH - bottomBarH)
+    }
+  })
+}
+
 // 支付方式列表
 const payList = getAvailablePayChannels()
 
@@ -336,11 +361,15 @@ const loadOrderDetail = async () => {
       payAmount: data.payAmount,
       extraPayAmount: data.extraPayAmount,
       totalAmount: data.totalAmount,
-      createTime: data.createTime,
       payStatus: data.payStatus,
       statusText: statusMap[data.status]?.text || '未知',
       serviceTime: formatBookingTime(data.bookingTime),
       createTime: formatCreateTime(data.createTime)
+    })
+
+    // 等待DOM更新后检查内容高度
+    nextTick(() => {
+      checkContentHeight()
     })
   } catch (error) {
     console.error('加载订单详情失败:', error)
@@ -475,14 +504,17 @@ onMounted(() => {
 .detail-scroll {
   flex: 1;
   padding-bottom: 140rpx;
+  &.no-scroll {
+    padding-bottom: 0;
+  }
 }
 
 /* 顶部状态卡片 */
 .status-card {
   margin: 30rpx 30rpx;
-  background: #1E252B;
+  //background: #1E252B;
   border-radius: 24rpx;
-  padding: 30rpx;
+  //padding: 30rpx;
   .status-header {
     display: flex;
     justify-content: space-between;
@@ -519,6 +551,13 @@ onMounted(() => {
   padding: 30rpx;
   &:first-child {
     margin-top: 0;
+  }
+  &.coach-card {
+    margin-top: 20rpx;
+  }
+  &.hall-card {
+    margin-top: 20rpx;
+    margin-bottom: 0;
   }
   .card-title {
     display: flex;
@@ -628,8 +667,8 @@ onMounted(() => {
 
 /* 底部安全区域 */
 .safe-area-bottom {
-  height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
+  height: constant(safe-area-inset-bottom);
   width: 100%;
 }
 
@@ -641,8 +680,8 @@ onMounted(() => {
   right: 0;
   background: #1E252B;
   padding: 16rpx 20rpx;
-  padding-bottom: calc(16rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(16rpx + constant(safe-area-inset-bottom));
   box-sizing: border-box;
   display: flex;
   gap: 12rpx;
@@ -731,8 +770,8 @@ onMounted(() => {
 
 .pay-popup-content {
   padding: 30rpx;
-  padding-bottom: calc(30rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(30rpx + constant(safe-area-inset-bottom));
 }
 
 .pay-amount-row {

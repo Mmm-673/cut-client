@@ -13,6 +13,34 @@
         @scrolltolower="onLoadMore"
         :lower-threshold="50"
     >
+      <!-- 服务信息选择 -->
+      <view class="info-card">
+        <view class="card-title">预约信息</view>
+
+        <view class="info-row">
+          <text class="label">服务时长</text>
+          <view class="value-wrap">
+            <view class="duration-control">
+              <view class="duration-btn" :class="{disabled: orderInfo.duration <= minDuration}" @click="decreaseDuration">
+                <uni-icons type="minus" size="20" :color="orderInfo.duration <= minDuration ? '#2a3338' : '#9CA3AF'" />
+              </view>
+              <text class="duration-num">{{ orderInfo.duration }}小时</text>
+              <view class="duration-btn" :class="{disabled: orderInfo.duration >= 8}" @click="increaseDuration">
+                <uni-icons type="plus" size="20" :color="orderInfo.duration >= 8 ? '#2a3338' : '#00BB88'" />
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="info-row" @click="showTimePicker = true">
+          <text class="label">服务时间</text>
+          <view class="value-wrap">
+            <text class="value">{{ orderInfo.timeText }}</text>
+            <uni-icons type="right" size="18" color="#9CA3AF" />
+          </view>
+        </view>
+      </view>
+
       <!-- 搜索框 -->
       <view class="search-box">
         <uni-icons type="search" size="20" color="#9CA3AF" />
@@ -57,7 +85,7 @@
               v-for="item in tabList"
               :key="item.value"
               @click="switchTab(item.value)"
-          >
+              >
             {{ item.label }}
           </view>
         </view>
@@ -145,7 +173,7 @@
                 <text>电话</text>
               </view>
               <view class="action-btn primary" @click="chooseHall(hall)">
-                <text>选择</text>
+                <text>{{ isCreating ? '创建中...' : '选择' }}</text>
               </view>
             </view>
           </view>
@@ -167,50 +195,62 @@
         加载中...
       </view>
 
-      <!-- 底部安全区域 - 增加额外高度避免内容被底部栏遮挡 -->
+      <!-- 底部安全区域 -->
       <view class="safe-area-bottom" ></view>
     </scroll-view>
 
-    <!-- 底部已选栏 -->
-    <view class="bottom-bar" v-if="selectedHall">
-      <view class="selected-info">
-        <view class="selected-hall">
-          <text class="selected-label">已选：</text><text class="selected-name">{{ selectedHall.name }}</text>
-        </view>
-        <view class="selected-price">
-          <text class="price-num">¥{{ formatPrice(selectedHall.price) }}/小时起</text>
-        </view>
-      </view>
-
-      <button class="confirm-btn" @click="confirmChoose">确认选择</button>
-    </view>
-
-    <!-- 城市选择弹窗 -->
-    <view class="city-picker-mask" v-if="showCityPicker" @click="closeCityPicker">
-      <view class="city-picker-wrapper" @click.stop>
-        <view class="city-picker-header">
-          <text class="cancel-btn" @click="closeCityPicker">取消</text>
-          <text class="picker-title">选择城市</text>
-          <text class="confirm-btn" @click="confirmCity">确定</text>
+    <!-- 时间选择器弹窗 -->
+    <view class="time-picker-mask" v-if="showTimePicker" @click="cancelTime">
+      <view class="time-picker-wrapper" @click.stop>
+        <view class="time-picker-header">
+          <text class="cancel-btn" @click="cancelTime">取消</text>
+          <text class="picker-title">选择服务时间</text>
+          <text class="confirm-btn" @click="confirmTime">确定</text>
         </view>
         <picker-view
-          class="city-picker-view"
-          :value="cityPickerValue"
-          @change="onCityPickerChange"
-          indicator-style="height: 80rpx; border-top: 1rpx solid rgba(255,255,255,0.1); border-bottom: 1rpx solid rgba(255,255,255,0.1);"
-          mask-style="background-image: linear-gradient(to bottom, rgba(42, 51, 56, 0.95), rgba(42, 51, 56, 0.4), rgba(42, 51, 56, 0.95));"
+            class="picker-view"
+            :indicator-style="indicatorStyle"
+            :value="pickerValue"
+            @change="onPickerChange"
+            indicator-style="height: 80rpx; border-top: 1rpx solid rgba(255,255,255,0.1); border-bottom: 1rpx solid rgba(255,255,255,0.1);"
+            mask-style="background-image: linear-gradient(to bottom, rgba(42, 51, 56, 0.95), rgba(42, 51, 56, 0.4), rgba(42, 51, 56, 0.95));"
         >
+          <!-- 日期列 -->
           <picker-view-column>
             <view
-              v-for="(item, index) in cityList"
-              :key="index"
-              class="picker-item"
+                v-for="(item, index) in dateColumns"
+                :key="index"
+                class="picker-item"
             >
-              {{ item.name }}
+              {{ item.dateText }}
+            </view>
+          </picker-view-column>
+          <!-- 小时列 -->
+          <picker-view-column>
+            <view
+                v-for="(item, index) in hourColumns"
+                :key="index"
+                class="picker-item"
+            >
+              {{ item.hourText }}
+            </view>
+          </picker-view-column>
+          <!-- 分钟列 -->
+          <picker-view-column>
+            <view
+                v-for="(item, index) in minuteColumns"
+                :key="index"
+                class="picker-item"
+            >
+              {{ item.minuteText }}
             </view>
           </picker-view-column>
         </picker-view>
       </view>
+    </view>
+
+    <!-- 城市选择弹窗（简化，不显示UI） -->
+    <view class="city-picker-mask" v-if="showCityPicker" @click="closeCityPicker">
     </view>
   </view>
 </template>
@@ -219,6 +259,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
 import { getVenueList } from '@/api/billiard/venue'
+import { createOrder } from '@/api/billiard/order'
 
 // ---------------------- 状态定义 ----------------------
 // 刷新/加载状态
@@ -227,13 +268,13 @@ const loading = ref(false)
 const hasMore = ref(true)
 const page = ref(1)
 const pageSize = ref(10)
+const isCreating = ref(false)
 
 // 搜索关键词
 const searchKeyword = ref('')
 
 // 筛选状态
 const currentTab = ref('nearest')
-const selectedHall = ref(null)
 
 // 定位相关
 const locating = ref(false)
@@ -245,8 +286,110 @@ const currentCity = ref('')
 
 // 城市选择相关
 const showCityPicker = ref(false)
-const cityPickerValue = ref([0])
-const selectedCityIndex = ref(0)
+const showTimePicker = ref(false)
+const indicatorStyle = ref('height: 80rpx;')
+const pickerValue = ref([0, 0, 0])
+
+// 最小服务时长
+const minDuration = ref(2)
+
+// 订单信息
+const orderInfo = ref({
+  serviceType: 1, // 1=台球陪练 2=陪游
+  duration: 2,
+  timeText: '请选择服务时间'
+})
+
+// 是否是重新选择
+const isReselect = ref(false)
+
+// 选中的预约时间（毫秒时间戳）
+const selectedBookingTime = ref(null)
+
+// 当前选中的时间
+const selectedDateTime = ref({
+  dateIndex: 0,
+  hourIndex: 0,
+  minuteIndex: 0
+})
+
+// 教练信息
+const coachInfo = ref(null)
+
+// ---------------------- 时间选择器数据 ----------------------
+// 生成日期列（从今天开始往后7天）
+const generateDateColumns = () => {
+  const columns = []
+  const now = new Date()
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(now.getTime() + i * 24 * 60 * 60 * 1000)
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+    columns.push({
+      date: date,
+      dateText: `${month}.${day}`,
+      weekDay: weekDays[date.getDay()],
+      isToday: i === 0
+    })
+  }
+  return columns
+}
+
+// 生成小时列
+const generateHourColumns = (dateIndex = 0) => {
+  const columns = []
+  const now = new Date()
+  const startHour = dateIndex === 0 ? now.getHours() : 0
+  const endHour = 23
+
+  for (let i = startHour; i <= endHour; i++) {
+    columns.push({
+      hour: i,
+      hourText: String(i).padStart(2, '0') + '时'
+    })
+  }
+  return columns
+}
+
+// 生成分钟列（5分钟间隔）
+const generateMinuteColumns = (dateIndex = 0, hourIndex = 0) => {
+  const columns = []
+  const now = new Date()
+  const isToday = dateIndex === 0
+  const currentHour = hourColumns.value[hourIndex]?.hour
+
+  let startMinute = 0
+  if (isToday) {
+    if (currentHour === now.getHours()) {
+      startMinute = Math.ceil(now.getMinutes() / 5) * 5
+    }
+  }
+  if (startMinute >= 60) {
+    startMinute = 0
+  }
+  for (let i = startMinute; i < 60; i += 5) {
+    columns.push({
+      minute: i,
+      minuteText: String(i).padStart(2, '0') + '分'
+    })
+  }
+  return columns
+}
+
+const dateColumns = ref(generateDateColumns())
+const hourColumns = ref(generateHourColumns(0))
+const minuteColumns = ref(generateMinuteColumns(0, 0))
+
+// 筛选标签
+const tabList = ref([
+  { value: 'nearest', label: '距离最近', sortType: 1 },
+  { value: 'price', label: '价格最低', sortType: 2 },
+  { value: 'score', label: '评分最高', sortType: 3 }
+])
+
+// 球厅列表
+const hallList = ref([])
 
 // 模拟城市列表
 const cityList = ref([
@@ -261,16 +404,6 @@ const cityList = ref([
   { name: '武汉市', code: '420100' },
   { name: '西安市', code: '610100' }
 ])
-
-// 筛选标签
-const tabList = ref([
-  { value: 'nearest', label: '距离最近', sortType: 1 },
-  { value: 'price', label: '价格最低', sortType: 2 },
-  { value: 'score', label: '评分最高', sortType: 3 }
-])
-
-// 球厅列表
-const hallList = ref([])
 
 // ---------------------- 计算属性 ----------------------
 // 获取当前选中的排序类型
@@ -295,6 +428,79 @@ const formatDistance = (distance) => {
   return `${distance.toFixed(1)}km`
 }
 
+// ---------------------- 时间选择器方法 ----------------------
+// picker-view 列变化时
+const onPickerChange = (e) => {
+  const val = e.detail.value
+  pickerValue.value = val
+
+  const newDateIndex = val[0]
+  const newHourIndex = val[1]
+  const newMinuteIndex = val[2]
+
+  if (newDateIndex !== selectedDateTime.value.dateIndex) {
+    hourColumns.value = generateHourColumns(newDateIndex)
+    minuteColumns.value = generateMinuteColumns(newDateIndex, 0)
+    pickerValue.value = [newDateIndex, 0, 0]
+    selectedDateTime.value = {
+      dateIndex: newDateIndex,
+      hourIndex: 0,
+      minuteIndex: 0
+    }
+    return
+  }
+
+  if (newHourIndex !== selectedDateTime.value.hourIndex) {
+    minuteColumns.value = generateMinuteColumns(newDateIndex, newHourIndex)
+    pickerValue.value = [newDateIndex, newHourIndex, 0]
+    selectedDateTime.value = {
+      ...selectedDateTime.value,
+      hourIndex: newHourIndex,
+      minuteIndex: 0
+    }
+    return
+  }
+
+  selectedDateTime.value = {
+    dateIndex: newDateIndex,
+    hourIndex: newHourIndex,
+    minuteIndex: newMinuteIndex
+  }
+}
+
+// 取消时间选择
+const cancelTime = () => {
+  showTimePicker.value = false
+}
+
+// 确认时间选择
+const confirmTime = () => {
+  const dateItem = dateColumns.value[selectedDateTime.value.dateIndex]
+  const hourItem = hourColumns.value[selectedDateTime.value.hourIndex]
+  const minuteItem = minuteColumns.value[selectedDateTime.value.minuteIndex]
+
+  if (!dateItem || !hourItem || !minuteItem) {
+    uni.showToast({ title: '请选择完整的时间', icon: 'none' })
+    return
+  }
+
+  const date = dateItem.date
+  date.setHours(hourItem.hour, minuteItem.minute, 0, 0)
+
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hour = String(hourItem.hour).padStart(2, '0')
+  const minute = String(minuteItem.minute).padStart(2, '0')
+
+  const weekDay = dateItem.isToday ? '今天' : dateItem.weekDay
+  orderInfo.value.timeText = `${weekDay} ${month}.${day} ${hour}:${minute}`
+
+  // 保存选中的时间戳
+  selectedBookingTime.value = date.getTime()
+
+  showTimePicker.value = false
+}
+
 // ---------------------- 位置相关方法 ----------------------
 // 获取当前位置
 const getCurrentLocation = () => {
@@ -309,11 +515,8 @@ const getCurrentLocation = () => {
         longitude: res.longitude,
         latitude: res.latitude
       }
-
-      // 尝试逆地理编码获取城市名
-      reverseGeocode(res.longitude, res.latitude)
-
-      // 重新加载球厅列表
+      currentCity.value = '当前城市'
+      locating.value = false
       page.value = 1
       hallList.value = []
       loadHallList()
@@ -330,59 +533,9 @@ const getCurrentLocation = () => {
   })
 }
 
-// 逆地理编码（获取城市名）
-const reverseGeocode = (longitude, latitude) => {
-  // #ifdef MP-WEIXIN
-  // 微信小程序使用内置地图逆地理编码
-  uni.request({
-    url: 'https://apis.map.qq.com/ws/geocoder/v1/',
-    data: {
-      location: `${latitude},${longitude}`,
-      key: 'your-tencent-map-key' // 需要替换为实际的腾讯地图Key
-    },
-    success: (res) => {
-      if (res.data && res.data.result && res.data.result.address_component) {
-        currentCity.value = res.data.result.address_component.city || res.data.result.address_component.province
-      }
-      locating.value = false
-    },
-    fail: () => {
-      currentCity.value = '定位城市'
-      locating.value = false
-    }
-  })
-  // #endif
-
-  // #ifndef MP-WEIXIN
-  // 其他平台简化处理
-  currentCity.value = '当前城市'
-  locating.value = false
-  // #endif
-}
-
 // 切换定位/城市
 const switchLocation = () => {
-  // 显示城市选择器
-  showCityPicker.value = true
-}
-
-// 城市选择器相关
-const onCityPickerChange = (e) => {
-  const val = e.detail.value
-  cityPickerValue.value = val
-  selectedCityIndex.value = val[0]
-}
-
-const confirmCity = () => {
-  const city = cityList.value[selectedCityIndex.value]
-  if (city) {
-    currentCity.value = city.name
-    // 这里可以根据选择的城市重新加载球厅列表
-    page.value = 1
-    hallList.value = []
-    loadHallList()
-  }
-  closeCityPicker()
+  uni.showToast({ title: '城市切换功能开发中', icon: 'none' })
 }
 
 const closeCityPicker = () => {
@@ -416,12 +569,10 @@ const loadHallList = async () => {
       sortType: currentSortType.value
     }
 
-    // 添加搜索关键词
     if (searchKeyword.value) {
       params.keyword = searchKeyword.value
     }
 
-    // 添加经纬度
     if (currentLocation.value.longitude && currentLocation.value.latitude) {
       params.longitude = currentLocation.value.longitude
       params.latitude = currentLocation.value.latitude
@@ -436,7 +587,6 @@ const loadHallList = async () => {
       hallList.value = [...hallList.value, ...list]
     }
 
-    // 判断是否还有更多
     hasMore.value = list.length >= pageSize.value
   } catch (error) {
     console.error('加载球厅列表失败:', error)
@@ -484,95 +634,15 @@ const navigateTo = (hall) => {
     itemList: ['百度地图', '高德地图', '本机地图'],
     success: (res) => {
       const index = res.tapIndex
-      if (index === 0) {
-        openBaiduMap(hall)
-      } else if (index === 1) {
-        openAmap(hall)
-      } else if (index === 2) {
-        openNativeMap(hall)
-      }
+      uni.openLocation({
+        latitude: hall.latitude || 39.908823,
+        longitude: hall.longitude || 116.397470,
+        name: hall.name,
+        address: hall.address,
+        scale: 18
+      })
     }
   })
-}
-
-// 打开百度地图
-const openBaiduMap = (hall) => {
-  // #ifdef APP-PLUS
-  // App端使用plus环境打开百度地图
-  const url = `baidumap://map/geocoder?address=${encodeURIComponent(hall.address)}&name=${encodeURIComponent(hall.name)}`
-  plus.runtime.openURL(url, (err) => {
-    // 如果没有安装百度地图，打开网页版
-    const webUrl = `https://map.baidu.com/search/${encodeURIComponent(hall.address)}`
-    plus.runtime.openURL(webUrl)
-  })
-  // #endif
-
-  // #ifdef MP-WEIXIN
-  // 微信小程序使用内置地图
-  uni.openLocation({
-    latitude: hall.latitude || 39.908823,
-    longitude: hall.longitude || 116.397470,
-    name: hall.name,
-    address: hall.address,
-    scale: 18
-  })
-  // #endif
-
-  // #ifdef H5
-  // H5打开百度地图网页版
-  window.open(`https://map.baidu.com/search/${encodeURIComponent(hall.address)}`)
-  // #endif
-}
-
-// 打开高德地图
-const openAmap = (hall) => {
-  // #ifdef APP-PLUS
-  const url = `androidamap://viewMap?sourceApplication=appname&poiname=${encodeURIComponent(hall.name)}&lat=${hall.latitude || 39.908823}&lon=${hall.longitude || 116.397470}&dev=0`
-  plus.runtime.openURL(url, (err) => {
-    const webUrl = `https://uri.amap.com/marker?position=${hall.longitude || 116.397470},${hall.latitude || 39.908823}&name=${encodeURIComponent(hall.name)}`
-    plus.runtime.openURL(webUrl)
-  })
-  // #endif
-
-  // #ifdef MP-WEIXIN
-  uni.openLocation({
-    latitude: hall.latitude || 39.908823,
-    longitude: hall.longitude || 116.397470,
-    name: hall.name,
-    address: hall.address,
-    scale: 18
-  })
-  // #endif
-
-  // #ifdef H5
-  window.open(`https://uri.amap.com/marker?position=${hall.longitude || 116.397470},${hall.latitude || 39.908823}&name=${encodeURIComponent(hall.name)}`)
-  // #endif
-}
-
-// 打开本机地图
-const openNativeMap = (hall) => {
-  // #ifdef MP-WEIXIN
-  uni.openLocation({
-    latitude: hall.latitude || 39.908823,
-    longitude: hall.longitude || 116.397470,
-    name: hall.name,
-    address: hall.address,
-    scale: 18
-  })
-  // #endif
-
-  // #ifdef APP-PLUS
-  plus.openMap({
-    latitude: hall.latitude || 39.908823,
-    longitude: hall.longitude || 116.397470,
-    name: hall.name,
-    address: hall.address
-  })
-  // #endif
-
-  // #ifdef H5
-  window.open(`https://www.google.com/maps/search/${encodeURIComponent(hall.address)}`)
-  // #endif
 }
 
 // 拨打电话
@@ -587,57 +657,107 @@ const callPhone = (hall) => {
   }
 }
 
-// 选择球厅
-const chooseHall = (hall) => {
-  selectedHall.value = hall
+// 增减时长
+const decreaseDuration = () => {
+  if (orderInfo.value.duration <= minDuration.value) return
+  orderInfo.value.duration--
 }
 
-// 确认选择
-const confirmChoose = () => {
-  if (!selectedHall.value) return
+const increaseDuration = () => {
+  if (orderInfo.value.duration >= 8) return
+  orderInfo.value.duration++
+}
 
-  // 保存选择的球厅信息
-  uni.setStorageSync('selectedHall', {
-    id: selectedHall.value.id,
-    name: selectedHall.value.name,
-    address: selectedHall.value.address,
-    longitude: selectedHall.value.longitude,
-    latitude: selectedHall.value.latitude,
-    price: selectedHall.value.price
-  })
+// 选择球厅 - 创建订单
+const chooseHall = async (hall) => {
+  if (!coachInfo.value) {
+    uni.showToast({ title: '教练信息缺失，请重试', icon: 'none' })
+    return
+  }
+  if (orderInfo.value.timeText === '请选择服务时间') {
+    uni.showToast({ title: '请先选择服务时间', icon: 'none' })
+    return
+  }
 
-  // 检查是否从确认订单页跳转过来的
-  const fromConfirm = uni.getStorageSync('fromConfirm')
-  if (fromConfirm) {
-    uni.removeStorageSync('fromConfirm')
-    // 返回确认订单页
-    uni.navigateBack()
-  } else {
-    // 跳转到确认订单页
-    uni.navigateTo({ url: '/pages/booking/confirm' })
+  isCreating.value = true
+  try {
+    // 构建创建订单参数
+    const createParams = {
+      coachId: coachInfo.value.id,
+      serviceType: orderInfo.value.serviceType,
+      bookingTime: selectedBookingTime.value,
+      serviceDuration: orderInfo.value.duration * 60,
+      quantity: orderInfo.value.duration,
+      venueId: hall.id,
+      venueName: hall.name,
+      venueAddress: hall.address,
+      venueLongitude: hall.longitude,
+      venueLatitude: hall.latitude
+    }
+
+    console.log('创建订单参数:', createParams)
+
+    // 调用创建订单接口
+    const createRes = await createOrder(createParams)
+
+    console.log('创建订单成功:', createRes.data)
+
+    // 保存订单数据到 storage，供 confirm.vue 使用
+    uni.setStorageSync('createdOrderData', {
+      ...createRes.data,
+      coachInfo: coachInfo.value,
+      hallInfo: hall,
+      serviceDuration: orderInfo.value.duration * 60,
+      quantity: orderInfo.value.duration,
+      bookingTime: selectedBookingTime.value,
+      timeText: orderInfo.value.timeText
+    })
+
+    uni.showToast({ title: '订单创建成功', icon: 'success' })
+
+    // 跳转到确认支付页
+    setTimeout(() => {
+      uni.redirectTo({ url: '/pages/booking/confirm' })
+    }, 500)
+
+  } catch (error) {
+    console.error('创建订单失败:', error)
+    uni.showToast({
+      title: error.message || '创建订单失败，请重试',
+      icon: 'none',
+      duration: 2000
+    })
+  } finally {
+    isCreating.value = false
   }
 }
 
 // ---------------------- 生命周期 ----------------------
 onMounted(() => {
-  // 自动获取定位
   getCurrentLocation()
-
-  // 检查是否有从确认订单页返回的选择需求
-  const pages = getCurrentPages()
-  const prevPage = pages[pages.length - 2]
-  if (prevPage && prevPage.$vm && prevPage.$vm.fromConfirm) {
-    // 如果是从确认订单页返回的，可以做一些特殊处理
-  }
 })
 
 onShow(() => {
-  // 页面显示时重置选择状态
-  // 检查是否有从确认订单页返回的选择
-  const returnHall = uni.getStorageSync('returnHall')
-  if (returnHall) {
-    selectedHall.value = returnHall
-    uni.removeStorageSync('returnHall')
+  // 检查是否是重新选择
+  const reselectParams = uni.getStorageSync('reselectParams')
+  if (reselectParams) {
+    isReselect.value = true
+    coachInfo.value = reselectParams.coachInfo
+    orderInfo.value.duration = reselectParams.quantity || 2
+    orderInfo.value.timeText = reselectParams.timeText || '请选择服务时间'
+    selectedBookingTime.value = reselectParams.bookingTime
+    uni.removeStorageSync('reselectParams')
+  } else {
+    // 从 storage 获取教练信息
+    const coach = uni.getStorageSync('selectedCoach')
+    if (coach) {
+      coachInfo.value = coach
+    } else {
+      uni.showToast({ title: '教练信息缺失', icon: 'none' })
+      setTimeout(() => {
+        uni.navigateBack()
+      }, 1000)
+    }
   }
 })
 </script>
@@ -652,14 +772,12 @@ onShow(() => {
   overflow: hidden;
 }
 
-/* 旋转动画 */
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-/* 自定义导航栏 */
- .nav-filter {
+.nav-filter {
   width: 60rpx;
   display: flex;
   align-items: center;
@@ -668,14 +786,79 @@ onShow(() => {
 .hall-scroll {
   flex: 1;
   width: 100%;
-  // 为底部栏预留空间
   padding-bottom: 200rpx;
   box-sizing: border-box;
 }
 
+/* 预约信息卡片 */
+.info-card {
+  margin: 20rpx 30rpx 30rpx;
+  background: #1E252B;
+  border-radius: 24rpx;
+  padding: 30rpx;
+  .card-title {
+    color: #fff;
+    font-size: 32rpx;
+    font-weight: 700;
+    margin-bottom: 24rpx;
+  }
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .label {
+    color: #9CA3AF;
+    font-size: 28rpx;
+  }
+  .value-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+    .value {
+      color: #fff;
+      font-size: 28rpx;
+    }
+  }
+}
+
+/* 时长控制 */
+.duration-control {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  .duration-btn {
+    width: 60rpx;
+    height: 60rpx;
+    border-radius: 50%;
+    background: #2a3338;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    &.disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+  }
+  .duration-num {
+    color: #fff;
+    font-size: 32rpx;
+    font-weight: 600;
+    min-width: 120rpx;
+    text-align: center;
+  }
+}
+
 /* 搜索框 */
 .search-box {
-  margin: 20rpx 30rpx;
+  margin: 0 30rpx 20rpx;
   background: #1E252B;
   border-radius: 24rpx;
   padding: 20rpx 30rpx;
@@ -926,79 +1109,6 @@ onShow(() => {
   }
 }
 
-/* 底部已选栏 */
-.bottom-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background: #1E252B;
-  border-top: 1rpx solid rgba(255,255,255,0.05);
-  padding: 12rpx 24rpx;
-  padding-bottom: calc(12rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.3);
-  .selected-info {
-    flex: 1;
-    min-width: 0;
-    .selected-hall {
-      .selected-label {
-        color: #9CA3AF;
-        font-size: 24rpx;
-        font-weight: 600;
-        display: inline-block;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      .selected-name {
-        color: #fff;
-        font-size: 24rpx;
-        font-weight: 600;
-        display: inline-block;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-    }
-
-    .selected-price {
-      display: flex;
-      align-items: baseline;
-      gap: 4rpx;
-      flex-shrink: 0;
-      margin-top: 4rpx;
-      .price-num {
-        color: #00BB88;
-        font-size: 28rpx;
-        font-weight: 700;
-      }
-      .price-unit {
-        color: #9CA3AF;
-        font-size: 20rpx;
-      }
-    }
-  }
-
-  .confirm-btn {
-    background: #00BB88;
-    color: #fff;
-    border-radius: 32rpx;
-    padding: 14rpx 44rpx;
-    font-size: 28rpx;
-    font-weight: 700;
-    border: none;
-    flex-shrink: 0;
-    &::after {
-      border: none;
-    }
-  }
-}
-
 /* 底部安全区域 */
 .safe-area-bottom {
   height: constant(safe-area-inset-bottom);
@@ -1006,8 +1116,8 @@ onShow(() => {
   width: 100%;
 }
 
-/* 城市选择器遮罩 */
-.city-picker-mask {
+/* 时间选择器遮罩 */
+.time-picker-mask {
   position: fixed;
   top: 0;
   left: 0;
@@ -1020,13 +1130,18 @@ onShow(() => {
   justify-content: flex-end;
 }
 
-.city-picker-wrapper {
+.time-picker-wrapper {
   background: #1E252B;
   border-radius: 32rpx 32rpx 0 0;
   animation: slideUp 0.3s ease;
 }
 
-.city-picker-header {
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.time-picker-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1048,7 +1163,7 @@ onShow(() => {
   }
 }
 
-.city-picker-view {
+.picker-view {
   width: 100%;
   height: 500rpx;
   background-color: #2a3338;
@@ -1062,5 +1177,15 @@ onShow(() => {
   font-size: 32rpx;
   height: 80rpx;
   line-height: 80rpx;
+}
+
+.city-picker-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: 998;
 }
 </style>

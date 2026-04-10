@@ -162,7 +162,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getOrderList } from '@/api/billiard/order'
+import { getOrderList, cancelOrder as cancelOrderApi } from '@/api/billiard/order'
 
 // 当前Tab
 const activeTab = ref(null)
@@ -345,15 +345,20 @@ const goToDetail = (order) => {
 }
 
 // 取消订单
-const cancelOrder = (order) => {
+const cancelOrder = async (order) => {
   uni.showModal({
     title: '提示',
     content: '确定要取消这个订单吗？',
-    success: (res) => {
+    success: async (res) => {
       if (res.confirm) {
-        uni.showToast({ title: '订单已取消', icon: 'success' })
-        // TODO: 调用取消订单接口
-        loadData(true)
+        try {
+          await cancelOrderApi({ orderId: order.orderId })
+          uni.showToast({ title: '订单已取消', icon: 'success' })
+          loadData(true)
+        } catch (error) {
+          uni.showToast({
+            title: error.message || '取消失败，请重试', icon: 'none' })
+        }
       }
     }
   })

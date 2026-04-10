@@ -345,6 +345,8 @@ onMounted(() => {
     query.select('.header-section').boundingClientRect()
     query.exec((res) => {
       const headerHeight = res[0]?.height || 0
+      console.log(systemInfo.windowHeight, headerHeight ,(systemInfo.safeAreaInsets?.bottom))
+
       // 减去系统导航栏、header、底部安全区域
       scrollHeight.value = systemInfo.windowHeight - headerHeight - (systemInfo.safeAreaInsets?.bottom || 0)
     })

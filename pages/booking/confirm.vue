@@ -1,7 +1,5 @@
 <template>
   <view class="confirm-order-wrapper">
-    <!-- 自定义导航栏 -->
-
     <scroll-view
         scroll-y
         class="order-scroll"
@@ -9,24 +7,30 @@
         :refresher-triggered="refreshing"
         @refresherrefresh="onRefresh"
     >
+
       <!-- 教练信息 -->
-      <view class="coach-card">
-        <image class="coach-avatar" :src="coachInfo.avatar" mode="aspectFill"></image>
+      <view class="coach-card" v-if="orderData.coachInfo">
+        <image class="coach-avatar" :src="orderData.coachInfo.avatar" mode="aspectFill"></image>
         <view class="coach-info">
           <view class="coach-name-row">
-            <text class="coach-name">{{ coachInfo.name }}</text>
-            <view class="coach-badge" :style="{background: coachInfo.badgeBg}">{{ coachInfo.badge }}</view>
+            <text class="coach-name">{{ orderData.coachInfo.stageName || orderData.coachInfo.name }}</text>
+            <view class="coach-badge" :style="{background: 'rgba(0, 187, 136, 0.2)'}">{{ orderData.coachInfo.levelText || '初级教练' }}</view>
           </view>
-          <text class="coach-desc">{{ coachInfo.desc }}</text>
+          <text class="coach-desc">{{ orderData.coachInfo.intro || '专业台球陪练，耐心教学' }}</text>
           <view class="coach-meta">
-            <text class="meta-item">已接单{{ coachInfo.orderCount }}次</text>
-            <text class="meta-divider">·</text>
-            <text class="meta-item">{{ coachInfo.distance }}</text>
+            <view class="meta-item">
+              <uni-icons type="star-filled" size="14" color="#FBBF24" />
+              <text>{{ orderData.coachInfo.overallScore || orderData.coachInfo.rating || 5.0 }}分</text>
+            </view>
+            <text class="meta-divider">|</text>
+            <text class="meta-item">已接单{{ orderData.coachInfo.serviceCount || orderData.coachInfo.orderCount || 0 }}次</text>
+            <text class="meta-divider" v-if="orderData.coachInfo.distance">|</text>
+            <text class="meta-item" v-if="orderData.coachInfo.distance">{{ orderData.coachInfo.distance }}</text>
           </view>
         </view>
         <view class="coach-score">
           <uni-icons type="star-filled" size="16" color="#FBBF24" />
-          <text>{{ coachInfo.score }}</text>
+          <text>{{ orderData.coachInfo.overallScore || orderData.coachInfo.rating || 5.0 }}</text>
         </view>
       </view>
 
@@ -34,62 +38,45 @@
       <view class="info-card">
         <view class="card-title">服务信息</view>
 
-        <view class="info-row" @click="toServiceSelect">
+        <view class="info-row">
           <text class="label">服务项目</text>
-          <view class="value-wrap">
-            <text class="value">{{ orderInfo.serviceName }}</text>
-            <uni-icons type="right" size="18" color="#9CA3AF" />
-          </view>
+          <text class="value">台球陪练</text>
         </view>
 
         <view class="info-row">
           <text class="label">服务时长</text>
-          <view class="value-wrap">
-            <view class="duration-control">
-              <view class="duration-btn" :class="{disabled: orderInfo.duration <= minDuration}" @click="decreaseDuration">
-                <uni-icons type="minus" size="20" :color="orderInfo.duration <= minDuration ? '#2a3338' : '#9CA3AF'" />
-              </view>
-              <text class="duration-num">{{ orderInfo.duration }}小时</text>
-              <view class="duration-btn" :class="{disabled: orderInfo.duration >= 8}" @click="increaseDuration">
-                <uni-icons type="plus" size="20" :color="orderInfo.duration >= 8 ? '#2a3338' : '#00BB88'" />
-              </view>
-            </view>
-          </view>
+          <text class="value">{{ (orderData.serviceDuration / 60) || 2 }}小时</text>
         </view>
 
-        <view class="info-row" @click="showTimePicker = true">
+        <view class="info-row">
           <text class="label">服务时间</text>
-          <view class="value-wrap">
-            <text class="value">{{ orderInfo.timeText }}</text>
-            <uni-icons type="right" size="18" color="#9CA3AF" />
-          </view>
+          <text class="value">{{ orderData.timeText || formatTime(orderData.bookingTime) }}</text>
         </view>
 
-        <view class="info-row" @click="selectHall">
+        <view class="info-row venue-row" @click="reselectHall">
           <text class="label">服务地点</text>
-          <view class="value-wrap">
-            <text class="value">{{ orderInfo.hallName }}</text>
+          <view class="value-wrap venue-wrap">
+            <view class="venue-info">
+              <text class="value venue-name">{{ orderData.hallInfo?.name || orderData.venueName || '请选择服务地点' }}</text>
+              <text class="venue-address" v-if="orderData.hallInfo?.address || orderData.venueAddress">{{ orderData.hallInfo?.address || orderData.venueAddress }}</text>
+            </view>
             <uni-icons type="right" size="18" color="#9CA3AF" />
           </view>
         </view>
       </view>
 
-      <!-- 优惠券 -->
-      <view class="info-card">
-        <view class="coupon-row" @click="selectCoupon">
-          <view class="coupon-left">
-            <uni-icons type="gift" size="20" color="#FBBF24" />
-            <text class="coupon-label">优惠券</text>
-          </view>
-          <view class="coupon-right">
-            <text class="coupon-count" v-if="!selectedCoupon">
-              <text style="color: #00BB88;">{{ couponCount }}张可用</text>
-            </text>
-            <text class="coupon-value" v-else style="color: #EF4444;">
-              -¥{{ selectedCoupon.value }}
-            </text>
-            <uni-icons type="right" size="18" color="#9CA3AF" />
-          </view>
+      <!-- 订单信息 -->
+      <view class="info-card" v-if="orderData.orderNo">
+        <view class="card-title">订单信息</view>
+
+        <view class="info-row">
+          <text class="label">订单号</text>
+          <text class="value">{{ orderData.orderNo }}</text>
+        </view>
+
+        <view class="info-row" v-if="orderData.orderId">
+          <text class="label">订单ID</text>
+          <text class="value">{{ orderData.orderId }}</text>
         </view>
       </view>
 
@@ -98,29 +85,30 @@
         <view class="card-title">费用明细</view>
 
         <view class="fee-row">
-          <text class="fee-label">{{ orderInfo.serviceName }} x{{ orderInfo.duration }}小时</text>
-          <text class="fee-value">¥{{ orderInfo.basePrice }}</text>
+          <text class="fee-label">台球陪练 x{{ orderData.quantity || 2 }}小时</text>
+          <text class="fee-value">¥{{ (orderData.serviceAmount / 100).toFixed(2) }}</text>
         </view>
 
-        <view class="fee-row" v-if="orderInfo.travelAmount > 0">
+        <view class="fee-row" v-if="orderData.travelAmount > 0">
           <text class="fee-label">车费</text>
-          <text class="fee-value">¥{{ (orderInfo.travelAmount / 100).toFixed(2) }}</text>
+          <text class="fee-value">¥{{ (orderData.travelAmount / 100).toFixed(2) }}</text>
         </view>
 
-        <view class="fee-row" v-if="orderInfo.travelDiscountAmount > 0">
+        <view class="fee-row" v-if="orderData.travelDiscountAmount > 0">
           <text class="fee-label">车费优惠</text>
-          <text class="fee-value" style="color: #EF4444;">-¥{{ (orderInfo.travelDiscountAmount / 100).toFixed(2) }}</text>
-        </view>
-
-        <view class="fee-row" v-if="selectedCoupon">
-          <text class="fee-label">优惠券抵扣</text>
-          <text class="fee-value" style="color: #EF4444;">-¥{{ selectedCoupon.value }}</text>
+          <text class="fee-value" style="color: #EF4444;">-¥{{ (orderData.travelDiscountAmount / 100).toFixed(2) }}</text>
         </view>
 
         <view class="fee-total">
           <text class="total-label">实付金额</text>
-          <text class="total-value">¥{{ totalPrice }}</text>
+          <text class="total-value">¥{{ (orderData.payAmount / 100).toFixed(2) }}</text>
         </view>
+      </view>
+
+      <!-- 支付倒计时 -->
+      <view class="countdown-card" v-if="orderData.expireTime">
+        <uni-icons type="time" size="18" color="#FBBF24" />
+        <text class="countdown-text">请在 <text class="countdown-time">{{ countdownText }}</text> 内完成支付</text>
       </view>
 
       <!-- 支付方式 -->
@@ -161,7 +149,7 @@
         <text class="agreement-tip">，付款后30分钟内未接单自动取消</text>
       </view>
 
-      <!-- 底部安全区域（为底部支付栏留出空间） -->
+      <!-- 底部安全区域 -->
       <view class="safe-bottom"></view>
     </scroll-view>
 
@@ -169,223 +157,45 @@
     <view class="bottom-bar">
       <view class="total-info">
         <text class="total-label">总计：</text>
-        <text class="total-price">¥{{ totalPrice }}</text>
+        <text class="total-price">¥{{ (orderData.payAmount / 100).toFixed(2) }}</text>
       </view>
       <button
           class="pay-btn"
           :class="{disabled: !canPay}"
           :disabled="!canPay"
-          @click="submitOrder"
+          @click="submitPayment"
       >
-        {{ isSubmitting ? '提交中...' : '立即支付' }}
+        {{ isSubmitting ? '支付中...' : '立即支付' }}
       </button>
-    </view>
-
-    <!-- 时间选择器弹窗 -->
-    <view class="time-picker-mask" v-if="showTimePicker" @click="cancelTime">
-      <view class="time-picker-wrapper" @click.stop>
-        <view class="time-picker-header">
-          <text class="cancel-btn" @click="cancelTime">取消</text>
-          <text class="picker-title">选择服务时间</text>
-          <text class="confirm-btn" @click="confirmTime">确定</text>
-        </view>
-        <picker-view
-            class="picker-view"
-            :indicator-style="indicatorStyle"
-            :value="pickerValue"
-            @change="onPickerChange"
-            indicator-style="height: 80rpx; border-top: 1rpx solid rgba(255,255,255,0.1); border-bottom: 1rpx solid rgba(255,255,255,0.1);"
-            mask-style="background-image: linear-gradient(to bottom, rgba(42, 51, 56, 0.95), rgba(42, 51, 56, 0.4), rgba(42, 51, 56, 0.95));"
-        >
-          <!-- 日期列 -->
-          <picker-view-column>
-            <view
-                v-for="(item, index) in dateColumns"
-                :key="index"
-                class="picker-item"
-            >
-              {{ item.dateText }}
-            </view>
-          </picker-view-column>
-          <!-- 小时列 -->
-          <picker-view-column>
-            <view
-                v-for="(item, index) in hourColumns"
-                :key="index"
-                class="picker-item"
-            >
-              {{ item.hourText }}
-            </view>
-          </picker-view-column>
-          <!-- 分钟列 -->
-          <picker-view-column>
-            <view
-                v-for="(item, index) in minuteColumns"
-                :key="index"
-                class="picker-item"
-            >
-              {{ item.minuteText }}
-            </view>
-          </picker-view-column>
-        </picker-view>
-      </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { onShow, onLoad } from  "@dcloudio/uni-app"
-import { createOrder } from '@/api/billiard/order'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getAvailablePayChannels, executePayment } from '@/utils/payment'
 
 // ---------------------- 状态定义 ----------------------
-// 刷新/提交状态
 const refreshing = ref(false)
 const isSubmitting = ref(false)
-// 用户协议勾选
 const userAgree = ref(true)
-// 选中的支付方式
 const selectedPay = ref('wechat')
-// 选中的优惠券
-const selectedCoupon = ref(null)
-// 优惠券数量
-const couponCount = ref(1)
-// 时间选择器显示状态
-const showTimePicker = ref(false)
-// 选择器样式
-const indicatorStyle = ref('height: 80rpx;')// picker-view的当前选中值
-const pickerValue = ref([0, 0, 0])
-// 创建订单后返回的数据
-const createdOrderData = ref(null)
-// 选中的预约时间（毫秒时间戳）
-const selectedBookingTime = ref(null)
 
-// 最小服务时长（根据服务类型动态设置）
-const minDuration = ref(2) // 默认2小时（台球陪练）
+// 订单数据
+const orderData = ref({})
 
-// ---------------------- 时间选择器数据 ----------------------
-// 生成日期列（从今天开始往后7天）
-const generateDateColumns = () => {
-  const columns = []
-  const now = new Date()
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(now.getTime() + i * 24 * 60 * 60 * 1000)
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-    columns.push({
-      date: date,
-      dateText: `${month}.${day}`,
-      weekDay: weekDays[date.getDay()],
-      isToday: i === 0
-    })
-  }
-  return columns
-}
+// 支付倒计时
+const countdownTimer = ref(null)
+const countdownText = ref('')
 
-// 生成小时列
-const generateHourColumns = (dateIndex = 0) => {
-  const columns = []
-  const now = new Date()
-  const startHour = dateIndex === 0 ? now.getHours() : 0 // 今天从下一小时开始，其他天从9点开始
-  const endHour = 23
-
-  for (let i = startHour; i <= endHour; i++) {
-    columns.push({
-      hour: i,
-      hourText: String(i).padStart(2, '0') + '时'
-    })
-  }
-  return columns
-}
-
-// 生成分钟列（5分钟间隔）
-const generateMinuteColumns = (dateIndex = 0, hourIndex = 0) => {
-  const columns = []
-  const now = new Date()
-  const isToday = dateIndex === 0
-  const currentHour = hourColumns.value[hourIndex]?.hour
-
-  // 1. 先确定一个基础起点：默认从 0 分开始
-  let startMinute = 0
-
-  // 2. 只有在【今天】的情况下，才需要进行时间过滤
-  if (isToday) {
-    // 情况 A：选的是当前小时（比如现在 14:10，选的是 14时）
-    if (currentHour === now.getHours()) {
-      startMinute = Math.ceil(now.getMinutes() / 5) * 5
-    }
-    // 情况 B：选的是今天晚些时候的小时（比如现在 14:10，选的是 15时）
-    // 这里如果不需要额外偏移，startMinute 依然是 0
-    // 如果你想强制至少提前30分钟预约，可以在这里加逻辑
-  }
-
-  // 3. 安全阀：防止 Math.ceil 算出 60 导致循环失效
-  if (startMinute >= 60) {
-    // 如果当前小时的分钟已经到头了（比如 58分向上取整到 60）
-    // 理论上这个小时就不该让选了，或者分钟显示为空提示用户选下一小时
-    // 这里我们简单处理为从 0 开始（正常逻辑下，小时列表会自动过滤掉这个点）
-    startMinute = 0
-  }
-
-  // 4. 生成 5 分钟间隔序列
-  for (let i = startMinute; i < 60; i += 5) {
-    columns.push({
-      minute: i,
-      minuteText: String(i).padStart(2, '0') + '分'
-    })
-  }
-
-  return columns
-}
-
-const dateColumns = ref(generateDateColumns())
-const hourColumns = ref(generateHourColumns(0))
-const minuteColumns = ref(generateMinuteColumns(0, 0))
-
-// 当前选中的时间
-const selectedDateTime = ref({
-  dateIndex: 0,
-  hourIndex: 0,
-  minuteIndex: 0
-})
-
-// ---------------------- 教练和订单数据 ----------------------
-// 教练信息
+// 教练信息显示用
 const coachInfo = ref({
-  id: null,
-  name: '',
-  avatar: '',
-  badge: '',
-  badgeBg: 'rgba(0, 187, 136, 0.2)',
-  desc: '',
-  orderCount: 0,
-  distance: '',
-  score: 0
+  badgeBg: 'rgba(0, 187, 136, 0.2)'
 })
 
-// 订单信息
-const orderInfo = ref({
-  serviceName: '台球陪练',
-  serviceType: 1, // 1=台球陪练 2=陪游
-  duration: 2,
-  timeText: '请选择服务时间',
-  hallName: '请选择服务地点',
-  hallId: null,
-  basePrice: 198,
-  serviceFee: 10,
-  // 从创建订单接口返回的费用信息
-  serviceAmount: 0,
-  travelAmount: 0,
-  travelDiscountAmount: 0,
-  payAmount: 0
-})
-
-// 支付方式列表（使用支付工具动态获取）
+// 支付方式列表
 const payList = computed(() => {
   const channels = getAvailablePayChannels()
-  // 默认选中第一个
   if (channels.length > 0 && !selectedPay.value) {
     selectedPay.value = channels[0].value
   }
@@ -393,105 +203,25 @@ const payList = computed(() => {
 })
 
 // ---------------------- 计算属性 ----------------------
-// 总价格
-const totalPrice = computed(() => {
-  // 如果已经创建了订单，使用返回的支付金额
-  if (createdOrderData.value && createdOrderData.value.payAmount !== undefined) {
-    return (createdOrderData.value.payAmount / 100).toFixed(2)
-  }
-  // 否则使用本地计算
-  let total = orderInfo.value.basePrice + orderInfo.value.serviceFee
-  if (selectedCoupon.value) {
-    total -= selectedCoupon.value.value
-  }
-  return Math.max(0, total)
-})
-
 // 是否可以支付
 const canPay = computed(() => {
   return userAgree.value &&
          !isSubmitting.value &&
-         orderInfo.value.timeText !== '请选择服务时间' &&
-         orderInfo.value.hallName !== '请选择服务地点' &&
-         coachInfo.value.id !== null
+         orderData.value.payOrderId
 })
 
-// ---------------------- 时间选择器方法 ----------------------
-// picker-view 列变化时
-const onPickerChange = (e) => {
-  const val = e.detail.value
-  pickerValue.value = val
-
-  const newDateIndex = val[0]
-  const newHourIndex = val[1]
-  const newMinuteIndex = val[2]
-
-  // 如果日期改变了，重新生成小时和分钟列
-  if (newDateIndex !== selectedDateTime.value.dateIndex) {
-    hourColumns.value = generateHourColumns(newDateIndex)
-    minuteColumns.value = generateMinuteColumns(newDateIndex, 0)
-    pickerValue.value = [newDateIndex, 0, 0]
-    selectedDateTime.value = {
-      dateIndex: newDateIndex,
-      hourIndex: 0,
-      minuteIndex: 0
-    }
-    return
-  }
-
-  // 如果小时改变了，重新生成分钟列
-  if (newHourIndex !== selectedDateTime.value.hourIndex) {
-    minuteColumns.value = generateMinuteColumns(newDateIndex, newHourIndex)
-    pickerValue.value = [newDateIndex, newHourIndex, 0]
-    selectedDateTime.value = {
-      ...selectedDateTime.value,
-      hourIndex: newHourIndex,
-      minuteIndex: 0
-    }
-    return
-  }
-
-  selectedDateTime.value = {
-    dateIndex: newDateIndex,
-    hourIndex: newHourIndex,
-    minuteIndex: newMinuteIndex
-  }
-}
-
-// 取消时间选择
-const cancelTime = () => {
-  showTimePicker.value = false
-}
-
-// 确认时间选择
-const confirmTime = () => {
-  const dateItem = dateColumns.value[selectedDateTime.value.dateIndex]
-  const hourItem = hourColumns.value[selectedDateTime.value.hourIndex]
-  const minuteItem = minuteColumns.value[selectedDateTime.value.minuteIndex]
-
-  if (!dateItem || !hourItem || !minuteItem) {
-    uni.showToast({ title: '请选择完整的时间', icon: 'none' })
-    return
-  }
-
-  const date = dateItem.date
-  date.setHours(hourItem.hour, minuteItem.minute, 0, 0)
-
+// ---------------------- 方法 ----------------------
+// 格式化时间
+const formatTime = (timestamp) => {
+  if (!timestamp) return ''
+  const date = new Date(timestamp)
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
-  const hour = String(hourItem.hour).padStart(2, '0')
-  const minute = String(minuteItem.minute).padStart(2, '0')
-
-  const weekDay = dateItem.isToday ? '今天' : dateItem.weekDay
-  orderInfo.value.timeText = `${weekDay} ${month}.${day} ${hour}:${minute}`
-
-  // 保存选中的时间戳
-  selectedBookingTime.value = date.getTime()
-
-  showTimePicker.value = false
+  const hour = String(date.getHours()).padStart(2, '0')
+  const minute = String(date.getMinutes()).padStart(2, '0')
+  return `${month}.${day} ${hour}:${minute}`
 }
 
-// ---------------------- 交互方法 ----------------------
 // 下拉刷新
 const onRefresh = () => {
   refreshing.value = true
@@ -501,58 +231,19 @@ const onRefresh = () => {
   }, 1000)
 }
 
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack()
-}
-
-// 联系客服
-const toService = () => {
-  uni.showToast({ title: '客服功能开发中', icon: 'none' })
-}
-
-// 选择服务项目
-const toServiceSelect = () => {
-  uni.showToast({ title: '服务选择功能开发中', icon: 'none' })
-}
-
-// 增减时长
-const decreaseDuration = () => {
-  if (orderInfo.value.duration <= minDuration.value) return
-  orderInfo.value.duration--
-  orderInfo.value.basePrice = orderInfo.value.duration * 99
-  // 清除已创建的订单数据，需要重新创建
-  createdOrderData.value = null
-}
-
-const increaseDuration = () => {
-  if (orderInfo.value.duration >= 8) return
-  orderInfo.value.duration++
-  orderInfo.value.basePrice = orderInfo.value.duration * 99
-  // 清除已创建的订单数据，需要重新创建
-  createdOrderData.value = null
-}
-
-// 选择球厅（跳转到选择球厅页）
-const selectHall = () => {
-  // 标记是从确认订单页跳转的
-  uni.setStorageSync('fromConfirm', true)
-  // 保存当前选择的球厅，方便返回
-  uni.setStorageSync('currentHall', { name: orderInfo.value.hallName })
-  uni.navigateTo({ url: '/pages/booking/hall' })
-}
-
-// 选择优惠券
-const selectCoupon = () => {
-  uni.showToast({ title: '优惠券选择功能开发中', icon: 'none' })
-  // 模拟选择优惠券
-  if (!selectedCoupon.value) {
-    selectedCoupon.value = { value: 20 }
-  } else {
-    selectedCoupon.value = null
+// 重新选择球厅
+const reselectHall = () => {
+  // 保存当前订单的基本参数，方便回去重新选择
+  const reselectParams = {
+    coachInfo: orderData.value.coachInfo,
+    serviceDuration: orderData.value.serviceDuration,
+    quantity: orderData.value.quantity,
+    bookingTime: orderData.value.bookingTime,
+    timeText: orderData.value.timeText,
+    isReselect: true
   }
-  // 清除已创建的订单数据，需要重新创建
-  createdOrderData.value = null
+  uni.setStorageSync('reselectParams', reselectParams)
+  uni.redirectTo({ url: '/pages/booking/hall' })
 }
 
 // 选择支付方式
@@ -568,74 +259,37 @@ const toAgreement = (type) => {
   })
 }
 
-// 提交订单
-const submitOrder = async () => {
-  if (!canPay.value) return
+// 提交支付
+const submitPayment = async () => {
+  if (!canPay.value || !orderData.value.payOrderId) return
 
   isSubmitting.value = true
   try {
-    // 1. 构建创建订单的请求参数
-    const createOrderParams = {
-      coachId: coachInfo.value.id,
-      serviceType: orderInfo.value.serviceType,
-      bookingTime: selectedBookingTime.value,
-      serviceDuration: orderInfo.value.duration * 60, // 转换为分钟
-      quantity: orderInfo.value.duration // 小时数
-    }
-
-    // 添加场地信息
-    if (orderInfo.value.hallId) {
-      createOrderParams.venueId = orderInfo.value.hallId
-    }
-    if (orderInfo.value.hallName && orderInfo.value.hallName !== '请选择服务地点') {
-      createOrderParams.venueName = orderInfo.value.hallName
-    }
-
-    // 添加优惠券
-    if (selectedCoupon.value && selectedCoupon.value.id) {
-      createOrderParams.couponId = selectedCoupon.value.id
-    }
-
-    // 2. 调用创建订单接口
-    const createRes = await createOrder(createOrderParams)
-    createdOrderData.value = createRes.data
-
-    // 更新订单信息中的费用明细
-    if (createRes.data) {
-      orderInfo.value.serviceAmount = createRes.data.serviceAmount || 0
-      orderInfo.value.travelAmount = createRes.data.travelAmount || 0
-      orderInfo.value.travelDiscountAmount = createRes.data.travelDiscountAmount || 0
-      orderInfo.value.payAmount = createRes.data.payAmount || 0
-    }
-
-    // 3. 发起支付
     await executePayment({
-      payOrderId: createRes.data.payOrderId,
-      payValue: selectedPay.value,
+        // orderId: orderData.value.payOrderId,
+        orderId: 53,
+        // payOrderId: selectedPay.value,
+        payOrderId: 612,
       onSuccess: (payResult) => {
-        // 支付成功
         uni.showToast({ title: '支付成功', icon: 'success' })
         setTimeout(() => {
           uni.reLaunch({ url: '/pages/order/list' })
         }, 1500)
       },
       onCancel: () => {
-        // 支付取消
         uni.showToast({ title: '支付已取消', icon: 'none' })
       },
       onError: (error) => {
-        // 支付失败
         uni.showToast({
           title: error.message || '支付失败，请重试',
           icon: 'none'
         })
       }
     })
-
   } catch (error) {
-    console.error('订单提交失败:', error)
+    console.error('支付失败:', error)
     uni.showToast({
-      title: error.message || '订单提交失败，请重试',
+      title: error.message || '支付失败，请重试',
       icon: 'none'
     })
   } finally {
@@ -643,64 +297,54 @@ const submitOrder = async () => {
   }
 }
 
-// ---------------------- 生命周期 ----------------------
-onLoad((options) => {
-  // 从本地存储获取选择的教练
-  const selectedCoach = uni.getStorageSync('selectedCoach')
-  if (selectedCoach) {
-    coachInfo.value = {
-      id: selectedCoach.id,
-      name: selectedCoach.stageName || selectedCoach.name,
-      avatar: selectedCoach.avatar,
-      badge: selectedCoach.levelText || '初级教练',
-      badgeBg: 'rgba(0, 187, 136, 0.2)',
-      desc: selectedCoach.introduction || selectedCoach.intro || '',
-      orderCount: selectedCoach.serviceCount || selectedCoach.orderCount || 0,
-      distance: selectedCoach.distance || '',
-      score: selectedCoach.overallScore || selectedCoach.rating || 0
-    }
+// 支付倒计时
+const startCountdown = () => {
+  if (!orderData.value || !orderData.value.expireTime) return
 
-    // 获取选中的服务
-    if (selectedCoach.selectedService) {
-      orderInfo.value.serviceName = selectedCoach.selectedService.name || '台球陪练'
-      orderInfo.value.basePrice = selectedCoach.selectedService.price * orderInfo.value.duration
-    }
+  const updateCountdown = () => {
+    const now = Date.now()
+    const diff = orderData.value.expireTime - now
 
-    // 根据服务类型设置最小时长
-    // 台球陪练 >= 120分钟(2小时)，陪游 >= 300分钟(5小时)
-    if (orderInfo.value.serviceType === 2) {
-      minDuration.value = 5
-      if (orderInfo.value.duration < 5) {
-        orderInfo.value.duration = 5
-        orderInfo.value.basePrice = orderInfo.value.duration * 99
+    if (diff <= 0) {
+      countdownText.value = '00:00'
+      if (countdownTimer.value) {
+        clearInterval(countdownTimer.value)
       }
+      uni.showToast({ title: '订单已过期，请重新下单', icon: 'none' })
+      setTimeout(() => {
+        uni.reLaunch({ url: '/pages/coach/list' })
+      }, 1500)
+      return
     }
-  }
-})
 
+    const minutes = Math.floor(diff / 60000)
+    const seconds = Math.floor((diff % 60000) / 1000)
+    countdownText.value = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+  }
+
+  updateCountdown()
+  countdownTimer.value = setInterval(updateCountdown, 1000)
+}
+
+// ---------------------- 生命周期 ----------------------
 onMounted(() => {
-  // 从本地存储获取选择的球厅
-  const selectedHall = uni.getStorageSync('selectedHall')
-  if (selectedHall) {
-    orderInfo.value.hallName = selectedHall.name
-    orderInfo.value.hallId = selectedHall.id
-    uni.removeStorageSync('selectedHall')
+  // 从 storage 获取已创建的订单数据
+  const createdOrder = uni.getStorageSync('createdOrderData')
+  if (createdOrder) {
+    orderData.value = createdOrder
+    uni.removeStorageSync('createdOrderData')
+    startCountdown()
+  } else {
+    uni.showToast({ title: '订单数据缺失，请重新下单', icon: 'none' })
+    setTimeout(() => {
+      uni.reLaunch({ url: '/pages/coach/list' })
+    }, 1500)
   }
-
-  // 初始化时间选择器的可选范围
-  const now = new Date()
-  // 如果现在时间较晚，可能需要调整初始值
 })
 
-onShow(() => {
-  // 检查是否有从选择球厅页返回的选择
-  const returnHall = uni.getStorageSync('returnHall')
-  if (returnHall) {
-    orderInfo.value.hallName = returnHall.name
-    orderInfo.value.hallId = returnHall.id
-    uni.removeStorageSync('returnHall')
-    // 清除已创建的订单数据，需要重新创建
-    createdOrderData.value = null
+onUnmounted(() => {
+  if (countdownTimer.value) {
+    clearInterval(countdownTimer.value)
   }
 })
 </script>
@@ -714,26 +358,11 @@ onShow(() => {
   position: relative;
 }
 
-
 .order-scroll {
   flex: 1;
   width: 100%;
-  padding-bottom: 200rpx; /* 为底部支付栏留出足够空间 */
+  padding-bottom: 200rpx;
   box-sizing: border-box;
-}
-
-/* 通用卡片 */
-.info-card {
-  margin: 0 30rpx 30rpx;
-  background: #1E252B;
-  border-radius: 24rpx;
-  padding: 30rpx;
-  .card-title {
-    color: #fff;
-    font-size: 32rpx;
-    font-weight: 700;
-    margin-bottom: 24rpx;
-  }
 }
 
 /* 教练信息 */
@@ -758,7 +387,8 @@ onShow(() => {
       display: flex;
       align-items: center;
       gap: 12rpx;
-      margin-bottom: 12rpx;
+      margin-bottom: 8rpx;
+      flex-wrap: wrap;
       .coach-name {
         color: #fff;
         font-size: 32rpx;
@@ -774,8 +404,8 @@ onShow(() => {
     }
     .coach-desc {
       color: #9CA3AF;
-      font-size: 26rpx;
-      margin-bottom: 12rpx;
+      font-size: 24rpx;
+      margin-bottom: 10rpx;
       display: block;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -785,9 +415,13 @@ onShow(() => {
       display: flex;
       align-items: center;
       gap: 8rpx;
+      flex-wrap: wrap;
       .meta-item {
         color: #9CA3AF;
         font-size: 24rpx;
+        display: flex;
+        align-items: center;
+        gap: 4rpx;
       }
       .meta-divider {
         color: #2a3338;
@@ -797,11 +431,25 @@ onShow(() => {
   .coach-score {
     display: flex;
     align-items: center;
-    gap: 8rpx;
+    gap: 4rpx;
     color: #FBBF24;
     font-size: 28rpx;
     font-weight: 700;
     flex-shrink: 0;
+  }
+}
+
+/* 通用卡片 */
+.info-card {
+  margin: 0 30rpx 30rpx;
+  background: #1E252B;
+  border-radius: 24rpx;
+  padding: 30rpx;
+  .card-title {
+    color: #fff;
+    font-size: 32rpx;
+    font-weight: 700;
+    margin-bottom: 24rpx;
   }
 }
 
@@ -827,61 +475,34 @@ onShow(() => {
     .value {
       color: #fff;
       font-size: 28rpx;
-      max-width: 400rpx;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
   }
-}
-
-/* 时长控制 */
-.duration-control {
-  display: flex;
-  align-items: center;
-  gap: 24rpx;
-  .duration-btn {
-    width: 60rpx;
-    height: 60rpx;
-    border-radius: 50%;
-    background: #2a3338;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    &.disabled {
-      opacity: 0.3;
-      pointer-events: none;
-    }
-  }
-  .duration-num {
+  .value {
     color: #fff;
-    font-size: 32rpx;
-    font-weight: 600;
-    min-width: 120rpx;
-    text-align: center;
+    font-size: 28rpx;
   }
 }
 
-/* 优惠券 */
-.coupon-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  .coupon-left {
-    display: flex;
-    align-items: center;
-    gap: 12rpx;
-    .coupon-label {
-      color: #fff;
-      font-size: 28rpx;
-    }
-  }
-  .coupon-right {
-    display: flex;
-    align-items: center;
-    gap: 12rpx;
-    .coupon-count {
-      font-size: 28rpx;
+/* 球厅信息特殊样式 */
+.venue-row {
+  align-items: flex-start;
+  .venue-wrap {
+    align-items: flex-start;
+    .venue-info {
+      flex: 1;
+      text-align: right;
+      .venue-name {
+        color: #fff;
+        font-size: 28rpx;
+        display: block;
+        margin-bottom: 6rpx;
+      }
+      .venue-address {
+        color: #9CA3AF;
+        font-size: 24rpx;
+        display: block;
+        line-height: 1.4;
+      }
     }
   }
 }
@@ -916,6 +537,26 @@ onShow(() => {
     color: #00BB88;
     font-size: 40rpx;
     font-weight: 700;
+  }
+}
+
+/* 支付倒计时 */
+.countdown-card {
+  margin: 0 30rpx 30rpx;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1rpx solid rgba(251, 191, 36, 0.3);
+  border-radius: 16rpx;
+  padding: 20rpx 30rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  .countdown-text {
+    color: #FBBF24;
+    font-size: 26rpx;
+  }
+  .countdown-time {
+    font-weight: 700;
+    font-size: 28rpx;
   }
 }
 
@@ -1068,105 +709,5 @@ onShow(() => {
   height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
   width: 100%;
-}
-
-/* 时间选择器遮罩 */
-.time-picker-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 999;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-
-.time-picker-wrapper {
-  background: #1E252B;
-  border-radius: 32rpx 32rpx 0 0;
-  animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-.time-picker-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 30rpx;
-  border-bottom: 1rpx solid rgba(255,255,255,0.05);
-  .cancel-btn {
-    color: #9CA3AF;
-    font-size: 30rpx;
-  }
-  .picker-title {
-    color: #fff;
-    font-size: 32rpx;
-    font-weight: 600;
-  }
-  .confirm-btn {
-    color: #00BB88;
-    font-size: 30rpx;
-    font-weight: 600;
-  }
-}
-
-/* 1. 整体容器背景 */
-.picker-view {
-  width: 100%;
-  height: 500rpx;
-  background-color: #2a3338; /* 确保背景色正确 */
-}
-
-/* 2. 调整中间选中框的边框颜色（原本默认是灰色的，改成半透明白或品牌绿） */
-:deep(.uni-picker-view-indicator) {
-  border-top: 1rpx solid rgba(255, 255, 255, 0.1);
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.1);
-  /* 如果想要品牌色边框，可以用下面这行 */
-  /* border-color: rgba(0, 187, 136, 0.3); */
-}
-
-/* 3. 核心：强制所有选项文字为白色 */
-.picker-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #FFFFFF !important; /* 强制白色 */
-  font-size: 32rpx;
-  height: 80rpx;
-  line-height: 80rpx;
-}
-
-/* 4. 优化遮罩层 (让中间更亮，两边更深) */
-/* 强制穿透修改原生 mask */
-
-///* 针对中间选中的那块区域，你可以手动给一个背景色来模拟选中感 */
-//:deep(.uni-picker-view-indicator) {
-//  /* 设置一个比背景色稍微浅一点点或深一点点的颜色，或者干脆透明 */
-//  background-color: rgba(255, 255, 255, 0.05);
-//  border-top: 1rpx solid rgba(255, 255, 255, 0.1);
-//  border-bottom: 1rpx solid rgba(255, 255, 255, 0.1);
-//}
-///* 顺便把中间选中框的边框也调暗，不然默认的白色边框在全黑下会刺眼 */
-//:deep(.uni-picker-view-indicator) {
-//  border-top: 1rpx solid rgba(255, 255, 255, 0.05) !important;
-//  border-bottom: 1rpx solid rgba(255, 255, 255, 0.05) !important;
-//  /* 如果完全不想要中间的横线，可以设为 transparent */
-//}
-
-/* 5. 针对选中行文字加粗 (可选) */
-.picker-view[value] .picker-item {
-  /* 这里的逻辑通常由原生组件处理，但我们可以通过样式增强感官 */
-  font-weight: 500;
 }
 </style>

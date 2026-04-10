@@ -90,7 +90,7 @@ export function getOrderDetail(params) {
  * @returns {Promise<Object>} 返回创建订单结果
  * @returns {number} returns.data.orderId - billiard_order.id
  * @returns {string} returns.data.orderNo - 订单号，展示用
- * @returns {number} returns.data.payOrderId - pay_order.id（前端调用 /pay/order/submit 拉起支付时需要此 ID）
+ * @returns {number} returns.data.payOrderId - pay_order.id（前端调用 /app-api/billiard/order/mock-pay 拉起支付时需要此 ID）
  * @returns {number} returns.data.expireTime - 支付截止时间（毫秒时间戳），前端倒计时展示
  * @returns {number} returns.data.serviceAmount - 服务时长费用（分）
  * @returns {number} returns.data.travelAmount - 车费原价（分）
@@ -116,7 +116,7 @@ export function createOrder(data) {
  */
 export function submitPayOrder(data) {
   return request({
-    url: '/pay/order/submit',
+    url: '/app-api/billiard/order/mock-pay?orderId=53&payOrderId=612',
     method: 'post',
     data
   })
@@ -125,7 +125,12 @@ export function submitPayOrder(data) {
 /**
  * 取消订单
  * @param {Object} data - 请求参数
- * @param {number} data.id - 订单ID
+ * @param {number} data.orderId - 订单ID (billiard_order.id)
+ *
+ * 业务校验：
+ * - 订单归属当前登录用户
+ * - 当前状态必须为 PENDING_PAYMENT / PENDING_ACCEPT / ACCEPTED（进行中 IN_SERVICE 不可取消）
+ * - IN_SERVICE 状态返回业务异常："服务进行中，无法取消订单，如有纠纷请联系客服"
  *
  * @returns {Promise<Object>} 返回取消结果
  */
