@@ -1,0 +1,23 @@
+README.md
+  48555520b5101fe2 52-56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "7ffde8ba38f4580603ca6e2ae31b92dc79852a4d",
+  "prompts": {
+    "48555520b5101fe2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ba6ec227-d97f-4402-942b-af859c2df707",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "carson.ma",
+      "messages": [],
+      "total_additions": 56,
+      "total_deletions": 50,
+      "accepted_lines": 47,
+      "overriden_lines": 0
+    }
+  }
+}
