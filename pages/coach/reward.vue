@@ -12,10 +12,10 @@
       <!-- 教练信息 -->
       <view class="coach-info">
         <image class="coach-avatar" :src="coachInfo.avatar" mode="aspectFill"></image>
-        <view class="coach-name">{{ coachInfo.name }}</view>
+        <view class="coach-name">{{ coachInfo.stageName || coachInfo.name }}</view>
         <view class="coach-level">
-          <text class="level-tag">{{ coachInfo.level }}</text>
-          <text class="rating">★ {{ coachInfo.rating }}分</text>
+          <text class="level-tag">{{ coachInfo.levelText || coachInfo.level }}</text>
+          <text class="rating">★ {{ coachInfo.overallScore || coachInfo.rating }}分</text>
         </view>
       </view>
 
@@ -94,6 +94,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { onNavigationBarButtonTap, onBackPress } from '@dcloudio/uni-app'
+import { getCoachDetail, createRewardOrder, submitRewardPay } from '@/api/billiard/coach'
 
 // 状态管理
 const statusBarHeight = ref(0)
@@ -104,14 +105,18 @@ const isCustomAmount = ref(false)
 const selectedAmount = ref(10)
 const customAmount = ref('')
 const message = ref('')
+const loading = ref(false)
+const coachId = ref(null)
 
-// 教练信息（实际项目中从接口获取）
+// 教练信息
 const coachInfo = ref({
-  id: 2,
-  name: '阿豪',
-  avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=200&h=200&fit=crop',
-  level: '中级教练',
-  rating: 4.8
+  id: null,
+  name: '',
+  avatar: '',
+  stageName: '',
+  level: 0,
+  levelText: '',
+  overallScore: 0
 })
 
 // 金额选项
@@ -152,49 +157,67 @@ onMounted(() => {
   // 获取传递的参数
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1]
-  const options = currentPage.options
+  const options = currentPage.options || currentPage.$page?.options || {}
 
   if (options.coachId) {
-    loadCoachInfo(parseInt(options.coachId))
+    coachId.value = parseInt(options.coachId)
+    loadCoachInfo(coachId.value)
   }
 })
 
-// 加载教练信息
-const loadCoachInfo = (coachId) => {
-  // 模拟根据ID加载教练信息
-  const coachData = {
-    1: {
-      id: 1,
-      name: '小雯',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop',
-      level: '高级教练',
-      rating: 4.9
-    },
-    2: {
-      id: 2,
-      name: '阿豪',
-      avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=200&h=200&fit=crop',
-      level: '中级教练',
-      rating: 4.8
-    },
-    3: {
-      id: 3,
-      name: '思思',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop',
-      level: '高级教练',
-      rating: 4.9
-    },
-    4: {
-      id: 4,
-      name: '大飞',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop',
-      level: '中级教练',
-      rating: 4.7
-    }
-  }
+// 等级映射
+const levelMap = {
+  0: '初级教练',
+  1: '中级教练',
+  2: '高级教练'
+}
 
-  if (coachData[coachId]) {
-    coachInfo.value = coachData[coachId]
+const getLevelText = (level) => {
+  if (typeof level === 'string') {
+    return level
+  }
+  return levelMap[level] || '初级教练'
+}
+
+// 获取主图
+const getMainPhoto = (photos) => {
+  if (!photos || !Array.isArray(photos) || photos.length === 0) {
+    return null
+  }
+  const mainPhoto = photos.find(p => p.isMain === true || p.is_main === true)
+  if (mainPhoto) {
+    return mainPhoto.photoUrl || mainPhoto.url || mainPhoto
+  }
+  const first = photos[0]
+  return first.photoUrl || first.url || first
+}
+
+// 加载教练信息
+const loadCoachInfo = async (id) => {
+  if (!id) return
+
+  loading.value = true
+  try {
+    const res = await getCoachDetail({ id })
+    const data = res.data || {}
+
+    coachInfo.value = {
+      id: data.id,
+      name: data.stageName || data.name,
+      stageName: data.stageName || data.name,
+      avatar: getMainPhoto(data.photos) || data.avatar || '/static/default-avatar.png',
+      level: data.level ?? 0,
+      levelText: getLevelText(data.level),
+      overallScore: data.overallScore || data.rating || 0
+    }
+  } catch (error) {
+    console.error('加载教练详情失败:', error)
+    uni.showToast({
+      title: '加载教练信息失败',
+      icon: 'none'
+    })
+  } finally {
+    loading.value = false
   }
 }
 
@@ -240,7 +263,7 @@ const onReachBottom = () => {
 }
 
 // 提交打赏
-const submitReward = () => {
+const submitReward = async () => {
   if (!currentAmount.value) {
     uni.showToast({
       title: '请选择打赏金额',
@@ -257,22 +280,157 @@ const submitReward = () => {
     return
   }
 
-  // 模拟打赏提交
+  if (!coachId.value) {
+    uni.showToast({
+      title: '教练信息加载失败',
+      icon: 'none'
+    })
+    return
+  }
+
+  loading.value = true
   uni.showLoading({
     title: '处理中...'
   })
 
-  setTimeout(() => {
-    uni.hideLoading()
-    uni.showToast({
-      title: '打赏成功',
-      icon: 'success'
+  try {
+    // 1. 创建打赏支付单（金额单位：分）
+    const amountInCents = Math.round(currentAmount.value * 100)
+    const createRes = await createRewardOrder({
+      coachId: coachId.value,
+      amount: amountInCents
     })
 
-    setTimeout(() => {
-      uni.navigateBack()
-    }, 1500)
-  }, 1000)
+    const payOrderId = createRes.data?.payOrderId
+    if (!payOrderId) {
+      throw new Error('创建支付单失败')
+    }
+
+    // 2. 拉起支付
+    uni.hideLoading()
+
+    // 获取支付渠道
+    let channelCode = 'wx_pub' // 默认微信小程序
+    // #ifdef MP-ALIPAY
+    channelCode = 'alipay_app'
+    // #endif
+
+    uni.showLoading({
+      title: '正在调起支付...'
+    })
+
+    try {
+      const payRes = await submitRewardPay({
+        payOrderId: payOrderId,
+        channelCode: channelCode
+      })
+
+      // 支付参数
+      const payData = payRes.data || {}
+
+      // 微信小程序支付
+      // #ifdef MP-WEIXIN
+      if (payData.wxPayInfo) {
+        wx.requestPayment({
+          ...payData.wxPayInfo,
+          success: () => {
+            uni.showToast({
+              title: '打赏成功',
+              icon: 'success'
+            })
+            setTimeout(() => {
+              uni.navigateBack()
+            }, 1500)
+          },
+          fail: (err) => {
+            console.error('支付取消或失败:', err)
+            if (err.errMsg !== 'requestPayment:fail cancel') {
+              uni.showToast({
+                title: '支付失败',
+                icon: 'none'
+              })
+            }
+          }
+        })
+      } else {
+        // 模拟支付成功（测试用）
+        uni.showToast({
+          title: '打赏成功',
+          icon: 'success'
+        })
+        setTimeout(() => {
+          uni.navigateBack()
+        }, 1500)
+      }
+      // #endif
+
+      // 支付宝支付
+      // #ifdef MP-ALIPAY
+      if (payData.tradeNO) {
+        my.tradePay({
+          tradeNO: payData.tradeNO,
+          success: () => {
+            uni.showToast({
+              title: '打赏成功',
+              icon: 'success'
+            })
+            setTimeout(() => {
+              uni.navigateBack()
+            }, 1500)
+          },
+          fail: (err) => {
+            console.error('支付取消或失败:', err)
+            if (err.errorMessage !== 'userCancel') {
+              uni.showToast({
+                title: '支付失败',
+                icon: 'none'
+              })
+            }
+          }
+        })
+      } else {
+        uni.showToast({
+          title: '打赏成功',
+          icon: 'success'
+        })
+        setTimeout(() => {
+          uni.navigateBack()
+        }, 1500)
+      }
+      // #endif
+
+      // 非小程序环境（h5/app）- 直接显示成功
+      // #ifndef MP-WEIXIN
+      // #ifndef MP-ALIPAY
+      uni.showToast({
+        title: '打赏成功',
+        icon: 'success'
+      })
+      setTimeout(() => {
+        uni.navigateBack()
+      }, 1500)
+      // #endif
+      // #endif
+
+    } catch (payError) {
+      console.error('支付失败:', payError)
+      uni.hideLoading()
+      uni.showToast({
+        title: '支付失败，请重试',
+        icon: 'none'
+      })
+    }
+
+  } catch (error) {
+    console.error('打赏失败:', error)
+    uni.hideLoading()
+    uni.showToast({
+      title: error.message || '打赏失败，请重试',
+      icon: 'none'
+    })
+  } finally {
+    loading.value = false
+  }
 }
 
 // 监听返回按钮
@@ -290,7 +448,7 @@ onBackPress(() => {
 /* 滚动内容 */
 .scroll-content {
   /* 高度通过内联样式动态设置 */
-  padding: 40rpx 32rpx;
+  padding: 24rpx 24rpx;
 }
 
 /* 教练信息 */
@@ -298,38 +456,38 @@ onBackPress(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40rpx 0;
+  padding: 24rpx 0;
 
   .coach-avatar {
-    width: 240rpx;
-    height: 240rpx;
-    border-radius: 120rpx;
-    border: 8rpx solid #f5a623;
+    width: 160rpx;
+    height: 160rpx;
+    border-radius: 80rpx;
+    border: 6rpx solid #f5a623;
   }
 
   .coach-name {
-    font-size: 48rpx;
+    font-size: 32rpx;
     font-weight: 700;
     color: #ffffff;
-    margin-top: 32rpx;
+    margin-top: 20rpx;
   }
 
   .coach-level {
     display: flex;
     align-items: center;
-    margin-top: 16rpx;
+    margin-top: 12rpx;
 
     .level-tag {
-      font-size: 24rpx;
+      font-size: 22rpx;
       color: #ffffff;
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      padding: 4rpx 20rpx;
-      border-radius: 8rpx;
-      margin-right: 16rpx;
+      padding: 4rpx 16rpx;
+      border-radius: 6rpx;
+      margin-right: 12rpx;
     }
 
     .rating {
-      font-size: 28rpx;
+      font-size: 24rpx;
       color: #f5a623;
     }
   }
@@ -338,24 +496,24 @@ onBackPress(() => {
 /* 提示文字 */
 .tip-text {
   text-align: center;
-  font-size: 30rpx;
+  font-size: 26rpx;
   color: #ffffff;
-  margin: 32rpx 0 64rpx;
+  margin: 24rpx 0 40rpx;
 }
 
 /* 金额选择 */
 .amount-section {
-  margin-bottom: 48rpx;
+  margin-bottom: 32rpx;
 
   .amount-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 24rpx;
+    gap: 16rpx;
 
     .amount-item {
       background-color: #2a2a2a;
-      border-radius: 24rpx;
-      padding: 40rpx 24rpx;
+      border-radius: 16rpx;
+      padding: 24rpx 16rpx;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -368,21 +526,21 @@ onBackPress(() => {
       }
 
       .amount-value {
-        font-size: 56rpx;
+        font-size: 36rpx;
         font-weight: 700;
         color: #ffffff;
       }
 
       .amount-label {
-        font-size: 24rpx;
+        font-size: 22rpx;
         color: #999999;
-        margin-top: 8rpx;
+        margin-top: 6rpx;
       }
 
       &.custom-item {
         .custom-icon {
-          font-size: 56rpx;
-          margin-bottom: 8rpx;
+          font-size: 36rpx;
+          margin-bottom: 6rpx;
         }
       }
     }
@@ -391,25 +549,25 @@ onBackPress(() => {
 
 /* 自定义金额输入 */
 .custom-input-section {
-  margin-bottom: 48rpx;
+  margin-bottom: 32rpx;
 
   .input-wrapper {
     display: flex;
     align-items: center;
     background-color: #2a2a2a;
-    border-radius: 24rpx;
-    padding: 32rpx 40rpx;
+    border-radius: 16rpx;
+    padding: 24rpx 28rpx;
 
     .currency-icon {
-      font-size: 40rpx;
+      font-size: 32rpx;
       color: #f5a623;
       font-weight: 600;
-      margin-right: 24rpx;
+      margin-right: 16rpx;
     }
 
     .custom-input {
       flex: 1;
-      font-size: 32rpx;
+      font-size: 28rpx;
       color: #ffffff;
 
       &::placeholder {
@@ -421,23 +579,23 @@ onBackPress(() => {
 
 /* 留言区域 */
 .message-section {
-  margin-bottom: 48rpx;
+  margin-bottom: 32rpx;
 
   .section-title {
-    font-size: 30rpx;
+    font-size: 26rpx;
     color: #ffffff;
-    margin-bottom: 24rpx;
+    margin-bottom: 16rpx;
   }
 
   .message-input-wrapper {
     background-color: #2a2a2a;
-    border-radius: 24rpx;
-    padding: 32rpx;
+    border-radius: 16rpx;
+    padding: 24rpx;
 
     .message-input {
       width: 100%;
-      min-height: 160rpx;
-      font-size: 30rpx;
+      min-height: 120rpx;
+      font-size: 26rpx;
       color: #ffffff;
       line-height: 1.6;
 
@@ -450,13 +608,13 @@ onBackPress(() => {
 
 /* 底部占位 */
 .bottom-placeholder {
-  height: 100rpx;
+  height: 80rpx;
 }
 
 /* 底部栏 */
 .bottom-bar {
   background-color: #1a1a1a;
-  padding: 16rpx 24rpx;
+  padding: 12rpx 24rpx;
   display: flex;
   align-items: center;
   border-top: 2rpx solid #2a2a2a;
@@ -465,12 +623,12 @@ onBackPress(() => {
     flex: 1;
 
     .total-label {
-      font-size: 24rpx;
+      font-size: 22rpx;
       color: #999999;
     }
 
     .total-value {
-      font-size: 38rpx;
+      font-size: 32rpx;
       font-weight: 700;
       color: #f5a623;
     }
@@ -479,13 +637,13 @@ onBackPress(() => {
   .reward-btn {
     background: linear-gradient(135deg, #f5a623 0%, #d98a00 100%);
     color: #1a1a1a;
-    font-size: 28rpx;
+    font-size: 26rpx;
     font-weight: 600;
-    border-radius: 36rpx;
-    padding: 0 48rpx;
-    height: 72rpx;
+    border-radius: 32rpx;
+    padding: 0 40rpx;
+    height: 64rpx;
     border: none;
-    line-height: 72rpx;
+    line-height: 64rpx;
 
     &.disabled {
       opacity: 0.5;

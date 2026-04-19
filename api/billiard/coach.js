@@ -82,6 +82,71 @@ export function getHotCoachList(params) {
 }
 
 /**
+ * 创建打赏支付单
+ * @param {Object} data - 请求参数
+ * @param {number} data.coachId - 助教ID（billiard_coach.id）
+ * @param {number} data.amount - 打赏金额（单位：分），必须大于 0
+ * @returns {Promise<Object>} 返回创建结果
+ * @returns {number} returns.data.payOrderId - pay_order.id（前端用于拉起支付）
+ */
+export function createRewardOrder(data) {
+  return request({
+    url: '/app-api/billiard/reward/create',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 提交打赏支付
+ * @param {Object} data - 请求参数
+ * @param {number} data.payOrderId - 支付单ID（pay_order.id）
+ * @param {string} data.channelCode - 支付渠道编码：wx_pub（微信小程序）、wx_app（微信App）、alipay_app（支付宝App）、wallet（钱包）
+ * @returns {Promise<Object>} 返回支付参数
+ */
+export function submitRewardPay(data) {
+  return request({
+    url: '/app-api/billiard/reward/pay',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 提交评价
+ * @param {Object} data - 请求参数
+ * @param {number} data.orderId - 订单ID（billiard_order.id）
+ * @param {number} data.star - 星级评分（1~5）
+ * @param {string} [data.content] - 评价文字描述
+ * @param {string} [data.tags] - 预设标签（逗号分隔，如：专业,准时）
+ * @param {Array<string>} [data.images] - 图片 URL 数组（最多9张）
+ * @param {boolean} [data.isAnonymous] - 是否匿名评价，默认 false
+ * @returns {Promise<Object>} 返回提交结果
+ */
+export function createReview(data) {
+  return request({
+    url: '/app-api/billiard/review/create',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 上传评价图片
+ * @param {string} filePath - 图片文件路径
+ * @returns {Promise<Object>} 返回上传结果
+ * @returns {string} returns.data.url - 图片 URL
+ */
+export function uploadReviewImage(filePath) {
+  return request({
+    url: '/app-api/billiard/review/upload-image',
+    method: 'post',
+    filePath,
+    name: 'file'
+  })
+}
+
+/**
  * 助教列表单条数据结构（用于参考）
  * @typedef {Object} CoachItem
  * @property {number} id - 助教ID

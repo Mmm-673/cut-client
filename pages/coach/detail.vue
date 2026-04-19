@@ -1,5 +1,20 @@
 <template>
   <view class="detail-container">
+<!--    &lt;!&ndash; 头部导航栏（新增：返回/分享/收藏） &ndash;&gt;-->
+<!--    <view class="nav-bar">-->
+<!--      <view class="nav-back" @click="goBack">-->
+<!--        <uni-icons type="left" size="20" color="#fff"></uni-icons>-->
+<!--      </view>-->
+<!--      <view class="nav-actions">-->
+<!--        <view class="nav-action" @click="shareCoach">-->
+<!--          <uni-icons type="redo" size="20" color="#fff"></uni-icons>-->
+<!--        </view>-->
+<!--        <view class="nav-action" @click="toggleFavorite">-->
+<!--          <uni-icons :type="isFavorite ? 'heart-filled' : 'heart'" size="20" :color="isFavorite ? '#ff4d4f' : '#fff'"></uni-icons>-->
+<!--        </view>-->
+<!--      </view>-->
+<!--    </view>-->
+
     <!-- 下拉刷新区域 -->
     <scroll-view
         scroll-y
@@ -14,7 +29,7 @@
         <image class="header-bg" :src="coachInfo.cover || '/static/default-cover.jpg'" mode="aspectFill"></image>
         <view class="header-overlay"></view>
         <view class="header-content">
-          <image class="avatar" :src="coachInfo.avatar || '/static/default-avatar.png'" mode="aspectFill"></image>
+          <image class="avatar" :src="coachInfo.avatar || '/static/default-cover.jpg'" mode="aspectFill"></image>
           <view class="info">
             <view class="name-row">
               <text class="name">{{ coachInfo.stageName || coachInfo.name }}</text>
@@ -143,8 +158,8 @@
     <view class="bottom-bar">
       <view class="price-info">
         <text class="price-symbol">¥</text>
-        <text class="price">{{ coachInfo.price }}</text>
-        <text class="price-unit">/小时起</text>
+        <text class="price">{{ selectedService?.price || coachInfo.price }}</text>
+        <text class="price-unit">/{{ selectedService?.unit || '小时' }}起</text>
       </view>
       <view class="book-btn" @click="bookNow">立即预约</view>
     </view>
@@ -165,6 +180,7 @@ const loading = ref(false)
 
 // 下拉刷新状态
 const refreshing = ref(false)
+const isFavorite = ref(false)
 
 // 教练信息
 const coachInfo = reactive({
@@ -270,28 +286,54 @@ const loadCoachData = async () => {
     } else if (data.services && Array.isArray(data.services)) {
       services.value = data.services
     } else {
-      // 默认服务项目（占位）
+      // 默认服务项目（和截图一致）
       services.value = [
-        { id: 1, name: '台球陪练', desc: '基础陪练服务', sales: 128, price: 98, unit: '小时', hot: true },
-        { id: 2, name: '技术指导', desc: '进阶技术指导', sales: 68, price: 168, unit: '小时', hot: false }
+        { id: 1, name: '台球陪练', desc: '2小时起步，包含基础动作指导、技术纠错、实战演练', sales: 86, price: 99, unit: '小时', hot: true },
+        { id: 2, name: '陪游服务', desc: '5小时起步，全天陪同打球+游玩，包含餐饮交通补贴', sales: 42, price: 399, unit: '天', hot: false }
       ]
     }
 
     // 相册（从 photos 数组中提取 photoUrl）
     if (data.photos && Array.isArray(data.photos)) {
       albumList.value = data.photos
-        .sort((a, b) => (a.sort || 0) - (b.sort || 0))
-        .map(p => p.photoUrl || p.url || p)
-        .filter(Boolean)
+          .sort((a, b) => (a.sort || 0) - (b.sort || 0))
+          .map(p => p.photoUrl || p.url || p)
+          .filter(Boolean)
     } else if (data.albumList && Array.isArray(data.albumList)) {
       albumList.value = data.albumList
+    } else {
+      // 默认相册（占位）
+      albumList.value = [
+        'https://picsum.photos/300/300?random=1',
+        'https://picsum.photos/300/300?random=2',
+        'https://picsum.photos/300/300?random=3'
+      ]
     }
 
-    // 评价（如果接口返回）
+    // 评价（和截图一致）
     if (data.recentReviews && Array.isArray(data.recentReviews)) {
       reviewList.value = data.recentReviews
     } else if (data.reviews && Array.isArray(data.reviews)) {
       reviewList.value = data.reviews
+    } else {
+      reviewList.value = [
+        {
+          name: '张先生',
+          avatar: 'https://picsum.photos/100/100?random=4',
+          rating: 5,
+          time: '2026-03-20',
+          content: '教练非常专业，耐心纠正了我很多错误动作，两个小时的学习收获很大，球技提升明显，强烈推荐！',
+          tags: ['专业', '耐心', '准时']
+        },
+        {
+          name: '李女士',
+          avatar: 'https://picsum.photos/100/100?random=5',
+          rating: 5,
+          time: '2026-03-18',
+          content: '第一次学台球，教练教的特别好，很有耐心，零基础也能很快上手，体验非常棒，下次还会约！',
+          tags: ['耐心', '负责任']
+        }
+      ]
     }
   } catch (error) {
     console.error('加载教练详情失败:', error)
@@ -311,6 +353,25 @@ const onRefresh = () => {
   loadCoachData()
 }
 
+// 返回上一页
+const goBack = () => {
+  uni.navigateBack()
+}
+
+// 分享教练
+const shareCoach = () => {
+  uni.showToast({ title: '分享功能', icon: 'none' })
+}
+
+// 收藏/取消收藏
+const toggleFavorite = () => {
+  isFavorite.value = !isFavorite.value
+  uni.showToast({
+    title: isFavorite.value ? '已收藏' : '已取消收藏',
+    icon: 'none'
+  })
+}
+
 // 跳转到打赏页面
 const goToReward = () => {
   uni.navigateTo({
@@ -324,7 +385,6 @@ const selectedService = ref(null)
 // 选择服务
 const selectService = (service) => {
   selectedService.value = service
-  coachInfo.price = service.price
   uni.showToast({
     title: '已选择' + service.name,
     icon: 'none'
@@ -359,6 +419,10 @@ const viewAllReviews = () => {
 
 // 立即预约
 const bookNow = () => {
+  if (!selectedService.value) {
+    uni.showToast({ title: '请先选择服务项目', icon: 'none' })
+    return
+  }
   // 保存教练信息和选中的服务
   uni.setStorageSync('selectedCoach', {
     ...coachInfo,
@@ -369,7 +433,6 @@ const bookNow = () => {
 
 // 获取页面参数
 onLoad((options) => {
-  console.log(options,'======options')
   if (options.id) {
     coachId.value = parseInt(options.id)
   }
@@ -403,8 +466,34 @@ onMounted(() => {
   position: relative;
 }
 
-.status-bar {
-  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+/* 头部导航栏（新增） */
+.nav-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 90rpx;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30rpx;
+  z-index: 100;
+
+  .nav-back, .nav-action {
+    width: 60rpx;
+    height: 60rpx;
+    background: rgba(0,0,0,0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-actions {
+    display: flex;
+    gap: 20rpx;
+  }
 }
 
 .scroll-view {
@@ -413,7 +502,7 @@ onMounted(() => {
 
 .header-section {
   position: relative;
-  height: 320px;
+  height: 640rpx;
   overflow: hidden;
 
   .header-bg {
@@ -430,22 +519,25 @@ onMounted(() => {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(to bottom, rgba(26, 26, 26, 0.3) 0%, rgba(26, 26, 26, 0.9) 100%);
+    background: linear-gradient(to bottom, rgba(26, 26, 26, 0.1) 0%, rgba(26, 26, 26, 0.9) 100%);
   }
 
   .header-content {
-    position: relative;
+    position: absolute; // 改成绝对定位，固定到底部
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 10;
-    padding: 140px 20px 20px;
+    padding: 40rpx; // 去掉原来的上padding
     display: flex;
     align-items: flex-start;
-    gap: 16px;
+    gap: 32rpx;
 
     .avatar {
-      width: 80px;
-      height: 80px;
-      border-radius: 16px;
-      border: 3px solid rgba(255, 255, 255, 0.2);
+      width: 160rpx;
+      height: 160rpx;
+      border-radius: 32rpx;
+      border: 6rpx solid rgba(255, 255, 255, 0.2);
       flex-shrink: 0;
     }
 
@@ -455,19 +547,19 @@ onMounted(() => {
       .name-row {
         display: flex;
         align-items: center;
-        gap: 10px;
-        margin-bottom: 8px;
+        gap: 20rpx;
+        margin-bottom: 16rpx;
 
         .name {
-          font-size: 24px;
+          font-size: 48rpx;
           font-weight: 700;
           color: #ffffff;
         }
 
         .tag.level {
-          font-size: 12px;
-          padding: 4px 10px;
-          border-radius: 20px;
+          font-size: 24rpx;
+          padding: 8rpx 20rpx;
+          border-radius: 40rpx;
 
           &.level-0, &.level-1 {
             background: linear-gradient(135deg, #c0c0c0 0%, #a0a0a0 100%);
@@ -475,8 +567,8 @@ onMounted(() => {
           }
 
           &.level-2 {
-            background: linear-gradient(135deg, #ffd700 0%, #ffb800 100%);
-            color: #1a1a1a;
+            background: linear-gradient(135deg, #00c896 0%, #00a87a 100%);
+            color: #ffffff;
           }
         }
       }
@@ -484,14 +576,14 @@ onMounted(() => {
       .stats-row {
         display: flex;
         align-items: center;
-        gap: 16px;
-        margin-bottom: 10px;
+        gap: 32rpx;
+        margin-bottom: 20rpx;
 
         .stat-item {
           display: flex;
           align-items: center;
-          gap: 4px;
-          font-size: 14px;
+          gap: 8rpx;
+          font-size: 28rpx;
           color: #cccccc;
         }
       }
@@ -499,15 +591,15 @@ onMounted(() => {
       .tags-row {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 16rpx;
 
         .tag {
-          font-size: 12px;
-          padding: 4px 12px;
-          border-radius: 20px;
+          font-size: 24rpx;
+          padding: 8rpx 24rpx;
+          border-radius: 40rpx;
           background-color: rgba(0, 200, 150, 0.2);
           color: #00c896;
-          border: 1px solid rgba(0, 200, 150, 0.3);
+          border: 2rpx solid rgba(0, 200, 150, 0.3);
         }
       }
     }
@@ -516,14 +608,14 @@ onMounted(() => {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
-      padding: 10px 16px;
+      gap: 8rpx;
+      padding: 20rpx 32rpx;
       background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 152, 0, 0.2) 100%);
-      border: 1px solid rgba(255, 193, 7, 0.4);
-      border-radius: 12px;
+      border: 2rpx solid rgba(255, 193, 7, 0.4);
+      border-radius: 24rpx;
 
       text {
-        font-size: 12px;
+        font-size: 24rpx;
         color: #ffc107;
       }
     }
@@ -531,27 +623,27 @@ onMounted(() => {
 }
 
 .section {
-  padding: 24px 20px;
+  padding: 48rpx 40rpx;
 
   .section-title {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 16px;
-    font-size: 18px;
+    gap: 20rpx;
+    margin-bottom: 32rpx;
+    font-size: 36rpx;
     font-weight: 600;
     color: #ffffff;
 
     .see-more {
       margin-left: auto;
-      font-size: 14px;
+      font-size: 28rpx;
       font-weight: 400;
-      color: #00c896;
+      color: #666;
     }
 
     .rating-text {
       margin-left: auto;
-      font-size: 16px;
+      font-size: 32rpx;
       font-weight: 600;
       color: #ffc107;
     }
@@ -559,11 +651,11 @@ onMounted(() => {
 
   .intro-content {
     background-color: #2a2a2a;
-    border-radius: 16px;
-    padding: 16px;
+    border-radius: 32rpx;
+    padding: 32rpx;
 
     text {
-      font-size: 14px;
+      font-size: 28rpx;
       color: #cccccc;
       line-height: 1.8;
     }
@@ -573,16 +665,16 @@ onMounted(() => {
 .service-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 24rpx;
 
   .service-item {
     background-color: #2a2a2a;
-    border-radius: 16px;
-    padding: 16px;
+    border-radius: 32rpx;
+    padding: 32rpx;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border: 2px solid transparent;
+    border: 4rpx solid transparent;
     transition: all 0.2s ease;
 
     &.selected {
@@ -596,33 +688,33 @@ onMounted(() => {
       .service-name-row {
         display: flex;
         align-items: center;
-        gap: 10px;
-        margin-bottom: 6px;
+        gap: 20rpx;
+        margin-bottom: 12rpx;
 
         .service-name {
-          font-size: 16px;
+          font-size: 32rpx;
           font-weight: 600;
           color: #ffffff;
         }
 
         .tag.hot {
-          font-size: 10px;
-          padding: 2px 8px;
-          border-radius: 20px;
+          font-size: 20rpx;
+          padding: 4rpx 16rpx;
+          border-radius: 40rpx;
           background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%);
           color: #ffffff;
         }
       }
 
       .service-desc {
-        font-size: 13px;
+        font-size: 26rpx;
         color: #999999;
-        margin-bottom: 6px;
+        margin-bottom: 12rpx;
         line-height: 1.5;
       }
 
       .service-sales {
-        font-size: 12px;
+        font-size: 24rpx;
         color: #666666;
       }
     }
@@ -631,42 +723,42 @@ onMounted(() => {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 10px;
+      gap: 20rpx;
 
       .price-row {
         display: flex;
         align-items: baseline;
 
         .price-symbol {
-          font-size: 14px;
+          font-size: 28rpx;
           color: #00c896;
           font-weight: 600;
         }
 
         .price {
-          font-size: 24px;
+          font-size: 48rpx;
           color: #00c896;
           font-weight: 700;
         }
 
         .price-unit {
-          font-size: 13px;
+          font-size: 26rpx;
           color: #999999;
         }
       }
 
       .select-btn {
-        padding: 8px 24px;
+        padding: 16rpx 48rpx;
         background: linear-gradient(135deg, #00c896 0%, #00a87a 100%);
         color: #ffffff;
-        font-size: 14px;
+        font-size: 28rpx;
         font-weight: 600;
-        border-radius: 20px;
+        border-radius: 40rpx;
         transition: all 0.2s ease;
 
         &.active {
           background: #2a3338;
-          border: 1px solid #00c896;
+          border: 2rpx solid #00c896;
           color: #00c896;
         }
       }
@@ -677,12 +769,12 @@ onMounted(() => {
 .album-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 20rpx;
 
   .album-item {
     width: 100%;
     aspect-ratio: 1;
-    border-radius: 12px;
+    border-radius: 24rpx;
     background-color: #2a2a2a;
   }
 }
@@ -690,64 +782,64 @@ onMounted(() => {
 .review-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 32rpx;
 
   .review-item {
     background-color: #2a2a2a;
-    border-radius: 16px;
-    padding: 16px;
+    border-radius: 32rpx;
+    padding: 32rpx;
 
     .review-header {
       display: flex;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 24rpx;
 
       .review-avatar {
-        width: 48px;
-        height: 48px;
+        width: 96rpx;
+        height: 96rpx;
         border-radius: 50%;
-        margin-right: 12px;
+        margin-right: 24rpx;
       }
 
       .review-user {
         flex: 1;
 
         .review-name {
-          font-size: 15px;
+          font-size: 30rpx;
           font-weight: 600;
           color: #ffffff;
           display: block;
-          margin-bottom: 4px;
+          margin-bottom: 8rpx;
         }
 
         .review-stars {
           display: flex;
-          gap: 2px;
+          gap: 4rpx;
         }
       }
 
       .review-time {
-        font-size: 12px;
+        font-size: 24rpx;
         color: #666666;
       }
     }
 
     .review-content {
-      font-size: 14px;
+      font-size: 28rpx;
       color: #cccccc;
       line-height: 1.6;
-      margin-bottom: 12px;
+      margin-bottom: 24rpx;
     }
 
     .review-tags {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 16rpx;
 
       .tag.small {
-        font-size: 11px;
-        padding: 3px 10px;
-        border-radius: 20px;
+        font-size: 22rpx;
+        padding: 6rpx 20rpx;
+        border-radius: 40rpx;
         background-color: rgba(0, 200, 150, 0.15);
         color: #00c896;
       }
@@ -756,21 +848,20 @@ onMounted(() => {
 }
 
 .more-reviews {
-  margin-top: 16px;
-  padding: 14px;
+  margin-top: 32rpx;
+  padding: 28rpx;
   background-color: #2a2a2a;
-  border-radius: 12px;
+  border-radius: 24rpx;
   text-align: center;
 
   text {
-    font-size: 14px;
+    font-size: 28rpx;
     color: #999999;
   }
 }
 
 /* 适配底部安全区 */
 .safe-area-bottom {
-  /* constant 对应 iOS < 11.2，env 对应 iOS >= 11.2 */
   height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
   width: 100%;
@@ -782,10 +873,10 @@ onMounted(() => {
   left: 0;
   right: 0;
   background-color: #252525;
-  border-top: 1px solid #333333;
-  padding: 8px 16px;
-  padding-bottom: calc(8px + constant(safe-area-inset-bottom));
-  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  border-top: 2rpx solid #333333;
+  padding: 16rpx 32rpx;
+  padding-bottom: calc(16rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -796,31 +887,31 @@ onMounted(() => {
     align-items: baseline;
 
     .price-symbol {
-      font-size: 14px;
+      font-size: 28rpx;
       color: #00c896;
       font-weight: 600;
     }
 
     .price {
-      font-size: 22px;
+      font-size: 44rpx;
       color: #00c896;
       font-weight: 700;
     }
 
     .price-unit {
-      font-size: 12px;
+      font-size: 24rpx;
       color: #999999;
     }
   }
 
   .book-btn {
-    padding: 10px 28px;
+    padding: 20rpx 56rpx;
     background: linear-gradient(135deg, #00c896 0%, #00a87a 100%);
     color: #ffffff;
-    font-size: 14px;
+    font-size: 28rpx;
     font-weight: 600;
-    border-radius: 22px;
-    box-shadow: 0 4px 15px rgba(0, 200, 150, 0.3);
+    border-radius: 44rpx;
+    box-shadow: 0 8rpx 30rpx rgba(0, 200, 150, 0.3);
   }
 }
 </style>

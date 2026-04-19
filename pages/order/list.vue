@@ -1,8 +1,8 @@
 <template>
   <view class="order-list-wrapper">
-    <!-- 顶部Tab - 根据API文档重新定义 -->
+    <!-- 顶部Tab - 滑动 -->
     <view class="tab-bar" id="tabBar">
-      <scroll-view scroll-x="true" class="tab-scroll">
+      <scroll-view scroll-x="true" :show-scrollbar="false" class="tab-scroll">
         <view class="tab-list">
           <view
             class="tab-item"
@@ -20,8 +20,22 @@
           </view>
           <view
             class="tab-item"
-            :class="{ active: activeTab === 'ongoing' }"
-            @click="switchTab('ongoing')"
+            :class="{ active: activeTab === 20 }"
+            @click="switchTab(20)"
+          >
+            待接单
+          </view>
+          <view
+            class="tab-item"
+            :class="{ active: activeTab === 30 }"
+            @click="switchTab(30)"
+          >
+            已接单
+          </view>
+          <view
+            class="tab-item"
+            :class="{ active: activeTab === 40 }"
+            @click="switchTab(40)"
           >
             进行中
           </view>
@@ -45,13 +59,6 @@
             @click="switchTab(70)"
           >
             已取消
-          </view>
-          <view
-            class="tab-item"
-            :class="{ active: activeTab === 'refund' }"
-            @click="switchTab('refund')"
-          >
-            退款售后
           </view>
         </view>
       </scroll-view>
@@ -184,21 +191,21 @@ const orderList = ref([])
 /**
  * 状态映射 - 根据API文档
  * 10=待付款
- * 20,30,40=进行中（待接单+已接单+进行中）
+ * 20=待接单
+ * 30=已接单/待服务
+ * 40=进行中
  * 50=待评价
  * 60=已完成
  * 70=已取消
- * 70,80=退款售后
  */
 const statusMap = {
   10: { text: '待付款', class: 'pending' },
-  20: { text: '待接单', class: 'ongoing' },
-  30: { text: '已接单', class: 'ongoing' },
+  20: { text: '待接单', class: 'pending-accept' },
+  30: { text: '已接单', class: 'accepted' },
   40: { text: '进行中', class: 'ongoing' },
   50: { text: '待评价', class: 'to-review' },
   60: { text: '已完成', class: 'completed' },
-  70: { text: '已取消', class: 'cancelled' },
-  80: { text: '退款中', class: 'refund' }
+  70: { text: '已取消', class: 'cancelled' }
 }
 
 // 获取状态文本
@@ -253,6 +260,120 @@ const formatAmount = (amount) => {
   return (amount / 100).toFixed(2)
 }
 
+// 模拟数据开关
+const USE_MOCK_DATA = true
+
+// 模拟数据
+const getMockOrders = () => {
+  const now = Date.now()
+  const mockOrders = [
+    {
+      orderId: 1001,
+      orderNo: 'TB202401150001',
+      coachId: 1,
+      coachStageName: '小雯',
+      coachMainPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop',
+      serviceType: 1,
+      bookingTime: now + 2 * 60 * 60 * 1000,
+      serviceDuration: 120,
+      status: 10,
+      payAmount: 19800,
+      totalAmount: 19800,
+      createTime: now - 10 * 60 * 1000
+    },
+    {
+      orderId: 1002,
+      orderNo: 'TB202401150002',
+      coachId: 2,
+      coachStageName: '阿豪',
+      coachMainPhoto: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=200&h=200&fit=crop',
+      serviceType: 1,
+      bookingTime: now + 24 * 60 * 60 * 1000,
+      serviceDuration: 180,
+      status: 20,
+      payAmount: 29800,
+      totalAmount: 29800,
+      createTime: now - 30 * 60 * 1000
+    },
+    {
+      orderId: 1003,
+      orderNo: 'TB202401150003',
+      coachId: 3,
+      coachStageName: '思思',
+      coachMainPhoto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop',
+      serviceType: 1,
+      bookingTime: now + 1 * 60 * 60 * 1000,
+      serviceDuration: 120,
+      status: 30,
+      payAmount: 19800,
+      totalAmount: 19800,
+      createTime: now - 2 * 60 * 60 * 1000
+    },
+    {
+      orderId: 1004,
+      orderNo: 'TB202401150004',
+      coachId: 4,
+      coachStageName: '大飞',
+      coachMainPhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop',
+      serviceType: 1,
+      bookingTime: now - 30 * 60 * 1000,
+      serviceDuration: 120,
+      status: 40,
+      payAmount: 19800,
+      totalAmount: 19800,
+      createTime: now - 3 * 60 * 60 * 1000
+    },
+    {
+      orderId: 1005,
+      orderNo: 'TB202401150005',
+      coachId: 1,
+      coachStageName: '小雯',
+      coachMainPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop',
+      serviceType: 1,
+      bookingTime: now - 2 * 60 * 60 * 1000,
+      serviceDuration: 120,
+      status: 50,
+      payAmount: 19800,
+      totalAmount: 19800,
+      createTime: now - 4 * 60 * 60 * 1000
+    },
+    {
+      orderId: 1006,
+      orderNo: 'TB202401140006',
+      coachId: 2,
+      coachStageName: '阿豪',
+      coachMainPhoto: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=200&h=200&fit=crop',
+      serviceType: 1,
+      bookingTime: now - 24 * 60 * 60 * 1000,
+      serviceDuration: 180,
+      status: 60,
+      payAmount: 29800,
+      totalAmount: 29800,
+      createTime: now - 26 * 60 * 60 * 1000
+    },
+    {
+      orderId: 1007,
+      orderNo: 'TB202401140007',
+      coachId: 3,
+      coachStageName: '思思',
+      coachMainPhoto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop',
+      serviceType: 2,
+      bookingTime: now - 48 * 60 * 60 * 1000,
+      serviceDuration: 300,
+      status: 70,
+      payAmount: 0,
+      totalAmount: 49800,
+      createTime: now - 50 * 60 * 60 * 1000
+    }
+  ]
+
+  // 根据Tab筛选
+  if (activeTab.value === null) {
+    return mockOrders
+  }
+  return mockOrders.filter(order => order.status === activeTab.value)
+}
+
 // 加载数据
 const loadData = async (isRefresh = false) => {
   if (loading.value) return
@@ -267,26 +388,28 @@ const loadData = async (isRefresh = false) => {
   }
 
   try {
-    const params = {
-      pageNo: pageNo.value,
-      pageSize: pageSize.value
-    }
+    let list = []
+    let data = {}
 
-    // 添加状态筛选 - 根据API文档处理特殊Tab
-    if (activeTab.value === 'ongoing') {
-      // 进行中包含：20,30,40
-      // 这里传20作为代表，实际应根据后端支持的方式处理
-      params.status = 20
-    } else if (activeTab.value === 'refund') {
-      // 退款售后包含：70,80
-      params.status = 70
-    } else if (activeTab.value !== null) {
-      params.status = activeTab.value
-    }
+    if (USE_MOCK_DATA) {
+      // 使用模拟数据
+      await new Promise(resolve => setTimeout(resolve, 500))
+      list = getMockOrders()
+    } else {
+      // 使用真实API
+      const params = {
+        pageNo: pageNo.value,
+        pageSize: pageSize.value
+      }
 
-    const res = await getOrderList(params)
-    const data = res.data || {}
-    const list = data.list || data.records || []
+      if (activeTab.value !== null) {
+        params.status = activeTab.value
+      }
+
+      const res = await getOrderList(params)
+      data = res.data || {}
+      list = data.list || data.records || []
+    }
 
     if (isRefresh) {
       orderList.value = list
@@ -295,13 +418,18 @@ const loadData = async (isRefresh = false) => {
     }
 
     // 判断是否还有更多数据
-    const total = data.total || data.totalCount || 0
-    if (total > 0) {
-      hasMore.value = orderList.value.length < total
+    if (USE_MOCK_DATA) {
+      hasMore.value = false
+      loadMoreStatus.value = 'noMore'
     } else {
-      hasMore.value = list.length >= pageSize.value
+      const total = data.total || data.totalCount || 0
+      if (total > 0) {
+        hasMore.value = orderList.value.length < total
+      } else {
+        hasMore.value = list.length >= pageSize.value
+      }
+      loadMoreStatus.value = hasMore.value ? 'more' : 'noMore'
     }
-    loadMoreStatus.value = hasMore.value ? 'more' : 'noMore'
 
     if (!hasMore.value && pageNo.value > 1) {
       uni.showToast({
@@ -491,6 +619,14 @@ onLoad(() => {
       background: rgba(255, 149, 0, 0.2);
       color: #FF9500;
     }
+    &.pending-accept {
+      background: rgba(59, 130, 246, 0.2);
+      color: #3B82F6;
+    }
+    &.accepted {
+      background: rgba(59, 130, 246, 0.2);
+      color: #3B82F6;
+    }
     &.ongoing {
       background: rgba(59, 130, 246, 0.2);
       color: #3B82F6;
@@ -506,10 +642,6 @@ onLoad(() => {
     &.cancelled {
       background: rgba(107, 114, 128, 0.2);
       color: #6B7280;
-    }
-    &.refund {
-      background: rgba(239, 68, 68, 0.2);
-      color: #EF4444;
     }
   }
 }

@@ -1,14 +1,5 @@
 <template>
   <view class="evaluate-page">
-    <!-- 顶部导航栏 -->
-    <view class="nav-bar">
-      <view class="nav-back" @click="goBack">
-        <text class="iconfont">&#xe61c;</text>
-      </view>
-      <view class="nav-title">评价服务</view>
-      <view class="nav-placeholder"></view>
-    </view>
-
     <!-- 教练信息区 -->
     <view class="coach-info">
       <image class="coach-avatar" :src="coachInfo.avatar" mode="aspectFill" />
@@ -65,6 +56,21 @@
           maxlength="300"
           @input="handleContentInput"
       />
+
+      <!-- 已上传图片预览 -->
+      <view class="image-preview-list" v-if="uploadedImages.length > 0">
+        <view
+            class="preview-item"
+            v-for="(img, index) in uploadedImages"
+            :key="index"
+        >
+          <image :src="img" mode="aspectFill" class="preview-img" />
+          <view class="remove-btn" @click="removeImage(index)">
+            <text class="iconfont">&#xe617;</text>
+          </view>
+        </view>
+      </view>
+
       <view class="content-toolbar">
         <view class="tool-buttons">
           <view class="tool-btn" @click="handleUploadImage">
@@ -93,10 +99,6 @@
 
     <!-- 底部操作栏 -->
     <view class="bottom-bar">
-      <view class="reward-btn" @click="handleReward">
-        <text class="iconfont">&#xe60d;</text>
-        <text>打赏教练</text>
-      </view>
       <view class="submit-btn" @click="handleSubmit">
         提交评价
       </view>
@@ -105,32 +107,52 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
+import { createReview, uploadReviewImage } from '@/api/billiard/coach';
 
-// 教练信息（模拟数据，实际从接口获取）
+// 教练信息
 const coachInfo = reactive({
-  avatar: 'https://via.placeholder.com/120x120/333/fff?text=阿豪',
-  name: '阿豪',
-  serviceType: '台球陪练',
-  serviceTime: '2026-03-22 14:00-16:00'
+  avatar: '',
+  name: '',
+  serviceType: '',
+  serviceTime: ''
 });
 
+// 订单ID
+const orderId = ref(null);
+
 // 星级评分相关
-const currentScore = ref(4);
-const scoreDesc = ref(['非常不满意', '不满意', '一般', '满意', '非常满意']);
+const currentScore = ref(5);
+const scoreDesc = ['非常不满意', '不满意', '一般', '满意', '非常满意'];
 
 // 标签相关
-const tagList = ref(['专业', '耐心', '准时', '技术好', '讲解清晰', '态度好', '性价比高', '推荐']);
-const selectedTags = ref(['专业', '耐心']);
+const tagList = ['专业', '耐心', '准时', '技术好', '讲解清晰', '态度好', '性价比高', '推荐'];
+const selectedTags = ref([]);
 
 // 评价内容相关
 const evaluateContent = ref('');
 const isAnonymous = ref(false);
+const uploadedImages = ref([]);
 
 // 页面生命周期
-onLoad(() => {
-  // 页面加载时可从接口获取订单/教练信息
+onLoad((options) => {
+  // 从上一页传递的参数获取订单ID和教练信息
+  if (options.orderId) {
+    orderId.value = parseInt(options.orderId);
+  }
+  if (options.coachAvatar) {
+    coachInfo.avatar = options.coachAvatar;
+  }
+  if (options.coachName) {
+    coachInfo.name = options.coachName;
+  }
+  if (options.serviceType) {
+    coachInfo.serviceType = options.serviceType;
+  }
+  if (options.serviceTime) {
+    coachInfo.serviceTime = options.serviceTime;
+  }
 });
 
 // 星级点击
@@ -159,25 +181,59 @@ const handleAnonymousChange = (e) => {
 };
 
 // 上传图片
-const handleUploadImage = () => {
+const handleUploadImage = async () => {
+  const remaining = 9 - uploadedImages.value.length;
+  if (remaining <= 0) {
+    uni.showToast({
+      title: '最多上传9张图片',
+      icon: 'none'
+    });
+    return;
+  }
+
   uni.chooseImage({
-    count: 9,
-    success: (res) => {
-      console.log('选择图片', res.tempFilePaths);
-      // 上传逻辑
+    count: remaining,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
+    success: async (res) => {
+      const tempFilePaths = res.tempFilePaths;
+      uni.showLoading({ title: '上传中...' });
+
+      try {
+        for (const filePath of tempFilePaths) {
+          const result = await uploadReviewImage(filePath);
+          if (result.data) {
+            uploadedImages.value.push(result.data.url);
+          }
+        }
+        uni.hideLoading();
+        uni.showToast({
+          title: '上传成功',
+          icon: 'success'
+        });
+      } catch (error) {
+        uni.hideLoading();
+        console.error('上传图片失败:', error);
+        uni.showToast({
+          title: '上传失败',
+          icon: 'none'
+        });
+      }
     }
   });
 };
 
-// 上传视频
+// 上传视频（暂不支持）
 const handleUploadVideo = () => {
-  uni.chooseVideo({
-    sourceType: ['album', 'camera'],
-    success: (res) => {
-      console.log('选择视频', res.tempFilePath);
-      // 上传逻辑
-    }
+  uni.showToast({
+    title: '视频上传功能开发中',
+    icon: 'none'
   });
+};
+
+// 删除已上传图片
+const removeImage = (index) => {
+  uploadedImages.value.splice(index, 1);
 };
 
 // 返回
@@ -185,16 +241,8 @@ const goBack = () => {
   uni.navigateBack();
 };
 
-// 打赏
-const handleReward = () => {
-  uni.showToast({
-    title: '打赏功能开发中',
-    icon: 'none'
-  });
-};
-
 // 提交评价
-const handleSubmit = () => {
+const handleSubmit = async () => {
   // 校验
   if (currentScore.value === 0) {
     return uni.showToast({
@@ -203,30 +251,44 @@ const handleSubmit = () => {
     });
   }
 
-  // 提交数据
-  const submitData = {
-    coachId: '123', // 教练ID
-    orderId: '456', // 订单ID
-    score: currentScore.value,
-    tags: selectedTags.value,
-    content: evaluateContent.value,
-    isAnonymous: isAnonymous.value
-  };
+  if (!orderId.value) {
+    return uni.showToast({
+      title: '订单信息获取失败',
+      icon: 'none'
+    });
+  }
 
-  console.log('提交评价', submitData);
   uni.showLoading({ title: '提交中...' });
 
-  // 模拟接口请求
-  setTimeout(() => {
+  try {
+    const submitData = {
+      orderId: orderId.value,
+      star: currentScore.value,
+      content: evaluateContent.value || '',
+      tags: selectedTags.value.join(','),
+      images: uploadedImages.value,
+      isAnonymous: isAnonymous.value
+    };
+
+    await createReview(submitData);
+
     uni.hideLoading();
     uni.showToast({
       title: '评价提交成功',
       icon: 'success'
     });
+
     setTimeout(() => {
       uni.navigateBack();
     }, 1500);
-  }, 1000);
+  } catch (error) {
+    uni.hideLoading();
+    console.error('提交评价失败:', error);
+    uni.showToast({
+      title: error.message || '提交失败，请重试',
+      icon: 'none'
+    });
+  }
 };
 </script>
 
@@ -425,6 +487,44 @@ $transition: all 0.3s ease;
     }
   }
 
+  .image-preview-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16rpx;
+    margin-top: 20rpx;
+
+    .preview-item {
+      position: relative;
+      width: 160rpx;
+      height: 160rpx;
+      border-radius: 12rpx;
+      overflow: hidden;
+
+      .preview-img {
+        width: 100%;
+        height: 100%;
+      }
+
+      .remove-btn {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 40rpx;
+        height: 40rpx;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0 0 0 12rpx;
+
+        .iconfont {
+          font-size: 24rpx;
+          color: #fff;
+        }
+      }
+    }
+  }
+
   .content-toolbar {
     display: flex;
     justify-content: space-between;
@@ -463,7 +563,7 @@ $transition: all 0.3s ease;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20rpx 30rpx 40rpx;
+  padding: 20rpx 30rpx calc(40rpx + env(safe-area-inset-bottom));
 
   .anonymous-left {
     display: flex;
@@ -489,37 +589,13 @@ $transition: all 0.3s ease;
   left: 0;
   right: 0;
   display: flex;
-  gap: 16rpx;
   padding: 16rpx 24rpx 24rpx;
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   background-color: $bg-primary;
   z-index: 999;
 
-  .reward-btn {
-    flex: 1;
-    height: 72rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10rpx;
-    background-color: transparent;
-    border: 2rpx solid $accent-yellow;
-    border-radius: 36rpx;
-    font-size: 28rpx;
-    color: $accent-yellow;
-    font-weight: 600;
-
-    .iconfont {
-      font-size: 32rpx;
-    }
-
-    &:active {
-      opacity: 0.8;
-    }
-  }
-
   .submit-btn {
-    flex: 3;
+    flex: 1;
     height: 72rpx;
     display: flex;
     align-items: center;

@@ -5,30 +5,30 @@
         <view class="search-input-wrapper">
           <uni-icons type="search" size="18" color="#999"></uni-icons>
           <input
-            class="search-input"
-            placeholder="搜索助教姓名或特长"
-            placeholder-class="search-placeholder"
-            v-model="searchKeyword"
-            @confirm="handleSearch"
+              class="search-input"
+              placeholder="搜索助教姓名或特长"
+              placeholder-class="search-placeholder"
+              v-model="searchKeyword"
+              @confirm="handleSearch"
           />
           <uni-icons
-            v-if="searchKeyword"
-            type="clear"
-            size="16"
-            color="#999"
-            class="clear-icon"
-            @click="clearSearch"
+              v-if="searchKeyword"
+              type="clear"
+              size="16"
+              color="#999"
+              class="clear-icon"
+              @click="clearSearch"
           ></uni-icons>
         </view>
       </view>
       <scroll-view class="tab-scroll" scroll-x="true" :show-scrollbar="false">
         <view class="tab-list">
           <view
-            v-for="(tab, index) in tabs"
-            :key="index"
-            class="tab-item"
-            :class="{ active: currentTab === index }"
-            @click="switchTab(index)"
+              v-for="(tab, index) in tabs"
+              :key="index"
+              class="tab-item"
+              :class="{ active: currentTab === index }"
+              @click="switchTab(index)"
           >
             {{ tab }}
           </view>
@@ -37,44 +37,46 @@
 
       <view class="sort-bar">
         <view
-          class="sort-item"
-          :class="{ active: currentSort === 0 }"
-          @click="switchSort(0)"
+            class="sort-item"
+            :class="{ active: currentSort === 0 }"
+            @click="switchSort(0)"
         >
           <text>智能排序</text>
           <uni-icons v-if="currentSort === 0" type="bottom" size="12" color="#00d4aa"></uni-icons>
         </view>
         <view
-          class="sort-item"
-          :class="{ active: currentSort === 1 }"
-          @click="switchSort(1)"
-        >距离最近</view>
+            class="sort-item"
+            :class="{ active: currentSort === 1 }"
+            @click="switchSort(1)"
+        >距离最近
+        </view>
         <view
-          class="sort-item"
-          :class="{ active: currentSort === 2 }"
-          @click="switchSort(2)"
-        >好评优先</view>
+            class="sort-item"
+            :class="{ active: currentSort === 2 }"
+            @click="switchSort(2)"
+        >好评优先
+        </view>
       </view>
     </view>
 
     <scroll-view
-      class="list-scroll"
-      scroll-y="true"
-      refresher-enabled="true"
-      :refresher-triggered="refreshing"
-      @refresherrefresh="onRefresh"
-      @scrolltolower="loadMore"
-      :style="{ height: scrollHeight + 'px' }"
+        class="list-scroll"
+        scroll-y="true"
+        refresher-enabled="true"
+        :refresher-triggered="refreshing"
+        @refresherrefresh="onRefresh"
+        @scrolltolower="loadMore"
     >
       <view class="coach-list">
         <view
-          v-for="(coach, index) in coachList"
-          :key="coach.id"
-          class="coach-card"
-          @click="goToDetail(coach.id)"
+            v-for="(coach, index) in coachList"
+            :key="coach.id"
+            class="coach-card"
+            @click="goToDetail(coach.id)"
         >
           <view class="coach-avatar">
-            <image :src="coach.mainPhotoUrl || coach.avatar || '/static/default-avatar.png'" mode="aspectFill" class="avatar-img"></image>
+            <image :src="coach.mainPhotoUrl || coach.avatar || '/static/default-avatar.png'" mode="aspectFill"
+                   class="avatar-img"></image>
           </view>
 
           <view class="coach-info">
@@ -95,11 +97,12 @@
               <text class="review-count">({{ coach.serviceCount || coach.reviewCount || 0 }}单)</text>
               <view class="coach-tags">
                 <view
-                  v-for="(tag, tagIndex) in (coach.tags || []).filter(t => t !== '新人')"
-                  :key="tagIndex"
-                  class="coach-tag"
-                  :class="getTagClass(tag)"
-                >{{ tag }}</view>
+                    v-for="(tag, tagIndex) in (coach.tags || []).filter(t => t !== '新人')"
+                    :key="tagIndex"
+                    class="coach-tag"
+                    :class="getTagClass(tag)"
+                >{{ tag }}
+                </view>
               </view>
             </view>
 
@@ -132,16 +135,17 @@
         <view class="loading-status">
           <uni-load-more :status="loadMoreStatus"></uni-load-more>
         </view>
-
-        <view class="safe-area-bottom"></view>
       </view>
+      <view class="safe-area-bottom"></view>
     </scroll-view>
+
+
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { getCoachList } from '@/api/billiard/coach'
+import {ref, onMounted} from 'vue'
+import {getCoachList} from '@/api/billiard/coach'
 
 const statusBarHeight = ref(0)
 const scrollHeight = ref(0)
@@ -161,9 +165,9 @@ const tabs = ['全部', '新人', '免费出行', '初级', '中级', '高级']
 
 // 等级映射
 const levelMap = {
-  0: { text: '初级', class: 'junior' },
-  1: { text: '中级', class: 'middle' },
-  2: { text: '高级', class: 'senior' }
+  0: {text: '初级', class: 'junior'},
+  1: {text: '中级', class: 'middle'},
+  2: {text: '高级', class: 'senior'}
 }
 
 const getLevelText = (level) => {
@@ -332,7 +336,7 @@ const goToReward = (id) => {
 const handleBook = (coach) => {
   // 保存选中的助教信息
   uni.setStorageSync('selectedCoach', coach)
-  uni.navigateTo({ url: '/pages/booking/hall' })
+  uni.navigateTo({url: '/pages/booking/hall'})
 }
 
 onMounted(() => {
@@ -345,7 +349,7 @@ onMounted(() => {
     query.select('.header-section').boundingClientRect()
     query.exec((res) => {
       const headerHeight = res[0]?.height || 0
-      console.log(systemInfo.windowHeight, headerHeight ,(systemInfo.safeAreaInsets?.bottom))
+      console.log(systemInfo.windowHeight, headerHeight, (systemInfo.safeAreaInsets?.bottom))
 
       // 减去系统导航栏、header、底部安全区域
       scrollHeight.value = systemInfo.windowHeight - headerHeight - (systemInfo.safeAreaInsets?.bottom || 0)
@@ -361,32 +365,42 @@ onMounted(() => {
 /* 全局容器 */
 .coach-list-page {
   width: 100%;
-  min-height: 100vh;
+  height: 100vh;
   background-color: #1a1a1a;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 顶部固定区域 */
 .header-section {
+  flex-shrink: 0;
   background-color: #2a2a2a;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .search-bar {
   padding: 20rpx 32rpx;
+
   .search-input-wrapper {
     display: flex;
     align-items: center;
     background-color: #3a3a3a;
     border-radius: 48rpx;
     padding: 16rpx 32rpx;
+
     .search-input {
       flex: 1;
       margin-left: 16rpx;
       color: #fff;
       font-size: 28rpx;
     }
+
     .search-placeholder {
       color: #999;
     }
+
     .clear-icon {
       margin-left: 10rpx;
     }
@@ -395,10 +409,16 @@ onMounted(() => {
 
 .tab-scroll {
   white-space: nowrap;
+  overflow-x: scroll;
+  padding: 0 32rpx;
+  box-sizing: border-box;
+
   .tab-list {
     display: flex;
-    padding: 10rpx 32rpx 20rpx;
+    padding: 10rpx 0 20rpx;
+
     .tab-item {
+      flex-shrink: 0;
       padding: 12rpx 32rpx;
       margin-right: 20rpx;
       border-radius: 40rpx;
@@ -406,6 +426,11 @@ onMounted(() => {
       color: #999;
       background-color: #333;
       transition: all 0.2s;
+
+      &:last-child {
+        margin-right: 0;
+      }
+
       &.active {
         background-color: #00d4aa;
         color: #fff;
@@ -419,12 +444,14 @@ onMounted(() => {
   justify-content: space-around;
   padding: 20rpx 0;
   border-top: 1rpx solid #333;
+
   .sort-item {
     display: flex;
     align-items: center;
     gap: 4rpx;
     font-size: 26rpx;
     color: #999;
+
     &.active {
       color: #00d4aa;
       font-weight: bold;
@@ -434,7 +461,8 @@ onMounted(() => {
 
 /* 滚动区域 */
 .list-scroll {
-  /* 高度通过内联样式动态设置 */
+  flex: 1;
+  min-height: 0;
 
   .coach-list {
     padding: 20rpx 30rpx;
@@ -447,7 +475,8 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 120rpx 0;
+  padding: 60rpx 0;
+
   .empty-text {
     margin-top: 20rpx;
     font-size: 28rpx;
@@ -488,33 +517,40 @@ onMounted(() => {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
+
       .name-row {
         display: flex;
         align-items: center;
         gap: 10rpx;
         flex-wrap: wrap;
+
         .coach-name {
           font-size: 32rpx;
           color: #fff;
           font-weight: bold;
         }
+
         .level-tag {
           font-size: 20rpx;
           padding: 2rpx 10rpx;
           border-radius: 4rpx;
+
           &.senior {
             background: rgba(0, 212, 170, 0.2);
             color: #00d4aa;
           }
+
           &.middle {
             background: rgba(255, 149, 0, 0.2);
             color: #FF9500;
           }
+
           &.junior {
             background: rgba(102, 102, 102, 0.2);
             color: #999;
           }
         }
+
         .new-tag {
           font-size: 20rpx;
           background: #FF3B30;
@@ -523,6 +559,7 @@ onMounted(() => {
           border-radius: 4rpx;
         }
       }
+
       .distance {
         font-size: 24rpx;
         color: #777;
@@ -533,15 +570,18 @@ onMounted(() => {
       display: flex;
       align-items: center;
       margin: 10rpx 0;
+
       .rating {
         color: #FFD700;
         font-size: 26rpx;
         margin: 0 8rpx;
       }
+
       .review-count {
         color: #777;
         font-size: 24rpx;
       }
+
       .coach-tags {
         display: flex;
         align-items: center;
@@ -621,24 +661,29 @@ onMounted(() => {
       justify-content: space-between;
       align-items: center;
       margin-top: 10rpx;
+
       .price-row {
         .price-symbol {
           color: #00d4aa;
           font-size: 24rpx;
         }
+
         .price {
           color: #00d4aa;
           font-size: 36rpx;
           font-weight: bold;
         }
+
         .price-unit {
           color: #777;
           font-size: 22rpx;
         }
       }
+
       .action-buttons {
         display: flex;
         gap: 10rpx;
+
         button {
           border: none;
           font-size: 24rpx;
@@ -647,6 +692,7 @@ onMounted(() => {
           height: 54rpx;
           line-height: 54rpx;
         }
+
         .reward-btn {
           background: #3a3a3a;
           color: #FF9500;
@@ -654,6 +700,7 @@ onMounted(() => {
           align-items: center;
           gap: 4rpx;
         }
+
         .book-btn {
           background: #00d4aa;
           color: #fff;

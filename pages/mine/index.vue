@@ -187,6 +187,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
+import { getUserInfo } from '@/api/billiard/user'
+import { useUserStore } from '@/store/modules/user'
+
+const userStore = useUserStore()
 
 // ---------------------- 状态定义 ----------------------
 // 刷新状态
@@ -196,18 +200,18 @@ const currentOrderTab = ref(2) // 默认选中待评价，和设计图一致
 
 // 用户信息
 const userInfo = ref({
-  avatar: '', // 你的头像地址
-  nickname: '张先生',
-  phone: '138****8888',
+  avatar: '',
+  nickname: '',
+  phone: '',
   level: '普通会员',
   levelClass: 'level-normal'
 })
 
 // 用户统计
 const stats = ref({
-  totalOrder: 12,
-  finishOrder: 8,
-  avgScore: 4.8
+  totalOrder: 0,
+  finishOrder: 0,
+  avgScore: 0
 })
 
 // 钱包信息
@@ -267,15 +271,47 @@ const showOrders = computed(() => {
   return orderList.value[currentOrderTab.value] || []
 })
 
+// ---------------------- 数据加载 ----------------------
+// 加载用户信息
+const loadUserInfo = async () => {
+  try {
+    const res = await getUserInfo()
+    const data = res.data || {}
+
+    // 处理头像
+    if (data.avatar) {
+      userInfo.value.avatar = data.avatar
+    } else {
+      userInfo.value.avatar = '/static/default-avatar.png'
+    }
+
+    // 处理昵称
+    userInfo.value.nickname = data.nickname || '用户'
+
+    // 处理手机号（脱敏显示）
+    if (data.mobile) {
+      userInfo.value.phone = data.mobile.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
+    }
+
+    // 处理等级（暂时默认普通会员，后续可根据业务扩展）
+    userInfo.value.level = '普通会员'
+    userInfo.value.levelClass = 'level-normal'
+
+  } catch (error) {
+    console.error('获取用户信息失败:', error)
+  }
+}
+
 // ---------------------- 交互方法 ----------------------
 // 下拉刷新
-const onRefresh = () => {
+const onRefresh = async () => {
   refreshing.value = true
-  // 重新加载数据，你可以替换为你的接口请求
-  setTimeout(() => {
-    refreshing.value = false
-    uni.showToast({ title: '刷新成功', icon: 'success' })
-  }, 1000)
+  // 重新加载数据
+  await Promise.all([
+    loadUserInfo()
+  ])
+  refreshing.value = false
+  uni.showToast({ title: '刷新成功', icon: 'success' })
 }
 
 // 预览当前头像
@@ -331,12 +367,14 @@ const toMenuPage = (item) => {
 
 // ---------------------- 生命周期 ----------------------
 onMounted(() => {
-  // 页面加载拉取用户数据，你可以替换为你的接口
+  // 页面加载拉取用户数据
+  loadUserInfo()
 })
 
 // 页面显示刷新数据
 onShow(() => {
-  // 可以在这里做数据刷新
+  // 每次进入页面刷新用户数据
+  loadUserInfo()
 })
 </script>
 

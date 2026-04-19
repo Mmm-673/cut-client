@@ -8,20 +8,47 @@
     >
       <!-- 标题区域 -->
       <view class="title-section">
-        <text class="main-title">设置新密码</text>
-        <text class="sub-title">请设置8-16位包含字母和数字的密码</text>
+        <text class="main-title">修改密码</text>
+        <text class="sub-title">请先验证手机号，再设置新密码</text>
       </view>
 
       <!-- 输入框区域 -->
       <view class="input-section">
+        <!-- 当前账号 -->
+        <view class="current-mobile">
+          <text class="label">当前账号</text>
+          <text class="value">{{ userStore.mobile || '未登录' }}</text>
+        </view>
+
+        <!-- 验证码输入 -->
+        <view class="input-box" style="margin-top: 30rpx;">
+          <uni-icons type="locked" size="24" color="#00BB88" />
+          <input
+              class="input-field"
+              type="number"
+              v-model="form.code"
+              placeholder="请输入验证码"
+              placeholder-class="input-placeholder"
+              maxlength="6"
+          />
+          <button
+              class="code-btn"
+              :class="{ 'code-btn-disabled': codeCountdown > 0 }"
+              @click="getCode"
+              :disabled="codeCountdown > 0"
+          >
+            {{ codeCountdown > 0 ? `${codeCountdown}s` : '获取验证码' }}
+          </button>
+        </view>
+
         <!-- 新密码 -->
-        <view class="input-box">
+        <view class="input-box" style="margin-top: 30rpx;">
           <uni-icons type="locked" size="24" color="#00BB88" />
           <input
               class="input-field"
               :type="showPass1 ? 'text' : 'password'"
-              v-model="newPassword"
-              placeholder="请输入新密码"
+              v-model="form.password"
+              placeholder="请输入新密码（4-16位）"
               placeholder-class="input-placeholder"
               maxlength="16"
           />
@@ -31,7 +58,7 @@
         </view>
 
         <!-- 密码强度 -->
-        <view class="strength-box" v-if="newPassword">
+        <view class="strength-box" v-if="form.password">
           <view class="strength-bar">
             <view class="bar-item" :class="strengthClass[0]"></view>
             <view class="bar-item" :class="strengthClass[1]"></view>
@@ -89,51 +116,67 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { onShow } from  "@dcloudio/uni-app"
+import { ref, computed, onUnmounted } from 'vue'
+import { useUserStore } from '@/store/modules/user'
+import { validateSmsCode } from '@/api/auth'
+
+const userStore = useUserStore()
 
 // ---------------------- 状态定义 ----------------------
-// 密码输入框显示状态
+// 密码显示状态
 const showPass1 = ref(false)
 const showPass2 = ref(false)
-// 密码值
-const newPassword = ref('')
+
+// 表单数据
+const form = ref({
+  code: '',
+  password: ''
+})
 const confirmPassword = ref('')
+
+// 验证码倒计时
+const codeCountdown = ref(0)
+let countdownTimer = null
+
 // 用户协议勾选状态
-const userAgree = ref(true) // 默认勾选更符合用户习惯，与设计图一致
+const userAgree = ref(true)
 // 提交中状态
 const isSubmitting = ref(false)
 
 // ---------------------- 密码强度逻辑 ----------------------
 const strengthInfo = computed(() => {
-  const pwd = newPassword.value
+  const pwd = form.value.password
   if (!pwd) return { text: '', textColor: '#6B7280', class: ['', '', ''] }
-  if (pwd.length < 8) return { text: '弱', textColor: '#EF4444', class: ['active-weak', '', ''] }
+  if (pwd.length < 4) return { text: '弱', textColor: '#EF4444', class: ['active-weak', '', ''] }
   const hasLetter = /[a-zA-Z]/.test(pwd)
   const hasNumber = /[0-9]/.test(pwd)
-  if (hasLetter && hasNumber && pwd.length >= 8 && pwd.length <= 16) {
-    return { text: '强', textColor: '#00BB88', class: ['active-strong', 'active-strong', 'active-strong'] }
-  } else {
+  if (pwd.length >= 4 && pwd.length <= 16) {
+    if (hasLetter && hasNumber) {
+      return { text: '强', textColor: '#00BB88', class: ['active-strong', 'active-strong', 'active-strong'] }
+    }
     return { text: '中', textColor: '#FBBF24', class: ['active-medium', 'active-medium', ''] }
   }
+  return { text: '弱', textColor: '#EF4444', class: ['active-weak', '', ''] }
 })
 
-// 简化的子属性引用（避免模板过长）
 const strengthText = computed(() => strengthInfo.value.text)
 const strengthTextColor = computed(() => strengthInfo.value.textColor)
 const strengthClass = computed(() => strengthInfo.value.class)
 
 // ---------------------- 完成按钮激活逻辑 ----------------------
 const isBtnActive = computed(() => {
-  const pwd = newPassword.value
+  const code = form.value.code
+  const pwd = form.value.password
   const confirm = confirmPassword.value
   // 激活条件：
-  // 1. 新密码长度≥8
-  // 2. 确认密码不为空
-  // 3. 已勾选协议
-  if (pwd.length < 8 || !confirm || !userAgree.value) return false
-  // 额外友好条件：确认密码和新密码长度一致时，更大概率是对的
-  if (pwd.length !== confirm.length) return false
+  // 1. 验证码长度=6
+  // 2. 新密码长度4-16
+  // 3. 确认密码不为空
+  // 4. 已勾选协议
+  if (code.length !== 6) return false
+  if (pwd.length < 4 || pwd.length > 16) return false
+  if (!confirm) return false
+  if (!userAgree.value) return false
   return true
 })
 
@@ -147,21 +190,62 @@ const toAgreement = (type) => {
     title: type === 'user' ? '用户协议功能开发中' : '隐私政策功能开发中',
     icon: 'none'
   })
-  // uni.navigateTo({ url: `/pages/agreement/${type}` })
+}
+
+// 获取验证码
+const getCode = async () => {
+  if (!userStore.mobile) {
+    uni.showToast({ title: '用户未登录', icon: 'none' })
+    return
+  }
+  if (codeCountdown.value > 0) return
+  if (!userAgree.value) {
+    uni.showToast({ title: '请先同意用户协议和隐私政策', icon: 'none' })
+    return
+  }
+
+  try {
+    uni.showLoading({ title: '发送中...' })
+    // scene: 3 = 修改密码
+    await userStore.sendCode(userStore.mobile, 3)
+    uni.hideLoading()
+    uni.showToast({ title: '验证码已发送', icon: 'success' })
+
+    // 开始倒计时
+    codeCountdown.value = 60
+    countdownTimer = setInterval(() => {
+      codeCountdown.value--
+      if (codeCountdown.value <= 0) {
+        clearInterval(countdownTimer)
+      }
+    }, 1000)
+  } catch (error) {
+    uni.hideLoading()
+    console.error('发送验证码失败:', error)
+    uni.showToast({ title: error.message || '发送失败', icon: 'none' })
+  }
 }
 
 // 表单验证
 const validateForm = () => {
-  const pwd = newPassword.value
+  const code = form.value.code
+  const pwd = form.value.password
   const confirm = confirmPassword.value
 
-  // 检查新密码格式
-  if (pwd.length < 8 || pwd.length > 16) {
-    uni.showToast({ title: '请设置8-16位密码', icon: 'none' })
+  if (!userStore.mobile) {
+    uni.showToast({ title: '用户未登录', icon: 'none' })
     return false
   }
-  if (!/[a-zA-Z]/.test(pwd) || !/[0-9]/.test(pwd)) {
-    uni.showToast({ title: '密码需包含字母和数字', icon: 'none' })
+
+  // 检查验证码
+  if (!code || code.length !== 6) {
+    uni.showToast({ title: '请输入6位验证码', icon: 'none' })
+    return false
+  }
+
+  // 检查新密码格式
+  if (pwd.length < 4 || pwd.length > 16) {
+    uni.showToast({ title: '请设置4-16位密码', icon: 'none' })
     return false
   }
 
@@ -186,36 +270,35 @@ const submitForm = async () => {
 
   isSubmitting.value = true
   try {
-    // TODO: 这里调用后端「设置新密码」接口
-    await new Promise(resolve => setTimeout(resolve, 1500)) // 模拟请求延迟
+    // 1. 先校验验证码
+    await validateSmsCode({
+      mobile: userStore.mobile,
+      code: form.value.code,
+      scene: 3
+    })
 
-    // 成功后的逻辑
-    uni.showToast({ title: '密码设置成功', icon: 'success' })
+    // 2. 验证码校验成功后，调用修改密码接口
+    await userStore.updatePassword({
+      code: form.value.code,
+      password: form.value.password
+    })
+
+    uni.showToast({ title: '密码修改成功', icon: 'success' })
     setTimeout(() => {
-      // 根据场景跳转：比如从忘记密码来的跳登录，从修改密码来的跳个人中心
+      // 修改成功后跳转到登录页重新登录
       uni.reLaunch({ url: '/pages/login/index' })
-      // 或者 uni.navigateBack({ delta: 2 })
     }, 1500)
   } catch (error) {
-    console.error('密码设置失败:', error)
-    uni.showToast({ title: '密码设置失败，请重试', icon: 'none' })
+    console.error('密码修改失败:', error)
+    uni.showToast({ title: error.message || '修改失败，请重试', icon: 'none' })
   } finally {
     isSubmitting.value = false
   }
 }
 
 // ---------------------- 生命周期 ----------------------
-onMounted(() => {
-  // 页面加载时清空可能的历史值
-  newPassword.value = ''
-  confirmPassword.value = ''
-  userAgree.value = true
-  showPass1.value = false
-  showPass2.value = false
-})
-
-onShow(() => {
-  // 页面显示时可以重置焦点
+onUnmounted(() => {
+  if (countdownTimer) clearInterval(countdownTimer)
 })
 </script>
 
@@ -225,26 +308,6 @@ onShow(() => {
   background: #121619;
   display: flex;
   flex-direction: column;
-}
-
-/* 顶部导航栏（只保留返回） */
-.nav-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20rpx 30rpx;
-  padding-top: calc(20rpx + constant(safe-area-inset-top));
-  padding-top: calc(20rpx + env(safe-area-inset-top));
-  .nav-back, .nav-placeholder {
-    width: 60rpx;
-    height: 60rpx;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-  }
-  .nav-placeholder {
-    justify-content: flex-end;
-  }
 }
 
 .pwd-scroll {
@@ -273,6 +336,26 @@ onShow(() => {
 /* 输入框区域 */
 .input-section {
   margin-bottom: 80rpx;
+
+  /* 当前账号 */
+  .current-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24rpx 30rpx;
+    background: #1E252B;
+    border-radius: 24rpx;
+
+    .label {
+      font-size: 28rpx;
+      color: #9CA3AF;
+    }
+    .value {
+      font-size: 28rpx;
+      color: #fff;
+    }
+  }
+
   .input-box {
     display: flex;
     align-items: center;
@@ -296,6 +379,23 @@ onShow(() => {
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+    }
+    .code-btn {
+      padding: 0 24rpx;
+      height: 56rpx;
+      line-height: 56rpx;
+      background: #00BB88;
+      color: #fff;
+      border-radius: 28rpx;
+      font-size: 24rpx;
+      border: none;
+      &::after {
+        border: none;
+      }
+    }
+    .code-btn-disabled {
+      background: rgba(0, 187, 136, 0.3) !important;
+      color: rgba(255,255,255,0.5) !important;
     }
   }
 }
