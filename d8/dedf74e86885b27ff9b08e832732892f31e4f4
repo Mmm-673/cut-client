@@ -1,0 +1,97 @@
+pages/login/index.vue
+  d1efcae32b9f8c71 195-196
+pages/coach/detail.vue
+  17dad194a6172e31 3-4,8,149,164,255-257,358-359,377,383-384,386,388-397,494,551,556
+  d1efcae32b9f8c71 7,165,309-310,323-357,378-382,385,387
+pages/mine/favorites/index.vue
+  d1efcae32b9f8c71 1-469
+store/modules/user.js
+  d1efcae32b9f8c71 59,61
+pages/login/resetPassword.vue
+  d1efcae32b9f8c71 158-159
+api/auth.js
+  d1efcae32b9f8c71 8,11,15-16,60,63,67-68
+api/billiard/user.js
+  17dad194a6172e31 2,23-35
+api/billiard/coach.js
+  d1efcae32b9f8c71 177-207
+  17dad194a6172e31 162-176
+pages/mine/info/index.vue
+  17dad194a6172e31 98,152-161,173,204,231,234,236-237
+utils/request.js
+  d1efcae32b9f8c71 119-122,125,128
+pages/mine/wallet/list.vue
+  d1efcae32b9f8c71 24-36,40-41,106-111,125-159,161,166,169-174,177-222,224-229,231,233-240,242-305,311-312,315,321-322,334-380,394,399-400
+CLAUDE.md
+  42081d64ef950fe1 1-111
+pages/mine/pwd/index.vue
+  d1efcae32b9f8c71 29,31,141,171,173,175,177,208,240-241,272,276-277,287,289
+pages.json
+  d1efcae32b9f8c71 110-111,115-116
+  87bcf88bf6db32f6 109
+api/billiard/wallet.js
+  d1efcae32b9f8c71 1-48
+pages/mine/index.vue
+  d1efcae32b9f8c71 191,220-222,225-240,281,283,329-330,391,398
+pages/mine/wallet/index.vue
+  d1efcae32b9f8c71 78,80,91-93,98-99,103-137,139-193,208,211,242
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "d8dedf74e86885b27ff9b08e832732892f31e4f4",
+  "prompts": {
+    "17dad194a6172e31": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "31bee5a3-164d-4f18-b68f-8fc92f5fd45b",
+        "model": "MiniMax-M2.7"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 99,
+      "total_deletions": 75,
+      "accepted_lines": 1530,
+      "overriden_lines": 3
+    },
+    "42081d64ef950fe1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8d6f4803-5105-4576-a0ec-aa1a911bf821",
+        "model": "MiniMax-M2.7"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 117,
+      "total_deletions": 6,
+      "accepted_lines": 111,
+      "overriden_lines": 0
+    },
+    "87bcf88bf6db32f6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f3b7f3c9-64b1-4973-9021-58f94a114a31",
+        "model": "MiniMax-M2.7"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 202,
+      "overriden_lines": 0
+    },
+    "d1efcae32b9f8c71": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ebf335d5-9abd-4a44-8609-2487a330e56e",
+        "model": "MiniMax-M2.7"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 1223,
+      "total_deletions": 436,
+      "accepted_lines": 2811,
+      "overriden_lines": 5
+    }
+  }
+}
