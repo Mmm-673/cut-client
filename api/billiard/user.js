@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import upload from '@/utils/upload'
 
 /**
  * 获取用户个人信息
@@ -16,6 +17,22 @@ export function getUserInfo() {
   return request({
     url: '/app-api/billiard/user/get',
     method: 'get'
+  })
+}
+
+/**
+ * 上传文件（统一文件上传接口）
+ * @param {string} filePath - 文件路径
+ * @param {string} [directory] - 保存目录，如 'avatar'
+ * @returns {Promise<Object>} 返回上传结果
+ * @returns {string} returns.data - 文件完整访问URL
+ */
+export function uploadFile(filePath, directory = 'avatar') {
+  return upload({
+    url: '/app-api/infra/file/upload',
+    filePath,
+    name: 'file',
+    formData: { directory }
   })
 }
 
@@ -64,20 +81,5 @@ export function updateMobile(data) {
     url: '/app-api/billiard/user/update-mobile',
     method: 'post',
     data
-  })
-}
-
-/**
- * 上传用户头像
- * @param {string} filePath - 文件路径
- * @returns {Promise<Object>} 返回上传结果
- * @returns {string} returns.data.url - 图片URL
- */
-export function uploadAvatar(filePath) {
-  return request({
-    url: '/app-api/billiard/user/upload-avatar',
-    method: 'post',
-    filePath,
-    name: 'file'
   })
 }

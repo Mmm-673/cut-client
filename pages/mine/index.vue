@@ -188,6 +188,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
 import { getUserInfo } from '@/api/billiard/user'
+import { getWallet } from '@/api/billiard/wallet'
 import { useUserStore } from '@/store/modules/user'
 
 const userStore = useUserStore()
@@ -216,8 +217,26 @@ const stats = ref({
 
 // 钱包信息
 const wallet = ref({
-  balance: 256.00
+  balance: 0,
+  totalExpense: 0,
+  totalRecharge: 0
 })
+
+// 加载钱包数据
+const loadWallet = async () => {
+  try {
+    const res = await getWallet()
+    if (res.data) {
+      wallet.value = {
+        balance: (res.data.balance || 0) / 100, // 分转元
+        totalExpense: (res.data.totalExpense || 0) / 100,
+        totalRecharge: (res.data.totalRecharge || 0) / 100
+      }
+    }
+  } catch (error) {
+    console.error('加载钱包失败:', error)
+  }
+}
 
 // 优惠券信息
 const coupon = ref({
@@ -259,10 +278,9 @@ const orderList = ref({
 
 // 功能菜单（修正了跳转路径！！对应刚才整合的pages.json）
 const menuList = ref([
-  { key: 'collection', title: '我的收藏', icon: 'heart', bgColor: 'rgba(251, 191, 36, 0.2)', color: '#FBBF24', path: '' },
+  { key: 'collection', title: '我的收藏', icon: 'heart', bgColor: 'rgba(255, 77, 79, 0.2)', color: '#ff4d4f', path: '/pages/mine/favorites/index' },
   { key: 'follow', title: '关注教练', icon: 'personadd', bgColor: 'rgba(0, 187, 136, 0.2)', color: '#00BB88', path: '' },
-  { key: 'hall', title: '常用球厅', icon: 'location', bgColor: 'rgba(239, 68, 68, 0.2)', color: '#EF4444', path: '' },
-  { key: 'help', title: '帮助中心', icon: 'question', bgColor: 'rgba(107, 114, 128, 0.2)', color: '#6B7280', path: '/subpkg-mine/pages/help' },
+  { key: 'help', title: '帮助中心', icon: 'question', bgColor: 'rgba(107, 114, 128, 0.2)', color: '#6B7280', path: '/pages/mine/help/index' },
 ])
 
 // ---------------------- 计算属性 ----------------------
@@ -308,7 +326,8 @@ const onRefresh = async () => {
   refreshing.value = true
   // 重新加载数据
   await Promise.all([
-    loadUserInfo()
+    loadUserInfo(),
+    loadWallet()
   ])
   refreshing.value = false
   uni.showToast({ title: '刷新成功', icon: 'success' })
@@ -369,12 +388,14 @@ const toMenuPage = (item) => {
 onMounted(() => {
   // 页面加载拉取用户数据
   loadUserInfo()
+  loadWallet()
 })
 
 // 页面显示刷新数据
 onShow(() => {
   // 每次进入页面刷新用户数据
   loadUserInfo()
+  loadWallet()
 })
 </script>
 

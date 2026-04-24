@@ -115,16 +115,17 @@ const request = async config => {
     let url = config.url + '?'
     for (const propName of Object.keys(config.params)) {
       const value = config.params[propName]
-      const part = encodeURIComponent(propName) + '='
       if (value !== null && value !== '' && typeof value !== 'undefined') {
-        if (typeof value === 'object') {
+        if (Array.isArray(value)) {
+          // 数组格式：逗号分隔，如 createTime=2026-01-01,2026-02-01
+          url += encodeURIComponent(propName) + '=' + encodeURIComponent(value.join(',')) + '&'
+        } else if (typeof value === 'object') {
           for (const key of Object.keys(value)) {
             const params = propName + '[' + key + ']'
-            const subPart = encodeURIComponent(params) + '='
-            url += subPart + encodeURIComponent(value[key]) + '&'
+            url += encodeURIComponent(params) + '=' + encodeURIComponent(value[key]) + '&'
           }
         } else {
-          url += part + encodeURIComponent(value) + '&'
+          url += encodeURIComponent(propName) + '=' + encodeURIComponent(value) + '&'
         }
       }
     }

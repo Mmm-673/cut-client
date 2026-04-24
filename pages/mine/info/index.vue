@@ -14,7 +14,7 @@
         <view class="camera-btn" @click="uploadAvatarAction">
           <uni-icons type="camera-filled" size="24" color="#fff" />
         </view>
-        <text class="avatar-tip">点击头像可更换图片</text>
+        <text class="avatar-tip">点击头像可查看大图</text>
       </view>
 
       <view class="info-card">
@@ -95,7 +95,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { onShow } from "@dcloudio/uni-app"
-import { getUserInfo, updateUser, sendUpdateMobileSms, updateMobile, uploadAvatar as uploadAvatarApi } from '@/api/billiard/user'
+import { getUserInfo, updateUser, sendUpdateMobileSms, updateMobile, uploadFile } from '@/api/billiard/user'
 import { getAreaTree } from '@/api/billiard/area'
 
 // 性别选项
@@ -149,6 +149,16 @@ const cityName = computed(() => {
   return findName(areaTree.value, userInfo.value.areaId) || '选择地区'
 })
 
+// 格式化日期时间戳为 yyyy-MM-dd
+const formatDate = (timestamp) => {
+  if (!timestamp) return ''
+  const date = new Date(timestamp)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const loadUserInfo = async () => {
   try {
     uni.showLoading({ title: '加载中...' })
@@ -160,7 +170,7 @@ const loadUserInfo = async () => {
         nickname: res.data.nickname || '',
         mobile: res.data.mobile || '',
         sex: res.data.sex ?? 0,
-        birthday: res.data.birthday ? res.data.birthday.split('T') : '',
+        birthday: res.data.birthday ? formatDate(res.data.birthday) : '',
         areaId: res.data.areaId,
         introduction: res.data.introduction || ''
       }
@@ -191,6 +201,7 @@ const saveUserInfo = async (data) => {
     const res = await updateUser(data)
     if (res.code === 0) {
       uni.showToast({ title: '保存成功', icon: 'success' })
+      await loadUserInfo()
       return true
     } else {
       uni.showToast({ title: res.msg || '保存失败', icon: 'none' })
@@ -217,13 +228,13 @@ const uploadAvatarAction = async () => {
     count: 1,
     sizeType: ['compressed'],
     success: async (res) => {
-      const tempFilePath = res.tempFilePaths
+      const tempFilePath = res.tempFilePaths[0]
       uni.showLoading({ title: '上传中...' })
       try {
-        const uploadRes = await uploadAvatarApi(tempFilePath)
+        const uploadRes = await uploadFile(tempFilePath, 'avatar')
         if (uploadRes.code === 0 && uploadRes.data) {
-          userInfo.value.avatar = uploadRes.data.url
-          await saveUserInfo({ avatar: uploadRes.data.url })
+          userInfo.value.avatar = uploadRes.data
+          await saveUserInfo({ avatar: uploadRes.data })
         }
       } catch (err) {
         uni.showToast({ title: '上传失败', icon: 'none' })
@@ -357,7 +368,8 @@ onMounted(() => {
     border: 4rpx solid #2a3338;
   }
   .camera-btn {
-    margin-top: -40rpx;
+    z-index: 2;
+    margin-top: -46rpx;
     margin-left: 120rpx;
     width: 60rpx;
     height: 60rpx;

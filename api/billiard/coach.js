@@ -37,6 +37,7 @@ export function getCoachList(params) {
  * @returns {string} [returns.data.profession] - 职业
  * @returns {number} returns.data.level - 助教级别：0=初级 1=中级 2=高级
  * @returns {number} returns.data.serviceCount - 累计服务次数
+ * @returns {boolean} returns.data.favorite - 是否关注
  * @returns {number} returns.data.overallScore - 综合评分
  * @returns {string} [returns.data.introduction] - 简介
  * @returns {Array} [returns.data.photos] - 照片列表（对象数组）
@@ -158,3 +159,49 @@ export function uploadReviewImage(filePath) {
  * @property {number|null} [distance] - 与用户的距离（km），未传经纬度时返回 null
  * @property {string} [tags] - 标签列表（逗号分隔，如：新人、免费出行）
  */
+
+/**
+ * 收藏/取消收藏助教
+ * @param {Object} data - 请求参数
+ * @param {number} data.coachId - 助教ID
+ * @returns {Promise<Object>} 返回当前收藏状态
+ * @returns {boolean} returns.data - true=已收藏，false=未收藏
+ */
+export function toggleCoachFavorite(data) {
+  return request({
+    url: '/app-api/billiard/coach/favorite',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 获取用户收藏助教分页列表
+ * @param {Object} params - 请求参数
+ * @param {number} [params.pageNo=1] - 页码，默认 1
+ * @param {number} [params.pageSize=10] - 每页数量，默认 10
+ * @returns {Promise<Object>} 返回收藏助教列表
+ */
+export function getFavoriteCoachPage(params) {
+  return request({
+    url: '/app-api/billiard/coach/favorite-page',
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 获取助教历史评价分页列表
+ * @param {Object} params - 请求参数
+ * @param {number} params.coachId - 助教ID
+ * @param {number} [params.pageNo=1] - 页码，默认 1
+ * @param {number} [params.pageSize=10] - 每页数量，默认 10，最大 20
+ * @returns {Promise<Object>} 返回评价列表
+ */
+export function getCoachReviews(params) {
+  return request({
+    url: '/app-api/billiard/review/coach-page',
+    method: 'get',
+    params
+  })
+}

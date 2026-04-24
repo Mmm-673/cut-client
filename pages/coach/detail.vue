@@ -1,19 +1,11 @@
 <template>
   <view class="detail-container">
-<!--    &lt;!&ndash; 头部导航栏（新增：返回/分享/收藏） &ndash;&gt;-->
-<!--    <view class="nav-bar">-->
-<!--      <view class="nav-back" @click="goBack">-->
-<!--        <uni-icons type="left" size="20" color="#fff"></uni-icons>-->
-<!--      </view>-->
-<!--      <view class="nav-actions">-->
-<!--        <view class="nav-action" @click="shareCoach">-->
-<!--          <uni-icons type="redo" size="20" color="#fff"></uni-icons>-->
-<!--        </view>-->
-<!--        <view class="nav-action" @click="toggleFavorite">-->
-<!--          <uni-icons :type="isFavorite ? 'heart-filled' : 'heart'" size="20" :color="isFavorite ? '#ff4d4f' : '#fff'"></uni-icons>-->
-<!--        </view>-->
-<!--      </view>-->
-<!--    </view>-->
+    <!-- 头部导航栏 -->
+    <view class="nav-bar">
+      <view class="nav-action" @click="handleToggleFavorite">
+        <uni-icons :type="isFavorite ? 'heart-filled' : 'heart'" size="20" :color="isFavorite ? '#ff4d4f' : '#fff'"></uni-icons>
+      </view>
+    </view>
 
     <!-- 下拉刷新区域 -->
     <scroll-view
@@ -154,6 +146,7 @@
       <view class="safe-area-bottom"></view>
     </scroll-view>
 
+
     <!-- 底部操作栏 -->
     <view class="bottom-bar">
       <view class="price-info">
@@ -168,8 +161,8 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { onLoad } from  "@dcloudio/uni-app"
-import { getCoachDetail } from '@/api/billiard/coach'
+import { onLoad } from "@dcloudio/uni-app"
+import { getCoachDetail, toggleCoachFavorite, getCoachReviews } from '@/api/billiard/coach'
 
 // 状态栏和安全区域高度
 const statusBarHeight = ref(0)
@@ -259,6 +252,9 @@ const loadCoachData = async () => {
     const res = await getCoachDetail({ id: coachId.value })
     const data = res.data || {}
 
+    // 更新收藏状态
+    isFavorite.value = data.favorite || false
+
     // 更新教练信息 - 完全按 API 文档字段处理
     Object.assign(coachInfo, {
       id: data.id,
@@ -310,31 +306,8 @@ const loadCoachData = async () => {
       ]
     }
 
-    // 评价（和截图一致）
-    if (data.recentReviews && Array.isArray(data.recentReviews)) {
-      reviewList.value = data.recentReviews
-    } else if (data.reviews && Array.isArray(data.reviews)) {
-      reviewList.value = data.reviews
-    } else {
-      reviewList.value = [
-        {
-          name: '张先生',
-          avatar: 'https://picsum.photos/100/100?random=4',
-          rating: 5,
-          time: '2026-03-20',
-          content: '教练非常专业，耐心纠正了我很多错误动作，两个小时的学习收获很大，球技提升明显，强烈推荐！',
-          tags: ['专业', '耐心', '准时']
-        },
-        {
-          name: '李女士',
-          avatar: 'https://picsum.photos/100/100?random=5',
-          rating: 5,
-          time: '2026-03-18',
-          content: '第一次学台球，教练教的特别好，很有耐心，零基础也能很快上手，体验非常棒，下次还会约！',
-          tags: ['耐心', '负责任']
-        }
-      ]
-    }
+    // 加载真实评价数据
+    loadReviews()
   } catch (error) {
     console.error('加载教练详情失败:', error)
     uni.showToast({
@@ -345,6 +318,43 @@ const loadCoachData = async () => {
     loading.value = false
     refreshing.value = false
   }
+}
+
+// 加载评价列表
+const loadReviews = async () => {
+  if (!coachId.value) return
+  try {
+    const res = await getCoachReviews({
+      coachId: coachId.value,
+      pageNo: 1,
+      pageSize: 10
+    })
+    const data = res.data || {}
+    const list = data.list || data.records || data.rows || []
+    // 转换字段格式
+    reviewList.value = list.map(item => ({
+      id: item.reviewId,
+      name: item.userNickname || '匿名用户',
+      avatar: item.userAvatar || '/static/default-avatar.png',
+      rating: item.star,
+      time: formatTime(item.createTime),
+      content: item.content || '',
+      tags: item.tags || [],
+      images: item.images || []
+    }))
+  } catch (error) {
+    console.error('加载评价列表失败:', error)
+    reviewList.value = []
+  }
+}
+
+// 格式化时间戳
+const formatTime = (timestamp) => {
+  if (!timestamp) return ''
+  const date = new Date(timestamp)
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  return `${month}月${day}日`
 }
 
 // 下拉刷新
@@ -364,12 +374,27 @@ const shareCoach = () => {
 }
 
 // 收藏/取消收藏
-const toggleFavorite = () => {
-  isFavorite.value = !isFavorite.value
-  uni.showToast({
-    title: isFavorite.value ? '已收藏' : '已取消收藏',
-    icon: 'none'
-  })
+const handleToggleFavorite = async () => {
+  console.log('收藏教练, id:', coachInfo.id)
+  if (!coachInfo.id) {
+    uni.showToast({ title: '教练信息加载中', icon: 'none' })
+    return
+  }
+  try {
+    uni.showLoading({ title: '处理中...' })
+    console.log('发送收藏请求, coachId:', coachInfo.id)
+    const res = await toggleCoachFavorite({ coachId: coachInfo.id })
+    console.log('收藏响应:', res)
+    isFavorite.value = res.data
+    uni.showToast({
+      title: isFavorite.value ? '已收藏' : '已取消收藏',
+      icon: 'none'
+    })
+  } catch (error) {
+    console.error('收藏操作失败:', error)
+  } finally {
+    uni.hideLoading()
+  }
 }
 
 // 跳转到打赏页面
@@ -466,7 +491,7 @@ onMounted(() => {
   position: relative;
 }
 
-/* 头部导航栏（新增） */
+/* 头部导航栏 */
 .nav-bar {
   position: fixed;
   top: 0;
@@ -475,7 +500,7 @@ onMounted(() => {
   height: 90rpx;
   background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   padding: 0 30rpx;
   z-index: 100;
@@ -523,12 +548,12 @@ onMounted(() => {
   }
 
   .header-content {
-    position: absolute; // 改成绝对定位，固定到底部
+    position: absolute;
     left: 0;
     right: 0;
     bottom: 0;
     z-index: 10;
-    padding: 40rpx; // 去掉原来的上padding
+    padding: 40rpx;
     display: flex;
     align-items: flex-start;
     gap: 32rpx;

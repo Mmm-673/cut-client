@@ -5,15 +5,15 @@ import request from '@/utils/request'
  * @param {Object} data - 请求参数
  * @param {string} data.mobile - 手机号
  * @param {number} data.scene - 场景（1=登录，2=修改手机号，3=修改密码，4=重置密码）
+ * @param {Object} [data.headers] - 可选，请求头，用于已登录场景携带 token
  */
 export function sendSmsCode(data) {
+  const { headers, ...rest } = data
   return request({
     url: '/app-api/member/auth/send-sms-code',
-    headers: {
-      isToken: false
-    },
     method: 'post',
-    data: data
+    data: rest,
+    ...(headers ? { headers } : {})
   })
 }
 
@@ -57,15 +57,15 @@ export function passwordLogin(data) {
  * @param {string} data.mobile - 手机号
  * @param {string} data.code - 验证码
  * @param {number} data.scene - 场景
+ * @param {Object} [data.headers] - 可选，请求头，用于已登录场景携带 token
  */
 export function validateSmsCode(data) {
+  const { headers, ...rest } = data
   return request({
     url: '/app-api/member/auth/validate-sms-code',
-    headers: {
-      isToken: false
-    },
     method: 'post',
-    data: data
+    data: rest,
+    ...(headers ? { headers } : {})
   })
 }
 

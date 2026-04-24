@@ -107,6 +107,14 @@
       }
     },
     {
+      "path": "pages/mine/favorites/index",
+      "style": {
+        "navigationBarBackgroundColor": "#121619",
+        "navigationBarTextStyle": "white",
+        "navigationBarTitleText": "我的收藏"
+      }
+    },
+    {
       "path": "pages/mine/pwd/index",
       "style": {
         "navigationBarTitleText": "修改密码"

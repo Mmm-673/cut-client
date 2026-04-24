@@ -56,9 +56,9 @@ export const useUserStore = defineStore('user', () => {
   }
 
   // 发送短信验证码
-  const sendCodeAction = (mobile, scene = 1) => {
+  const sendCodeAction = (mobile, scene = 1, options = {}) => {
     return new Promise((resolve, reject) => {
-      sendSmsCode({ mobile, scene }).then(res => {
+      sendSmsCode({ mobile, scene, ...options }).then(res => {
         resolve(res.data)
       }).catch(error => {
         reject(error)

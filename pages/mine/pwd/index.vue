@@ -11,7 +11,6 @@
         <text class="main-title">修改密码</text>
         <text class="sub-title">请先验证手机号，再设置新密码</text>
       </view>
-
       <!-- 输入框区域 -->
       <view class="input-section">
         <!-- 当前账号 -->
@@ -27,9 +26,9 @@
               class="input-field"
               type="number"
               v-model="form.code"
-              placeholder="请输入验证码"
+              placeholder="请输入4位验证码"
               placeholder-class="input-placeholder"
-              maxlength="6"
+              maxlength="4"
           />
           <button
               class="code-btn"
@@ -139,7 +138,7 @@ const codeCountdown = ref(0)
 let countdownTimer = null
 
 // 用户协议勾选状态
-const userAgree = ref(true)
+const userAgree = ref(false)
 // 提交中状态
 const isSubmitting = ref(false)
 
@@ -169,13 +168,13 @@ const isBtnActive = computed(() => {
   const pwd = form.value.password
   const confirm = confirmPassword.value
   // 激活条件：
-  // 1. 验证码长度=6
+  // 1. 验证码长度=4
   // 2. 新密码长度4-16
-  // 3. 确认密码不为空
+  // 3. 确认密码与新密码一致
   // 4. 已勾选协议
-  if (code.length !== 6) return false
+  if (code.length !== 4) return false
   if (pwd.length < 4 || pwd.length > 16) return false
-  if (!confirm) return false
+  if (pwd !== confirm) return false
   if (!userAgree.value) return false
   return true
 })
@@ -206,7 +205,7 @@ const getCode = async () => {
 
   try {
     uni.showLoading({ title: '发送中...' })
-    // scene: 3 = 修改密码
+    // scene: 3 = 修改密码，已登录状态需要携带 token
     await userStore.sendCode(userStore.mobile, 3)
     uni.hideLoading()
     uni.showToast({ title: '验证码已发送', icon: 'success' })
@@ -238,8 +237,8 @@ const validateForm = () => {
   }
 
   // 检查验证码
-  if (!code || code.length !== 6) {
-    uni.showToast({ title: '请输入6位验证码', icon: 'none' })
+  if (!code || code.length !== 4) {
+    uni.showToast({ title: '请输入4位验证码', icon: 'none' })
     return false
   }
 
@@ -270,11 +269,12 @@ const submitForm = async () => {
 
   isSubmitting.value = true
   try {
-    // 1. 先校验验证码
+    // 1. 先校验验证码，已登录需要携带 token
     await validateSmsCode({
       mobile: userStore.mobile,
       code: form.value.code,
-      scene: 3
+      scene: 3,
+      headers: {}
     })
 
     // 2. 验证码校验成功后，调用修改密码接口
@@ -284,14 +284,14 @@ const submitForm = async () => {
     })
 
     uni.showToast({ title: '密码修改成功', icon: 'success' })
+    // 修改成功后跳转到登录页重新登录
     setTimeout(() => {
-      // 修改成功后跳转到登录页重新登录
+      console.log('准备跳转登录页')
       uni.reLaunch({ url: '/pages/login/index' })
     }, 1500)
   } catch (error) {
     console.error('密码修改失败:', error)
     uni.showToast({ title: error.message || '修改失败，请重试', icon: 'none' })
-  } finally {
     isSubmitting.value = false
   }
 }

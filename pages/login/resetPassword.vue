@@ -155,8 +155,8 @@ const getCode = async () => {
 
   try {
     uni.showLoading({ title: '发送中...' })
-    // scene: 4 = 重置密码
-    await userStore.sendCode(form.value.mobile, 4)
+    // scene: 4 = 重置密码，未登录状态不需要 token
+    await userStore.sendCode(form.value.mobile, 4, { headers: { isToken: false } })
     uni.hideLoading()
     uni.showToast({ title: '验证码已发送', icon: 'success' })
 

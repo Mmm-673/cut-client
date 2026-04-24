@@ -75,8 +75,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
+import { getWallet, getWalletTransactions, getWalletTransactionSummary } from '@/api/billiard/wallet'
 
 // 刷新状态
 const refreshing = ref(false)
@@ -87,48 +88,109 @@ const currentMonth = ref('本月')
 
 // 钱包数据
 const wallet = ref({
-  balance: 256.00
+  balance: 0,
+  totalExpense: 0,
+  totalRecharge: 0
 })
 
 // 收支统计数据
 const statData = ref({
-  income: '1,286.00',
-  expense: '892.00'
+  income: '0.00',
+  expense: '0.00'
 })
 
 // 交易记录列表
-const recordList = ref([
-  {
-    id: 1,
-    title: '台球陪练消费',
-    time: '2026-03-28 16:30',
-    icon: 'wallet',
-    iconBg: 'rgba(0, 187, 136, 0.2)',
-    iconColor: '#00BB88',
-    amount: '-¥198.00',
-    amountColor: '#EF4444'
-  },
-  {
-    id: 2,
-    title: '订单取消退款',
-    time: '2026-03-25 10:15',
-    icon: 'refresh',
-    iconBg: 'rgba(236, 72, 153, 0.2)',
-    iconColor: '#EC4899',
-    amount: '+¥158.00',
-    amountColor: '#00BB88'
-  },
-  {
-    id: 3,
-    title: '台球陪练消费',
-    time: '2026-03-22 14:00',
-    icon: 'wallet',
-    iconBg: 'rgba(0, 187, 136, 0.2)',
-    iconColor: '#00BB88',
-    amount: '-¥168.00',
-    amountColor: '#EF4444'
+const recordList = ref([])
+
+// bizType 对应的图标和颜色
+const bizTypeMap = {
+  1: { title: '充值', icon: 'wallet', iconBg: 'rgba(0, 187, 136, 0.2)', iconColor: '#00BB88' },
+  2: { title: '充值退款', icon: 'refresh', iconBg: 'rgba(236, 72, 153, 0.2)', iconColor: '#EC4899' },
+  3: { title: '支付', icon: 'wallet', iconBg: 'rgba(0, 187, 136, 0.2)', iconColor: '#00BB88' },
+  4: { title: '支付退款', icon: 'refresh', iconBg: 'rgba(236, 72, 153, 0.2)', iconColor: '#EC4899' },
+  5: { title: '更新余额', icon: 'plus', iconBg: 'rgba(59, 130, 246, 0.2)', iconColor: '#3B82F6' },
+  6: { title: '转账', icon: 'transfer', iconBg: 'rgba(251, 191, 36, 0.2)', iconColor: '#FBBF24' }
+}
+
+// 获取本月时间范围
+const getCurrentMonthRange = () => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+  const startDate = `${year}-${String(month).padStart(2, '0')}-01 00:00:00`
+  const endDate = `${year}-${String(month).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} 23:59:59`
+  return [startDate, endDate]
+}
+
+// 加载钱包余额
+const loadWallet = async () => {
+  try {
+    const res = await getWallet()
+    if (res.data) {
+      wallet.value = {
+        balance: (res.data.balance || 0) / 100,
+        totalExpense: (res.data.totalExpense || 0) / 100,
+        totalRecharge: (res.data.totalRecharge || 0) / 100
+      }
+    }
+  } catch (error) {
+    console.error('加载钱包失败:', error)
   }
-])
+}
+
+// 加载本月收支统计
+const loadStatData = async () => {
+  try {
+    const timeRange = getCurrentMonthRange()
+    const res = await getWalletTransactionSummary({
+      createTime: timeRange
+    })
+    if (res.data) {
+      statData.value = {
+        income: ((res.data.totalIncome || 0) / 100).toFixed(2),
+        expense: ((res.data.totalExpense || 0) / 100).toFixed(2)
+      }
+    }
+  } catch (error) {
+    console.error('加载收支统计失败:', error)
+  }
+}
+
+// 加载交易记录
+const loadTransactions = async () => {
+  try {
+    const res = await getWalletTransactions({
+      pageNo: 1,
+      pageSize: 10
+    })
+    const list = res.data?.list || []
+    recordList.value = list.map(item => {
+      const bizInfo = bizTypeMap[item.bizType] || bizTypeMap[3]
+      const isIncome = item.bizType === 1 || item.bizType === 2 || item.bizType === 4 || item.bizType === 5
+      return {
+        id: item.id || Date.now(),
+        title: item.title || bizInfo.title,
+        time: item.createTime || '',
+        icon: bizInfo.icon,
+        iconBg: bizInfo.iconBg,
+        iconColor: bizInfo.iconColor,
+        amount: (isIncome ? '+' : '-') + '¥' + ((item.price || 0) / 100).toFixed(2),
+        amountColor: isIncome ? '#00BB88' : '#EF4444'
+      }
+    })
+  } catch (error) {
+    console.error('加载交易记录失败:', error)
+  }
+}
+
+// 加载所有数据
+const loadAllData = async () => {
+  await Promise.all([
+    loadWallet(),
+    loadStatData(),
+    loadTransactions()
+  ])
+}
 
 // 格式化余额
 const formatBalance = (num) => {
@@ -143,11 +205,10 @@ const toggleBalance = () => {
 // 下拉刷新
 const onRefresh = () => {
   refreshing.value = true
-  // 重新加载数据，你可以替换为你的接口请求
-  setTimeout(() => {
+  loadAllData().then(() => {
     refreshing.value = false
     uni.showToast({ title: '刷新成功', icon: 'success' })
-  }, 1000)
+  })
 }
 
 // 选择月份
@@ -176,13 +237,9 @@ const toRecordDetail = (recordId) => {
   uni.showToast({ title: '详情功能开发中', icon: 'none' })
 }
 
-onMounted(() => {
-  // 页面加载拉取钱包数据，你可以替换为你的接口
-})
-
 // 页面显示刷新数据
 onShow(() => {
-  // 可以在这里做数据刷新
+  loadAllData()
 })
 </script>
 
