@@ -1,7 +1,7 @@
 {
-    "name" : "若依移动端",
-    "appid" : "__UNI__25A9D80",
-    "description" : "",
+    "name" : "球了么",
+    "appid" : "__UNI__B081810",
+    "description" : "搭建台球爱好者与专业助教、裁判教练的对接平台，支持用户在线预约台球陪练与教学服务，助教线上接单获取收益；平台统一管理账号、订单、财务结算及客服售后，提供便捷规范的台球陪练预约服务。",
     "versionName" : "1.2.0",
     "versionCode" : "100",
     "transformPx" : false,
@@ -17,6 +17,7 @@
         "modules" : {},
         "distribute" : {
             "android" : {
+                "package" : "com.aksjzt.qiuleme.user",
                 "permissions" : [
                     "<uses-permission android:name=\"android.permission.CHANGE_NETWORK_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.MOUNT_UNMOUNT_FILESYSTEMS\"/>",
@@ -39,6 +40,7 @@
                 ]
             },
             "ios" : {
+                "bundleID" : "com.aksjzt.qiuleme.user",
                 "dSYMs" : false,
                 "plist" : {
                     "NSCameraUsageDescription" : "需要访问您的相机进行拍照",
@@ -57,7 +59,7 @@
     },
     "quickapp" : {},
     "mp-weixin" : {
-        "appid" : "wxe62c721fa3a02194",
+        "appid" : "wx02d7bf0f5a282673",
         "setting" : {
             "urlCheck" : false,
             "es6" : true,
@@ -162,7 +164,7 @@
             "port" : 9090,
             "https" : false
         },
-        "title" : "RuoYi-App",
+        "title" : "球了么",
         "router" : {
             "mode" : "hash",
             "base" : "./"
