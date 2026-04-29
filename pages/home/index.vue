@@ -31,13 +31,6 @@
         <swiper-item v-for="(item, index) in bannerList" :key="index" @click="handleBannerClick(item)">
           <view class="banner-card">
             <image class="banner-img" :src="item.img" mode="aspectFill"></image>
-            <view class="banner-mask">
-              <view class="banner-content">
-                <text class="banner-tag">限时特惠</text>
-                <text class="banner-title">{{item.title}}</text>
-                <text class="banner-desc">{{item.desc}}</text>
-              </view>
-            </view>
           </view>
         </swiper-item>
       </swiper>
@@ -144,8 +137,8 @@ const statusBarHeight = ref(0)
 const loading = ref(false)
 
 const bannerList = ref([
-  { id: 1, img: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=800', title: '深夜台球局', desc: '全城优质助教随叫随到' },
-  { id: 2, img: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=800', title: '新人领券', desc: '首单预约最高立减50元' }
+  { id: 1, img: '/static/images/banner/banner01.png' },
+  { id: 2, img: '/static/images/banner/banner02.png' }
 ])
 
 const serviceList = ref([
@@ -315,33 +308,6 @@ onMounted(() => {
     .banner-img {
       width: 100%;
       height: 100%;
-    }
-    .banner-mask {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-      display: flex;
-      align-items: flex-end;
-      padding: 30rpx;
-      .banner-tag {
-        background: #00BB88;
-        font-size: 24rpx;
-        color: #fff;
-        padding: 4rpx 12rpx;
-        border-radius: 8rpx;
-        margin-bottom: 10rpx;
-        display: inline-block;
-      }
-      .banner-title {
-        color: #fff;
-        font-size: 48rpx;
-        font-weight: bold;
-        display: block;
-      }
-      .banner-desc {
-        color: #ccc;
-        font-size: 28rpx;
-      }
     }
   }
 }

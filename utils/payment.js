@@ -224,17 +224,16 @@ export async function executePayment(options) {
 
   try {
     // 1. 获取支付渠道编码
-    // 暂时先注释 后续会打开
-    // const channelCode = getChannelCode(payValue)
-    // if (!channelCode) {
-    //   throw new Error('不支持的支付方式')
-    // }
+    const channelCode = getChannelCode(payValue)
+    if (!channelCode) {
+      throw new Error('不支持的支付方式')
+    }
 
     // 2. 调用后端接口提交支付，获取支付参数
     const submitRes = await submitPayOrder({
       payOrderId,
       orderId,
-      // channelCode
+      channelCode
     })
 
     const payParams = submitRes.data

@@ -179,6 +179,47 @@
     <view class="bottom-bar" v-if="orderInfo.status === 70">
       <button class="action-btn book-again" @click="bookAgain">再来一单</button>
     </view>
+
+    <!-- 支付弹窗 -->
+    <view class="pay-popup-mask" v-if="showPayPopup" @click="closePayPopup">
+      <view class="pay-popup-wrapper" @click.stop>
+        <!-- 头部 -->
+        <view class="pay-popup-header">
+          <text class="close-btn" @click="closePayPopup">取消</text>
+          <text class="pay-popup-title">选择支付方式</text>
+          <text class="confirm-btn" :class="{ disabled: isPaying }" @click="confirmPay">
+            {{ isPaying ? '支付中...' : '确认' }}
+          </text>
+        </view>
+        <!-- 金额 -->
+        <view class="pay-popup-content">
+          <view class="pay-amount-row">
+            <text class="pay-label">支付金额</text>
+            <text class="pay-amount">¥{{ formatAmount(orderInfo.payAmount) }}</text>
+          </view>
+          <!-- 支付方式列表 -->
+          <view class="pay-method-list">
+            <view
+              v-for="item in payList"
+              :key="item.value"
+              class="pay-method-item"
+              :class="{ active: selectedPay === item.value }"
+              @click="selectPay(item.value)"
+            >
+              <view class="pay-method-left">
+                <view class="pay-method-icon" :style="{ background: item.bgColor }">
+                  <uni-icons :type="item.icon" size="20" color="#fff" />
+                </view>
+                <text class="pay-method-name">{{ item.label }}</text>
+              </view>
+              <view class="pay-method-radio">
+                <view class="radio-dot" v-if="selectedPay === item.value"></view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -373,6 +414,8 @@ const selectedPay = ref('wechat')
 const isPaying = ref(false)
 // 创建订单时保存的支付订单ID
 const payOrderId = ref(null)
+// 当前订单ID（用于支付）
+const currentOrderId = ref(null)
 // 【新增】倒计时相关
 let countdownTimer = null
 const countdownHours = ref('00')
@@ -619,6 +662,14 @@ const loadOrderDetail = async () => {
       createTime: formatCreateTime(data.createTime)
     })
 
+    // 保存支付订单ID和订单ID
+    if (data.payOrderId) {
+      payOrderId.value = data.payOrderId
+    }
+    if (data.id) {
+      currentOrderId.value = data.id
+    }
+
     // 待开始状态启动倒计时
     if (data.status === 30) {
       startCountdown()
@@ -680,7 +731,7 @@ const payOrder = () => {
 
 // 确认支付
 const confirmPay = async () => {
-  if (!payOrderId.value) {
+  if (!payOrderId.value || !currentOrderId.value) {
     uni.showToast({ title: '支付订单信息缺失', icon: 'none' })
     return
   }
@@ -689,6 +740,7 @@ const confirmPay = async () => {
   try {
     await executePayment({
       payOrderId: payOrderId.value,
+      orderId: currentOrderId.value,
       payValue: selectedPay.value,
       onSuccess: (payResult) => {
         // 支付成功

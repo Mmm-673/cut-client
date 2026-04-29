@@ -112,7 +112,7 @@
             >
               {{ hall.tags.split(',')[0] }}
             </view>
-            <view class="hall-distance" v-if="hall.distance">
+            <view class="hall-distance" v-if="hall.distance != null">
               {{ formatDistance(hall.distance) }}
             </view>
           </view>
@@ -131,8 +131,8 @@
                 </view>
               </view>
               <view class="hall-price">
-                <text class="price-num">¥{{ formatPrice(hall.price) }}</text>
-                <text class="price-unit">/小时起</text>
+                <text class="price-num">{{ hall.price > 0 ? '¥' + formatPrice(hall.price) : '暂无报价' }}</text>
+                <text class="price-unit" v-if="hall.price > 0">/小时起</text>
               </view>
             </view>
 
@@ -173,7 +173,7 @@
                 <text>电话</text>
               </view>
               <view class="action-btn primary" @click="chooseHall(hall)">
-                <text>{{ isCreating ? '创建中...' : '选择' }}</text>
+                <text>{{ creatingHallId === hall.id ? '创建中...' : '选择' }}</text>
               </view>
             </view>
           </view>
@@ -266,9 +266,8 @@ import { createOrder } from '@/api/billiard/order'
 const refreshing = ref(false)
 const loading = ref(false)
 const hasMore = ref(true)
-const page = ref(1)
-const pageSize = ref(10)
-const isCreating = ref(false)
+const offset = ref(0)  // 偏移量，用于分页
+const pageSize = ref(25)  // 每页条数
 
 // 搜索关键词
 const searchKeyword = ref('')
@@ -315,6 +314,12 @@ const selectedDateTime = ref({
 
 // 教练信息
 const coachInfo = ref(null)
+
+// 搜索半径（km）
+const radius = ref(5)
+
+// 创建订单中状态（跟踪正在创建的球厅ID）
+const creatingHallId = ref(null)
 
 // ---------------------- 时间选择器数据 ----------------------
 // 生成日期列（从今天开始往后7天）
@@ -517,7 +522,7 @@ const getCurrentLocation = () => {
       }
       currentCity.value = '当前城市'
       locating.value = false
-      page.value = 1
+      hasMore.value = true
       hallList.value = []
       loadHallList()
     },
@@ -544,15 +549,13 @@ const closeCityPicker = () => {
 
 // ---------------------- 搜索相关方法 ----------------------
 const handleSearch = () => {
-  page.value = 1
-  hallList.value = []
+  hasMore.value = true
   loadHallList()
 }
 
 const clearSearch = () => {
   searchKeyword.value = ''
-  page.value = 1
-  hallList.value = []
+  hasMore.value = true
   loadHallList()
 }
 
@@ -564,29 +567,42 @@ const loadHallList = async () => {
   loading.value = true
   try {
     const params = {
-      pageNo: page.value,
-      pageSize: pageSize.value,
-      sortType: currentSortType.value
+      limit: pageSize.value
     }
 
+    // 关键词搜索
     if (searchKeyword.value) {
       params.keyword = searchKeyword.value
     }
 
+    // 定位参数（必须同时传或同时不传）
     if (currentLocation.value.longitude && currentLocation.value.latitude) {
       params.longitude = currentLocation.value.longitude
       params.latitude = currentLocation.value.latitude
+      params.radius = radius.value
     }
 
-    const res = await getVenueList(params)
-    const list = res.data?.list || res.data || []
+    // 排序类型
+    params.sortType = currentSortType.value
 
-    if (page.value === 1) {
+    // 偏移量（分页）
+    params.offset = offset.value
+
+    const res = await getVenueList(params)
+    const list = res.data || []
+
+    if (offset.value === 0) {
+      // 第一页替换
       hallList.value = list
     } else {
+      // 后续页追加
       hallList.value = [...hallList.value, ...list]
     }
 
+    // 更新偏移量
+    offset.value += list.length
+
+    // 判断是否还有更多
     hasMore.value = list.length >= pageSize.value
   } catch (error) {
     console.error('加载球厅列表失败:', error)
@@ -603,7 +619,7 @@ const loadHallList = async () => {
 // 下拉刷新
 const onRefresh = () => {
   refreshing.value = true
-  page.value = 1
+  offset.value = 0
   hasMore.value = true
   loadHallList()
 }
@@ -611,14 +627,13 @@ const onRefresh = () => {
 // 上拉加载更多
 const onLoadMore = () => {
   if (!hasMore.value || loading.value) return
-  page.value++
   loadHallList()
 }
 
 // 切换筛选标签
 const switchTab = (val) => {
   currentTab.value = val
-  page.value = 1
+  hasMore.value = true
   hallList.value = []
   loadHallList()
 }
@@ -670,6 +685,8 @@ const increaseDuration = () => {
 
 // 选择球厅 - 创建订单
 const chooseHall = async (hall) => {
+  if (creatingHallId.value) return  // 防止重复点击
+
   if (!coachInfo.value) {
     uni.showToast({ title: '教练信息缺失，请重试', icon: 'none' })
     return
@@ -679,7 +696,7 @@ const chooseHall = async (hall) => {
     return
   }
 
-  isCreating.value = true
+  creatingHallId.value = hall.id
   try {
     // 构建创建订单参数
     const createParams = {
@@ -728,7 +745,7 @@ const chooseHall = async (hall) => {
       duration: 2000
     })
   } finally {
-    isCreating.value = false
+    creatingHallId.value = null
   }
 }
 

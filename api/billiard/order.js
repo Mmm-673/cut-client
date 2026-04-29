@@ -116,7 +116,7 @@ export function createOrder(data) {
  */
 export function submitPayOrder(data) {
   return request({
-    url: '/app-api/billiard/order/mock-pay?orderId=53&payOrderId=612',
+    url: '/app-api/billiard/order/pay',
     method: 'post',
     data
   })

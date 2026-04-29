@@ -266,10 +266,9 @@ const submitPayment = async () => {
   isSubmitting.value = true
   try {
     await executePayment({
-        // orderId: orderData.value.payOrderId,
-        orderId: 53,
-        // payOrderId: selectedPay.value,
-        payOrderId: 612,
+      payOrderId: orderData.value.payOrderId,
+      orderId: orderData.value.orderId,
+      payValue: selectedPay.value,
       onSuccess: (payResult) => {
         uni.showToast({ title: '支付成功', icon: 'success' })
         setTimeout(() => {
