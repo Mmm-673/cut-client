@@ -1,0 +1,33 @@
+api/billiard/venue.js
+  be88326e9c91f186 7-9,12-13,16-33
+pages/booking/hall.vue
+  be88326e9c91f186 115,134-135,176,269-270,318-323,525,552,558,570,573,578,582,585-590,592,594-595,598,602-605,622,636,688-689,699,748
+pages/order/detail.vue
+  be88326e9c91f186 182-222,417-418,665-672,734,743
+pages/booking/confirm.vue
+  be88326e9c91f186 269-271
+api/billiard/order.js
+  be88326e9c91f186 119
+utils/payment.js
+  be88326e9c91f186 227-230,236
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "9d890e734015de1ce020f303ba2c4593772ce14b",
+  "prompts": {
+    "be88326e9c91f186": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5ae1a7cf-ab03-40ed-8453-d4cba924bf1e",
+        "model": "MiniMax-M2.7"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 146,
+      "total_deletions": 76,
+      "accepted_lines": 4279,
+      "overriden_lines": 5
+    }
+  }
+}
