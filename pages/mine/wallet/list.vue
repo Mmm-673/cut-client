@@ -180,7 +180,11 @@ const showGroupList = computed(() => {
   // 按日期分组
   const groupMap = {}
   transactionList.value.forEach(item => {
-    const dateStr = item.createTime ? item.createTime.split(' ')[0] : ''
+    const timestamp = item?.createTime
+    if (!timestamp) return
+    // 时间戳格式化为日期字符串
+    const date = new Date(Number(timestamp))
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
     if (!dateStr) return
     // 格式化为中文日期
     const parts = dateStr.split('-')
@@ -263,20 +267,27 @@ const loadTransactions = async (isRefresh = false) => {
     }
 
     const res = await getWalletTransactions(params)
-    const list = res?.data?.list || res?.data || []
+    console.log(res.data.list,'====const list = res?.list || [] ')
+    const list = res.data.list || []
 
     // 转换数据格式
     const formattedList = list.map(item => {
       const bizInfo = bizTypeMap[item.bizType] || bizTypeMap[3]
       const isIncome = incomeBizTypes.includes(item.bizType)
+      // 时间格式化为 HH:mm:ss
+      const formatTime = (ts) => {
+        if (!ts) return ''
+        const d = new Date(Number(ts))
+        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`
+      }
       return {
         id: item.id || Date.now(),
         title: item.title || bizInfo.title,
-        subtitle: item.createTime || '',
+        subtitle: formatTime(item.createTime),
         icon: bizInfo.icon,
         iconBg: bizInfo.iconBg,
         iconColor: bizInfo.iconColor,
-        amount: (isIncome ? '+' : '-') + '¥' + ((item.price || 0) / 100).toFixed(2),
+        amount: (isIncome ? '+' : '-') + '¥' + (Math.abs(item.price || 0) / 100).toFixed(2),
         amountColor: isIncome ? '#00BB88' : '#EF4444',
         createTime: item.createTime
       }
