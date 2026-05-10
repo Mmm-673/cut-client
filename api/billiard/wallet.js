@@ -46,3 +46,36 @@ export function getWalletTransactionSummary(params) {
     params
   })
 }
+
+/**
+ * 创建钱包充值订单
+ * @param {Object} data - 请求参数
+ * @param {number} data.amount - 充值金额（分）
+ * @param {string} data.channelCode - 支付渠道编码
+ * @returns {Promise<Object>} 返回充值订单信息
+ * @returns {number} returns.data.payOrderId - 支付单ID
+ */
+export function createWalletRecharge(data) {
+  return request({
+    url: '/app-api/pay/wallet-recharge/create',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 创建钱包提现申请
+ * @param {Object} data - 请求参数
+ * @param {number} data.amount - 提现金额（分）
+ * @param {string} data.channel - 提现渠道：wechat/alipay
+ * @param {string} data.accountName - 账户名称（微信昵称或支付宝账号）
+ * @param {string} data.realName - 真实姓名
+ * @returns {Promise<Object>} 返回提现申请结果
+ */
+export function createWalletWithdraw(data) {
+  return request({
+    url: '/app-api/pay/wallet-withdraw/create',
+    method: 'post',
+    data
+  })
+}

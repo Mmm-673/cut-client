@@ -14,7 +14,7 @@
         :lower-threshold="50"
     >
       <!-- 服务信息选择 -->
-      <view class="info-card">
+      <view class="info-card" v-if="!isReselect">
         <view class="card-title">预约信息</view>
 
         <view class="info-row">
@@ -22,7 +22,7 @@
           <view class="value-wrap">
             <view class="duration-control">
               <view class="duration-btn" :class="{disabled: orderInfo.duration <= minDuration}" @click="decreaseDuration">
-                <uni-icons type="minus" size="20" :color="orderInfo.duration <= minDuration ? '#2a3338' : '#9CA3AF'" />
+                <uni-icons type="minus" size="20" :color="orderInfo.duration <= minDuration ? '#2a3338' : '#00BB88'" />
               </view>
               <text class="duration-num">{{ orderInfo.duration }}小时</text>
               <view class="duration-btn" :class="{disabled: orderInfo.duration >= 8}" @click="increaseDuration">
@@ -63,17 +63,13 @@
       </view>
 
       <!-- 定位信息 -->
-      <view class="location-box" @click="switchLocation">
+      <view class="location-box">
         <uni-icons type="location" size="18" color="#00BB88" />
         <text class="location-text">
           <text v-if="locating">定位中...</text>
           <text v-else-if="currentCity">{{ currentCity }}</text>
-          <text v-else>点击定位</text>
+          <text v-else>定位中...</text>
         </text>
-        <view class="location-switch">
-          <text>切换</text>
-          <uni-icons type="right" size="14" color="#00BB88" />
-        </view>
       </view>
 
       <!-- 筛选标签 -->
@@ -102,7 +98,7 @@
           <view class="hall-image-wrap">
             <image
               class="hall-image"
-              :src="hall.coverImageUrl || '/static/default-venue.jpg'"
+              :src="hall.coverImageUrl || hall.defaultImage"
               mode="aspectFill"
             ></image>
             <view
@@ -520,7 +516,25 @@ const getCurrentLocation = () => {
         longitude: res.longitude,
         latitude: res.latitude
       }
+      // 逆地址解析获取城市名称
+      // #ifdef MP-WEIXIN
+      qqmapsdk.reverseGeocoder({
+        location: {
+          latitude: res.latitude,
+          longitude: res.longitude
+        },
+        success: (addressRes) => {
+          const city = addressRes.result.ad_info.city || '当前城市'
+          currentCity.value = city.replace('市', '')
+        },
+        fail: () => {
+          currentCity.value = '当前城市'
+        }
+      })
+      // #endif
+      // #ifndef MP-WEIXIN
       currentCity.value = '当前城市'
+      // #endif
       locating.value = false
       hasMore.value = true
       hallList.value = []
@@ -528,11 +542,7 @@ const getCurrentLocation = () => {
     },
     fail: (err) => {
       console.error('定位失败:', err)
-      uni.showToast({
-        title: '定位失败，请检查定位权限',
-        icon: 'none',
-        duration: 2000
-      })
+      currentCity.value = '定位失败'
       locating.value = false
     }
   })
@@ -540,7 +550,7 @@ const getCurrentLocation = () => {
 
 // 切换定位/城市
 const switchLocation = () => {
-  uni.showToast({ title: '城市切换功能开发中', icon: 'none' })
+  // 功能已隐藏
 }
 
 const closeCityPicker = () => {
@@ -560,6 +570,19 @@ const clearSearch = () => {
 }
 
 // ---------------------- 球厅列表方法 ----------------------
+
+// 默认占位图
+const defaultImages = [
+  '/static/images/banner/billiards_1.jpg',
+  '/static/images/banner/billiards_2.jpg',
+  '/static/images/banner/billiards_3.jpg'
+]
+
+// 获取随机图
+const getRandomDefaultImage = () => {
+  return defaultImages[Math.floor(Math.random() * defaultImages.length)]
+}
+
 // 加载球厅列表
 const loadHallList = async () => {
   if (loading.value) return
@@ -589,7 +612,11 @@ const loadHallList = async () => {
     params.offset = offset.value
 
     const res = await getVenueList(params)
-    const list = res.data || []
+    // 给没有封面的场馆加随机默认图
+    const list = (res.data || []).map(item => ({
+      ...item,
+      defaultImage: getRandomDefaultImage()
+    }))
 
     if (offset.value === 0) {
       // 第一页替换
@@ -803,8 +830,14 @@ onShow(() => {
 .hall-scroll {
   flex: 1;
   width: 100%;
+  height: 0; /* 关键：让 scroll-view 有明确高度 */
   padding-bottom: 200rpx;
   box-sizing: border-box;
+}
+
+/* 底部安全区域 */
+.safe-area-bottom {
+  display: none; /* 隐藏空白的安全区域 */
 }
 
 /* 预约信息卡片 */

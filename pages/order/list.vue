@@ -260,120 +260,6 @@ const formatAmount = (amount) => {
   return (amount / 100).toFixed(2)
 }
 
-// 模拟数据开关
-const USE_MOCK_DATA = true
-
-// 模拟数据
-const getMockOrders = () => {
-  const now = Date.now()
-  const mockOrders = [
-    {
-      orderId: 1001,
-      orderNo: 'TB202401150001',
-      coachId: 1,
-      coachStageName: '小雯',
-      coachMainPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop',
-      serviceType: 1,
-      bookingTime: now + 2 * 60 * 60 * 1000,
-      serviceDuration: 120,
-      status: 10,
-      payAmount: 19800,
-      totalAmount: 19800,
-      createTime: now - 10 * 60 * 1000
-    },
-    {
-      orderId: 1002,
-      orderNo: 'TB202401150002',
-      coachId: 2,
-      coachStageName: '阿豪',
-      coachMainPhoto: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=200&h=200&fit=crop',
-      serviceType: 1,
-      bookingTime: now + 24 * 60 * 60 * 1000,
-      serviceDuration: 180,
-      status: 20,
-      payAmount: 29800,
-      totalAmount: 29800,
-      createTime: now - 30 * 60 * 1000
-    },
-    {
-      orderId: 1003,
-      orderNo: 'TB202401150003',
-      coachId: 3,
-      coachStageName: '思思',
-      coachMainPhoto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop',
-      serviceType: 1,
-      bookingTime: now + 1 * 60 * 60 * 1000,
-      serviceDuration: 120,
-      status: 30,
-      payAmount: 19800,
-      totalAmount: 19800,
-      createTime: now - 2 * 60 * 60 * 1000
-    },
-    {
-      orderId: 1004,
-      orderNo: 'TB202401150004',
-      coachId: 4,
-      coachStageName: '大飞',
-      coachMainPhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop',
-      serviceType: 1,
-      bookingTime: now - 30 * 60 * 1000,
-      serviceDuration: 120,
-      status: 40,
-      payAmount: 19800,
-      totalAmount: 19800,
-      createTime: now - 3 * 60 * 60 * 1000
-    },
-    {
-      orderId: 1005,
-      orderNo: 'TB202401150005',
-      coachId: 1,
-      coachStageName: '小雯',
-      coachMainPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop',
-      serviceType: 1,
-      bookingTime: now - 2 * 60 * 60 * 1000,
-      serviceDuration: 120,
-      status: 50,
-      payAmount: 19800,
-      totalAmount: 19800,
-      createTime: now - 4 * 60 * 60 * 1000
-    },
-    {
-      orderId: 1006,
-      orderNo: 'TB202401140006',
-      coachId: 2,
-      coachStageName: '阿豪',
-      coachMainPhoto: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=200&h=200&fit=crop',
-      serviceType: 1,
-      bookingTime: now - 24 * 60 * 60 * 1000,
-      serviceDuration: 180,
-      status: 60,
-      payAmount: 29800,
-      totalAmount: 29800,
-      createTime: now - 26 * 60 * 60 * 1000
-    },
-    {
-      orderId: 1007,
-      orderNo: 'TB202401140007',
-      coachId: 3,
-      coachStageName: '思思',
-      coachMainPhoto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop',
-      serviceType: 2,
-      bookingTime: now - 48 * 60 * 60 * 1000,
-      serviceDuration: 300,
-      status: 70,
-      payAmount: 0,
-      totalAmount: 49800,
-      createTime: now - 50 * 60 * 60 * 1000
-    }
-  ]
-
-  // 根据Tab筛选
-  if (activeTab.value === null) {
-    return mockOrders
-  }
-  return mockOrders.filter(order => order.status === activeTab.value)
-}
-
 // 加载数据
 const loadData = async (isRefresh = false) => {
   if (loading.value) return
@@ -388,28 +274,18 @@ const loadData = async (isRefresh = false) => {
   }
 
   try {
-    let list = []
-    let data = {}
-
-    if (USE_MOCK_DATA) {
-      // 使用模拟数据
-      await new Promise(resolve => setTimeout(resolve, 500))
-      list = getMockOrders()
-    } else {
-      // 使用真实API
-      const params = {
-        pageNo: pageNo.value,
-        pageSize: pageSize.value
-      }
-
-      if (activeTab.value !== null) {
-        params.status = activeTab.value
-      }
-
-      const res = await getOrderList(params)
-      data = res.data || {}
-      list = data.list || data.records || []
+    const params = {
+      pageNo: pageNo.value,
+      pageSize: pageSize.value
     }
+
+    if (activeTab.value !== null) {
+      params.status = activeTab.value
+    }
+
+    const res = await getOrderList(params)
+    const data = res.data || {}
+    const list = data.list || data.records || []
 
     if (isRefresh) {
       orderList.value = list
@@ -418,18 +294,13 @@ const loadData = async (isRefresh = false) => {
     }
 
     // 判断是否还有更多数据
-    if (USE_MOCK_DATA) {
-      hasMore.value = false
-      loadMoreStatus.value = 'noMore'
+    const total = data.total || data.totalCount || 0
+    if (total > 0) {
+      hasMore.value = orderList.value.length < total
     } else {
-      const total = data.total || data.totalCount || 0
-      if (total > 0) {
-        hasMore.value = orderList.value.length < total
-      } else {
-        hasMore.value = list.length >= pageSize.value
-      }
-      loadMoreStatus.value = hasMore.value ? 'more' : 'noMore'
+      hasMore.value = list.length >= pageSize.value
     }
+    loadMoreStatus.value = hasMore.value ? 'more' : 'noMore'
 
     if (!hasMore.value && pageNo.value > 1) {
       uni.showToast({

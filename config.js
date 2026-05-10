@@ -4,7 +4,7 @@ export default {
   // 应用信息
   appInfo: {
     // 应用名称
-    name: "台球约",
+    name: "初球",
     // 应用版本
     version: "1.0.0",
     // 应用logo

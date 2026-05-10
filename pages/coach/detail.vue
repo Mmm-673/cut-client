@@ -448,12 +448,25 @@ const bookNow = () => {
     uni.showToast({ title: '请先选择服务项目', icon: 'none' })
     return
   }
+
   // 保存教练信息和选中的服务
   uni.setStorageSync('selectedCoach', {
     ...coachInfo,
     selectedService: selectedService.value
   })
-  uni.navigateTo({ url: '/pages/booking/hall' })
+
+  // 判断服务类型：1=台球陪练(需要选择球厅)，2=陪游(直接创建订单)
+  // 根据服务名称或ID判断类型
+  const serviceName = selectedService.value.name || ''
+  const isCompanion = serviceName.includes('陪游') || selectedService.value.type === 2
+
+  if (isCompanion) {
+    // 陪游服务，直接跳转确认订单页创建订单
+    uni.navigateTo({ url: '/pages/booking/confirm?createDirect=1' })
+  } else {
+    // 台球陪练，需要选择球厅
+    uni.navigateTo({ url: '/pages/booking/hall' })
+  }
 }
 
 // 获取页面参数

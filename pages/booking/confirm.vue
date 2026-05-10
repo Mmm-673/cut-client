@@ -1,5 +1,14 @@
 <template>
   <view class="confirm-order-wrapper">
+    <!-- 顶部导航 -->
+<!--    <view class="nav-header">-->
+<!--      <view class="nav-left" @click="goBack">-->
+<!--        <uni-icons type="left" size="22" color="#fff" />-->
+<!--      </view>-->
+<!--      <text class="nav-title">确认订单</text>-->
+<!--      <view class="nav-right"></view>-->
+<!--    </view>-->
+
     <scroll-view
         scroll-y
         class="order-scroll"
@@ -40,7 +49,7 @@
 
         <view class="info-row">
           <text class="label">服务项目</text>
-          <text class="value">台球陪练</text>
+          <text class="value">{{ serviceTypeName }}</text>
         </view>
 
         <view class="info-row">
@@ -48,12 +57,20 @@
           <text class="value">{{ (orderData.serviceDuration / 60) || 2 }}小时</text>
         </view>
 
-        <view class="info-row">
+        <view class="info-row" v-if="!isOrderCreated" @click="showTimePicker = true">
+          <text class="label">服务时间</text>
+          <view class="value-wrap">
+            <text class="value">{{ orderData.timeText || '请选择服务时间' }}</text>
+            <uni-icons type="right" size="18" color="#9CA3AF" />
+          </view>
+        </view>
+
+        <view class="info-row" v-else>
           <text class="label">服务时间</text>
           <text class="value">{{ orderData.timeText || formatTime(orderData.bookingTime) }}</text>
         </view>
 
-        <view class="info-row venue-row" @click="reselectHall">
+        <view class="info-row venue-row" v-if="serviceType === 1" @click="reselectHall">
           <text class="label">服务地点</text>
           <view class="value-wrap venue-wrap">
             <view class="venue-info">
@@ -85,7 +102,7 @@
         <view class="card-title">费用明细</view>
 
         <view class="fee-row">
-          <text class="fee-label">台球陪练 x{{ orderData.quantity || 2 }}小时</text>
+          <text class="fee-label">{{ serviceTypeName }} x{{ orderData.quantity || 2 }}小时</text>
           <text class="fee-value">¥{{ (orderData.serviceAmount / 100).toFixed(2) }}</text>
         </view>
 
@@ -106,13 +123,13 @@
       </view>
 
       <!-- 支付倒计时 -->
-      <view class="countdown-card" v-if="orderData.expireTime">
+      <view class="countdown-card" v-if="orderData.expireTime && isOrderCreated">
         <uni-icons type="time" size="18" color="#FBBF24" />
         <text class="countdown-text">请在 <text class="countdown-time">{{ countdownText }}</text> 内完成支付</text>
       </view>
 
       <!-- 支付方式 -->
-      <view class="info-card">
+      <view class="info-card" v-if="isOrderCreated">
         <view class="card-title">支付方式</view>
 
         <view
@@ -127,11 +144,11 @@
               <uni-icons :type="item.icon" size="24" color="#fff" />
             </view>
             <text class="pay-name">{{ item.label }}</text>
-            <text class="pay-balance" v-if="item.balance">（可用余额：¥{{ item.balance }}）</text>
+            <text class="pay-balance" v-if="item.balance !== undefined">（可用余额：¥{{ item.balance }}）</text>
           </view>
           <view class="pay-radio">
             <view class="radio-dot" v-if="selectedPay === item.value"></view>
-          </view>
+            </view>
         </view>
       </view>
 
@@ -161,12 +178,62 @@
       </view>
       <button
           class="pay-btn"
-          :class="{disabled: !canPay}"
-          :disabled="!canPay"
-          @click="submitPayment"
+          :class="{disabled: !canAction}"
+          :disabled="!canAction"
+          @click="handleAction"
       >
-        {{ isSubmitting ? '支付中...' : '立即支付' }}
+        {{ isSubmitting ? '处理中...' : (isOrderCreated ? '立即支付' : '创建订单') }}
       </button>
+    </view>
+
+    <!-- 时间选择器弹窗 -->
+    <view class="time-picker-mask" v-if="showTimePicker" @click="cancelTime">
+      <view class="time-picker-wrapper" @click.stop>
+        <view class="time-picker-header">
+          <text class="cancel-btn" @click="cancelTime">取消</text>
+          <text class="picker-title">选择服务时间</text>
+          <text class="confirm-btn" @click="confirmTime">确定</text>
+        </view>
+        <picker-view
+            class="picker-view"
+            :indicator-style="indicatorStyle"
+            :value="pickerValue"
+            @change="onPickerChange"
+            indicator-style="height: 80rpx; border-top: 1rpx solid rgba(255,255,255,0.1); border-bottom: 1rpx solid rgba(255,255,255,0.1);"
+            mask-style="background-image: linear-gradient(to bottom, rgba(42, 51, 56, 0.95), rgba(42, 51, 56, 0.4), rgba(42, 51, 56, 0.95));"
+        >
+          <!-- 日期列 -->
+          <picker-view-column>
+            <view
+                v-for="(item, index) in dateColumns"
+                :key="index"
+                class="picker-item"
+            >
+              {{ item.dateText }}
+            </view>
+          </picker-view-column>
+          <!-- 小时列 -->
+          <picker-view-column>
+            <view
+                v-for="(item, index) in hourColumns"
+                :key="index"
+                class="picker-item"
+            >
+              {{ item.hourText }}
+            </view>
+          </picker-view-column>
+          <!-- 分钟列 -->
+          <picker-view-column>
+            <view
+                v-for="(item, index) in minuteColumns"
+                :key="index"
+                class="picker-item"
+            >
+              {{ item.minuteText }}
+            </view>
+          </picker-view-column>
+        </picker-view>
+      </view>
     </view>
   </view>
 </template>
@@ -174,24 +241,141 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getAvailablePayChannels, executePayment } from '@/utils/payment'
+import { createOrder } from '@/api/billiard/order'
+import { onLoad } from '@dcloudio/uni-app'
+import { getWallet } from '@/api/billiard/wallet'
 
 // ---------------------- 状态定义 ----------------------
 const refreshing = ref(false)
 const isSubmitting = ref(false)
 const userAgree = ref(true)
 const selectedPay = ref('wechat')
+const showTimePicker = ref(false)
+const createDirect = ref(false)
+const isOrderCreated = ref(false)
 
 // 订单数据
 const orderData = ref({})
+
+// 服务类型
+const serviceType = ref(1)
 
 // 支付倒计时
 const countdownTimer = ref(null)
 const countdownText = ref('')
 
+// 钱包余额
+const walletBalance = ref(null)
+
+// 时间选择器相关
+const pickerValue = ref([0, 0, 0])
+const selectedDateTime = ref({ dateIndex: 0, hourIndex: 0, minuteIndex: 0 })
+
 // 教练信息显示用
-const coachInfo = ref({
-  badgeBg: 'rgba(0, 187, 136, 0.2)'
-})
+const coachInfo = ref({ badgeBg: 'rgba(0, 187, 136, 0.2)' })
+
+// 时间选择器列
+const dateColumns = ref([])
+const hourColumns = ref([])
+const minuteColumns = ref([])
+
+// 初始化时间选择器数据
+const initTimePickerData = () => {
+  const now = new Date()
+  const dates = []
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(now.getTime() + i * 24 * 60 * 60 * 1000)
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    dates.push({ date, dateText: `${month}.${day}` })
+  }
+  dateColumns.value = dates
+  updateHourColumns(0)
+  updateMinuteColumns(0, 0)
+}
+
+const updateHourColumns = (dateIndex) => {
+  const now = new Date()
+  const startHour = dateIndex === 0 ? now.getHours() : 0
+  const hours = []
+  for (let i = startHour; i <= 23; i++) {
+    hours.push({ hour: i, hourText: String(i).padStart(2, '0') + '时' })
+  }
+  hourColumns.value = hours
+}
+
+const updateMinuteColumns = (dateIndex, hourIndex) => {
+  const now = new Date()
+  const isToday = dateIndex === 0
+  const currentHour = hourColumns.value[hourIndex]?.hour
+  let startMinute = 0
+  if (isToday && currentHour === now.getHours()) {
+    startMinute = Math.ceil(now.getMinutes() / 5) * 5
+  }
+  if (startMinute >= 60) startMinute = 0
+  const minutes = []
+  for (let i = startMinute; i < 60; i += 5) {
+    minutes.push({ minute: i, minuteText: String(i).padStart(2, '0') + '分' })
+  }
+  minuteColumns.value = minutes
+}
+
+const onPickerChange = (e) => {
+  const val = e.detail.value
+  pickerValue.value = val
+  const newDateIndex = val[0]
+  const newHourIndex = val[1]
+  const newMinuteIndex = val[2]
+
+  if (newDateIndex !== selectedDateTime.value.dateIndex) {
+    updateHourColumns(newDateIndex)
+    updateMinuteColumns(newDateIndex, 0)
+    pickerValue.value = [newDateIndex, 0, 0]
+    selectedDateTime.value = { dateIndex: newDateIndex, hourIndex: 0, minuteIndex: 0 }
+    return
+  }
+
+  if (newHourIndex !== selectedDateTime.value.hourIndex) {
+    updateMinuteColumns(newDateIndex, newHourIndex)
+    pickerValue.value = [newDateIndex, newHourIndex, 0]
+    selectedDateTime.value = { ...selectedDateTime.value, hourIndex: newHourIndex, minuteIndex: 0 }
+    return
+  }
+
+  selectedDateTime.value = { dateIndex: newDateIndex, hourIndex: newHourIndex, minuteIndex: newMinuteIndex }
+}
+
+const cancelTime = () => { showTimePicker.value = false }
+
+const confirmTime = () => {
+  const dateItem = dateColumns.value[selectedDateTime.value.dateIndex]
+  const hourItem = hourColumns.value[selectedDateTime.value.hourIndex]
+  const minuteItem = minuteColumns.value[selectedDateTime.value.minuteIndex]
+
+  if (!dateItem || !hourItem || !minuteItem) {
+    uni.showToast({ title: '请选择完整的时间', icon: 'none' })
+    return
+  }
+
+  const date = dateItem.date
+  date.setHours(hourItem.hour, minuteItem.minute, 0, 0)
+
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hour = String(hourItem.hour).padStart(2, '0')
+  const minute = String(minuteItem.minute).padStart(2, '0')
+
+  const isToday = selectedDateTime.value.dateIndex === 0
+  const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  const weekDay = isToday ? '今天' : weekDays[date.getDay()]
+
+  orderData.value.timeText = `${weekDay} ${month}.${day} ${hour}:${minute}`
+  orderData.value.bookingTime = date.getTime()
+  showTimePicker.value = false
+}
+
+// 服务类型名称
+const serviceTypeName = computed(() => serviceType.value === 1 ? '台球陪练' : '陪游')
 
 // 支付方式列表
 const payList = computed(() => {
@@ -199,15 +383,27 @@ const payList = computed(() => {
   if (channels.length > 0 && !selectedPay.value) {
     selectedPay.value = channels[0].value
   }
+  // 填充钱包余额
+  if (walletBalance.value !== null) {
+    const walletChannel = channels.find(c => c.value === 'wallet')
+    if (walletChannel) {
+      walletChannel.balance = walletBalance.value
+    }
+  }
   return channels
 })
 
 // ---------------------- 计算属性 ----------------------
-// 是否可以支付
-const canPay = computed(() => {
-  return userAgree.value &&
-         !isSubmitting.value &&
-         orderData.value.payOrderId
+// 是否可以操作
+const canAction = computed(() => {
+  if (!userAgree.value) return false
+  if (isSubmitting.value) return false
+
+  if (!isOrderCreated.value) {
+    return orderData.value.bookingTime !== undefined
+  } else {
+    return orderData.value.payOrderId !== undefined
+  }
 })
 
 // ---------------------- 方法 ----------------------
@@ -233,7 +429,6 @@ const onRefresh = () => {
 
 // 重新选择球厅
 const reselectHall = () => {
-  // 保存当前订单的基本参数，方便回去重新选择
   const reselectParams = {
     coachInfo: orderData.value.coachInfo,
     serviceDuration: orderData.value.serviceDuration,
@@ -243,25 +438,95 @@ const reselectHall = () => {
     isReselect: true
   }
   uni.setStorageSync('reselectParams', reselectParams)
-  uni.redirectTo({ url: '/pages/booking/hall' })
+  uni.navigateTo({ url: '/pages/booking/hall' })
+}
+
+// 返回上一页
+const goBack = () => {
+  uni.navigateBack()
 }
 
 // 选择支付方式
-const selectPay = (val) => {
-  selectedPay.value = val
-}
+const selectPay = (val) => { selectedPay.value = val }
 
 // 查看协议
 const toAgreement = (type) => {
-  uni.showToast({
-    title: type === 'service' ? '服务协议功能开发中' : '退款规则功能开发中',
-    icon: 'none'
-  })
+  uni.showToast({ title: type === 'service' ? '服务协议功能开发中' : '退款规则功能开发中', icon: 'none' })
+}
+
+// 加载钱包余额
+const loadWalletBalance = async () => {
+  try {
+    const res = await getWallet()
+    if (res.data && res.data.balance !== undefined) {
+      walletBalance.value = (res.data.balance / 100).toFixed(2)
+    }
+  } catch (error) {
+    console.error('加载钱包余额失败:', error)
+  }
+}
+
+// 处理操作：创建订单 或 支付
+const handleAction = async () => {
+  if (!canAction.value) return
+
+  if (!isOrderCreated.value) {
+    await handleCreateOrder()
+  } else {
+    await submitPayment()
+  }
+}
+
+// 创建订单
+const handleCreateOrder = async () => {
+  if (!orderData.value.coachInfo?.id) {
+    uni.showToast({ title: '教练信息缺失', icon: 'none' })
+    return
+  }
+
+  if (!orderData.value.bookingTime) {
+    uni.showToast({ title: '请选择服务时间', icon: 'none' })
+    return
+  }
+
+  isSubmitting.value = true
+  try {
+    const createParams = {
+      coachId: orderData.value.coachInfo.id,
+      serviceType: serviceType.value,
+      bookingTime: orderData.value.bookingTime,
+      serviceDuration: orderData.value.serviceDuration || 120,
+      quantity: orderData.value.quantity || 2,
+      venueId: orderData.value.hallInfo?.id || orderData.value.venueId,
+      venueName: orderData.value.hallInfo?.name || orderData.value.venueName,
+      venueAddress: orderData.value.hallInfo?.address || orderData.value.venueAddress,
+      venueLongitude: orderData.value.hallInfo?.longitude || orderData.value.venueLongitude,
+      venueLatitude: orderData.value.hallInfo?.latitude || orderData.value.venueLatitude
+    }
+
+    const createRes = await createOrder(createParams)
+    const resultData = createRes.data || {}
+
+    // 合并数据
+    orderData.value = { ...orderData.value, ...resultData }
+    isOrderCreated.value = true
+
+    // 保存到 storage
+    uni.setStorageSync('createdOrderData', orderData.value)
+    startCountdown()
+
+    uni.showToast({ title: '订单创建成功', icon: 'success' })
+  } catch (error) {
+    console.error('创建订单失败:', error)
+    uni.showToast({ title: error.message || '创建订单失败，请重试', icon: 'none' })
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
 // 提交支付
 const submitPayment = async () => {
-  if (!canPay.value || !orderData.value.payOrderId) return
+  if (!canAction.value || !orderData.value.payOrderId) return
 
   isSubmitting.value = true
   try {
@@ -272,25 +537,21 @@ const submitPayment = async () => {
       onSuccess: (payResult) => {
         uni.showToast({ title: '支付成功', icon: 'success' })
         setTimeout(() => {
-          uni.reLaunch({ url: '/pages/order/list' })
+          uni.redirectTo({ url: `/pages/booking/pay-success?orderId=${orderData.value.orderId}` })
         }, 1500)
       },
       onCancel: () => {
         uni.showToast({ title: '支付已取消', icon: 'none' })
       },
       onError: (error) => {
-        uni.showToast({
-          title: error.message || '支付失败，请重试',
-          icon: 'none'
-        })
+        uni.showToast({ title: error.message || '支付失败，请重试', icon: 'none' })
       }
     })
   } catch (error) {
     console.error('支付失败:', error)
-    uni.showToast({
-      title: error.message || '支付失败，请重试',
-      icon: 'none'
-    })
+    if (!error.canceled) {
+      uni.showToast({ title: error.message || '支付失败，请重试', icon: 'none' })
+    }
   } finally {
     isSubmitting.value = false
   }
@@ -326,18 +587,65 @@ const startCountdown = () => {
 }
 
 // ---------------------- 生命周期 ----------------------
+onLoad((options) => {
+  createDirect.value = options.createDirect === '1'
+  initTimePickerData()
+})
+
 onMounted(() => {
   // 从 storage 获取已创建的订单数据
   const createdOrder = uni.getStorageSync('createdOrderData')
   if (createdOrder) {
     orderData.value = createdOrder
     uni.removeStorageSync('createdOrderData')
+    isOrderCreated.value = true
     startCountdown()
+    loadWalletBalance()
+  } else if (createDirect.value) {
+    // 直接创建订单模式：从 selectedCoach 获取教练信息
+    const coach = uni.getStorageSync('selectedCoach')
+    if (coach) {
+      orderData.value = { coachInfo: coach }
+
+      // 判断服务类型
+      const serviceName = coach.selectedService?.name || ''
+      const isCompanion = serviceName.includes('陪游') || coach.selectedService?.type === 2
+      serviceType.value = isCompanion ? 2 : 1
+
+      // 设置默认值
+      const price = coach.selectedService?.price || coach.price || 0
+      const duration = serviceType.value === 1 ? 120 : 300 // 陪练2小时，陪游5小时
+      const quantity = serviceType.value === 1 ? 2 : 5
+
+      orderData.value = {
+        ...orderData.value,
+        serviceType: serviceType.value,
+        serviceDuration: duration,
+        quantity: quantity,
+        serviceAmount: price * quantity * 100, // 分
+        payAmount: price * quantity * 100,
+        travelAmount: 0,
+        travelDiscountAmount: 0
+      }
+
+      // 设置默认时间
+      const now = new Date(Date.now() + 3600000) // 1小时后
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const day = String(now.getDate()).padStart(2, '0')
+      const hour = String(now.getHours()).padStart(2, '0')
+      const minute = String(Math.ceil(now.getMinutes() / 5) * 5).padStart(2, '0')
+      orderData.value.timeText = `今天 ${month}.${day} ${hour}:${minute}`
+      orderData.value.bookingTime = now.getTime()
+
+      isOrderCreated.value = false
+      loadWalletBalance()
+    } else {
+      uni.showToast({ title: '教练信息缺失，请重新下单', icon: 'none' })
+      setTimeout(() => { uni.reLaunch({ url: '/pages/coach/list' }) }, 1500)
+    }
   } else {
     uni.showToast({ title: '订单数据缺失，请重新下单', icon: 'none' })
-    setTimeout(() => {
-      uni.reLaunch({ url: '/pages/coach/list' })
-    }, 1500)
+    setTimeout(() => { uni.reLaunch({ url: '/pages/coach/list' }) }, 1500)
   }
 })
 
@@ -357,9 +665,33 @@ onUnmounted(() => {
   position: relative;
 }
 
+/* 顶部导航 */
+.nav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 30rpx;
+  padding-top: calc(20rpx + constant(safe-area-inset-top));
+  padding-top: calc(20rpx + env(safe-area-inset-top));
+  background: #121619;
+  .nav-left, .nav-right {
+    width: 60rpx;
+    height: 60rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-title {
+    color: #fff;
+    font-size: 34rpx;
+    font-weight: 600;
+  }
+}
+
 .order-scroll {
   flex: 1;
   width: 100%;
+  height: 0; /* 关键：让 scroll-view 有明确高度 */
   padding-bottom: 200rpx;
   box-sizing: border-box;
 }
@@ -708,5 +1040,68 @@ onUnmounted(() => {
   height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
   width: 100%;
+}
+
+/* 时间选择器遮罩 */
+.time-picker-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.time-picker-wrapper {
+  background: #1E252B;
+  border-radius: 32rpx 32rpx 0 0;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.time-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx;
+  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  .cancel-btn {
+    color: #9CA3AF;
+    font-size: 30rpx;
+  }
+  .picker-title {
+    color: #fff;
+    font-size: 32rpx;
+    font-weight: 600;
+  }
+  .confirm-btn {
+    color: #00BB88;
+    font-size: 30rpx;
+    font-weight: 600;
+  }
+}
+
+.picker-view {
+  width: 100%;
+  height: 500rpx;
+  background-color: #2a3338;
+}
+
+.picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF !important;
+  font-size: 32rpx;
+  height: 80rpx;
+  line-height: 80rpx;
 }
 </style>

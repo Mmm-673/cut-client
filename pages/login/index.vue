@@ -5,7 +5,7 @@
       <view class="logo-circle">
         <text class="logo-text">⑧</text>
       </view>
-      <text class="app-name">台球约</text>
+      <text class="app-name">初球</text>
       <text class="app-desc">专业台球陪练平台</text>
     </view>
 
@@ -64,7 +64,7 @@
       </view>
 
       <!-- 密码输入（密码登录Tab） -->
-      <view v-if="activeTab === 'password'" class="input-group">
+      <view v-if="activeTab === 'password'" class="input-group-eye">
         <uni-icons type="locked" size="20" color="#00BB88" class="input-icon" />
         <input
           class="input"
@@ -77,6 +77,7 @@
         <uni-icons
           :type="showPassword ? 'eye' : 'eye-slash'"
           size="20"
+          style="margin-right: 10px"
           color="#9CA3AF"
           class="password-eye"
           @click="showPassword = !showPassword"
@@ -388,7 +389,7 @@ onUnload(() => {
     border-radius: 48rpx;
     display: flex;
     align-items: center;
-    padding: 0 32rpx;
+    padding: 0  0 0 32rpx ;
     margin-bottom: 32rpx;
     box-sizing: border-box;
     position: relative;
@@ -406,6 +407,35 @@ onUnload(() => {
     }
     .password-eye {
       margin-left: 16rpx;
+
+    }
+  }
+  .input-group-eye {
+    width: 100%;
+    height: 96rpx;
+    background: #2A3138;
+    border-radius: 48rpx;
+    display: flex;
+    align-items: center;
+    padding: 0 32rpx ;
+    margin-bottom: 32rpx;
+    box-sizing: border-box;
+    position: relative;
+    .input-icon {
+      margin-right: 16rpx;
+    }
+    .input {
+      flex: 1;
+      font-size: 32rpx;
+      color: #fff;
+      line-height: 1;
+    }
+    .placeholder {
+      color: #9CA3AF;
+    }
+    .password-eye {
+      margin-left: 16rpx;
+
     }
   }
   /* 行内输入（验证码+按钮） */

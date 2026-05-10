@@ -27,12 +27,19 @@ function onTokenRefreshed() {
  * 刷新Token
  */
 async function refreshTokenRequest() {
+  const refreshToken = getRefreshToken()
+  if (!refreshToken) {
+    return Promise.reject(new Error('Refresh token is missing'))
+  }
+
   return new Promise((resolve, reject) => {
     uni.request({
       method: 'POST',
       timeout: timeout,
       url: baseUrl + '/app-api/member/auth/refresh-token',
-      data: {},
+      data: {
+        refreshToken: refreshToken
+      },
       header: {
         'Content-Type': 'application/json',
         'tenant-id': '122'

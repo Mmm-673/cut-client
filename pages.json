@@ -70,6 +70,14 @@
       }
     },
     {
+      "path": "pages/booking/pay-success",
+      "style": {
+        "navigationBarTitleText": "支付成功",
+        "navigationBarBackgroundColor": "#121619",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
       "path": "pages/booking/index",
       "style": {
         "navigationBarTitleText": "预约",
@@ -144,6 +152,30 @@
         "navigationBarTitleText": "交易记录"
       }
     },
+    {
+      "path": "pages/mine/wallet/recharge",
+      "style": {
+        "navigationBarTitleText": "充值",
+        "navigationBarBackgroundColor": "#121619",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/mine/wallet/recharge-success",
+      "style": {
+        "navigationBarTitleText": "充值成功",
+        "navigationBarBackgroundColor": "#121619",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/mine/wallet/withdraw",
+      "style": {
+        "navigationBarTitleText": "提现",
+        "navigationBarBackgroundColor": "#121619",
+        "navigationBarTextStyle": "white"
+      }
+    },
 
     {
       "path": "pages/common/webview/index",
@@ -192,7 +224,7 @@
   },
   "globalStyle": {
     "navigationBarTextStyle": "white",
-    "navigationBarTitleText": "台球约",
+    "navigationBarTitleText": "初球",
     "navigationBarBackgroundColor": "#121619",
     "backgroundColor": "#121619",
     "enablePullDownRefresh": false,

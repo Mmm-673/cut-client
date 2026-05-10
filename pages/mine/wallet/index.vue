@@ -222,11 +222,11 @@ const goBack = () => {
 }
 
 const toRecharge = () => {
-  uni.showToast({ title: '充值功能开发中', icon: 'none' })
+  uni.navigateTo({ url: '/pages/mine/wallet/recharge' })
 }
 
 const toWithdraw = () => {
-  uni.showToast({ title: '提现功能开发中', icon: 'none' })
+  uni.navigateTo({ url: '/pages/mine/wallet/withdraw' })
 }
 
 const toAllRecord = () => {

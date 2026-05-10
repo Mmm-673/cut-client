@@ -88,13 +88,55 @@
         立即打赏
       </button>
     </view>
+
+    <!-- 支付方式弹窗 -->
+    <view class="pay-popup-mask" v-if="showPayPopup" @click="closePayPopup">
+      <view class="pay-popup-wrapper" @click.stop>
+        <!-- 头部 -->
+        <view class="pay-popup-header">
+          <text class="close-btn" @click="closePayPopup">取消</text>
+          <text class="pay-popup-title">选择支付方式</text>
+          <text class="confirm-btn" :class="{ disabled: isPaying }" @click="confirmPay">
+            {{ isPaying ? '支付中...' : '确认' }}
+          </text>
+        </view>
+        <!-- 金额 -->
+        <view class="pay-popup-content">
+          <view class="pay-amount-row">
+            <text class="pay-label">打赏金额</text>
+            <text class="pay-amount">¥{{ currentAmount }}</text>
+          </view>
+          <!-- 支付方式列表 -->
+          <view class="pay-method-list">
+            <view
+              v-for="item in payList"
+              :key="item.value"
+              class="pay-method-item"
+              :class="{ active: selectedPay === item.value }"
+              @click="selectPay(item.value)"
+            >
+              <view class="pay-method-left">
+                <view class="pay-method-icon" :style="{ background: item.bgColor }">
+                  <uni-icons :type="item.icon" size="20" color="#fff" />
+                </view>
+                <text class="pay-method-name">{{ item.label }}</text>
+              </view>
+              <view class="pay-method-radio">
+                <view class="radio-dot" v-if="selectedPay === item.value"></view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { onNavigationBarButtonTap, onBackPress } from '@dcloudio/uni-app'
-import { getCoachDetail, createRewardOrder, submitRewardPay } from '@/api/billiard/coach'
+import { getCoachDetail, createRewardOrder } from '@/api/billiard/coach'
+import { executePayment, fetchEnabledChannels } from '@/utils/payment'
 
 // 状态管理
 const statusBarHeight = ref(0)
@@ -107,6 +149,13 @@ const customAmount = ref('')
 const message = ref('')
 const loading = ref(false)
 const coachId = ref(null)
+
+// 支付相关
+const showPayPopup = ref(false)
+const selectedPay = ref('wechat')
+const isPaying = ref(false)
+const payList = ref([])
+const payOrderId = ref(null)
 
 // 教练信息
 const coachInfo = ref({
@@ -153,6 +202,9 @@ onMounted(() => {
       scrollHeight.value = systemInfo.windowHeight - bottomBarHeight - (systemInfo.safeAreaInsets?.bottom || 0)
     })
   }, 100)
+
+  // 加载支付渠道
+  loadPayChannels()
 
   // 获取传递的参数
   const pages = getCurrentPages()
@@ -262,6 +314,64 @@ const onReachBottom = () => {
   // 预留上拉加载接口
 }
 
+// 加载支付渠道
+const loadPayChannels = async () => {
+  try {
+    const channels = await fetchEnabledChannels(10)
+    payList.value = channels
+    if (channels.length > 0) {
+      selectedPay.value = channels[0].value
+    }
+  } catch (error) {
+    console.error('加载支付渠道失败:', error)
+  }
+}
+
+// 选择支付方式
+const selectPay = (val) => {
+  selectedPay.value = val
+}
+
+// 关闭支付弹窗
+const closePayPopup = () => {
+  showPayPopup.value = false
+}
+
+// 确认支付
+const confirmPay = async () => {
+  if (isPaying.value) return
+  if (!payOrderId.value) {
+    uni.showToast({ title: '支付信息缺失', icon: 'none' })
+    return
+  }
+
+  isPaying.value = true
+  try {
+    await executePayment({
+      payOrderId: payOrderId.value,
+      payValue: selectedPay.value,
+      orderId: payOrderId.value,
+      onSuccess: () => {
+        uni.showToast({ title: '打赏成功', icon: 'success' })
+        showPayPopup.value = false
+        setTimeout(() => {
+          uni.navigateBack()
+        }, 1500)
+      },
+      onCancel: () => {
+        uni.showToast({ title: '支付已取消', icon: 'none' })
+      },
+      onError: (error) => {
+        uni.showToast({ title: error.message || '支付失败', icon: 'none' })
+      }
+    })
+  } catch (error) {
+    console.error('支付失败:', error)
+  } finally {
+    isPaying.value = false
+  }
+}
+
 // 提交打赏
 const submitReward = async () => {
   if (!currentAmount.value) {
@@ -288,142 +398,29 @@ const submitReward = async () => {
     return
   }
 
-  loading.value = true
-  uni.showLoading({
-    title: '处理中...'
-  })
+  uni.showLoading({ title: '创建订单...' })
 
   try {
-    // 1. 创建打赏支付单（金额单位：分）
+    // 创建打赏支付单（金额单位：分）
     const amountInCents = Math.round(currentAmount.value * 100)
     const createRes = await createRewardOrder({
       coachId: coachId.value,
       amount: amountInCents
     })
 
-    const payOrderId = createRes.data?.payOrderId
-    if (!payOrderId) {
+    const orderId = createRes.data
+    console.log(createRes.data,'=====createRes.data')
+    if (!orderId) {
       throw new Error('创建支付单失败')
     }
 
-    // 2. 拉起支付
+    payOrderId.value = orderId
     uni.hideLoading()
-
-    // 获取支付渠道
-    let channelCode = 'wx_pub' // 默认微信小程序
-    // #ifdef MP-ALIPAY
-    channelCode = 'alipay_app'
-    // #endif
-
-    uni.showLoading({
-      title: '正在调起支付...'
-    })
-
-    try {
-      const payRes = await submitRewardPay({
-        payOrderId: payOrderId,
-        channelCode: channelCode
-      })
-
-      // 支付参数
-      const payData = payRes.data || {}
-
-      // 微信小程序支付
-      // #ifdef MP-WEIXIN
-      if (payData.wxPayInfo) {
-        wx.requestPayment({
-          ...payData.wxPayInfo,
-          success: () => {
-            uni.showToast({
-              title: '打赏成功',
-              icon: 'success'
-            })
-            setTimeout(() => {
-              uni.navigateBack()
-            }, 1500)
-          },
-          fail: (err) => {
-            console.error('支付取消或失败:', err)
-            if (err.errMsg !== 'requestPayment:fail cancel') {
-              uni.showToast({
-                title: '支付失败',
-                icon: 'none'
-              })
-            }
-          }
-        })
-      } else {
-        // 模拟支付成功（测试用）
-        uni.showToast({
-          title: '打赏成功',
-          icon: 'success'
-        })
-        setTimeout(() => {
-          uni.navigateBack()
-        }, 1500)
-      }
-      // #endif
-
-      // 支付宝支付
-      // #ifdef MP-ALIPAY
-      if (payData.tradeNO) {
-        my.tradePay({
-          tradeNO: payData.tradeNO,
-          success: () => {
-            uni.showToast({
-              title: '打赏成功',
-              icon: 'success'
-            })
-            setTimeout(() => {
-              uni.navigateBack()
-            }, 1500)
-          },
-          fail: (err) => {
-            console.error('支付取消或失败:', err)
-            if (err.errorMessage !== 'userCancel') {
-              uni.showToast({
-                title: '支付失败',
-                icon: 'none'
-              })
-            }
-          }
-        })
-      } else {
-        uni.showToast({
-          title: '打赏成功',
-          icon: 'success'
-        })
-        setTimeout(() => {
-          uni.navigateBack()
-        }, 1500)
-      }
-      // #endif
-
-      // 非小程序环境（h5/app）- 直接显示成功
-      // #ifndef MP-WEIXIN
-      // #ifndef MP-ALIPAY
-      uni.showToast({
-        title: '打赏成功',
-        icon: 'success'
-      })
-      setTimeout(() => {
-        uni.navigateBack()
-      }, 1500)
-      // #endif
-      // #endif
-
-    } catch (payError) {
-      console.error('支付失败:', payError)
-      uni.hideLoading()
-      uni.showToast({
-        title: '支付失败，请重试',
-        icon: 'none'
-      })
-    }
-
+    // 显示支付弹窗
+    showPayPopup.value = true
   } catch (error) {
-    console.error('打赏失败:', error)
     uni.hideLoading()
+    console.error('打赏失败:', error)
     uni.showToast({
       title: error.message || '打赏失败，请重试',
       icon: 'none'
@@ -651,6 +648,146 @@ onBackPress(() => {
 
     &::after {
       border: none;
+    }
+  }
+}
+
+/* 支付弹窗 */
+.pay-popup-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.pay-popup-wrapper {
+  background: #1E252B;
+  border-radius: 32rpx 32rpx 0 0;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.pay-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx;
+  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+
+  .close-btn {
+    color: #9CA3AF;
+    font-size: 30rpx;
+  }
+
+  .pay-popup-title {
+    color: #fff;
+    font-size: 32rpx;
+    font-weight: 600;
+  }
+
+  .confirm-btn {
+    color: #f5a623;
+    font-size: 30rpx;
+    font-weight: 600;
+
+    &.disabled {
+      color: rgba(245, 166, 35, 0.5);
+      pointer-events: none;
+    }
+  }
+}
+
+.pay-popup-content {
+  padding: 30rpx;
+  padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(30rpx + constant(safe-area-inset-bottom));
+}
+
+.pay-amount-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+  padding-bottom: 30rpx;
+  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+
+  .pay-label {
+    color: #9CA3AF;
+    font-size: 28rpx;
+  }
+
+  .pay-amount {
+    color: #f5a623;
+    font-size: 40rpx;
+    font-weight: 700;
+  }
+}
+
+.pay-method-list {
+  .pay-method-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24rpx 0;
+    border-bottom: 1rpx solid rgba(255,255,255,0.05);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .pay-method-left {
+      display: flex;
+      align-items: center;
+      gap: 16rpx;
+
+      .pay-method-icon {
+        width: 70rpx;
+        height: 70rpx;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .pay-method-name {
+        color: #fff;
+        font-size: 30rpx;
+        font-weight: 500;
+      }
+    }
+
+    .pay-method-radio {
+      width: 40rpx;
+      height: 40rpx;
+      border: 3rpx solid #2a3338;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    &.active {
+      .pay-method-radio {
+        border-color: #f5a623;
+
+        .radio-dot {
+          width: 20rpx;
+          height: 20rpx;
+          border-radius: 50%;
+          background: #f5a623;
+        }
+      }
     }
   }
 }

@@ -45,7 +45,7 @@ export default {
   // 应用信息
   appInfo: {
     // 应用名称
-    name: "台球约",
+    name: "初球",
     // 应用版本
     version: "1.0.0",
     // 应用logo
@@ -965,7 +965,7 @@ git commit -m "feat: 重写用户Store，适配新的认证接口"
       <view class="logo-circle">
         <text class="logo-text">⑧</text>
       </view>
-      <text class="app-name">台球约</text>
+      <text class="app-name">初球</text>
       <text class="app-desc">专业台球陪练平台</text>
     </view>
 

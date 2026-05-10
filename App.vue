@@ -1,7 +1,8 @@
 <script setup>
   import config from './config'
-  import { isLoggedIn } from '@/utils/token'
+  import { isLoggedIn, getAccessToken } from '@/utils/token'
   import { useConfigStore } from '@/store'
+  import { useUserStore } from '@/store/modules/user'
   import { getCurrentInstance } from "vue"
   import { onLaunch } from '@dcloudio/uni-app'
 
@@ -39,13 +40,36 @@
   }
 
   function checkLogin() {
-    // 全平台都检查登录状态
-    if (!isLoggedIn()) {
-      // 避免在页面未加载时跳转
+    // 直接读取 storage 中的 token，确保是最新的状态
+    const token = getAccessToken()
+    const expiresTime = uni.getStorageSync('auth_expires_time')
+
+    // 没有 token 或者 token 已过期，跳转登录
+    if (!token || !expiresTime) {
       setTimeout(() => {
         proxy.$tab.reLaunch('/pages/login/index')
       }, 100)
+      return
     }
+
+    // 检查 token 是否过期
+    const expireDate = new Date(expiresTime)
+    if (new Date() >= expireDate) {
+      // token 已过期，跳转登录
+      setTimeout(() => {
+        proxy.$tab.reLaunch('/pages/login/index')
+      }, 100)
+      return
+    }
+
+    // 有有效的 token，同步 Pinia store 的状态
+    const userStore = useUserStore()
+    userStore.accessToken = token
+    userStore.refreshToken = uni.getStorageSync('auth_refresh_token') || ''
+    userStore.expiresTime = expireDate
+    userStore.userId = uni.getStorageSync('auth_user_id') || ''
+    userStore.nickname = uni.getStorageSync('auth_nickname') || ''
+    userStore.mobile = uni.getStorageSync('auth_mobile') || ''
   }
 </script>
 

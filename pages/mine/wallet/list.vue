@@ -117,6 +117,7 @@ const loading = ref(false)
 const hasMore = ref(true)
 const page = ref(1)
 const pageSize = ref(20)
+const isLoading = ref(false) // 防止重复加载
 
 // 当前选中的标签
 const currentTab = ref('all')
@@ -232,9 +233,11 @@ const loadStatData = async () => {
 
 // 加载交易记录
 const loadTransactions = async (isRefresh = false) => {
-  if (loading.value) return
+  if (isLoading.value) return
 
+  isLoading.value = true
   loading.value = true
+
   if (isRefresh) {
     hasMore.value = true
     page.value = 1
@@ -260,7 +263,7 @@ const loadTransactions = async (isRefresh = false) => {
     }
 
     const res = await getWalletTransactions(params)
-    const list = res.data?.list || []
+    const list = res?.data?.list || res?.data || []
 
     // 转换数据格式
     const formattedList = list.map(item => {
@@ -292,6 +295,7 @@ const loadTransactions = async (isRefresh = false) => {
     hasMore.value = false
   } finally {
     loading.value = false
+    isLoading.value = false
     refreshing.value = false
   }
 }

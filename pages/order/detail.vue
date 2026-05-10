@@ -227,180 +227,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { onLoad } from  "@dcloudio/uni-app"
 import { getOrderDetail, cancelOrder } from '@/api/billiard/order'
-import { getAvailablePayChannels, executePayment } from '@/utils/payment'
-
-// ========== Mock数据开关 ==========
-const USE_MOCK_DATA = true
-
-// Mock数据 - 各状态订单详情
-const getMockOrderData = (id) => {
-  const now = Date.now()
-  // id 到状态的映射
-  const idToStatus = {
-    1001: 10, // 待付款
-    1002: 20, // 待接单
-    1003: 30, // 已接单
-    1004: 40, // 进行中
-    1005: 50, // 待评价
-    1006: 60, // 已完成
-    1007: 70  // 已取消
-  }
-
-  const status = id ? (idToStatus[id] || 10) : 10
-
-  // 根据状态返回对应的 mock 数据
-  const mockDataMap = {
-    10: { // 待付款
-      id: 1001,
-      orderNo: 'TB202401150001',
-      coachId: 1,
-      coachStageName: '小雯',
-      coachMainPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop',
-      venueName: '星际台球俱乐部',
-      venueAddress: '杭州市西湖区文三路123号',
-      venueLongitude: 120.123456,
-      venueLatitude: 30.234567,
-      venueImg: 'https://picsum.photos/700/300',
-      serviceType: 1,
-      bookingTime: now + 2 * 60 * 60 * 1000,
-      serviceDuration: 120,
-      status: 10,
-      payAmount: 19800,
-      extraPayAmount: 0,
-      totalAmount: 19800,
-      createTime: now - 10 * 60 * 1000,
-      payStatus: 0
-    },
-    20: { // 待接单
-      id: 1002,
-      orderNo: 'TB202401150002',
-      coachId: 2,
-      coachStageName: '阿豪',
-      coachMainPhoto: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=200&h=200&fit=crop',
-      venueName: '皇家台球会所',
-      venueAddress: '杭州市拱墅区建国北路456号',
-      venueLongitude: 120.134567,
-      venueLatitude: 30.245678,
-      venueImg: 'https://picsum.photos/700/300',
-      serviceType: 1,
-      bookingTime: now + 24 * 60 * 60 * 1000,
-      serviceDuration: 180,
-      status: 20,
-      payAmount: 29800,
-      extraPayAmount: 0,
-      totalAmount: 29800,
-      createTime: now - 30 * 60 * 1000,
-      payStatus: 10
-    },
-    30: { // 已接单
-      id: 1003,
-      orderNo: 'TB202401150003',
-      coachId: 3,
-      coachStageName: '思思',
-      coachMainPhoto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop',
-      venueName: '精英台球俱乐部',
-      venueAddress: '杭州市滨江区江南大道789号',
-      venueLongitude: 120.145678,
-      venueLatitude: 30.256789,
-      venueImg: 'https://picsum.photos/700/300',
-      serviceType: 1,
-      bookingTime: now + 1 * 60 * 60 * 1000,
-      serviceDuration: 120,
-      status: 30,
-      payAmount: 19800,
-      extraPayAmount: 0,
-      totalAmount: 19800,
-      createTime: now - 2 * 60 * 60 * 1000,
-      payStatus: 10
-    },
-    40: { // 进行中
-      id: 1004,
-      orderNo: 'TB202401150004',
-      coachId: 4,
-      coachStageName: '大飞',
-      coachMainPhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop',
-      venueName: '名人台球会所',
-      venueAddress: '杭州市余杭区文一西路321号',
-      venueLongitude: 120.156789,
-      venueLatitude: 30.267890,
-      venueImg: 'https://picsum.photos/700/300',
-      serviceType: 1,
-      bookingTime: now - 30 * 60 * 1000,
-      serviceDuration: 120,
-      status: 40,
-      payAmount: 19800,
-      extraPayAmount: 0,
-      totalAmount: 19800,
-      createTime: now - 3 * 60 * 60 * 1000,
-      payStatus: 10
-    },
-    50: { // 待评价
-      id: 1005,
-      orderNo: 'TB202401150005',
-      coachId: 1,
-      coachStageName: '小雯',
-      coachMainPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop',
-      venueName: '星际台球俱乐部',
-      venueAddress: '杭州市西湖区文三路123号',
-      venueLongitude: 120.123456,
-      venueLatitude: 30.234567,
-      venueImg: 'https://picsum.photos/700/300',
-      serviceType: 1,
-      bookingTime: now - 2 * 60 * 60 * 1000,
-      serviceDuration: 120,
-      status: 50,
-      payAmount: 19800,
-      extraPayAmount: 0,
-      totalAmount: 19800,
-      createTime: now - 4 * 60 * 60 * 1000,
-      payStatus: 10
-    },
-    60: { // 已完成
-      id: 1006,
-      orderNo: 'TB202401140006',
-      coachId: 2,
-      coachStageName: '阿豪',
-      coachMainPhoto: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=200&h=200&fit=crop',
-      venueName: '皇家台球会所',
-      venueAddress: '杭州市拱墅区建国北路456号',
-      venueLongitude: 120.134567,
-      venueLatitude: 30.245678,
-      venueImg: 'https://picsum.photos/700/300',
-      serviceType: 1,
-      bookingTime: now - 24 * 60 * 60 * 1000,
-      serviceDuration: 180,
-      status: 60,
-      payAmount: 29800,
-      extraPayAmount: 5000,
-      totalAmount: 34800,
-      createTime: now - 26 * 60 * 60 * 1000,
-      payStatus: 10
-    },
-    70: { // 已取消
-      id: 1007,
-      orderNo: 'TB202401140007',
-      coachId: 3,
-      coachStageName: '思思',
-      coachMainPhoto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop',
-      venueName: '精英台球俱乐部',
-      venueAddress: '杭州市滨江区江南大道789号',
-      venueLongitude: 120.145678,
-      venueLatitude: 30.256789,
-      venueImg: 'https://picsum.photos/700/300',
-      serviceType: 2,
-      bookingTime: now - 48 * 60 * 60 * 1000,
-      serviceDuration: 300,
-      status: 70,
-      payAmount: 0,
-      extraPayAmount: 0,
-      totalAmount: 49800,
-      createTime: now - 50 * 60 * 60 * 1000,
-      payStatus: 30
-    }
-  }
-
-  return mockDataMap[status]
-}
+import { executePayment, fetchEnabledChannels } from '@/utils/payment'
 
 // 订单ID
 const orderId = ref(null)
@@ -421,6 +248,9 @@ let countdownTimer = null
 const countdownHours = ref('00')
 const countdownMinutes = ref('30')
 const countdownSeconds = ref('00')
+
+// 支付方式列表（从后端获取）
+const payList = ref([])
 
 // 是否显示底部操作栏
 const showBottomBar = computed(() => {
@@ -578,8 +408,21 @@ const stopCountdown = () => {
   }
 }
 
-// 支付方式列表
-const payList = getAvailablePayChannels()
+// 加载支付渠道列表
+const loadPayChannels = async () => {
+  try {
+    const channels = await fetchEnabledChannels(10)
+    payList.value = channels
+    // 默认选中第一个
+    if (channels.length > 0) {
+      selectedPay.value = channels[0].value
+    }
+  } catch (error) {
+    console.error('加载支付渠道失败:', error)
+    // 使用本地默认渠道
+    payList.value = []
+  }
+}
 
 // 选择支付方式
 const selectPay = (val) => {
@@ -625,17 +468,8 @@ const loadOrderDetail = async () => {
 
   loading.value = true
   try {
-    let data = {}
-
-    if (USE_MOCK_DATA) {
-      // 使用Mock数据
-      await new Promise(resolve => setTimeout(resolve, 300))
-      data = getMockOrderData(orderId.value)
-    } else {
-      // 使用真实API
-      const res = await getOrderDetail({ id: orderId.value })
-      data = res.data || {}
-    }
+    const res = await getOrderDetail({ id: orderId.value })
+    const data = res.data || {}
 
     // 更新订单信息 - 完全按API文档字段处理
     Object.assign(orderInfo.value, {
@@ -824,6 +658,9 @@ onMounted(() => {
   uni.$once('setScrollHeight', () => {
     // nothing
   })
+
+  // 加载支付渠道
+  loadPayChannels()
 
   // 加载数据
   if (orderId.value) {

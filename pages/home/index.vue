@@ -6,7 +6,7 @@
           <text class="logo-text">8</text>
         </view>
         <view class="nav-title-group">
-          <text class="nav-title">台球约</text>
+          <text class="nav-title">初球</text>
           <text class="nav-subtitle">专业助教预约平台</text>
         </view>
       </view>
@@ -26,9 +26,12 @@
           indicator-dots
           autoplay
           circular
+          :interval="3500"
+          :duration="400"
+          easing-function="easeInOutCubic"
           indicator-active-color="#00BB88"
       >
-        <swiper-item v-for="(item, index) in bannerList" :key="index" @click="handleBannerClick(item)">
+        <swiper-item v-for="(item, index) in bannerList" :key="index" @click="handleBannerClick(item)" class="swiper-item">
           <view class="banner-card">
             <image class="banner-img" :src="item.img" mode="aspectFill"></image>
           </view>
@@ -137,13 +140,13 @@ const statusBarHeight = ref(0)
 const loading = ref(false)
 
 const bannerList = ref([
-  { id: 1, img: '/static/images/banner/banner01.png' },
-  { id: 2, img: '/static/images/banner/banner02.png' }
+  { id: 1, img: '/static/images/banner/banner01.jpg' },
+  { id: 2, img: '/static/images/banner/banner02.jpg' }
 ])
 
 const serviceList = ref([
-  { id: 1, title: '台球陪练', price: 99, unit: '小时', priceColor: '#00BB88', icon: '🎱', iconBg: 'rgba(0, 187, 136, 0.15)' },
-  { id: 2, title: '桌球教学', price: 158, unit: '小时', priceColor: '#3B82F6', icon: '🎓', iconBg: 'rgba(59, 130, 246, 0.15)' }
+  { id: 1, title: '台球陪练', price: 99, unit: '两小时', priceColor: '#00BB88', icon: '🎱', iconBg: 'rgba(0, 187, 136, 0.15)' },
+  { id: 2, title: '结伴出行', price: 495, unit: '五小时', priceColor: '#3B82F6', icon: '🎓', iconBg: 'rgba(59, 130, 246, 0.15)' }
 ])
 
 const hotCoachList = ref([])
@@ -296,19 +299,27 @@ onMounted(() => {
 
 .banner-section {
   margin: 0 30rpx 40rpx;
+  border-radius: 30rpx;
+  overflow: hidden;
   .banner-swiper {
     height: 340rpx;
+    border-radius: 30rpx;
+    overflow: hidden;
     .banner-card {
       position: relative;
       width: 100%;
       height: 100%;
-      border-radius: 30rpx;
       overflow: hidden;
+      background: #2a3338;
     }
     .banner-img {
       width: 100%;
       height: 100%;
     }
+  }
+  .swiper-item {
+    padding: 0 12rpx;
+    box-sizing: border-box;
   }
 }
 

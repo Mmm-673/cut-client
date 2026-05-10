@@ -490,6 +490,7 @@ onMounted(() => {
   height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
   width: 100%;
+  background-color: #1a1a1a;
 }
 
 /* 助教卡片样式优化 */

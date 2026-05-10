@@ -3,8 +3,8 @@
  * 支持多端支付：微信小程序支付、App微信支付、App支付宝支付、钱包支付
  */
 
-import { isMPWeixin, isApp, isIOS, isAndroid } from '@/utils/platform'
-import { submitPayOrder } from '@/api/billiard/order'
+import { isMPWeixin, isApp } from '@/utils/platform'
+import { submitPayOrder, getEnableChannelCodeList } from '@/api/billiard/pay'
 
 /**
  * 支付渠道编码
@@ -21,51 +21,118 @@ export const PAY_CHANNEL = {
 }
 
 /**
- * 获取当前平台可用的支付渠道
- * @returns {Array} 可用的支付渠道列表
+ * 所有可用的支付渠道配置
  */
-export function getAvailablePayChannels() {
-  const channels = []
-
-  // 微信小程序环境
-  if (isMPWeixin()) {
-    channels.push({
-      value: 'wechat',
-      label: '微信支付',
-      channelCode: PAY_CHANNEL.WX_MINIPROGRAM,
-      icon: 'chatbubble-filled',
-      bgColor: '#07C160'
-    })
-  }
-
-  // App环境
-  if (isApp()) {
-    channels.push({
-      value: 'wechat',
-      label: '微信支付',
-      channelCode: PAY_CHANNEL.WX_APP,
-      icon: 'chatbubble-filled',
-      bgColor: '#07C160'
-    })
-    channels.push({
-      value: 'alipay',
-      label: '支付宝',
-      channelCode: PAY_CHANNEL.ALIPAY_APP,
-      icon: 'chatbubble',
-      bgColor: '#1677FF'
-    })
-  }
-
-  // 所有环境都支持钱包支付
-  channels.push({
+const ALL_PAY_CHANNELS = [
+  {
+    value: 'wechat',
+    label: '微信支付',
+    channelCode: PAY_CHANNEL.WX_MINIPROGRAM, // 默认用JSAPI，App会覆盖
+    icon: 'chatbubble-filled',
+    bgColor: '#07C160',
+    platforms: ['mp-weixin', 'app-plus']
+  },
+  {
+    value: 'alipay',
+    label: '支付宝',
+    channelCode: PAY_CHANNEL.ALIPAY_APP,
+    icon: 'chatbubble',
+    bgColor: '#1677FF',
+    platforms: ['app-plus']
+  },
+  {
     value: 'wallet',
     label: '钱包余额',
     channelCode: PAY_CHANNEL.WALLET,
     icon: 'wallet',
-    bgColor: '#00BB88'
+    bgColor: '#00BB88',
+    platforms: ['mp-weixin', 'app-plus', 'h5']
+  }
+]
+
+/**
+ * 获取当前平台可用的支付渠道（仅本地判断，不查询后端）
+ * @returns {Array} 可用的支付渠道列表
+ */
+export function getAvailablePayChannels() {
+  const currentPlatform = getCurrentPlatform()
+  return ALL_PAY_CHANNELS.filter(channel => channel.platforms.includes(currentPlatform))
+}
+
+/**
+ * 获取当前运行平台
+ * @returns {string} 平台标识
+ */
+function getCurrentPlatform() {
+  // #ifdef MP-WEIXIN
+  return 'mp-weixin'
+  // #endif
+
+  // #ifdef APP-PLUS
+  return 'app-plus'
+  // #endif
+
+  // #ifdef H5
+  return 'h5'
+  // #endif
+
+  return 'h5'
+}
+
+/**
+ * 根据后端返回的启用渠道列表，获取可用的支付渠道
+ * @param {Array<string>} enabledCodes - 后端返回的启用渠道编码列表
+ * @returns {Array} 可用的支付渠道列表
+ */
+export function getPayChannelsByEnabled(enabledCodes) {
+  if (!enabledCodes || !Array.isArray(enabledCodes)) {
+    return getAvailablePayChannels()
+  }
+
+  const currentPlatform = getCurrentPlatform()
+
+  // 渠道编码映射
+  const codeToChannel = {
+    'wx_pub': { value: 'wechat', label: '微信支付', icon: 'chatbubble-filled', bgColor: '#07C160', channelCode: PAY_CHANNEL.WX_MINIPROGRAM },
+    'wx_lite': { value: 'wechat', label: '微信支付', icon: 'chatbubble-filled', bgColor: '#07C160', channelCode: PAY_CHANNEL.WX_MINIPROGRAM },
+    'wx_app': { value: 'wechat', label: '微信支付', icon: 'chatbubble-filled', bgColor: '#07C160', channelCode: PAY_CHANNEL.WX_APP },
+    'alipay_app': { value: 'alipay', label: '支付宝', icon: 'chatbubble', bgColor: '#1677FF', channelCode: PAY_CHANNEL.ALIPAY_APP },
+    'wallet': { value: 'wallet', label: '钱包余额', icon: 'wallet', bgColor: '#00BB88', channelCode: PAY_CHANNEL.WALLET }
+  }
+
+  const result = []
+
+  // 遍历后端返回的渠道
+  enabledCodes.forEach(code => {
+    const channel = codeToChannel[code]
+    if (channel && channel.platForm === currentPlatform) {
+      result.push(channel)
+    }
   })
 
-  return channels
+  // 如果后端返回的渠道为空，返回本地可用渠道
+  if (result.length === 0) {
+    return getAvailablePayChannels()
+  }
+
+  return result
+}
+
+/**
+ * 从后端获取启用的支付渠道列表
+ * @param {number} appId - 支付应用编号，默认10
+ * @returns {Promise<Array>} 启用的支付渠道列表
+ */
+export async function fetchEnabledChannels(appId = 10) {
+  try {
+    const res = await getEnableChannelCodeList({ appId })
+    const enabledCodes = res.data || []
+    return getPayChannelsByEnabled(enabledCodes)
+  } catch (error) {
+    console.error('获取支付渠道失败:', error)
+    // 失败时返回本地可用渠道
+    return getAvailablePayChannels()
+  }
 }
 
 /**
@@ -213,7 +280,7 @@ function walletPay(payParams) {
  * @param {Object} options - 支付选项
  * @param {number} options.payOrderId - 支付单ID
  * @param {string} options.payValue - 支付方式值（wechat/alipay/wallet）
- * @param {string} options.orderId - 订单id（
+ * @param {string} options.orderId - 订单id
  * @param {Function} [options.onSuccess] - 支付成功回调
  * @param {Function} [options.onCancel] - 支付取消回调
  * @param {Function} [options.onError] - 支付失败回调
@@ -231,14 +298,39 @@ export async function executePayment(options) {
 
     // 2. 调用后端接口提交支付，获取支付参数
     const submitRes = await submitPayOrder({
-      payOrderId,
-      orderId,
-      channelCode
+      id: payOrderId,
+      channelCode: channelCode
     })
 
-    const payParams = submitRes.data
+    const resultData = submitRes.data || {}
+    const payStatus = resultData.status
+    const displayMode = resultData.displayMode
+    const displayContent = resultData.displayContent
 
-    // 3. 根据支付方式和平台执行支付
+    // 3. 如果是钱包支付，后端直接处理完成
+    if (payValue === 'wallet') {
+      // 检查支付状态
+      if (payStatus === 10) {
+        // 支付成功
+        const payResult = { success: true, status: payStatus }
+        if (onSuccess && typeof onSuccess === 'function') {
+          onSuccess(payResult)
+        }
+        return payResult
+      } else {
+        throw new Error('钱包支付失败，请稍后重试')
+      }
+    }
+
+    // 4. 解析支付参数 - displayContent 是 JSON 字符串
+    let payParams
+    try {
+      payParams = typeof displayContent === 'string' ? JSON.parse(displayContent) : displayContent
+    } catch (e) {
+      payParams = displayContent
+    }
+
+    // 5. 根据支付方式和平台执行支付
     let payResult
 
     if (isMPWeixin() && payValue === 'wechat') {
@@ -250,14 +342,11 @@ export async function executePayment(options) {
     } else if (isApp() && payValue === 'alipay') {
       // App支付宝支付
       payResult = await alipayAppPay(payParams)
-    } else if (payValue === 'wallet') {
-      // 钱包支付
-      payResult = await walletPay(payParams)
     } else {
       throw new Error('不支持的支付方式或平台')
     }
 
-    // 4. 支付成功回调
+    // 6. 支付成功回调
     if (onSuccess && typeof onSuccess === 'function') {
       onSuccess(payResult)
     }
@@ -325,6 +414,8 @@ export function pollPayStatus(options) {
 export default {
   PAY_CHANNEL,
   getAvailablePayChannels,
+  getPayChannelsByEnabled,
+  fetchEnabledChannels,
   getChannelCode,
   executePayment,
   pollPayStatus

@@ -105,22 +105,6 @@ export function createOrder(data) {
   })
 }
 
-/**
- * 支付订单 - 提交支付
- * @param {Object} data - 请求参数
- * @param {number} data.payOrderId - 支付单ID（pay_order.id）
- * @param {string} data.channelCode - 支付渠道编码：wx_pub（微信小程序）、wx_app（微信App）、alipay_app（支付宝App）、wallet（钱包）
- *
- * @returns {Promise<Object>} 返回支付参数
- * @returns {Object} returns.data - 支付参数，根据不同渠道返回不同参数
- */
-export function submitPayOrder(data) {
-  return request({
-    url: '/app-api/billiard/order/pay',
-    method: 'post',
-    data
-  })
-}
 
 /**
  * 取消订单
