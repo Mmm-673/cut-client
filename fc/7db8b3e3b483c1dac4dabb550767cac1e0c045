@@ -1,0 +1,61 @@
+api/billiard/pay.js
+  a161f2b5789f5308 1-53
+App.vue
+  a161f2b5789f5308 3,5,43-48,52,54-72
+pages/mine/wallet/index.vue
+  a161f2b5789f5308 225,229
+pages/order/list.vue
+  a161f2b5789f5308 277-280,282-283,286-289,297-299,301,303
+pages/mine/wallet/recharge-success.vue
+  a161f2b5789f5308 1-132
+pages/order/detail.vue
+  a161f2b5789f5308 230,252-254,411-425,471-472,662-664
+pages/coach/reward.vue
+  a161f2b5789f5308 92-131,138-139,153-159,206-208,317-374,401,404,411,413,417,419-420,423,654-793
+pages/mine/wallet/list.vue
+  a161f2b5789f5308 120,236,238,240,266,298
+pages/booking/pay-success.vue
+  a161f2b5789f5308 1-215
+pages/booking/confirm.vue
+  a161f2b5789f5308 3,11,52,60-68,73,105,126,132,147,151,181-183,185,188-237,244-246,253-255,260-262,267-273,275-378,386-392,397-406,441,444-446,449-451,454-524,529,540,547,552-554,590-594,601,603-645,648,668-690,694,1044-1107
+utils/payment.js
+  a161f2b5789f5308 6-7,24-54,58-89,92-100,103-110,113-135,283,301-302,305-331,333,349,417-418
+pages.json
+  a161f2b5789f5308 72-79,155-178
+utils/request.js
+  a161f2b5789f5308 30-34,40-42
+pages/coach/list.vue
+  a161f2b5789f5308 493
+api/billiard/wallet.js
+  a161f2b5789f5308 48-80
+pages/coach/detail.vue
+  a161f2b5789f5308 451,457-469
+pages/booking/hall.vue
+  a161f2b5789f5308 17,66,71,519-535,537,545,553,833,838-842
+pages/home/index.vue
+  a161f2b5789f5308 31,34,143-144,148-149,302-303,306-307,313
+pages/mine/wallet/withdraw.vue
+  a161f2b5789f5308 1-412
+pages/mine/wallet/recharge.vue
+  a161f2b5789f5308 1-361
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "fc7db8b3e3b483c1dac4dabb550767cac1e0c045",
+  "prompts": {
+    "a161f2b5789f5308": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cc7a5668-49a9-4cdd-a7a4-9c24ce741542",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 2249,
+      "total_deletions": 623,
+      "accepted_lines": 8213,
+      "overriden_lines": 15
+    }
+  }
+}
