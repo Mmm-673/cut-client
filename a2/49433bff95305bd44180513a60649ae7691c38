@@ -1,0 +1,23 @@
+pages/mine/wallet/list.vue
+  7c711d039eb735f5 183-187,277-282,286,290
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "a249433bff95305bd44180513a60649ae7691c38",
+  "prompts": {
+    "7c711d039eb735f5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d85a6f54-1b6e-4079-8fe0-061920f5c2fa",
+        "model": "MiniMax-M2.7"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 16,
+      "total_deletions": 6,
+      "accepted_lines": 615,
+      "overriden_lines": 1
+    }
+  }
+}
