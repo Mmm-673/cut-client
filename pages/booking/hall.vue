@@ -67,8 +67,8 @@
         <uni-icons type="location" size="18" color="#00BB88" />
         <text class="location-text">
           <text v-if="locating">定位中...</text>
-          <text v-else-if="currentCity">{{ currentCity }}</text>
-          <text v-else>定位中...</text>
+          <text v-else-if="currentStreet">{{ currentStreet }}</text>
+          <text v-else>定位失败</text>
         </text>
       </view>
 
@@ -244,7 +244,6 @@
         </picker-view>
       </view>
     </view>
-
     <!-- 城市选择弹窗（简化，不显示UI） -->
     <view class="city-picker-mask" v-if="showCityPicker" @click="closeCityPicker">
     </view>
@@ -255,6 +254,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
 import { getVenueList } from '@/api/billiard/venue'
+import { regeocode } from '@/api/billiard/amap'
 import { createOrder } from '@/api/billiard/order'
 
 // ---------------------- 状态定义 ----------------------
@@ -277,7 +277,7 @@ const currentLocation = ref({
   longitude: null,
   latitude: null
 })
-const currentCity = ref('')
+const currentStreet = ref('')
 
 // 城市选择相关
 const showCityPicker = ref(false)
@@ -510,31 +510,30 @@ const getCurrentLocation = () => {
   uni.getLocation({
     type: 'gcj02',
     altitude: true,
-    success: (res) => {
+    success: async (res) => {
       console.log('定位成功:', res)
       currentLocation.value = {
         longitude: res.longitude,
         latitude: res.latitude
       }
-      // 逆地址解析获取城市名称
-      // #ifdef MP-WEIXIN
-      qqmapsdk.reverseGeocoder({
-        location: {
-          latitude: res.latitude,
-          longitude: res.longitude
-        },
-        success: (addressRes) => {
-          const city = addressRes.result.ad_info.city || '当前城市'
-          currentCity.value = city.replace('市', '')
-        },
-        fail: () => {
-          currentCity.value = '当前城市'
+
+      // 调用后端逆地址解析接口
+      try {
+        const geoRes = await regeocode({
+          longitude: res.longitude,
+          latitude: res.latitude
+        })
+        console.log('逆地址解析结果:', geoRes)
+        console.log('逆地址解析数据:', JSON.stringify(geoRes.data))
+        if (geoRes.data) {
+          // 优先取 street，其次 township，最后 formattedAddress
+          currentStreet.value = geoRes.data.street || geoRes.data.township || geoRes.data.district || ''
+          console.log('设置街道为:', currentStreet.value)
         }
-      })
-      // #endif
-      // #ifndef MP-WEIXIN
-      currentCity.value = '当前城市'
-      // #endif
+      } catch (e) {
+        console.error('逆地址解析失败:', e)
+      }
+
       locating.value = false
       hasMore.value = true
       hallList.value = []
@@ -542,8 +541,44 @@ const getCurrentLocation = () => {
     },
     fail: (err) => {
       console.error('定位失败:', err)
-      currentCity.value = '定位失败'
       locating.value = false
+      // #ifdef MP-WEIXIN
+      if (err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize'))) {
+        uni.showModal({
+          title: '定位权限未开启',
+          content: '您未开启定位权限，将无法获取附近球厅。是否前往开启？',
+          confirmText: '去开启',
+          success: (res) => {
+            if (res.confirm) {
+              uni.openSetting({
+                success: (settingRes) => {
+                  if (settingRes.authSetting['scope.userLocation']) {
+                    getCurrentLocation()
+                  }
+                }
+              })
+            }
+          }
+        })
+      } else {
+        uni.showToast({ title: '定位失败，请检查定位功能', icon: 'none' })
+      }
+      // #endif
+      // #ifdef APP-PLUS
+      uni.showModal({
+        title: '定位权限未开启',
+        content: '您未开启定位权限，将无法获取附近球厅。是否前往开启？',
+        confirmText: '去开启',
+        success: (res) => {
+          if (res.confirm) {
+            uni.openSetting()
+          }
+        }
+      })
+      // #endif
+      // #ifdef H5
+      uni.showToast({ title: '定位失败，请检查浏览器定位权限', icon: 'none' })
+      // #endif
     }
   })
 }
@@ -672,19 +707,113 @@ const openFilter = () => {
 
 // 导航
 const navigateTo = (hall) => {
+  const lat = hall.latitude || 39.908823
+  const lng = hall.longitude || 116.397470
+  const name = hall.name
+  const address = hall.address
+
+  // #ifdef MP-WEIXIN
+  // 小程序直接使用本机地图
+  uni.openLocation({
+    latitude: lat,
+    longitude: lng,
+    name: name,
+    address: address,
+    scale: 18,
+    fail: () => {
+      uni.showToast({ title: '打开地图失败', icon: 'none' })
+    }
+  })
+  // #endif
+
+  // #ifdef APP-PLUS
+  // App端让用户选择地图
+  uni.showActionSheet({
+    itemList: ['百度地图', '高德地图', '腾讯地图', '本机地图'],
+    success: (res) => {
+      const index = res.tapIndex
+      let url = ''
+      if (index === 0) {
+        // 百度地图
+        url = `baidumap://map/marker?location=${lat},${lng}&title=${encodeURIComponent(name)}&addr=${encodeURIComponent(address)}`
+      } else if (index === 1) {
+        // 高德地图
+        url = `amap://viewMarker?lat=${lat}&lng=${lng}&title=${encodeURIComponent(name)}&address=${encodeURIComponent(address)}`
+      } else if (index === 2) {
+        // 腾讯地图
+        url = `qqmap://map/marker?coord=${lat},${lng}&title=${encodeURIComponent(name)}&address=${encodeURIComponent(address)}`
+      } else {
+        // 本机地图
+        uni.openLocation({
+          latitude: lat,
+          longitude: lng,
+          name: name,
+          address: address,
+          scale: 18,
+          fail: () => {
+            uni.showToast({ title: '打开地图失败', icon: 'none' })
+          }
+        })
+        return
+      }
+      // 检查地图是否安装
+      plus.runtime.isApplicationExist({
+        app: index === 0 ? 'baidumap' : index === 1 ? 'amap' : 'qqmap',
+        pkg: index === 0 ? 'com.baidu.BaiduMap' : index === 1 ? 'com.autonavi.minimap' : 'com.tencent.map'
+      }, (result) => {
+        if (result) {
+          uni.redirectTo({
+            url: url
+          })
+        } else {
+          // 地图未安装，尝试使用本机地图
+          uni.openLocation({
+            latitude: lat,
+            longitude: lng,
+            name: name,
+            address: address,
+            scale: 18,
+            fail: () => {
+              uni.showToast({ title: '未找到可用的地图应用', icon: 'none' })
+            }
+          })
+        }
+      })
+    }
+  })
+  // #endif
+
+  // #ifdef H5
+  // H5端让用户选择
   uni.showActionSheet({
     itemList: ['百度地图', '高德地图', '本机地图'],
     success: (res) => {
       const index = res.tapIndex
-      uni.openLocation({
-        latitude: hall.latitude || 39.908823,
-        longitude: hall.longitude || 116.397470,
-        name: hall.name,
-        address: hall.address,
-        scale: 18
-      })
+      let url = ''
+      if (index === 0) {
+        // 百度地图
+        url = `https://api.map.baidu.com/marker?location=${lat},${lng}&title=${encodeURIComponent(name)}&output=html`
+      } else if (index === 1) {
+        // 高德地图
+        url = `https://restapi.amap.com/v3/staticmap?center=${lng},${lat}&zoom=18&size=512*512&markers=mid,,A:${lng},${lat}`
+      } else {
+        // 本机地图
+        uni.openLocation({
+          latitude: lat,
+          longitude: lng,
+          name: name,
+          address: address,
+          scale: 18,
+          fail: () => {
+            uni.showToast({ title: '打开地图失败', icon: 'none' })
+          }
+        })
+        return
+      }
+      window.location.href = url
     }
   })
+  // #endif
 }
 
 // 拨打电话
@@ -809,11 +938,10 @@ onShow(() => {
 <style lang="scss" scoped>
 .choose-hall-wrapper {
   min-height: 100vh;
+  height: 100vh;
   background: #121619;
   display: flex;
   flex-direction: column;
-  position: relative;
-  overflow: hidden;
 }
 
 @keyframes spin {
@@ -830,14 +958,14 @@ onShow(() => {
 .hall-scroll {
   flex: 1;
   width: 100%;
-  height: 0; /* 关键：让 scroll-view 有明确高度 */
-  padding-bottom: 200rpx;
+  height: 100vh;
   box-sizing: border-box;
 }
 
 /* 底部安全区域 */
 .safe-area-bottom {
-  display: none; /* 隐藏空白的安全区域 */
+  height: constant(safe-area-inset-bottom);
+  height: env(safe-area-inset-bottom);
 }
 
 /* 预约信息卡片 */

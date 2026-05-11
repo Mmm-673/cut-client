@@ -95,11 +95,62 @@ const goToPwd = () => {
 
 // 检查更新
 const checkUpgrade = () => {
+  // #ifdef MP-WEIXIN
+  const updateManager = uni.getUpdateManager()
   uni.showLoading({ title: '检查中...' })
-  setTimeout(() => {
+  updateManager.onCheckForUpdate((res) => {
     uni.hideLoading()
-    uni.showToast({ title: '当前已是最新版本', icon: 'none' })
-  }, 800)
+    if (res.hasUpdate) {
+      uni.showModal({
+        title: '发现新版本',
+        content: '下载进度：0%',
+        showCancel: false,
+        confirmColor: '#00BB88'
+      })
+      updateManager.onUpdateReady(() => {
+        uni.hideLoading()
+        uni.showModal({
+          title: '更新提示',
+          content: '新版本已准备好，是否重启应用？',
+          confirmColor: '#00BB88',
+          success: (res) => {
+            if (res.confirm) {
+              updateManager.applyUpdate()
+            }
+          }
+        })
+      })
+      updateManager.onUpdateFailed(() => {
+        uni.hideLoading()
+        uni.showModal({
+          title: '更新失败',
+          content: '新版本下载失败，是否重试？',
+          confirmColor: '#00BB88'
+        })
+      })
+    } else {
+      uni.showToast({ title: '当前已是最新版本', icon: 'none' })
+    }
+  })
+  // #endif
+  // #ifndef MP-WEIXIN
+  uni.showToast({ title: '检查更新功能仅小程序支持', icon: 'none' })
+  // #endif
+}
+
+// 获取缓存大小
+const getCacheSize = () => {
+  try {
+    const storageInfo = uni.getStorageInfoSync()
+    const sizeKB = storageInfo.currentSize
+    if (sizeKB > 1024) {
+      cacheSize.value = (sizeKB / 1024).toFixed(1) + 'MB'
+    } else {
+      cacheSize.value = sizeKB + 'KB'
+    }
+  } catch (e) {
+    cacheSize.value = '0KB'
+  }
 }
 
 // 清理缓存
@@ -111,11 +162,22 @@ const cleanCache = () => {
     success: (res) => {
       if (res.confirm) {
         uni.showLoading({ title: '清理中...' })
-        setTimeout(() => {
+        try {
+          // 只清理非登录相关的缓存
+          const keys = uni.getStorageInfoSync().keys || []
+          keys.forEach((key) => {
+            // 保留登录相关的key
+            if (!key.includes('token') && !key.includes('user') && !key.includes('auth')) {
+              uni.removeStorageSync(key)
+            }
+          })
+          getCacheSize()
           uni.hideLoading()
-          cacheSize.value = '0MB'
           uni.showToast({ title: '清理成功', icon: 'success' })
-        }, 1000)
+        } catch (e) {
+          uni.hideLoading()
+          uni.showToast({ title: '清理失败', icon: 'none' })
+        }
       }
     }
   })
@@ -149,7 +211,7 @@ const handleLogout = () => {
 
 // ---------------------- 生命周期 ----------------------
 onMounted(() => {
-  // 页面加载时获取真实缓存大小（简化示例）
+  getCacheSize()
 })
 
 onShow(() => {

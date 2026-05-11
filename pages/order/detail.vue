@@ -82,9 +82,11 @@
 
       <!-- 陪练教练卡片 -->
       <view class="info-card coach-card">
-        <view class="card-title">
-          <text class="title-icon">👤</text>
-          陪练教练
+        <view class="card-title-row">
+          <view class="card-title">
+            <text class="title-icon">👤</text>
+            陪练教练
+          </view>
           <text class="view-more" @click="goToCoachDetail">查看主页 <uni-icons type="right" size="16" color="#00BB88" /></text>
         </view>
 
@@ -116,13 +118,17 @@
 
       <!-- 球厅信息卡片 -->
       <view class="info-card hall-card" v-if="orderInfo.venueName">
-        <view class="card-title">
-          <text class="title-icon">📍</text>
-          球厅信息
-          <button class="nav-btn" @click="openHallNavigate" v-if="orderInfo.venueLongitude && orderInfo.venueLatitude">
-            <uni-icons type="navigation" size="16" color="#fff" />
-            导航
-          </button>
+        <view class="card-title-row">
+          <view class="card-title">
+            <text class="title-icon">📍</text>
+            球厅信息
+          </view>
+          <view>
+            <button class="nav-btn" @click="openHallNavigate" v-if="orderInfo.venueLongitude && orderInfo.venueLatitude">
+              <uni-icons type="navigation" size="16" color="#fff" />
+              导航
+            </button>
+          </view>
         </view>
 
         <text class="hall-name">{{ orderInfo.venueName }}</text>
@@ -463,10 +469,12 @@ const contactCoach = () => {
 }
 
 // 加载订单详情
-const loadOrderDetail = async () => {
+const loadOrderDetail = async (silent = false) => {
   if (!orderId.value) return
 
-  loading.value = true
+  if (!silent) {
+    loading.value = true
+  }
   try {
     const res = await getOrderDetail({ id: orderId.value })
     const data = res.data || {}
@@ -510,14 +518,29 @@ const loadOrderDetail = async () => {
     } else {
       stopCountdown()
     }
+
+    // 终态停止轮训
+    if (isFinalStatus(data.status)) {
+      stopPolling()
+    }
+
+    // 状态改变也停止轮训
+    if (lastStatus !== null && lastStatus !== data.status) {
+      stopPolling()
+    }
+    lastStatus = data.status
   } catch (error) {
-    console.error('加载订单详情失败:', error)
-    uni.showToast({
-      title: '加载失败',
-      icon: 'none'
-    })
+    if (!silent) {
+      console.error('加载订单详情失败:', error)
+      uni.showToast({
+        title: '加载失败',
+        icon: 'none'
+      })
+    }
   } finally {
-    loading.value = false
+    if (!silent) {
+      loading.value = false
+    }
   }
 }
 
@@ -543,7 +566,7 @@ const cancelOrderFunc = async () => {
     success: async (res) => {
       if (res.confirm) {
         try {
-          await cancelOrder({ id: orderId.value })
+          await cancelOrder({ orderId: orderId.value })
           uni.showToast({ title: '订单已取消', icon: 'success' })
           stopCountdown()
           setTimeout(() => {
@@ -665,23 +688,61 @@ onMounted(() => {
   // 加载数据
   if (orderId.value) {
     loadOrderDetail()
+    startPolling()
   }
 })
 
 onUnmounted(() => {
   stopCountdown()
+  stopPolling()
 })
+
+// ---------------------- 状态轮训 ----------------------
+// 轮询定时器
+let pollingTimer = null
+const POLLING_INTERVAL = 3000 // 3秒轮询一次
+
+// 开始轮训
+const startPolling = () => {
+  stopPolling() // 先停止之前的
+  pollingTimer = setInterval(() => {
+    if (orderId.value) {
+      loadOrderDetail(true) // silent refresh
+    }
+  }, POLLING_INTERVAL)
+}
+
+// 停止轮训
+const stopPolling = () => {
+  if (pollingTimer) {
+    clearInterval(pollingTimer)
+    pollingTimer = null
+  }
+}
+
+// 判断是否是终态（不需要轮训的状态）
+const isFinalStatus = (status) => {
+  return status === 50 || status === 60 || status === 70 // 已完成/已取消/已退款
+}
+
+// 记录上次状态
+let lastStatus = null
 </script>
 
 <style lang="scss" scoped>
 .order-detail-wrapper {
   min-height: 100vh;
   background: #121619;
-  position: relative;
+  overscroll-behavior: none;
 }
 
 .page-content {
+  min-height: 100vh;
+  padding-top: 30rpx;
   padding-bottom: 140rpx;
+  background: #121619;
+  box-sizing: border-box;
+  overscroll-behavior: none;
 }
 
 /* 顶部状态卡片 */
@@ -790,13 +851,28 @@ onUnmounted(() => {
   .card-title {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     color: #fff;
     font-size: 32rpx;
     font-weight: 600;
     margin-bottom: 24rpx;
     .title-icon {
       margin-right: 12rpx;
+    }
+  }
+  .card-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24rpx;
+    .card-title {
+      display: flex;
+      align-items: center;
+      color: #fff;
+      font-size: 32rpx;
+      font-weight: 600;
+      .title-icon {
+        margin-right: 12rpx;
+      }
     }
     .view-more {
       color: #00BB88;

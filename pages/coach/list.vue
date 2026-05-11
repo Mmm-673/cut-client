@@ -366,7 +366,7 @@ onMounted(() => {
 .coach-list-page {
   width: 100%;
   height: 100vh;
-  background-color: #1a1a1a;
+  background-color: #121619;
   display: flex;
   flex-direction: column;
 }
@@ -374,7 +374,7 @@ onMounted(() => {
 /* 顶部固定区域 */
 .header-section {
   flex-shrink: 0;
-  background-color: #2a2a2a;
+  background-color: #1E252B;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -386,7 +386,7 @@ onMounted(() => {
   .search-input-wrapper {
     display: flex;
     align-items: center;
-    background-color: #3a3a3a;
+    background-color: #2a2a2a;
     border-radius: 48rpx;
     padding: 16rpx 32rpx;
 
@@ -398,7 +398,7 @@ onMounted(() => {
     }
 
     .search-placeholder {
-      color: #999;
+      color: #666;
     }
 
     .clear-icon {
@@ -423,8 +423,8 @@ onMounted(() => {
       margin-right: 20rpx;
       border-radius: 40rpx;
       font-size: 26rpx;
-      color: #999;
-      background-color: #333;
+      color: #9CA3AF;
+      background-color: #2a2a2a;
       transition: all 0.2s;
 
       &:last-child {
@@ -490,13 +490,13 @@ onMounted(() => {
   height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
   width: 100%;
-  background-color: #1a1a1a;
+  background-color: #121619;
 }
 
 /* 助教卡片样式优化 */
 .coach-card {
   display: flex;
-  background-color: #2a2a2a;
+  background-color: #1E252B;
   border-radius: 20rpx;
   padding: 20rpx;
   margin-bottom: 20rpx;

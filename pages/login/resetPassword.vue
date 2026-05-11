@@ -302,6 +302,7 @@ onUnmounted(() => {
   .input-group-row {
     display: flex;
     gap: 16rpx;
+    padding: 0 0 0 32rpx ;
     .input-wrap {
       flex: 1;
       display: flex;

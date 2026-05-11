@@ -174,7 +174,7 @@ const loadTransactions = async () => {
         icon: bizInfo.icon,
         iconBg: bizInfo.iconBg,
         iconColor: bizInfo.iconColor,
-        amount: (isIncome ? '+' : '-') + '¥' + ((item.price || 0) / 100).toFixed(2),
+        amount: (isIncome ? '+' : '-') + '¥' + (Math.abs(item.price || 0) / 100).toFixed(2),
         amountColor: isIncome ? '#00BB88' : '#EF4444'
       }
     })

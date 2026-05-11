@@ -38,13 +38,10 @@
           <view class="user-info">
             <view class="user-name-row">
               <text class="user-name">{{ userInfo.nickname }}</text>
-              <text class="edit-btn" @click="toEditInfo">
-                编辑资料
-                <uni-icons type="right" size="14" color="#9CA3AF" />
-              </text>
+              <text class="user-level" :class="userInfo.levelClass">{{ userInfo.level }}</text>
             </view>
             <view class="user-phone">{{ userInfo.phone }}</view>
-            <text class="user-level" :class="userInfo.levelClass">{{ userInfo.level }}</text>
+            <text class="edit-btn" @click="toEditInfo">编辑资料</text>
           </view>
 
           <!-- 设置按钮 -->
@@ -496,52 +493,47 @@ onShow(() => {
     }
     .user-info {
       flex: 1;
-      padding-top: 8rpx;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 20rpx;
       .user-name-row {
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        margin-bottom: 12rpx;
+        gap: 16rpx;
+        margin-bottom: 8rpx;
         .user-name {
           color: #fff;
           font-size: 40rpx;
           font-weight: 700;
         }
-        .edit-btn {
-          color: #9CA3AF;
-          font-size: 26rpx;
-          font-weight: normal;
-          display: flex;
-          align-items: center;
-          gap: 4rpx;
-          flex-shrink: 0;
+        .user-level {
+          display: inline-block;
+          padding: 4rpx 16rpx;
+          border-radius: 8rpx;
+          font-size: 22rpx;
+          font-weight: 500;
+          &.level-normal {
+            background: rgba(251, 191, 36, 0.2);
+            color: #FBBF24;
+          }
+          &.level-vip {
+            background: rgba(236, 72, 153, 0.2);
+            color: #EC4899;
+          }
         }
       }
       .user-phone {
         color: #9CA3AF;
         font-size: 28rpx;
-        margin-bottom: 16rpx;
+        margin-bottom: 12rpx;
       }
-      .user-level {
-        display: inline-block;
-        padding: 4rpx 24rpx;
-        border-radius: 8rpx;
+      .edit-btn {
+        color: #9CA3AF;
         font-size: 24rpx;
-        font-weight: 500;
-        &.level-normal {
-          background: rgba(251, 191, 36, 0.2);
-          color: #FBBF24;
-        }
-        &.level-vip {
-          background: rgba(236, 72, 153, 0.2);
-          color: #EC4899;
-        }
       }
     }
     .setting-btn {
-      position: absolute;
-      top: 0;
-      right: 0;
       width: 56rpx;
       height: 56rpx;
       border-radius: 50%;
@@ -549,6 +541,8 @@ onShow(() => {
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
+      align-self: flex-start;
       flex-shrink: 0;
     }
   }

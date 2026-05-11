@@ -78,9 +78,20 @@
 
   /* 全局样式 - 安全区域适配 */
   page {
-    ///* 适配底部安全区域 */
-    //padding-bottom: constant(safe-area-inset-bottom);
-    //padding-bottom: env(safe-area-inset-bottom);
+    min-height: 100vh;
+    background: #121619;
+  }
+
+  /* 防止下拉出现白色空白 */
+  body {
+    overscroll-behavior: none;
+  }
+
+  /* 隐藏滚动条 */
+  ::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
 
   /* 顶部安全区域适配 */
