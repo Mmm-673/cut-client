@@ -1,0 +1,57 @@
+design-system/tokens/_spacing.scss
+  000a8543f830749f 1-36
+design-system/tokens/_motion.scss
+  000a8543f830749f 1-89
+components/ds-card/ds-card.vue
+  000a8543f830749f 1-71
+UI-UPGRADE-PLAN.md
+  000a8543f830749f 1-167
+utils/token.js
+  000a8543f830749f 88-90,99-104,126-128
+components/ds-skeleton/ds-skeleton.vue
+  000a8543f830749f 1-82
+pages/coach/list.vue
+  000a8543f830749f 500-502,505-507,512,525,529,535-536,556,559,565,573,577-578,583,589-590,594-595,651,664,669,674,680,686,690-694
+utils/request.js
+  000a8543f830749f 85-87
+components/ds-button/ds-button.vue
+  000a8543f830749f 1-164
+components/ds-coach-card/ds-coach-card.vue
+  000a8543f830749f 1-200
+design-system/index.scss
+  000a8543f830749f 1-64
+components/ds-app-navbar/ds-app-navbar.vue
+  000a8543f830749f 1-113
+design-system/tokens/_colors.scss
+  000a8543f830749f 1-104
+pages/home/index-new.vue
+  000a8543f830749f 1-605
+design-system/tokens/_radius.scss
+  000a8543f830749f 1-34
+design-system/tokens/_typography.scss
+  000a8543f830749f 1-65
+design-system/tokens/_shadows.scss
+  000a8543f830749f 1-34
+static/styles/animations.scss
+  000a8543f830749f 1-54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "3995ef43a1f3180f1d5c690ba96999124017c9c9",
+  "prompts": {
+    "000a8543f830749f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "705799fd-959e-422e-bf43-433e3e413ce9",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 2013,
+      "total_deletions": 118,
+      "accepted_lines": 3293,
+      "overriden_lines": 2
+    }
+  }
+}
