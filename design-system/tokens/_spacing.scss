@@ -1,0 +1,36 @@
+// ==========================================
+// DESIGN SYSTEM - SPACING
+// ==========================================
+
+$ds-space-unit: 8rpx;
+
+$ds-space-1: 8rpx;
+$ds-space-2: 16rpx;
+$ds-space-3: 24rpx;
+$ds-space-4: 32rpx;
+$ds-space-5: 40rpx;
+$ds-space-6: 48rpx;
+$ds-space-8: 64rpx;
+$ds-space-10: 80rpx;
+$ds-space-12: 96rpx;
+
+// Layout Spacing Presets
+$ds-layout-screen-padding: 30rpx;  // 屏幕左右边距
+$ds-layout-card-padding: 24rpx;    // 卡片内边距
+$ds-layout-component-gap: 16rpx;   // 组件间距
+$ds-layout-section-gap: 48rpx;     // 模块间距
+
+// CSS VARS
+:root {
+  --ds-space-1: #{$ds-space-1};
+  --ds-space-2: #{$ds-space-2};
+  --ds-space-3: #{$ds-space-3};
+  --ds-space-4: #{$ds-space-4};
+  --ds-space-5: #{$ds-space-5};
+  --ds-space-6: #{$ds-space-6};
+
+  --ds-layout-screen-padding: #{$ds-layout-screen-padding};
+  --ds-layout-card-padding: #{$ds-layout-card-padding};
+  --ds-layout-component-gap: #{$ds-layout-component-gap};
+  --ds-layout-section-gap: #{$ds-layout-section-gap};
+}

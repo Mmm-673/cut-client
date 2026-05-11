@@ -1,0 +1,64 @@
+// ==========================================
+// DESIGN SYSTEM - MAIN ENTRY
+// ==========================================
+
+// Import all tokens
+@import './tokens/_colors.scss';
+@import './tokens/_typography.scss';
+@import './tokens/_spacing.scss';
+@import './tokens/_radius.scss';
+@import './tokens/_shadows.scss';
+@import './tokens/_motion.scss';
+
+// ==========================================
+// UTILITY CLASSES
+// ==========================================
+
+// Layout
+.ds-flex { display: flex; }
+.ds-flex-column { flex-direction: column; }
+.ds-items-center { align-items: center; }
+.ds-justify-between { justify-content: space-between; }
+.ds-justify-center { justify-content: center; }
+
+// Spacing
+.ds-p-0 { padding: 0; }
+.ds-p-2 { padding: $ds-space-2; }
+.ds-p-3 { padding: $ds-space-3; }
+.ds-p-4 { padding: $ds-space-4; }
+.ds-px-screen { padding-left: $ds-layout-screen-padding; padding-right: $ds-layout-screen-padding; }
+
+// Text
+.ds-text-primary { color: var(--ds-text-primary); }
+.ds-text-secondary { color: var(--ds-text-secondary); }
+.ds-text-tertiary { color: var(--ds-text-tertiary); }
+.ds-text-emerald { color: var(--ds-color-primary); }
+
+.ds-font-semibold { font-weight: $ds-font-weight-semibold; }
+.ds-font-bold { font-weight: $ds-font-weight-bold; }
+
+.ds-text-title-2 { font-size: $ds-font-size-title-2; line-height: $ds-line-height-tight; }
+.ds-text-body { font-size: $ds-font-size-body; line-height: $ds-line-height-normal; }
+.ds-text-body-small { font-size: $ds-font-size-body-small; }
+.ds-text-caption { font-size: $ds-font-size-caption; }
+
+// Background
+.ds-bg-primary { background-color: var(--ds-bg-primary); }
+.ds-bg-secondary { background-color: var(--ds-bg-secondary); }
+.ds-bg-card { background-color: var(--ds-bg-card); }
+
+// Border
+.ds-border-subtle { border: 1rpx solid var(--ds-border-subtle); }
+
+// Radius
+.ds-rounded-card { border-radius: $ds-radius-card; }
+.ds-rounded-button { border-radius: $ds-radius-button; }
+
+// Shadows
+.ds-shadow-md { box-shadow: $ds-shadow-md; }
+.ds-shadow-lg { box-shadow: $ds-shadow-lg; }
+
+// Animation
+.ds-animate-fade-in { animation: ds-fade-in var(--ds-duration-normal) var(--ds-easing-standard); }
+.ds-animate-slide-up { animation: ds-slide-up var(--ds-duration-normal) var(--ds-easing-decelerate); }
+.ds-animate-scale-in { animation: ds-scale-in var(--ds-duration-fast) var(--ds-easing-spring); }

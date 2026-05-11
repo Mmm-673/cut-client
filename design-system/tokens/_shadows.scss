@@ -1,0 +1,34 @@
+// ==========================================
+// DESIGN SYSTEM - SHADOWS
+// ==========================================
+
+$ds-shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+$ds-shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.25);
+$ds-shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.3);
+$ds-shadow-xl: 0 12rpx 48rpx rgba(0, 0, 0, 0.35);
+
+// Glow Shadows (Brand Colors)
+$ds-shadow-glow-emerald: 0 0 40rpx rgba(0, 187, 136, 0.3);
+$ds-shadow-glow-gold: 0 0 40rpx rgba(245, 158, 11, 0.25);
+$ds-shadow-glow-emerald-soft: 0 0 24rpx rgba(0, 187, 136, 0.15);
+
+// Glass Effects
+$ds-shadow-inner-glass: inset 0 1rpx 0 rgba(255, 255, 255, 0.1);
+
+// Elevation (z-index)
+$ds-elevation-dropdown: 1000;
+$ds-elevation-sticky: 1024;
+$ds-elevation-drawer: 2048;
+$ds-elevation-modal: 4096;
+$ds-elevation-toast: 5120;
+
+// CSS VARS
+:root {
+  --ds-shadow-sm: #{$ds-shadow-sm};
+  --ds-shadow-md: #{$ds-shadow-md};
+  --ds-shadow-lg: #{$ds-shadow-lg};
+  --ds-shadow-xl: #{$ds-shadow-xl};
+  --ds-shadow-glow-emerald: #{$ds-shadow-glow-emerald};
+  --ds-shadow-glow-gold: #{$ds-shadow-glow-gold};
+  --ds-shadow-inner-glass: #{$ds-shadow-inner-glass};
+}

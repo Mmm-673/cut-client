@@ -1,0 +1,65 @@
+// ==========================================
+// DESIGN SYSTEM - TYPOGRAPHY
+// ==========================================
+
+// ------------------------------------------
+// FONT FAMILY
+// ------------------------------------------
+$ds-font-family-base: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+$ds-font-family-display: 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+
+// ------------------------------------------
+// FONT SCALE (rpx for UniApp)
+// ------------------------------------------
+$ds-font-size-display: 56rpx;   // 大标题 - 页面主标题
+$ds-font-size-title-1: 44rpx;   // 页面标题
+$ds-font-size-title-2: 36rpx;   // 卡片标题
+$ds-font-size-title-3: 32rpx;   // 次级标题
+$ds-font-size-body: 28rpx;      // 正文
+$ds-font-size-body-small: 24rpx; // 辅助文字
+$ds-font-size-caption: 20rpx;   // 标签/说明
+
+// ------------------------------------------
+// LINE HEIGHT
+// ------------------------------------------
+$ds-line-height-tight: 1.2;
+$ds-line-height-normal: 1.5;
+$ds-line-height-relaxed: 1.6;
+
+// ------------------------------------------
+// FONT WEIGHT
+// ------------------------------------------
+$ds-font-weight-regular: 400;
+$ds-font-weight-medium: 500;
+$ds-font-weight-semibold: 600;
+$ds-font-weight-bold: 700;
+
+// ------------------------------------------
+// LETTER SPACING
+// ------------------------------------------
+$ds-letter-spacing-tight: -0.5rpx;
+$ds-letter-spacing-normal: 0;
+$ds-letter-spacing-wide: 0.5rpx;
+
+// ------------------------------------------
+// CSS VARS EXPORT
+// ------------------------------------------
+:root {
+  --ds-font-family-base: #{$ds-font-family-base};
+  --ds-font-size-display: #{$ds-font-size-display};
+  --ds-font-size-title-1: #{$ds-font-size-title-1};
+  --ds-font-size-title-2: #{$ds-font-size-title-2};
+  --ds-font-size-title-3: #{$ds-font-size-title-3};
+  --ds-font-size-body: #{$ds-font-size-body};
+  --ds-font-size-body-small: #{$ds-font-size-body-small};
+  --ds-font-size-caption: #{$ds-font-size-caption};
+
+  --ds-line-height-tight: #{$ds-line-height-tight};
+  --ds-line-height-normal: #{$ds-line-height-normal};
+  --ds-line-height-relaxed: #{$ds-line-height-relaxed};
+
+  --ds-font-weight-regular: #{$ds-font-weight-regular};
+  --ds-font-weight-medium: #{$ds-font-weight-medium};
+  --ds-font-weight-semibold: #{$ds-font-weight-semibold};
+  --ds-font-weight-bold: #{$ds-font-weight-bold};
+}

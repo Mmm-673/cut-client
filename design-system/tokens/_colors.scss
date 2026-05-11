@@ -1,0 +1,104 @@
+// ==========================================
+// DESIGN SYSTEM - COLORS
+// Emerald Gold Theme for 台球约
+// ==========================================
+
+// ------------------------------------------
+// PRIMARY - 翡翠绿 (品牌色)
+// ------------------------------------------
+$ds-color-primary-50: #ECFDF5;
+$ds-color-primary-100: #D1FAE5;
+$ds-color-primary-200: #A7F3D0;
+$ds-color-primary-300: #6EE7B7;
+$ds-color-primary-400: #34D399;
+$ds-color-primary-500: #00BB88;
+$ds-color-primary-600: #059669;
+$ds-color-primary-700: #047857;
+$ds-color-primary-800: #065F46;
+$ds-color-primary-900: #064E3B;
+
+// ------------------------------------------
+// SECONDARY - 鎏金 (辅助色)
+// ------------------------------------------
+$ds-color-secondary-50: #FFFBEB;
+$ds-color-secondary-100: #FEF3C7;
+$ds-color-secondary-400: #FBBF24;
+$ds-color-secondary-500: #F59E0B;
+$ds-color-secondary-600: #D97706;
+
+// ------------------------------------------
+// NEUTRAL - 暗夜灰 (背景/文字)
+// ------------------------------------------
+$ds-color-neutral-50: #F9FAFB;
+$ds-color-neutral-100: #F3F4F6;
+$ds-color-neutral-200: #E5E7EB;
+$ds-color-neutral-300: #D1D5DB;
+$ds-color-neutral-400: #9CA3AF;
+$ds-color-neutral-500: #6B7280;
+$ds-color-neutral-600: #4B5563;
+$ds-color-neutral-700: #374151;
+$ds-color-neutral-750: #2A3338;
+$ds-color-neutral-800: #1E252B;
+$ds-color-neutral-850: #181C20;
+$ds-color-neutral-900: #121619;
+$ds-color-neutral-950: #0A0D0F;
+
+// ------------------------------------------
+// FUNCTIONAL - 功能色
+// ------------------------------------------
+$ds-color-success: #4ADE80;
+$ds-color-warning: #FBBF24;
+$ds-color-error: #F87171;
+$ds-color-info: #60A5FA;
+
+// ------------------------------------------
+// GRADIENTS - 渐变色
+// ------------------------------------------
+$ds-gradient-primary: linear-gradient(135deg, #34D399 0%, #00BB88 50%, #059669 100%);
+$ds-gradient-gold: linear-gradient(135deg, #FBBF24 0%, #F59E0B 50%, #D97706 100%);
+$ds-gradient-emerald-gold: linear-gradient(135deg, #34D399 0%, #00BB88 40%, #FBBF24 100%);
+$ds-gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%);
+$ds-gradient-card: linear-gradient(180deg, rgba(42,51,56,0.95) 0%, rgba(42,51,56,0.85) 100%);
+$ds-gradient-shimmer: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+
+// ------------------------------------------
+// EXPORT AS CSS VARS
+// ------------------------------------------
+:root {
+  /* Primary Colors */
+  --ds-color-primary: #{$ds-color-primary-500};
+  --ds-color-primary-light: #{$ds-color-primary-400};
+  --ds-color-primary-dark: #{$ds-color-primary-600};
+
+  /* Secondary Colors */
+  --ds-color-secondary: #{$ds-color-secondary-500};
+  --ds-color-secondary-light: #{$ds-color-secondary-400};
+
+  /* Background Colors */
+  --ds-bg-primary: #{$ds-color-neutral-900};
+  --ds-bg-secondary: #{$ds-color-neutral-800};
+  --ds-bg-card: #{$ds-color-neutral-750};
+  --ds-bg-elevated: rgba(255, 255, 255, 0.05);
+
+  /* Text Colors */
+  --ds-text-primary: #FFFFFF;
+  --ds-text-secondary: #{$ds-color-neutral-400};
+  --ds-text-tertiary: #{$ds-color-neutral-500};
+  --ds-text-disabled: #{$ds-color-neutral-600};
+
+  /* Border Colors */
+  --ds-border-subtle: rgba(255, 255, 255, 0.08);
+  --ds-border-normal: rgba(255, 255, 255, 0.12);
+
+  /* Functional Colors */
+  --ds-color-success: #{$ds-color-success};
+  --ds-color-warning: #{$ds-color-warning};
+  --ds-color-error: #{$ds-color-error};
+  --ds-color-info: #{$ds-color-info};
+
+  /* Gradients */
+  --ds-gradient-primary: #{$ds-gradient-primary};
+  --ds-gradient-gold: #{$ds-gradient-gold};
+  --ds-gradient-glass: #{$ds-gradient-glass};
+  --ds-gradient-shimmer: #{$ds-gradient-shimmer};
+}

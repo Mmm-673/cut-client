@@ -85,6 +85,9 @@ export function setExpiresTime(expiresTime) {
   }
 }
 
+// 记录登录时间，刚登录1分钟内不刷新token
+let loginTime = null
+
 /**
  * 检查 accessToken 是否需要刷新（5分钟内过期）
  */
@@ -93,6 +96,12 @@ export function shouldRefreshToken() {
   if (!expiresTime) return true
 
   const now = new Date()
+
+  // 刚登录1分钟内，强制不刷新
+  if (loginTime && (now.getTime() - loginTime.getTime() < 60 * 1000)) {
+    return false
+  }
+
   const fiveMinutesBeforeExpire = new Date(expiresTime.getTime() - 5 * 60 * 1000)
   return now >= fiveMinutesBeforeExpire
 }
@@ -114,6 +123,9 @@ export function isLoggedIn() {
  * 设置完整的登录信息
  */
 export function setAuthInfo(data) {
+  // 记录登录时间，用于防止刚登录就刷新token
+  loginTime = new Date()
+
   setAccessToken(data.accessToken || '')
   setRefreshToken(data.refreshToken || '')
   if (data.expiresTime) {

@@ -497,19 +497,19 @@ onMounted(() => {
 .coach-card {
   display: flex;
   background-color: #2a2a2a;
-  border-radius: 24rpx;
-  padding: 24rpx;
-  margin-bottom: 24rpx;
+  border-radius: 20rpx;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
 
   .coach-avatar .avatar-img {
-    width: 180rpx;
-    height: 180rpx;
-    border-radius: 16rpx;
+    width: 140rpx;
+    height: 140rpx;
+    border-radius: 12rpx;
   }
 
   .coach-info {
     flex: 1;
-    margin-left: 20rpx;
+    margin-left: 16rpx;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -522,18 +522,18 @@ onMounted(() => {
       .name-row {
         display: flex;
         align-items: center;
-        gap: 10rpx;
+        gap: 8rpx;
         flex-wrap: wrap;
 
         .coach-name {
-          font-size: 32rpx;
+          font-size: 28rpx;
           color: #fff;
           font-weight: bold;
         }
 
         .level-tag {
-          font-size: 20rpx;
-          padding: 2rpx 10rpx;
+          font-size: 18rpx;
+          padding: 2rpx 8rpx;
           border-radius: 4rpx;
 
           &.senior {
@@ -553,16 +553,16 @@ onMounted(() => {
         }
 
         .new-tag {
-          font-size: 20rpx;
+          font-size: 18rpx;
           background: #FF3B30;
           color: #fff;
-          padding: 2rpx 10rpx;
+          padding: 2rpx 8rpx;
           border-radius: 4rpx;
         }
       }
 
       .distance {
-        font-size: 24rpx;
+        font-size: 22rpx;
         color: #777;
       }
     }
@@ -570,29 +570,29 @@ onMounted(() => {
     .rating-row {
       display: flex;
       align-items: center;
-      margin: 10rpx 0;
+      margin: 8rpx 0;
 
       .rating {
         color: #FFD700;
-        font-size: 26rpx;
-        margin: 0 8rpx;
+        font-size: 24rpx;
+        margin: 0 6rpx;
       }
 
       .review-count {
         color: #777;
-        font-size: 24rpx;
+        font-size: 22rpx;
       }
 
       .coach-tags {
         display: flex;
         align-items: center;
-        gap: 8rpx;
-        margin-left: 10rpx;
+        gap: 6rpx;
+        margin-left: 8rpx;
         flex-wrap: wrap;
 
         .coach-tag {
-          font-size: 20rpx;
-          padding: 0 10rpx;
+          font-size: 18rpx;
+          padding: 0 8rpx;
           border-radius: 4rpx;
           white-space: nowrap;
 
@@ -648,7 +648,7 @@ onMounted(() => {
     }
 
     .desc-row .coach-desc {
-      font-size: 24rpx;
+      font-size: 22rpx;
       color: #999;
       line-height: 1.4;
       display: -webkit-box;
@@ -661,37 +661,37 @@ onMounted(() => {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 10rpx;
+      margin-top: 8rpx;
 
       .price-row {
         .price-symbol {
           color: #00d4aa;
-          font-size: 24rpx;
+          font-size: 22rpx;
         }
 
         .price {
           color: #00d4aa;
-          font-size: 36rpx;
+          font-size: 30rpx;
           font-weight: bold;
         }
 
         .price-unit {
           color: #777;
-          font-size: 22rpx;
+          font-size: 20rpx;
         }
       }
 
       .action-buttons {
         display: flex;
-        gap: 10rpx;
+        gap: 8rpx;
 
         button {
           border: none;
-          font-size: 24rpx;
-          border-radius: 30rpx;
-          padding: 0 24rpx;
-          height: 54rpx;
-          line-height: 54rpx;
+          font-size: 22rpx;
+          border-radius: 24rpx;
+          padding: 0 20rpx;
+          height: 48rpx;
+          line-height: 48rpx;
         }
 
         .reward-btn {

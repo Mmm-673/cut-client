@@ -1,0 +1,54 @@
+// ==========================================
+// GLOBAL ANIMATIONS
+// ==========================================
+
+@import '@/design-system/index.scss';
+
+/* Fade In */
+.animate-fade-in {
+  animation: ds-fade-in var(--ds-duration-normal) var(--ds-easing-standard);
+}
+
+/* Slide Up */
+.animate-slide-up {
+  animation: ds-slide-up var(--ds-duration-normal) var(--ds-easing-decelerate);
+}
+
+/* Staggered Animations */
+.animate-stagger-1 { animation-delay: 50ms; }
+.animate-stagger-2 { animation-delay: 100ms; }
+.animate-stagger-3 { animation-delay: 150ms; }
+.animate-stagger-4 { animation-delay: 200ms; }
+.animate-stagger-5 { animation-delay: 250ms; }
+
+/* Scale In */
+.animate-scale-in {
+  animation: ds-scale-in var(--ds-duration-fast) var(--ds-easing-spring);
+}
+
+/* Pulse */
+.animate-pulse {
+  animation: ds-pulse-soft 2s ease-in-out infinite;
+}
+
+/* Bounce */
+.animate-bounce {
+  animation: ds-bounce-soft 1s ease-in-out infinite;
+}
+
+/* Shimmer Loading */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--ds-gradient-shimmer);
+    animation: ds-shimmer 1.5s infinite;
+  }
+}

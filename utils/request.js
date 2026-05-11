@@ -82,8 +82,9 @@ const request = async config => {
     config.header['Authorization'] = 'Bearer ' + accessToken
   }
 
-  // 检查是否需要刷新Token（非登录接口）
-  const needRefresh = !isToken && accessToken && shouldRefreshToken() && !config.url.includes('/refresh-token')
+  // 检查是否需要刷新Token（非登录接口、非认证相关接口）
+  const isAuthApi = config.url.includes('/auth/') || config.url.includes('/login') || config.url.includes('/refresh-token')
+  const needRefresh = !isToken && accessToken && shouldRefreshToken() && !isAuthApi
 
   if (needRefresh) {
     if (isRefreshing) {
