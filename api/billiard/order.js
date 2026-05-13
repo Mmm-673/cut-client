@@ -125,3 +125,25 @@ export function cancelOrder(data) {
     data
   })
 }
+
+/**
+ * 加钟 - 申请延长服务时长并发起支付
+ * @param {Object} data - 请求参数
+ * @param {number} data.orderId - billiard_order.id
+ * @param {number} data.addMinutes - 加钟时长（分钟），必须为正整数
+ *
+ * 业务校验：
+ * - 订单归属当前登录用户
+ * - 订单状态必须为 IN_SERVICE (40)
+ * - addMinutes > 0
+ *
+ * @returns {Promise<Object>} 返回加钟结果
+ * @returns {number} returns.data - addTimePayOrderId（pay_order.id，前端用于拉起支付）
+ */
+export function addTimeOrder(data) {
+  return request({
+    url: '/app-api/billiard/order/add-time',
+    method: 'post',
+    data
+  })
+}

@@ -10,14 +10,14 @@
           <text class="nav-subtitle">专业助教预约平台</text>
         </view>
       </view>
-      <view class="nav-right">
-        <view class="icon-btn" @click="goSearch">
-          <uni-icons type="search" size="20" color="#fff" />
-        </view>
-        <view class="icon-btn" @click="goNotice">
-          <uni-icons type="notification" size="20" color="#fff" />
-        </view>
-      </view>
+<!--      <view class="nav-right">-->
+<!--        <view class="icon-btn" @click="goSearch">-->
+<!--          <uni-icons type="search" size="20" color="#fff" />-->
+<!--        </view>-->
+<!--        <view class="icon-btn" @click="goNotice">-->
+<!--          <uni-icons type="notification" size="20" color="#fff" />-->
+<!--        </view>-->
+<!--      </view>-->
     </view>
 
     <view class="banner-section">

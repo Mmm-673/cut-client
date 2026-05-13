@@ -3,12 +3,10 @@
     <!-- 顶部Logo区域 -->
     <view class="logo-section">
       <view class="logo-circle">
-        <text class="logo-text">⑧</text>
+        <image class="logo-img" :src="globalConfig.appInfo.logo" mode="aspectFit"></image>
       </view>
-      <text class="app-name">初球</text>
       <text class="app-desc">专业台球陪练平台</text>
     </view>
-
     <!-- Tab切换 -->
     <view class="tab-section">
       <view
@@ -134,9 +132,13 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useUserStore } from '@/store/modules/user'
+import {
+  useConfigStore,
+  useUserStore
+} from '@/store'
 import { onUnload, onHide } from '@dcloudio/uni-app';
 const userStore = useUserStore()
+const globalConfig = useConfigStore().config
 
 // 当前Tab
 const activeTab = ref('sms')
@@ -304,12 +306,12 @@ onUnload(() => {
 .login-wrapper {
   min-height: 100vh;
   background: #1E252B;
-  padding: 100rpx 48rpx 40rpx;
+  padding: 180rpx 48rpx 40rpx;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: calc(120rpx + var(--status-bar-height));
+  padding-top: calc(180rpx + var(--status-bar-height));
   padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
   position: relative;
 }
@@ -319,32 +321,17 @@ onUnload(() => {
   text-align: center;
   margin-bottom: 60rpx;
   .logo-circle {
-    width: 160rpx;
-    height: 160rpx;
+    width: 140rpx;
+    height: 140rpx;
     border-radius: 50%;
-    background: #00BB88;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 32rpx;
   }
-  .logo-text {
-    font-size: 64rpx;
-    color: #fff;
-    font-weight: bold;
-    border: 6rpx solid #fff;
-    width: 50rpx;
-    height: 50rpx;
-    line-height: 50rpx;
-    text-align: center;
-    border-radius: 50%;
-  }
-  .app-name {
-    display: block;
-    font-size: 64rpx;
-    font-weight: bold;
-    color: #fff;
-    margin-bottom: 16rpx;
+  .logo-img {
+    width: 140rpx;
+    height: 140rpx;
   }
   .app-desc {
     display: block;

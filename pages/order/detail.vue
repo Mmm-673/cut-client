@@ -186,6 +186,35 @@
       <button class="action-btn book-again" @click="bookAgain">再来一单</button>
     </view>
 
+    <!-- 加钟弹窗 -->
+    <view class="add-time-popup-mask" v-if="showAddTimePopup" @click="closeAddTimePopup">
+      <view class="add-time-popup-wrapper" @click.stop>
+        <!-- 头部 -->
+        <view class="add-time-popup-header">
+          <text class="close-btn" @click="closeAddTimePopup">取消</text>
+          <text class="add-time-popup-title">选择加钟时长</text>
+          <text class="confirm-btn" :class="{ disabled: isAddingTime }" @click="confirmAddTime">
+            {{ isAddingTime ? '处理中...' : '确认' }}
+          </text>
+        </view>
+        <!-- 时长选择 -->
+        <view class="add-time-popup-content">
+          <view class="add-time-tip">请选择需要延长的服务时长</view>
+          <view class="add-time-options">
+            <view
+              v-for="option in addTimeOptions"
+              :key="option.value"
+              class="add-time-option"
+              :class="{ active: selectedAddMinutes === option.value }"
+              @click="selectedAddMinutes = option.value"
+            >
+              <text class="option-label">{{ option.label }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <!-- 支付弹窗 -->
     <view class="pay-popup-mask" v-if="showPayPopup" @click="closePayPopup">
       <view class="pay-popup-wrapper" @click.stop>
@@ -232,7 +261,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { onLoad } from  "@dcloudio/uni-app"
-import { getOrderDetail, cancelOrder } from '@/api/billiard/order'
+import { getOrderDetail, cancelOrder, addTimeOrder } from '@/api/billiard/order'
 import { executePayment, fetchEnabledChannels } from '@/utils/payment'
 
 // 订单ID
@@ -249,10 +278,26 @@ const isPaying = ref(false)
 const payOrderId = ref(null)
 // 当前订单ID（用于支付）
 const currentOrderId = ref(null)
+// 加钟弹窗显示状态
+const showAddTimePopup = ref(false)
+// 选中的加钟时长（分钟）
+const selectedAddMinutes = ref(60)
+// 加钟中的状态
+const isAddingTime = ref(false)
+// 加钟支付订单ID
+const addTimePayOrderId = ref(null)
+
+// 加钟时长选项
+const addTimeOptions = ref([
+  { label: '30分钟', value: 30 },
+  { label: '1小时', value: 60 },
+  { label: '1.5小时', value: 90 },
+  { label: '2小时', value: 120 }
+])
 // 【新增】倒计时相关
 let countdownTimer = null
 const countdownHours = ref('00')
-const countdownMinutes = ref('30')
+const countdownMinutes = ref('00')
 const countdownSeconds = ref('00')
 
 // 支付方式列表（从后端获取）
@@ -388,22 +433,39 @@ const formatAmount = (amount) => {
 
 // 【新增】倒计时逻辑
 const startCountdown = () => {
-  // 示例：固定倒计时30分钟
-  let totalSeconds = 30 * 60
-  countdownTimer = setInterval(() => {
-    if (totalSeconds <= 0) {
-      clearInterval(countdownTimer)
-      countdownTimer = null
-      return
-    }
-    totalSeconds--
+  // 先停止之前的倒计时
+  stopCountdown()
+
+  // 如果没有预约时间，不开始倒计时
+  if (!orderInfo.value.bookingTime) {
+    return
+  }
+
+  const updateCountdown = () => {
+    const now = Date.now()
+    const bookingTime = orderInfo.value.bookingTime
+    let totalSeconds = Math.max(0, Math.floor((bookingTime - now) / 1000))
+
     const hours = Math.floor(totalSeconds / 3600)
     const minutes = Math.floor((totalSeconds % 3600) / 60)
     const seconds = totalSeconds % 60
     countdownHours.value = String(hours).padStart(2, '0')
     countdownMinutes.value = String(minutes).padStart(2, '0')
     countdownSeconds.value = String(seconds).padStart(2, '0')
-  }, 1000)
+
+    // 如果倒计时结束，停止定时器
+    if (totalSeconds <= 0) {
+      stopCountdown()
+      // 可以选择自动刷新订单状态
+      loadOrderDetail(true)
+    }
+  }
+
+  // 立即执行一次
+  updateCountdown()
+
+  // 开始定时器
+  countdownTimer = setInterval(updateCountdown, 1000)
 }
 
 // 【新增】停止倒计时
@@ -433,11 +495,6 @@ const loadPayChannels = async () => {
 // 选择支付方式
 const selectPay = (val) => {
   selectedPay.value = val
-}
-
-// 关闭支付弹窗
-const closePayPopup = () => {
-  showPayPopup.value = false
 }
 
 // 打开球厅导航
@@ -588,7 +645,10 @@ const payOrder = () => {
 
 // 确认支付
 const confirmPay = async () => {
-  if (!payOrderId.value || !currentOrderId.value) {
+  // 判断是加钟支付还是普通订单支付
+  const currentPayOrderId = addTimePayOrderId.value || payOrderId.value
+
+  if (!currentPayOrderId || !currentOrderId.value) {
     uni.showToast({ title: '支付订单信息缺失', icon: 'none' })
     return
   }
@@ -596,13 +656,18 @@ const confirmPay = async () => {
   isPaying.value = true
   try {
     await executePayment({
-      payOrderId: payOrderId.value,
+      payOrderId: currentPayOrderId,
       orderId: currentOrderId.value,
       payValue: selectedPay.value,
       onSuccess: (payResult) => {
         // 支付成功
-        uni.showToast({ title: '支付成功', icon: 'success' })
+        uni.showToast({
+          title: addTimePayOrderId.value ? '加钟成功' : '支付成功',
+          icon: 'success'
+        })
         showPayPopup.value = false
+        // 清空加钟相关状态
+        addTimePayOrderId.value = null
         setTimeout(() => {
           loadOrderDetail()
         }, 1500)
@@ -626,20 +691,59 @@ const confirmPay = async () => {
   }
 }
 
-// 加钟
+// 关闭支付弹窗时清空加钟状态
+const closePayPopup = () => {
+  showPayPopup.value = false
+  addTimePayOrderId.value = null
+}
+
+// 加钟 - 打开弹窗
 const addTime = () => {
-  uni.showModal({
-    title: '加钟服务',
-    content: '确定要增加服务时长吗？',
-    confirmText: '确定',
-    cancelText: '取消',
-    success: (res) => {
-      if (res.confirm) {
-        uni.showToast({ title: '加钟功能开发中', icon: 'none' })
-        // TODO: 调用加钟接口
-      }
-    }
-  })
+  showAddTimePopup.value = true
+  selectedAddMinutes.value = 60 // 默认选1小时
+}
+
+// 关闭加钟弹窗
+const closeAddTimePopup = () => {
+  showAddTimePopup.value = false
+  isAddingTime.value = false
+}
+
+// 确认加钟
+const confirmAddTime = async () => {
+  if (isAddingTime.value) return
+
+  isAddingTime.value = true
+  try {
+    // 调用加钟接口
+    const res = await addTimeOrder({
+      orderId: orderId.value,
+      addMinutes: selectedAddMinutes.value
+    })
+
+    // 获取加钟支付订单ID
+    addTimePayOrderId.value = res.data
+    currentOrderId.value = orderId.value
+
+    // 关闭加钟弹窗
+    closeAddTimePopup()
+
+    // 显示支付弹窗
+    showPayPopup.value = true
+
+    // 重新加载支付渠道（可选）
+    await loadPayChannels()
+
+    uni.showToast({ title: '请完成支付', icon: 'success' })
+  } catch (error) {
+    console.error('加钟失败:', error)
+    uni.showToast({
+      title: error.message || '加钟失败，请重试',
+      icon: 'none'
+    })
+  } finally {
+    isAddingTime.value = false
+  }
 }
 
 // 打赏教练
@@ -751,55 +855,74 @@ let lastStatus = null
   background: #1E252B;
   border-radius: 24rpx;
   padding: 30rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
 
   .status-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 20rpx;
+    gap: 20rpx;
+    flex-shrink: 0;
   }
 
   .status-info {
     display: flex;
     align-items: center;
     gap: 16rpx;
+    flex: 1;
+    min-width: 0;
   }
 
   .status-icon {
     font-size: 56rpx;
+    flex-shrink: 0;
   }
 
   .status-text-group {
     display: flex;
     flex-direction: column;
     gap: 4rpx;
+    flex: 1;
+    min-width: 0;
   }
 
   .status-title {
     color: #fff;
     font-size: 36rpx;
     font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .status-subtitle {
     color: #9CA3AF;
     font-size: 24rpx;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .order-no {
     color: #9CA3AF;
     font-size: 24rpx;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-align: right;
   }
 
   .countdown-timer {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 16rpx;
-    margin: 30rpx 0;
+    gap: 12rpx;
+    padding: 20rpx 0;
+    flex-shrink: 0;
     .time-item {
-      width: 120rpx;
-      height: 120rpx;
+      width: 100rpx;
+      height: 100rpx;
       background: #2A3338;
       border-radius: 16rpx;
       display: flex;
@@ -807,20 +930,23 @@ let lastStatus = null
       align-items: center;
       justify-content: center;
       .time-num {
-        font-size: 48rpx;
+        font-size: 40rpx;
         font-weight: 700;
         color: #00BB88;
+        line-height: 1;
       }
       .time-label {
-        font-size: 24rpx;
+        font-size: 20rpx;
         color: #9CA3AF;
-        margin-top: 8rpx;
+        margin-top: 6rpx;
+        line-height: 1;
       }
     }
     .time-colon {
-      font-size: 48rpx;
+      font-size: 40rpx;
       color: #9CA3AF;
       font-weight: bold;
+      line-height: 1;
     }
   }
 
@@ -1205,6 +1331,89 @@ let lastStatus = null
           height: 20rpx;
           border-radius: 50%;
           background: #00BB88;
+        }
+      }
+    }
+  }
+}
+
+/* 加钟弹窗遮罩 */
+.add-time-popup-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.add-time-popup-wrapper {
+  background: #1E252B;
+  border-radius: 32rpx 32rpx 0 0;
+  animation: slideUp 0.3s ease;
+}
+
+.add-time-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx;
+  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  .close-btn {
+    color: #9CA3AF;
+    font-size: 30rpx;
+  }
+  .add-time-popup-title {
+    color: #fff;
+    font-size: 36rpx;
+    font-weight: 600;
+  }
+  .confirm-btn {
+    color: #00BB88;
+    font-size: 30rpx;
+    font-weight: 600;
+    &.disabled {
+      color: rgba(0, 187, 136, 0.5);
+      pointer-events: none;
+    }
+  }
+}
+
+.add-time-popup-content {
+  padding: 40rpx 30rpx;
+  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(40rpx + constant(safe-area-inset-bottom));
+  .add-time-tip {
+    color: #9CA3AF;
+    font-size: 28rpx;
+    margin-bottom: 30rpx;
+    text-align: center;
+  }
+  .add-time-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20rpx;
+    .add-time-option {
+      background: #2A3338;
+      border-radius: 16rpx;
+      padding: 40rpx 20rpx;
+      text-align: center;
+      border: 2rpx solid transparent;
+      transition: all 0.2s ease;
+      .option-label {
+        color: #fff;
+        font-size: 32rpx;
+        font-weight: 500;
+      }
+      &.active {
+        border-color: #00BB88;
+        background: rgba(0, 187, 136, 0.1);
+        .option-label {
+          color: #00BB88;
         }
       }
     }

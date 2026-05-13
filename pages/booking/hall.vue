@@ -503,6 +503,73 @@ const confirmTime = () => {
 }
 
 // ---------------------- 位置相关方法 ----------------------
+// 打开应用设置页面（兼容 iOS、Android、鸿蒙）
+const openAppSetting = () => {
+  // #ifdef APP-PLUS
+  // 获取系统信息判断平台
+  const systemInfo = uni.getSystemInfoSync()
+  const platform = systemInfo.platform
+
+  if (platform === 'ios') {
+    // iOS 平台 - 跳转到应用设置
+    plus.runtime.openURL(plus.runtime.appid ? 'app-settings:' : 'prefs:root=LOCATION_SERVICES')
+  } else if (platform === 'android') {
+    // Android 平台 - 跳转应用详情页
+    const main = plus.android.runtimeMainActivity()
+    const Intent = plus.android.importClass('android.content.Intent')
+    const Settings = plus.android.importClass('android.provider.Settings')
+    const Uri = plus.android.importClass('android.net.Uri')
+    const packageName = main.getPackageName()
+
+    try {
+      // 先尝试直接打开应用详情页
+      const intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+      const uri = Uri.fromParts('package', packageName, null)
+      intent.setData(uri)
+      main.startActivity(intent)
+    } catch (e) {
+      // 失败则尝试打开设置主页
+      try {
+        const intent = new Intent(Settings.ACTION_SETTINGS)
+        main.startActivity(intent)
+      } catch (e2) {
+        uni.showToast({ title: '打开设置失败', icon: 'none' })
+      }
+    }
+  } else {
+    // 其他平台（鸿蒙）- 尝试通用方式
+    try {
+      const osName = systemInfo.osName || ''
+      if (osName.toLowerCase().includes('harmony') || systemInfo.systemName?.toLowerCase().includes('harmony')) {
+        // 鸿蒙系统处理
+        const main = plus.android.runtimeMainActivity()
+        const Intent = plus.android.importClass('android.content.Intent')
+        const Settings = plus.android.importClass('android.provider.Settings')
+        try {
+          const intent = new Intent(Settings.ACTION_APPLICATION_SETTINGS)
+          main.startActivity(intent)
+        } catch (he) {
+          const intent = new Intent(Settings.ACTION_SETTINGS)
+          main.startActivity(intent)
+        }
+      } else {
+        uni.openSetting({
+          fail: () => {
+            uni.showToast({ title: '打开设置失败', icon: 'none' })
+          }
+        })
+      }
+    } catch (e) {
+      uni.openSetting({
+        fail: () => {
+          uni.showToast({ title: '打开设置失败', icon: 'none' })
+        }
+      })
+    }
+  }
+  // #endif
+}
+
 // 获取当前位置
 const getCurrentLocation = () => {
   locating.value = true
@@ -555,6 +622,9 @@ const getCurrentLocation = () => {
                   if (settingRes.authSetting['scope.userLocation']) {
                     getCurrentLocation()
                   }
+                },
+                fail: () => {
+                  uni.showToast({ title: '打开设置失败', icon: 'none' })
                 }
               })
             }
@@ -571,7 +641,7 @@ const getCurrentLocation = () => {
         confirmText: '去开启',
         success: (res) => {
           if (res.confirm) {
-            uni.openSetting()
+            openAppSetting()
           }
         }
       })

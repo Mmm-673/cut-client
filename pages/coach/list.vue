@@ -146,6 +146,7 @@
 <script setup>
 import {ref, onMounted} from 'vue'
 import {getCoachList} from '@/api/billiard/coach'
+import {regeocode} from '@/api/billiard/amap'
 
 const statusBarHeight = ref(0)
 const scrollHeight = ref(0)
@@ -160,6 +161,14 @@ const pageSize = ref(20)
 const searchKeyword = ref('')
 const coachList = ref([])
 const hasMore = ref(true)
+
+// 定位相关
+const locating = ref(false)
+const currentLocation = ref({
+  longitude: null,
+  latitude: null
+})
+const currentCity = ref('')
 
 const tabs = ['全部', '新人', '免费出行', '初级', '中级', '高级']
 
@@ -210,9 +219,100 @@ const formatDistance = (distance) => {
   return distance
 }
 
+// 获取当前位置
+const getCurrentLocation = () => {
+  locating.value = true
+
+  uni.getLocation({
+    type: 'gcj02',
+    altitude: true,
+    success: async (res) => {
+      console.log('定位成功:', res)
+      currentLocation.value = {
+        longitude: res.longitude,
+        latitude: res.latitude
+      }
+
+      // 调用后端逆地址解析接口获取城市
+      try {
+        const geoRes = await regeocode({
+          longitude: res.longitude,
+          latitude: res.latitude
+        })
+        console.log('逆地址解析结果:', geoRes)
+        if (geoRes.data) {
+          currentCity.value = geoRes.data.city || ''
+        }
+      } catch (e) {
+        console.error('逆地址解析失败:', e)
+      }
+
+      locating.value = false
+      loadData(true)
+    },
+    fail: (err) => {
+      console.error('定位失败:', err)
+      locating.value = false
+      // #ifdef MP-WEIXIN
+      if (err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize'))) {
+        uni.showModal({
+          title: '定位权限未开启',
+          content: '您未开启定位权限，将无法按距离排序。是否前往开启？',
+          confirmText: '去开启',
+          success: (res) => {
+            if (res.confirm) {
+              uni.openSetting({
+                success: (settingRes) => {
+                  if (settingRes.authSetting['scope.userLocation']) {
+                    getCurrentLocation()
+                  }
+                }
+              })
+            }
+          }
+        })
+      } else {
+        uni.showToast({ title: '定位失败，请检查定位功能', icon: 'none' })
+      }
+      // #endif
+      // #ifdef APP-PLUS
+      uni.showModal({
+        title: '定位权限未开启',
+        content: '您未开启定位权限，将无法按距离排序。是否前往开启？',
+        confirmText: '去开启',
+        success: (res) => {
+          if (res.confirm) {
+            uni.openSetting()
+          }
+        }
+      })
+      // #endif
+      // #ifdef H5
+      uni.showToast({ title: '定位失败，请检查浏览器定位权限', icon: 'none' })
+      // #endif
+    }
+  })
+}
+
 // 加载数据
 const loadData = async (isRefresh = false) => {
   if (loading.value) return
+
+  // 如果是距离排序但没有经纬度，先获取定位
+  if (currentSort.value === 1 && (!currentLocation.value.longitude || !currentLocation.value.latitude)) {
+    if (!locating.value) {
+      getCurrentLocation()
+    }
+    return
+  }
+
+  // 如果是智能排序但没有城市信息，先获取定位
+  if (currentSort.value === 0 && !currentCity.value) {
+    if (!locating.value) {
+      getCurrentLocation()
+    }
+    return
+  }
 
   loading.value = true
   if (isRefresh) {
@@ -244,6 +344,16 @@ const loadData = async (isRefresh = false) => {
       params.tag = '新人'
     } else if (currentTab.value === 2) {
       params.tag = '免费出行'
+    }
+
+    // 根据排序类型添加不同的参数
+    if (currentSort.value === 1) {
+      // 距离最近：添加经纬度
+      params.longitude = currentLocation.value.longitude
+      params.latitude = currentLocation.value.latitude
+    } else if (currentSort.value === 0) {
+      // 智能排序：添加城市
+      params.city = currentCity.value
     }
 
     const res = await getCoachList(params)
@@ -301,9 +411,27 @@ const switchTab = (index) => {
 }
 
 // 切换排序
-const switchSort = (index) => {
+const switchSort = async (index) => {
   currentSort.value = index
-  // TODO: 根据排序类型调整请求参数
+
+  if (index === 1) {
+    // 距离最近：需要获取定位
+    if (!currentLocation.value.longitude || !currentLocation.value.latitude) {
+      // 还没有定位信息，先获取定位，getCurrentLocation内部会调用loadData
+      getCurrentLocation()
+      return
+    }
+  } else if (index === 0) {
+    // 智能排序：需要城市信息
+    if (!currentCity.value) {
+      // 还没有城市信息，先获取定位，getCurrentLocation内部会调用loadData
+      if (!currentLocation.value.longitude || !currentLocation.value.latitude) {
+        getCurrentLocation()
+        return
+      }
+    }
+  }
+
   loadData(true)
 }
 
@@ -356,8 +484,8 @@ onMounted(() => {
     })
   }, 100)
 
-  // 加载数据
-  loadData(true)
+  // 默认智能排序，先获取定位
+  getCurrentLocation()
 })
 </script>
 

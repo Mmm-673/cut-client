@@ -279,7 +279,7 @@ const handleSubmit = async () => {
     });
 
     setTimeout(() => {
-      uni.navigateBack();
+      uni.switchTab({ url: '/pages/order/list' });
     }, 1500);
   } catch (error) {
     uni.hideLoading();

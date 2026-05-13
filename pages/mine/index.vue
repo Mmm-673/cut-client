@@ -44,10 +44,10 @@
             <text class="edit-btn" @click="toEditInfo">编辑资料</text>
           </view>
 
-          <!-- 设置按钮 -->
-          <view class="setting-btn" @click="toSetting">
-            <uni-icons type="gear" size="22" color="#fff" />
-          </view>
+<!--          &lt;!&ndash; 设置按钮 &ndash;&gt;-->
+<!--          <view class="setting-btn" @click="toSetting">-->
+<!--            <uni-icons type="gear" size="22" color="#fff" />-->
+<!--          </view>-->
         </view>
 
         <!-- 统计数据 -->

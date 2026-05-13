@@ -283,12 +283,15 @@ const submitForm = async () => {
       password: form.value.password
     })
 
-    uni.showToast({ title: '密码修改成功', icon: 'success' })
+    uni.showToast({ title: '密码修改成功，请重新登录', icon: 'success', duration: 2000 })
+    // 清空登录信息
+    userStore.clearLoginInfo()
+    // 重置提交状态
+    isSubmitting.value = false
     // 修改成功后跳转到登录页重新登录
     setTimeout(() => {
-      console.log('准备跳转登录页')
       uni.reLaunch({ url: '/pages/login/index' })
-    }, 1500)
+    }, 1000)
   } catch (error) {
     console.error('密码修改失败:', error)
     uni.showToast({ title: error.message || '修改失败，请重试', icon: 'none' })
