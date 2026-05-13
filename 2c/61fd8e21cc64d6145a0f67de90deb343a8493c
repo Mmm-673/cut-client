@@ -1,0 +1,46 @@
+pages/order/detail.vue
+  50f3b7003859ca6e 189-217,264,281-296,300,436-448,455-468,648-651,659,664-667,669-670,694-700,702-746,858-860,866-867,874-875,880,887-888,895-897,903-905,911-913,920-922,924-925,933,936,939,941-942,946,949,1339-1421
+pages/booking/hall.vue
+  50f3b7003859ca6e 506-572,625-627,644
+pages/mine/pwd/index.vue
+  50f3b7003859ca6e 286-290
+pages/coach/list.vue
+  79b0deb6e2d32b97 149,165-172,222-296,301-316,349-358,414,416-434,487-488
+pages/evaluate/index.vue
+  50f3b7003859ca6e 282
+api/billiard/order.js
+  50f3b7003859ca6e 127-148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "2c61fd8e21cc64d6145a0f67de90deb343a8493c",
+  "prompts": {
+    "50f3b7003859ca6e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ab231a2-f74d-4bb6-8eba-5a09ca8bf664",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 351,
+      "total_deletions": 47,
+      "accepted_lines": 3625,
+      "overriden_lines": 1
+    },
+    "79b0deb6e2d32b97": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "614045f7-f2e1-4202-b130-bf60acd98e80",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 141,
+      "total_deletions": 13,
+      "accepted_lines": 845,
+      "overriden_lines": 0
+    }
+  }
+}
