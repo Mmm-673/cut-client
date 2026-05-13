@@ -45,9 +45,9 @@
           </view>
 
 <!--          &lt;!&ndash; 设置按钮 &ndash;&gt;-->
-<!--          <view class="setting-btn" @click="toSetting">-->
-<!--            <uni-icons type="gear" size="22" color="#fff" />-->
-<!--          </view>-->
+          <view class="setting-btn" @click="toSetting">
+            <uni-icons type="gear" size="22" color="#fff" />
+          </view>
         </view>
 
         <!-- 统计数据 -->

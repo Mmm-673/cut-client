@@ -241,7 +241,7 @@ const getCurrentLocation = () => {
         })
         console.log('逆地址解析结果:', geoRes)
         if (geoRes.data) {
-          currentCity.value = geoRes.data.city || ''
+          currentCity.value = geoRes.data.district || ''
         }
       } catch (e) {
         console.error('逆地址解析失败:', e)
@@ -341,9 +341,9 @@ const loadData = async (isRefresh = false) => {
 
     // 添加标签筛选
     if (currentTab.value === 1) {
-      params.tag = '新人'
+      params.tag = ['新人']
     } else if (currentTab.value === 2) {
-      params.tag = '免费出行'
+      params.tag = ['免费出行']
     }
 
     // 根据排序类型添加不同的参数
