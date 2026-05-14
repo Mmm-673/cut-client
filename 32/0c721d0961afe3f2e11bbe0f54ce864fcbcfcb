@@ -1,0 +1,108 @@
+subpkg/mine/info.vue
+  f3b1443aa314a666 1-453
+subpkg/coach/reward.vue
+  f3b1443aa314a666 1-263,265-795
+  083d298ac7cda039 264
+subpkg/mine/index.vue
+  f3b1443aa314a666 1-799
+subpkg/mine/recharge-success.vue
+  f3b1443aa314a666 41
+subpkg/coach/evaluate.vue
+  083d298ac7cda039 110,120,122,137-152,154-161,164-165,168-174
+  f3b1443aa314a666 1,3-9,13-21,23-29,31-32,34-45,48,50-70,75-78,81-83,85-89,91-96,98-103,108-109,111-119,121,123-136,162-163,166-167,175-244,246-249,251-254,256-264,266-271,273,275-304,307-318,320-322,325-326,328,330,332-337,340-344,347,349,351,353-361,363-366,369,371-391,394-397,401-403,405-409,411-434,438-440,442-445,448,450-464,467,469-502,505,507-529,531-534,538-539,543,545-548,550-552,555-558,562-567,569-572,574-584,586-588,591
+subpkg/mine/help.vue
+  f3b1443aa314a666 1-301
+subpkg/mine/withdraw.vue
+  f3b1443aa314a666 1-412
+subpkg/mine/pwd.vue
+  f3b1443aa314a666 1-505
+pages/coach/list.vue
+  083d298ac7cda039 148,226-228,230-231,250-258,270-289,291,293-310,313-317,513-521
+  f3b1443aa314a666 475,482,490
+subpkg/mine/recharge.vue
+  f3b1443aa314a666 167
+pages/order/list.vue
+  083d298ac7cda039 171,410-414
+  f3b1443aa314a666 342,374
+subpkg/common/webview.vue
+  f3b1443aa314a666 1-34
+.claude/settings.local.json
+  f3b1443aa314a666 5-7
+subpkg/common/textview.vue
+  f3b1443aa314a666 1-43
+pages/mine/index.vue
+  083d298ac7cda039 189,192-282,308-320,351-352,362,367-391,400,402-403,444-445,507,515
+  f3b1443aa314a666 283,392,395-396,467,471,475,487,491
+pages.json
+  f3b1443aa314a666 56-216,219-236
+  000a8543f830749f 217-218
+subpkg/mine/wallet-list.vue
+  f3b1443aa314a666 1-618
+pages/login/resetPassword.vue
+  f3b1443aa314a666 222-223
+pages/home/index.vue
+  f3b1443aa314a666 191,207
+subpkg/coach/detail.vue
+  f3b1443aa314a666 1,39,267,406,468,471,601,719,798,966
+  083d298ac7cda039 104-115,810-813,815-827
+config.js
+  f3b1443aa314a666 17,21
+pages/booking/index.vue
+  f3b1443aa314a666 191
+subpkg/booking/pay-success.vue
+  f3b1443aa314a666 1-215
+pages/login/index.vue
+  f3b1443aa314a666 294-295
+subpkg/mine/favorites.vue
+  f3b1443aa314a666 199,206,213
+subpkg/booking/confirm.vue
+  f3b1443aa314a666 441,540
+permission.js
+  f3b1443aa314a666 7-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "320c721d0961afe3f2e11bbe0f54ce864fcbcfcb",
+  "prompts": {
+    "000a8543f830749f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "705799fd-959e-422e-bf43-433e3e413ce9",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 105,
+      "overriden_lines": 0
+    },
+    "083d298ac7cda039": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7b34d22a-34a6-4e85-bd04-b905e9a4b04a",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 534,
+      "total_deletions": 255,
+      "accepted_lines": 398,
+      "overriden_lines": 0
+    },
+    "f3b1443aa314a666": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b31e2a77-9abb-4a1d-825d-393c963e9cd7",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 20646,
+      "total_deletions": 202,
+      "accepted_lines": 15797,
+      "overriden_lines": 11
+    }
+  }
+}
