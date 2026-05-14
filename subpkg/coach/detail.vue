@@ -1,3 +1,4 @@
+
 <template>
   <view class="detail-container">
     <!-- 头部导航栏 -->
@@ -18,10 +19,10 @@
     >
       <!-- 头部信息区域 -->
       <view class="header-section">
-        <image class="header-bg" :src="coachInfo.cover || '/static/default-cover.jpg'" mode="aspectFill"></image>
+        <image class="header-bg" :src="coachInfo.cover || '/static/images/profile.jpg'" mode="aspectFill"></image>
         <view class="header-overlay"></view>
         <view class="header-content">
-          <image class="avatar" :src="coachInfo.avatar || '/static/default-cover.jpg'" mode="aspectFill"></image>
+          <image class="avatar" :src="coachInfo.avatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
           <view class="info">
             <view class="name-row">
               <text class="name">{{ coachInfo.stageName || coachInfo.name }}</text>
@@ -35,7 +36,7 @@
                 <text>{{ coachInfo.overallScore || coachInfo.rating }}</text>
               </view>
               <view class="stat-item">
-                <text>{{ coachInfo.serviceCount || coachInfo.orderCount }}单</text>
+                <text>{{ coachInfo.serviceCount }}单</text>
               </view>
               <view class="stat-item">
                 <text>{{ coachInfo.distance }}</text>
@@ -100,16 +101,18 @@
           <text>个人相册 ({{ albumList.length }})</text>
           <text class="see-more" @click="viewAlbum">查看全部</text>
         </view>
-        <view class="album-grid">
-          <image
-              class="album-item"
-              v-for="(item, index) in albumList.slice(0, 6)"
-              :key="index"
-              :src="item"
-              mode="aspectFill"
-              @click="previewImage(index)"
-          ></image>
-        </view>
+        <scroll-view class="album-scroll" scroll-x="true" :show-scrollbar="false">
+          <view class="album-grid">
+            <image
+                class="album-item"
+                v-for="(item, index) in albumList"
+                :key="index"
+                :src="item"
+                mode="aspectFill"
+                @click="previewImage(index)"
+                ></image>
+          </view>
+        </scroll-view>
       </view>
 
       <!-- 用户评价 -->
@@ -261,8 +264,8 @@ const loadCoachData = async () => {
       name: data.name || data.stageName,
       stageName: data.stageName || data.name,
       // 主图用 photos 中的 isMain=true 的图，或者用 avatar/cover 兜底
-      avatar: getMainPhoto(data.photos) || data.avatar || data.mainPhotoUrl || '/static/default-avatar.png',
-      cover: data.cover || getMainPhoto(data.photos) || '/static/default-cover.jpg',
+      avatar: getMainPhoto(data.photos) || data.avatar || '/static/default-avatar.png',
+      cover: data.cover || getMainPhoto(data.photos) || '/static/images/profile.jpg',
       level: data.level ?? 0,
       levelText: getLevelText(data.level),
       rating: data.overallScore || data.rating || 4.9,
@@ -400,7 +403,7 @@ const handleToggleFavorite = async () => {
 // 跳转到打赏页面
 const goToReward = () => {
   uni.navigateTo({
-    url: '/pages/coach/reward?coachId=' + coachInfo.id
+    url: '/subpkg/coach/reward?coachId=' + coachInfo.id
   })
 }
 
@@ -462,10 +465,10 @@ const bookNow = () => {
 
   if (isCompanion) {
     // 陪游服务，直接跳转确认订单页创建订单
-    uni.navigateTo({ url: '/pages/booking/confirm?createDirect=1' })
+    uni.navigateTo({ url: '/subpkg/booking/confirm?createDirect=1' })
   } else {
     // 台球陪练，需要选择球厅
-    uni.navigateTo({ url: '/pages/booking/hall' })
+    uni.navigateTo({ url: '/subpkg/booking/hall' })
   }
 }
 
@@ -595,7 +598,7 @@ onMounted(() => {
         }
 
         .tag.level {
-          font-size: 24rpx;
+          font-size: 22rpx;
           padding: 8rpx 20rpx;
           border-radius: 40rpx;
 
@@ -713,7 +716,7 @@ onMounted(() => {
     justify-content: space-between;
     align-items: center;
     border: 4rpx solid transparent;
-    transition: all 0.2s ease;
+    transition: all 0.3s;
 
     &.selected {
       border-color: #00c896;
@@ -792,7 +795,7 @@ onMounted(() => {
         font-size: 28rpx;
         font-weight: 600;
         border-radius: 40rpx;
-        transition: all 0.2s ease;
+        transition: all 0.3s;
 
         &.active {
           background: #2a3338;
@@ -804,16 +807,24 @@ onMounted(() => {
   }
 }
 
-.album-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20rpx;
+.album-scroll {
+  width: 100%;
+  margin-left: -40rpx;
+  padding: 0 40rpx;
 
-  .album-item {
-    width: 100%;
-    aspect-ratio: 1;
-    border-radius: 24rpx;
-    background-color: #2a2a2a;
+  .album-grid {
+    display: inline-flex;
+    flex-direction: row;
+    gap: 20rpx;
+    white-space: nowrap;
+
+    .album-item {
+      width: 200rpx;
+      height: 200rpx;
+      flex-shrink: 0;
+      border-radius: 24rpx;
+      background-color: #2a2a2a;
+    }
   }
 }
 

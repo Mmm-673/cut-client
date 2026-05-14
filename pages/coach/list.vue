@@ -145,6 +145,7 @@
 
 <script setup>
 import {ref, onMounted} from 'vue'
+import {onShow} from  "@dcloudio/uni-app"
 import {getCoachList} from '@/api/billiard/coach'
 import {regeocode} from '@/api/billiard/amap'
 
@@ -222,7 +223,12 @@ const formatDistance = (distance) => {
 // 获取当前位置
 const getCurrentLocation = () => {
   locating.value = true
+  // uni.getLocation 本身就会自动申请权限
+  doGetLocation()
+}
 
+// 实际执行定位的函数
+const doGetLocation = () => {
   uni.getLocation({
     type: 'gcj02',
     altitude: true,
@@ -241,7 +247,15 @@ const getCurrentLocation = () => {
         })
         console.log('逆地址解析结果:', geoRes)
         if (geoRes.data) {
-          currentCity.value = geoRes.data.district || ''
+          // 兼容直辖市：处理 city 为 "[]" 字符串或空数组的情况
+          let city = geoRes.data.city
+          // 如果是字符串格式的 "[]"，当作空处理
+          if (city === '[]') {
+            city = null
+          } else if (Array.isArray(city)) {
+            city = city.length > 0 ? city[0] : null
+          }
+          currentCity.value = city || geoRes.data.province || ''
         }
       } catch (e) {
         console.error('逆地址解析失败:', e)
@@ -253,45 +267,54 @@ const getCurrentLocation = () => {
     fail: (err) => {
       console.error('定位失败:', err)
       locating.value = false
-      // #ifdef MP-WEIXIN
-      if (err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize'))) {
-        uni.showModal({
-          title: '定位权限未开启',
-          content: '您未开启定位权限，将无法按距离排序。是否前往开启？',
-          confirmText: '去开启',
-          success: (res) => {
-            if (res.confirm) {
-              uni.openSetting({
-                success: (settingRes) => {
-                  if (settingRes.authSetting['scope.userLocation']) {
-                    getCurrentLocation()
-                  }
-                }
-              })
-            }
-          }
-        })
-      } else {
-        uni.showToast({ title: '定位失败，请检查定位功能', icon: 'none' })
-      }
-      // #endif
-      // #ifdef APP-PLUS
-      uni.showModal({
-        title: '定位权限未开启',
-        content: '您未开启定位权限，将无法按距离排序。是否前往开启？',
-        confirmText: '去开启',
-        success: (res) => {
-          if (res.confirm) {
-            uni.openSetting()
-          }
-        }
-      })
-      // #endif
-      // #ifdef H5
-      uni.showToast({ title: '定位失败，请检查浏览器定位权限', icon: 'none' })
-      // #endif
+      showPermissionModal(err)
     }
   })
+}
+
+// 显示权限引导弹窗
+const showPermissionModal = (err) => {
+  // #ifdef MP-WEIXIN
+  if (err && err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize'))) {
+    uni.showModal({
+      title: '定位权限未开启',
+      content: '您未开启定位权限，将无法按距离排序。是否前往开启？',
+      confirmText: '去开启',
+      success: (res) => {
+        if (res.confirm) {
+          uni.openSetting({
+            success: (settingRes) => {
+              if (settingRes.authSetting['scope.userLocation']) {
+                getCurrentLocation()
+              }
+            }
+          })
+        }
+      }
+    })
+  } else {
+    uni.showToast({ title: '定位失败，请检查定位功能', icon: 'none' })
+  }
+  // #endif
+
+  // #ifdef APP-PLUS
+  uni.showModal({
+    title: '定位权限未开启',
+    content: '您未开启定位权限，将无法按距离排序。是否前往开启？',
+    confirmText: '去开启',
+    success: (res) => {
+      if (res.confirm) {
+        // 这里应该调用 openAppSetting，但这个函数在 coach/list.vue 里没有定义
+        // 暂时直接用 uni.openSetting
+        uni.openSetting()
+      }
+    }
+  })
+  // #endif
+
+  // #ifdef H5
+  uni.showToast({ title: '定位失败，请检查浏览器定位权限', icon: 'none' })
+  // #endif
 }
 
 // 加载数据
@@ -449,14 +472,14 @@ const clearSearch = () => {
 // 跳转详情
 const goToDetail = (id) => {
   uni.navigateTo({
-    url: `/pages/coach/detail?id=${id}`
+    url: `/subpkg/coach/detail?id=${id}`
   })
 }
 
 // 跳转打赏
 const goToReward = (id) => {
   uni.navigateTo({
-    url: '/pages/coach/reward?coachId=' + id
+    url: '/subpkg/coach/reward?coachId=' + id
   })
 }
 
@@ -464,7 +487,7 @@ const goToReward = (id) => {
 const handleBook = (coach) => {
   // 保存选中的助教信息
   uni.setStorageSync('selectedCoach', coach)
-  uni.navigateTo({url: '/pages/booking/hall'})
+  uni.navigateTo({url: '/subpkg/booking/hall'})
 }
 
 onMounted(() => {
@@ -486,6 +509,15 @@ onMounted(() => {
 
   // 默认智能排序，先获取定位
   getCurrentLocation()
+})
+
+onShow(() => {
+  // 从设置回来后，如果还没有定位信息，尝试重新获取定位
+  if ((!currentLocation.value.longitude || !currentLocation.value.latitude) || !currentCity.value) {
+    if (!locating.value) {
+      getCurrentLocation()
+    }
+  }
 })
 </script>
 

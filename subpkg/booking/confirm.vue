@@ -438,7 +438,7 @@ const reselectHall = () => {
     isReselect: true
   }
   uni.setStorageSync('reselectParams', reselectParams)
-  uni.navigateTo({ url: '/pages/booking/hall' })
+  uni.navigateTo({ url: '/subpkg/booking/hall' })
 }
 
 // 返回上一页
@@ -537,7 +537,7 @@ const submitPayment = async () => {
       onSuccess: (payResult) => {
         uni.showToast({ title: '支付成功', icon: 'success' })
         setTimeout(() => {
-          uni.redirectTo({ url: `/pages/booking/pay-success?orderId=${orderData.value.orderId}` })
+          uni.redirectTo({ url: `/subpkg/booking/pay-success?orderId=${orderData.value.orderId}` })
         }, 1500)
       },
       onCancel: () => {

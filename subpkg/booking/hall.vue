@@ -413,6 +413,38 @@ const currentSortType = computed(() => {
   return tab ? tab.sortType : 1
 })
 
+// 计算默认服务时间
+const calculateDefaultTime = () => {
+  const now = new Date()
+  const currentMinutes = now.getMinutes()
+
+  // 计算到下一个30分或00分的时间差
+  let targetMinutes = currentMinutes < 30 ? 30 : 60
+  let minutesDiff = targetMinutes - currentMinutes
+
+  // 如果剩余时间小于15分钟，就加到下一个整点
+  if (minutesDiff < 15) {
+    targetMinutes = targetMinutes === 30 ? 60 : 60
+  }
+
+  // 计算目标时间
+  const targetTime = new Date(now.getTime())
+  if (targetMinutes === 60) {
+    targetTime.setHours(now.getHours() + 1, 0, 0, 0)
+  } else {
+    targetTime.setMinutes(targetMinutes, 0, 0)
+  }
+
+  // 格式化显示
+  const month = String(targetTime.getMonth() + 1).padStart(2, '0')
+  const day = String(targetTime.getDate()).padStart(2, '0')
+  const hour = String(targetTime.getHours()).padStart(2, '0')
+  const minute = String(targetTime.getMinutes()).padStart(2, '0')
+
+  orderInfo.value.timeText = `今天 ${month}.${day} ${hour}:${minute}`
+  selectedBookingTime.value = targetTime.getTime()
+}
+
 // ---------------------- 工具方法 ----------------------
 // 格式化价格（分转元）
 const formatPrice = (price) => {
@@ -573,7 +605,12 @@ const openAppSetting = () => {
 // 获取当前位置
 const getCurrentLocation = () => {
   locating.value = true
+  // uni.getLocation 本身就会自动申请权限
+  doGetLocation()
+}
 
+// 实际执行定位的函数
+const doGetLocation = () => {
   uni.getLocation({
     type: 'gcj02',
     altitude: true,
@@ -609,48 +646,55 @@ const getCurrentLocation = () => {
     fail: (err) => {
       console.error('定位失败:', err)
       locating.value = false
-      // #ifdef MP-WEIXIN
-      if (err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize'))) {
-        uni.showModal({
-          title: '定位权限未开启',
-          content: '您未开启定位权限，将无法获取附近球厅。是否前往开启？',
-          confirmText: '去开启',
-          success: (res) => {
-            if (res.confirm) {
-              uni.openSetting({
-                success: (settingRes) => {
-                  if (settingRes.authSetting['scope.userLocation']) {
-                    getCurrentLocation()
-                  }
-                },
-                fail: () => {
-                  uni.showToast({ title: '打开设置失败', icon: 'none' })
-                }
-              })
-            }
-          }
-        })
-      } else {
-        uni.showToast({ title: '定位失败，请检查定位功能', icon: 'none' })
-      }
-      // #endif
-      // #ifdef APP-PLUS
-      uni.showModal({
-        title: '定位权限未开启',
-        content: '您未开启定位权限，将无法获取附近球厅。是否前往开启？',
-        confirmText: '去开启',
-        success: (res) => {
-          if (res.confirm) {
-            openAppSetting()
-          }
-        }
-      })
-      // #endif
-      // #ifdef H5
-      uni.showToast({ title: '定位失败，请检查浏览器定位权限', icon: 'none' })
-      // #endif
+      showPermissionModal(err)
     }
   })
+}
+
+// 显示权限引导弹窗
+const showPermissionModal = (err) => {
+  // #ifdef MP-WEIXIN
+  if (err && err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize'))) {
+    uni.showModal({
+      title: '定位权限未开启',
+      content: '您未开启定位权限，将无法获取附近球厅。是否前往开启？',
+      confirmText: '去开启',
+      success: (res) => {
+        if (res.confirm) {
+          uni.openSetting({
+            success: (settingRes) => {
+              if (settingRes.authSetting['scope.userLocation']) {
+                getCurrentLocation()
+              }
+            },
+            fail: () => {
+              uni.showToast({ title: '打开设置失败', icon: 'none' })
+            }
+          })
+        }
+      }
+    })
+  } else {
+    uni.showToast({ title: '定位失败，请检查定位功能', icon: 'none' })
+  }
+  // #endif
+
+  // #ifdef APP-PLUS
+  uni.showModal({
+    title: '定位权限未开启',
+    content: '您未开启定位权限，将无法获取附近球厅。是否前往开启？',
+    confirmText: '去开启',
+    success: (res) => {
+      if (res.confirm) {
+        openAppSetting()
+      }
+    }
+  })
+  // #endif
+
+  // #ifdef H5
+  uni.showToast({ title: '定位失败，请检查浏览器定位权限', icon: 'none' })
+  // #endif
 }
 
 // 切换定位/城市
@@ -767,7 +811,15 @@ const switchTab = (val) => {
   currentTab.value = val
   hasMore.value = true
   hallList.value = []
-  loadHallList()
+
+  // 如果切换到"距离最近"且没有定位信息，先获取定位
+  if (val === 'nearest' && (!currentLocation.value.longitude || !currentLocation.value.latitude)) {
+    if (!locating.value) {
+      getCurrentLocation()
+    }
+  } else {
+    loadHallList()
+  }
 }
 
 // 打开筛选
@@ -960,7 +1012,7 @@ const chooseHall = async (hall) => {
 
     // 跳转到确认支付页
     setTimeout(() => {
-      uni.redirectTo({ url: '/pages/booking/confirm' })
+      uni.redirectTo({ url: '/subpkg/booking/confirm' })
     }, 500)
 
   } catch (error) {
@@ -1000,6 +1052,15 @@ onShow(() => {
       setTimeout(() => {
         uni.navigateBack()
       }, 1000)
+    }
+    // 设置默认服务时间
+    calculateDefaultTime()
+  }
+
+  // 从设置回来后，如果还没有定位信息，尝试重新获取定位
+  if (!currentLocation.value.longitude || !currentLocation.value.latitude) {
+    if (!locating.value) {
+      getCurrentLocation()
     }
   }
 })

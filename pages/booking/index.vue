@@ -188,7 +188,7 @@ const goToConfirm = () => {
     return
   }
   uni.navigateTo({
-    url: '/pages/booking/confirm'
+    url: '/subpkg/booking/confirm'
   })
 }
 

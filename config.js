@@ -14,11 +14,11 @@ export default {
     // 政策协议
     agreements: [{
         title: "隐私政策",
-        url: "/pages/common/textview/index?type=privacy"
+        url: "/subpkg/common/textview?type=privacy"
       },
       {
         title: "用户服务协议",
-        url: "/pages/common/textview/index?type=user"
+        url: "/subpkg/common/textview?type=user"
       }
     ]
   }

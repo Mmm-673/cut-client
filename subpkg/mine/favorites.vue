@@ -196,21 +196,21 @@ const goBack = () => {
 // 跳转详情
 const goToDetail = (id) => {
   uni.navigateTo({
-    url: `/pages/coach/detail?id=${id}`
+    url: `/subpkg/coach/detail?id=${id}`
   })
 }
 
 // 跳转打赏
 const goToReward = (id) => {
   uni.navigateTo({
-    url: '/pages/coach/reward?coachId=' + id
+    url: '/subpkg/coach/reward?coachId=' + id
   })
 }
 
 // 预约
 const handleBook = (coach) => {
   uni.setStorageSync('selectedCoach', coach)
-  uni.navigateTo({url: '/pages/booking/hall'})
+  uni.navigateTo({url: '/subpkg/booking/hall'})
 }
 
 onMounted(() => {

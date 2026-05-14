@@ -186,100 +186,7 @@ import { ref, computed, onMounted } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
 import { getUserInfo } from '@/api/billiard/user'
 import { getWallet } from '@/api/billiard/wallet'
-import { getOrderList } from '@/api/billiard/order'
 import { useUserStore } from '@/store/modules/user'
-
-// 后端状态映射：10=待付款,20=待接单,30=已接单,40=进行中,50=待评价,60=已完成,70=已取消
-const STATUS_MAP = {
-  TO_PAY: 10,
-  PENDING_ACCEPT: 20,
-  ACCEPTED: 30,
-  IN_SERVICE: 40,
-  TO_REVIEW: 50,
-  COMPLETED: 60,
-  CANCELLED: 70
-}
-
-// 前端Tab -> 后端状态列表
-const TAB_TO_STATUSES = {
-  0: [STATUS_MAP.TO_PAY], // 待付款
-  1: [STATUS_MAP.PENDING_ACCEPT, STATUS_MAP.ACCEPTED, STATUS_MAP.IN_SERVICE], // 进行中
-  2: [STATUS_MAP.TO_REVIEW], // 待评价
-  3: [STATUS_MAP.COMPLETED], // 已完成
-  4: [STATUS_MAP.CANCELLED] // 已取消
-}
-
-// 状态文本映射
-const STATUS_TEXT = {
-  [STATUS_MAP.TO_PAY]: '待付款',
-  [STATUS_MAP.PENDING_ACCEPT]: '待接单',
-  [STATUS_MAP.ACCEPTED]: '已接单',
-  [STATUS_MAP.IN_SERVICE]: '进行中',
-  [STATUS_MAP.TO_REVIEW]: '待评价',
-  [STATUS_MAP.COMPLETED]: '已完成',
-  [STATUS_MAP.CANCELLED]: '已取消'
-}
-
-// 状态颜色映射
-const STATUS_COLOR = {
-  [STATUS_MAP.TO_PAY]: 'rgba(251, 191, 36, 0.2)',
-  [STATUS_MAP.PENDING_ACCEPT]: 'rgba(0, 187, 136, 0.2)',
-  [STATUS_MAP.ACCEPTED]: 'rgba(0, 187, 136, 0.2)',
-  [STATUS_MAP.IN_SERVICE]: 'rgba(0, 187, 136, 0.2)',
-  [STATUS_MAP.TO_REVIEW]: 'rgba(0, 187, 136, 0.2)',
-  [STATUS_MAP.COMPLETED]: 'rgba(107, 114, 128, 0.2)',
-  [STATUS_MAP.CANCELLED]: 'rgba(239, 68, 68, 0.2)'
-}
-
-// 服务类型映射
-const SERVICE_TYPE_TEXT = {
-  1: '台球陪练',
-  2: '陪游'
-}
-
-// 格式化时间
-const formatTime = (timestamp) => {
-  if (!timestamp) return ''
-  const date = new Date(timestamp)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hour = String(date.getHours()).padStart(2, '0')
-  const minute = String(date.getMinutes()).padStart(2, '0')
-  const endHour = String(date.getHours() + Math.floor((date.getMinutes() + 0) / 60)).padStart(2, '0')
-  const endMinute = String((date.getMinutes() + 0) % 60).padStart(2, '0')
-  return `${year}-${month}-${day} ${hour}:${minute}-${endHour}:${endMinute}`
-}
-
-// 转换订单数据
-const transformOrder = (item) => {
-  const durationHours = Math.round(item.serviceDuration / 60)
-  const endTime = item.bookingTime + item.serviceDuration * 60 * 1000
-  const startTime = new Date(item.bookingTime)
-  const endTimeDate = new Date(endTime)
-
-  const startHour = String(startTime.getHours()).padStart(2, '0')
-  const startMin = String(startTime.getMinutes()).padStart(2, '0')
-  const endHour = String(endTimeDate.getHours()).padStart(2, '0')
-  const endMin = String(endTimeDate.getMinutes()).padStart(2, '0')
-  const dateStr = `${startTime.getFullYear()}-${String(startTime.getMonth() + 1).padStart(2, '0')}-${String(startTime.getDate()).padStart(2, '0')}`
-  const timeStr = `${dateStr} ${startHour}:${startMin}-${endHour}:${endMin}`
-
-  return {
-    id: item.orderId,
-    coachAvatar: item.coachMainPhoto || '/static/default-avatar.png',
-    coachName: item.coachStageName || '助教',
-    coachLevel: '教练', // 后端暂时没返回等级
-    serviceName: SERVICE_TYPE_TEXT[item.serviceType] || '台球陪练',
-    duration: durationHours,
-    time: timeStr,
-    statusText: STATUS_TEXT[item.status] || '未知',
-    statusColor: STATUS_COLOR[item.status] || 'rgba(107,114,128,0.2)',
-    showAction: item.status === STATUS_MAP.TO_REVIEW,
-    actionText: '去评价',
-    actionColor: '#00BB88'
-  }
-}
 
 const userStore = useUserStore()
 
@@ -304,19 +211,6 @@ const stats = ref({
   finishOrder: 0,
   avgScore: 0
 })
-
-// 计算订单统计
-const calculateStats = () => {
-  let total = 0
-  let finished = 0
-  Object.values(orderList.value).forEach(list => {
-    total += list.length
-  })
-  finished = (orderList.value[3] || []).length // 已完成订单数
-  stats.value.totalOrder = total
-  stats.value.finishOrder = finished
-  stats.value.avgScore = 0 // 暂时没有评分数据
-}
 
 // 钱包信息
 const wallet = ref({
@@ -348,8 +242,8 @@ const coupon = ref({
 
 // 订单分类
 const orderTabs = ref([
-  { value: 0, label: '待付款', icon: 'wallet', color: '#FBBF24', hasBadge: true },
-  { value: 1, label: '进行中', icon: 'redo', color: '#00BB88', hasBadge: false },
+  { value: 0, label: '待付款', icon: 'clock', color: '#FBBF24', hasBadge: true },
+  { value: 1, label: '进行中', icon: 'play', color: '#00BB88', hasBadge: false },
   { value: 2, label: '待评价', icon: 'star', color: '#FBBF24', hasBadge: true },
   { value: 3, label: '已完成', icon: 'checkmarkempty', color: '#00BB88', hasBadge: false },
   { value: 4, label: '已取消', icon: 'close', color: '#EF4444', hasBadge: false },
@@ -359,48 +253,37 @@ const orderTabs = ref([
 const orderList = ref({
   0: [], // 待付款
   1: [], // 进行中
-  2: [], // 待评价
+  2: [ // 待评价，和设计图一致
+    {
+      id: 1,
+      coachAvatar: 'https://via.placeholder.com/100', // 替换为你的头像地址
+      coachName: '阿豪',
+      coachLevel: '中级教练',
+      serviceName: '台球陪练',
+      duration: 2,
+      time: '2026-03-22 14:00-16:00',
+      statusText: '待评价',
+      statusColor: 'rgba(0, 187, 136, 0.2)',
+      showAction: true,
+      actionText: '去评价',
+      actionColor: '#00BB88'
+    }
+  ],
   3: [], // 已完成
   4: [] // 已取消
 })
 
-// 加载订单列表
-const loadOrders = async () => {
-  try {
-    // 并行加载所有状态的订单
-    const promises = Object.keys(TAB_TO_STATUSES).map(async (tab) => {
-      const statuses = TAB_TO_STATUSES[tab]
-      const list = []
-      for (const status of statuses) {
-        try {
-          const res = await getOrderList({ status, pageNo: 1, pageSize: 100 }) // 多取点用于统计
-          const data = res.data || {}
-          const items = data.list || data.records || data.rows || []
-          list.push(...items)
-        } catch (e) {
-          console.error(`加载状态${status}订单失败:`, e)
-        }
-      }
-      orderList.value[tab] = list.map(transformOrder)
-    })
-    await Promise.all(promises)
-    calculateStats() // 加载完成后计算统计
-  } catch (error) {
-    console.error('加载订单列表失败:', error)
-  }
-}
-
 // 功能菜单（修正了跳转路径！！对应刚才整合的pages.json）
 const menuList = ref([
   { key: 'collection', title: '我的收藏', icon: 'heart', bgColor: 'rgba(255, 77, 79, 0.2)', color: '#ff4d4f', path: '/subpkg/mine/favorites' },
+  { key: 'follow', title: '关注教练', icon: 'personadd', bgColor: 'rgba(0, 187, 136, 0.2)', color: '#00BB88', path: '' },
   { key: 'help', title: '帮助中心', icon: 'question', bgColor: 'rgba(107, 114, 128, 0.2)', color: '#6B7280', path: '/subpkg/mine/help' },
 ])
 
 // ---------------------- 计算属性 ----------------------
-// 当前展示的订单（只展示前3条）
+// 当前展示的订单
 const showOrders = computed(() => {
-  const list = orderList.value[currentOrderTab.value] || []
-  return list.slice(0, 3)
+  return orderList.value[currentOrderTab.value] || []
 })
 
 // ---------------------- 数据加载 ----------------------
@@ -441,8 +324,7 @@ const onRefresh = async () => {
   // 重新加载数据
   await Promise.all([
     loadUserInfo(),
-    loadWallet(),
-    loadOrders()
+    loadWallet()
   ])
   refreshing.value = false
   uni.showToast({ title: '刷新成功', icon: 'success' })
@@ -504,7 +386,6 @@ onMounted(() => {
   // 页面加载拉取用户数据
   loadUserInfo()
   loadWallet()
-  loadOrders()
 })
 
 // 页面显示刷新数据
@@ -512,7 +393,6 @@ onShow(() => {
   // 每次进入页面刷新用户数据
   loadUserInfo()
   loadWallet()
-  loadOrders()
 })
 </script>
 

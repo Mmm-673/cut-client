@@ -222,15 +222,15 @@ const goBack = () => {
 }
 
 const toRecharge = () => {
-  uni.navigateTo({ url: '/pages/mine/wallet/recharge' })
+  uni.navigateTo({ url: '/subpkg/mine/recharge' })
 }
 
 const toWithdraw = () => {
-  uni.navigateTo({ url: '/pages/mine/wallet/withdraw' })
+  uni.navigateTo({ url: '/subpkg/mine/withdraw' })
 }
 
 const toAllRecord = () => {
-  uni.navigateTo({ url: '/pages/mine/wallet/list' })
+  uni.navigateTo({ url: '/subpkg/mine/wallet-list' })
 }
 
 const toRecordDetail = (recordId) => {

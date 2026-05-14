@@ -30,54 +30,6 @@
       }
     },
     {
-      "path": "pages/coach/detail",
-      "style": {
-        "navigationBarTitleText": "助教详情",
-        "navigationBarBackgroundColor": "#121619",
-        "navigationBarTextStyle": "white"
-      }
-    },
-    {
-      "path": "pages/coach/reward",
-      "style": {
-        "navigationBarTitleText": "打赏教练",
-        "navigationBarBackgroundColor": "#121619",
-        "navigationBarTextStyle": "white"
-      }
-    },
-    {
-      "path": "pages/evaluate/index",
-      "style": {
-        "navigationBarTitleText": "评价",
-        "navigationBarBackgroundColor": "#121619",
-        "navigationBarTextStyle": "white"
-      }
-    },
-    {
-      "path": "pages/booking/hall",
-      "style": {
-        "navigationBarTitleText": "选择球厅",
-        "navigationBarBackgroundColor": "#121619",
-        "navigationBarTextStyle": "white"
-      }
-    },
-    {
-      "path": "pages/booking/confirm",
-      "style": {
-        "navigationBarTitleText": "确认订单",
-        "navigationBarBackgroundColor": "#121619",
-        "navigationBarTextStyle": "white"
-      }
-    },
-    {
-      "path": "pages/booking/pay-success",
-      "style": {
-        "navigationBarTitleText": "支付成功",
-        "navigationBarBackgroundColor": "#121619",
-        "navigationBarTextStyle": "white"
-      }
-    },
-    {
       "path": "pages/booking/index",
       "style": {
         "navigationBarTitleText": "预约",
@@ -94,102 +46,194 @@
       }
     },
     {
-      "path": "pages/order/detail",
-      "style": {
-        "navigationBarTitleText": "订单详情",
-        "navigationBarBackgroundColor": "#121619",
-        "navigationBarTextStyle": "white"
-      }
-    },
-    {
       "path": "pages/mine/index",
       "style": {
         "navigationBarTitleText": "我的",
         "navigationStyle": "custom"
       }
-    },
-    {
-      "path": "pages/mine/info/index",
-      "style": {
-        "navigationBarTitleText": "个人信息"
-      }
-    },
-    {
-      "path": "pages/mine/favorites/index",
-      "style": {
-        "navigationBarBackgroundColor": "#121619",
-        "navigationBarTextStyle": "white",
-        "navigationBarTitleText": "我的收藏"
-      }
-    },
-    {
-      "path": "pages/mine/pwd/index",
-      "style": {
-        "navigationBarTitleText": "修改密码"
-      }
-    },
-    {
-      "path": "pages/mine/setting/index",
-      "style": {
-        "navigationBarTitleText": "应用设置"
-      }
-    },
-    {
-      "path": "pages/mine/help/index",
-      "style": {
-        "navigationBarTitleText": "常见问题"
-      }
-    },
-    {
-      "path": "pages/mine/wallet/index",
-      "style": {
-        "navigationBarTitleText": "我的钱包"
-      }
-    },
-    {
-      "path": "pages/mine/wallet/list",
-      "style": {
-        "navigationBarTitleText": "交易记录"
-      }
-    },
-    {
-      "path": "pages/mine/wallet/recharge",
-      "style": {
-        "navigationBarTitleText": "充值",
-        "navigationBarBackgroundColor": "#121619",
-        "navigationBarTextStyle": "white"
-      }
-    },
-    {
-      "path": "pages/mine/wallet/recharge-success",
-      "style": {
-        "navigationBarTitleText": "充值成功",
-        "navigationBarBackgroundColor": "#121619",
-        "navigationBarTextStyle": "white"
-      }
-    },
-    {
-      "path": "pages/mine/wallet/withdraw",
-      "style": {
-        "navigationBarTitleText": "提现",
-        "navigationBarBackgroundColor": "#121619",
-        "navigationBarTextStyle": "white"
-      }
-    },
-
-    {
-      "path": "pages/common/webview/index",
-      "style": {
-        "navigationBarTitleText": "浏览网页"
-      }
-    },
-    {
-      "path": "pages/common/textview/index",
-      "style": {
-        "navigationBarTitleText": "浏览文本"
-      }
     }
   ],
+  "subPackages": [
+    {
+      "root": "subpkg/coach",
+      "pages": [
+        {
+          "path": "detail",
+          "style": {
+            "navigationBarTitleText": "助教详情",
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white"
+          }
+        },
+        {
+          "path": "reward",
+          "style": {
+            "navigationBarTitleText": "打赏教练",
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white"
+          }
+        },
+        {
+          "path": "evaluate",
+          "style": {
+            "navigationBarTitleText": "评价",
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white"
+          }
+        }
+      ]
+    },
+    {
+      "root": "subpkg/booking",
+      "pages": [
+        {
+          "path": "hall",
+          "style": {
+            "navigationBarTitleText": "选择球厅",
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white"
+          }
+        },
+        {
+          "path": "confirm",
+          "style": {
+            "navigationBarTitleText": "确认订单",
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white"
+          }
+        },
+        {
+          "path": "pay-success",
+          "style": {
+            "navigationBarTitleText": "支付成功",
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white"
+          }
+        }
+      ]
+    },
+    {
+      "root": "subpkg/order",
+      "pages": [
+        {
+          "path": "detail",
+          "style": {
+            "navigationBarTitleText": "订单详情",
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white"
+          }
+        }
+      ]
+    },
+    {
+      "root": "subpkg/mine",
+      "pages": [
+        {
+          "path": "info",
+          "style": {
+            "navigationBarTitleText": "个人信息"
+          }
+        },
+        {
+          "path": "favorites",
+          "style": {
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white",
+            "navigationBarTitleText": "我的收藏"
+          }
+        },
+        {
+          "path": "pwd",
+          "style": {
+            "navigationBarTitleText": "修改密码"
+          }
+        },
+        {
+          "path": "setting",
+          "style": {
+            "navigationBarTitleText": "应用设置"
+          }
+        },
+        {
+          "path": "help",
+          "style": {
+            "navigationBarTitleText": "常见问题"
+          }
+        },
+        {
+          "path": "wallet",
+          "style": {
+            "navigationBarTitleText": "我的钱包"
+          }
+        },
+        {
+          "path": "wallet-list",
+          "style": {
+            "navigationBarTitleText": "交易记录"
+          }
+        },
+        {
+          "path": "recharge",
+          "style": {
+            "navigationBarTitleText": "充值",
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white"
+          }
+        },
+        {
+          "path": "recharge-success",
+          "style": {
+            "navigationBarTitleText": "充值成功",
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white"
+          }
+        },
+        {
+          "path": "withdraw",
+          "style": {
+            "navigationBarTitleText": "提现",
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white"
+          }
+        }
+      ]
+    },
+    {
+      "root": "subpkg/common",
+      "pages": [
+        {
+          "path": "webview",
+          "style": {
+            "navigationBarTitleText": "浏览网页"
+          }
+        },
+        {
+          "path": "textview",
+          "style": {
+            "navigationBarTitleText": "浏览文本"
+          }
+        }
+      ]
+    }
+  ],
+  "preloadRule": {
+    "pages/coach/list": {
+      "network": "all",
+      "packages": ["subpkg/coach"]
+    },
+    "pages/booking/index": {
+      "network": "all",
+      "packages": ["subpkg/booking"]
+    },
+    "pages/order/list": {
+      "network": "all",
+      "packages": ["subpkg/order"]
+    },
+    "pages/mine/index": {
+      "network": "all",
+      "packages": ["subpkg/mine"]
+    }
+  },
   "tabBar": {
     "color": "#666666",
     "selectedColor": "#00BB88",

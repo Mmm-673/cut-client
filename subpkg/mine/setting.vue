@@ -89,7 +89,7 @@ const goBack = () => {
 // 跳转修改密码
 const goToPwd = () => {
   uni.navigateTo({
-    url: '/pages/mine/pwd/index'
+    url: '/subpkg/mine/pwd'
   })
 }
 

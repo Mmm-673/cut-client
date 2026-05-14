@@ -219,8 +219,8 @@ const handleReset = async () => {
 const goToAgree = (type) => {
   uni.navigateTo({
     url: type === 'user'
-      ? '/pages/common/textview/index?type=user'
-      : '/pages/common/textview/index?type=privacy'
+      ? '/subpkg/common/textview?type=user'
+      : '/subpkg/common/textview?type=privacy'
   })
 }
 

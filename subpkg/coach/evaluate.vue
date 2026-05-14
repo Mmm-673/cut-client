@@ -1,3 +1,4 @@
+
 <template>
   <view class="evaluate-page">
     <!-- 教练信息区 -->
@@ -22,7 +23,7 @@
           <text
               class="iconfont"
               :class="{ 'star-active': currentScore >= index + 1 }"
-          >
+              >
             {{ currentScore >= index + 1 ? '★' : '☆' }}
           </text>
         </view>
@@ -66,7 +67,7 @@
         >
           <image :src="img" mode="aspectFill" class="preview-img" />
           <view class="remove-btn" @click="removeImage(index)">
-            <text class="iconfont">&#xe617;</text>
+            <text class="iconfont">✕</text>
           </view>
         </view>
       </view>
@@ -74,10 +75,7 @@
       <view class="content-toolbar">
         <view class="tool-buttons">
           <view class="tool-btn" @click="handleUploadImage">
-            <text class="iconfont">&#xe60a;</text>
-          </view>
-          <view class="tool-btn" @click="handleUploadVideo">
-            <text class="iconfont">&#xe60b;</text>
+            <text class="iconfont">📷</text>
           </view>
         </view>
         <view class="content-count">{{ evaluateContent.length }}/300</view>
@@ -87,7 +85,7 @@
     <!-- 匿名评价开关 -->
     <view class="anonymous-section">
       <view class="anonymous-left">
-        <text class="iconfont">&#xe60c;</text>
+        <text class="iconfont">👤</text>
         <text class="anonymous-text">匿名评价</text>
       </view>
       <switch
@@ -109,7 +107,7 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import { createReview, uploadReviewImage } from '@/api/billiard/coach';
+import { createReview, uploadReviewImage, getCoachDetail } from '@/api/billiard/coach';
 
 // 教练信息
 const coachInfo = reactive({
@@ -119,8 +117,9 @@ const coachInfo = reactive({
   serviceTime: ''
 });
 
-// 订单ID
+// 订单ID和教练ID
 const orderId = ref(null);
+const coachId = ref(null);
 
 // 星级评分相关
 const currentScore = ref(5);
@@ -135,23 +134,44 @@ const evaluateContent = ref('');
 const isAnonymous = ref(false);
 const uploadedImages = ref([]);
 
+// 获取主图URL
+const getMainPhoto = (photos) => {
+  if (!photos || !Array.isArray(photos) || photos.length === 0) {
+    return '';
+  }
+  const mainPhoto = photos.find(p => p.isMain === true || p.is_main === true);
+  if (mainPhoto) {
+    return mainPhoto.photoUrl || mainPhoto.url || '';
+  }
+  const first = photos[0];
+  return first.photoUrl || first.url || '';
+};
+
+// 加载教练详情
+const loadCoachDetail = async (id) => {
+  if (!id) return;
+  try {
+    const res = await getCoachDetail({ id });
+    const data = res.data || {};
+    coachInfo.avatar = getMainPhoto(data.photos) || data.avatar || '';
+    coachInfo.name = data.stageName || data.name || '';
+  } catch (error) {
+  }
+};
+
 // 页面生命周期
 onLoad((options) => {
-  // 从上一页传递的参数获取订单ID和教练信息
+  console.log('evaluate onLoad options:', options);
+  // 从上一页传递的参数获取订单ID和教练ID
   if (options.orderId) {
     orderId.value = parseInt(options.orderId);
   }
-  if (options.coachAvatar) {
-    coachInfo.avatar = options.coachAvatar;
-  }
-  if (options.coachName) {
-    coachInfo.name = options.coachName;
-  }
-  if (options.serviceType) {
-    coachInfo.serviceType = options.serviceType;
-  }
-  if (options.serviceTime) {
-    coachInfo.serviceTime = options.serviceTime;
+  if (options.coachId) {
+    coachId.value = parseInt(options.coachId);
+    console.log('开始加载教练详情, coachId:', coachId.value);
+    loadCoachDetail(coachId.value);
+  } else {
+    console.warn('没有接收到 coachId 参数');
   }
 });
 
@@ -220,14 +240,6 @@ const handleUploadImage = async () => {
         });
       }
     }
-  });
-};
-
-// 上传视频（暂不支持）
-const handleUploadVideo = () => {
-  uni.showToast({
-    title: '视频上传功能开发中',
-    icon: 'none'
   });
 };
 
@@ -308,41 +320,6 @@ $transition: all 0.3s ease;
   background-color: $bg-primary;
   color: $text-primary;
   padding-bottom: 120rpx;
-}
-
-// 导航栏
-.nav-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 88rpx;
-  padding: 0 30rpx;
-  background-color: $bg-primary;
-  position: sticky;
-  top: 0;
-  z-index: 999;
-
-  .nav-back {
-    width: 60rpx;
-    height: 60rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    .iconfont {
-      font-size: 40rpx;
-      color: $text-primary;
-    }
-  }
-
-  .nav-title {
-    font-size: 36rpx;
-    font-weight: 600;
-    color: $text-primary;
-  }
-
-  .nav-placeholder {
-    width: 60rpx;
-  }
 }
 
 // 教练信息
@@ -477,7 +454,7 @@ $transition: all 0.3s ease;
     font-size: 28rpx;
     color: $text-primary;
     box-sizing: border-box;
-    line-height: 1.5;
+    line-height: 1.6;
     border: none;
     outline: none;
     resize: none;

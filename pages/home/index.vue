@@ -145,8 +145,8 @@ const bannerList = ref([
 ])
 
 const serviceList = ref([
-  { id: 1, title: '台球陪练', price: 99, unit: '两小时', priceColor: '#00BB88', icon: '🎱', iconBg: 'rgba(0, 187, 136, 0.15)' },
-  { id: 2, title: '结伴出行', price: 495, unit: '五小时', priceColor: '#3B82F6', icon: '🎓', iconBg: 'rgba(59, 130, 246, 0.15)' }
+  { id: 1, title: '台球陪练', price: 99, unit: '小时', priceColor: '#00BB88', icon: '🎱', iconBg: 'rgba(0, 187, 136, 0.15)' },
+  { id: 2, title: '结伴出行', price: 99, unit: '小时', priceColor: '#3B82F6', icon: '🎓', iconBg: 'rgba(59, 130, 246, 0.15)' }
 ])
 
 const hotCoachList = ref([])
@@ -183,10 +183,12 @@ const loadNewCoaches = async () => {
   }
 }
 
-const goSearch = () => uni.showToast({ title: '搜索', icon: 'none' })
-const goNotice = () => uni.showToast({ title: '通知', icon: 'none' })
-const handleBannerClick = (i) => console.log(i)
-const handleServiceClick = (i) => uni.showToast({ title: i.title, icon: 'none' })
+const handleBannerClick = (i) => uni.switchTab({
+  url: '/pages/coach/list'
+})
+const handleServiceClick = (i) => uni.switchTab({
+  url: '/pages/coach/list'
+})
 
 const viewAllHotCoach = () => {
   uni.switchTab({
@@ -202,7 +204,7 @@ const viewAllNewCoach = () => {
 
 const goCoachDetail = (item) => {
   uni.navigateTo({
-    url: `/pages/coach/detail?id=${item.id}`
+    url: `/subpkg/coach/detail?id=${item.id}`
   })
 }
 

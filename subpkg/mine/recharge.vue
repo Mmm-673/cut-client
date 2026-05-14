@@ -164,7 +164,7 @@ const handleRecharge = async () => {
         uni.showToast({ title: '充值成功', icon: 'success' })
         setTimeout(() => {
           uni.redirectTo({
-            url: `/pages/mine/wallet/recharge-success?amount=${finalAmount.value}`
+            url: `/subpkg/mine/recharge-success?amount=${finalAmount.value}`
           })
         }, 1500)
       },

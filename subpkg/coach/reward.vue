@@ -1,3 +1,4 @@
+
 <template>
   <view class="reward-page">
     <scroll-view
@@ -11,11 +12,11 @@
     >
       <!-- 教练信息 -->
       <view class="coach-info">
-        <image class="coach-avatar" :src="coachInfo.avatar" mode="aspectFill"></image>
+        <image class="coach-avatar" :src="coachInfo.avatar" mode="aspectFill" />
         <view class="coach-name">{{ coachInfo.stageName || coachInfo.name }}</view>
         <view class="coach-level">
           <text class="level-tag">{{ coachInfo.levelText || coachInfo.level }}</text>
-          <text class="rating">★ {{ coachInfo.overallScore || coachInfo.rating }}分</text>
+          <text class="rating">★ {{ coachInfo.overallScore }}分</text>
         </view>
       </view>
 
@@ -31,7 +32,7 @@
               class="amount-item"
               :class="{ active: selectedAmount === item.value && !isCustomAmount }"
               @click="selectAmount(item.value)"
-          >
+              >
             <text class="amount-value">¥{{ item.value }}</text>
             <text class="amount-label">{{ item.label }}</text>
           </view>
@@ -39,7 +40,7 @@
               class="amount-item custom-item"
               :class="{ active: isCustomAmount }"
               @click="selectCustomAmount"
-          >
+              >
             <text class="custom-icon">✏️</text>
             <text class="amount-label">自定义</text>
           </view>
@@ -56,7 +57,7 @@
               v-model="customAmount"
               placeholder="请输入打赏金额"
               @input="onCustomAmountInput"
-          />
+              />
         </view>
       </view>
 
@@ -70,7 +71,7 @@
               placeholder="说点什么感谢教练吧..."
               :maxlength="200"
               auto-height
-          ></textarea>
+              ></textarea>
         </view>
       </view>
 
@@ -185,7 +186,7 @@ const currentAmount = computed(() => {
   return selectedAmount.value
 })
 
-// 页面初始化
+// 页面生命周期
 onMounted(() => {
   // 获取系统信息
   const systemInfo = uni.getSystemInfoSync()
@@ -260,7 +261,7 @@ const loadCoachInfo = async (id) => {
       avatar: getMainPhoto(data.photos) || data.avatar || '/static/default-avatar.png',
       level: data.level ?? 0,
       levelText: getLevelText(data.level),
-      overallScore: data.overallScore || data.rating || 0
+      overallScore: data.overallScore ?? data.rating ?? 0
     }
   } catch (error) {
     console.error('加载教练详情失败:', error)
@@ -518,7 +519,7 @@ onBackPress(() => {
       transition: all 0.3s;
 
       &.active {
-        background-color: rgba(245, 166, 35, 0.1);
+        background-color: rgba(245, 166, 35, 0.15);
         border-color: #f5a623;
       }
 
@@ -592,7 +593,7 @@ onBackPress(() => {
     .message-input {
       width: 100%;
       min-height: 120rpx;
-      font-size: 26rpx;
+      font-size: 28rpx;
       color: #ffffff;
       line-height: 1.6;
 
@@ -638,9 +639,9 @@ onBackPress(() => {
     font-weight: 600;
     border-radius: 32rpx;
     padding: 0 40rpx;
-    height: 64rpx;
+    height: 72rpx;
     border: none;
-    line-height: 64rpx;
+    line-height: 72rpx;
 
     &.disabled {
       opacity: 0.5;
@@ -691,7 +692,7 @@ onBackPress(() => {
 
   .pay-popup-title {
     color: #fff;
-    font-size: 32rpx;
+    font-size: 36rpx;
     font-weight: 600;
   }
 

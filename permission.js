@@ -4,8 +4,8 @@ import { isLoggedIn } from '@/utils/token'
 const whiteList = [
   '/pages/login/index',
   '/pages/login/resetPassword',
-  '/pages/common/webview/index',
-  '/pages/common/textview/index'
+  '/subpkg/common/webview',
+  '/subpkg/common/textview'
 ]
 
 // 拦截路由跳转

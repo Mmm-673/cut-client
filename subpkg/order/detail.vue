@@ -260,7 +260,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { onLoad } from  "@dcloudio/uni-app"
+import { onLoad, onShow } from  "@dcloudio/uni-app"
 import { getOrderDetail, cancelOrder, addTimeOrder } from '@/api/billiard/order'
 import { executePayment, fetchEnabledChannels } from '@/utils/payment'
 
@@ -610,7 +610,7 @@ const onRefresh = () => {
 const goToCoachDetail = () => {
   if (orderInfo.value.coachId) {
     uni.navigateTo({
-      url: `/pages/coach/detail?id=${orderInfo.value.coachId}`
+      url: `/subpkg/coach/detail?id=${orderInfo.value.coachId}`
     })
   }
 }
@@ -749,14 +749,14 @@ const confirmAddTime = async () => {
 // 打赏教练
 const goToReward = () => {
   uni.navigateTo({
-    url: `/pages/coach/reward?coachId=${orderInfo.value.coachId}`
+    url: `/subpkg/coach/reward?coachId=${orderInfo.value.coachId}`
   })
 }
 
 // 去评价
 const goToReview = () => {
   uni.navigateTo({
-    url: `/pages/evaluate/index?orderId=${orderInfo.value.id}`
+    url: `/subpkg/coach/evaluate?orderId=${orderInfo.value.id}&coachId=${orderInfo.value.coachId}`
   })
 }
 
@@ -799,6 +799,17 @@ onMounted(() => {
 onUnmounted(() => {
   stopCountdown()
   stopPolling()
+})
+
+onShow(() => {
+  // 每次页面显示时刷新订单详情
+  if (orderId.value) {
+    loadOrderDetail()
+    // 重新开始轮询（如果之前停止了）
+    if (!pollingTimer) {
+      startPolling()
+    }
+  }
 })
 
 // ---------------------- 状态轮训 ----------------------

@@ -38,7 +38,7 @@ onLoad((options) => {
 })
 
 const goToWallet = () => {
-  uni.switchTab({ url: '/pages/mine/wallet/index' })
+  uni.redirectTo({ url: '/subpkg/mine/wallet' })
 }
 
 const goBack = () => {

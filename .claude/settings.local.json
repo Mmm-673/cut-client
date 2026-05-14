@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(ls -la \"D:/Jt-code/cut-client/用户端 \\(1\\)\")",
-      "Bash(dir \"D:\\\\Jt-code\\\\cut-client\\\\用户端 \\(1\\)\")"
+      "Bash(dir \"D:\\\\Jt-code\\\\cut-client\\\\用户端 \\(1\\)\")",
+      "Bash(cp -r pages/mine/* subpkg/mine/)",
+      "Bash(cp -r pages/common/* subpkg/common/)"
     ]
   }
 }

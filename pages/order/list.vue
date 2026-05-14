@@ -168,7 +168,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getOrderList, cancelOrder as cancelOrderApi } from '@/api/billiard/order'
 
 // 当前Tab
@@ -339,7 +339,7 @@ const switchTab = (tab) => {
 // 跳转详情
 const goToDetail = (order) => {
   uni.navigateTo({
-    url: `/pages/order/detail?id=${order.orderId}`
+    url: `/subpkg/order/detail?id=${order.orderId}`
   })
 }
 
@@ -371,14 +371,14 @@ const contactCoach = (order) => {
 // 去评价
 const goToReview = (order) => {
   uni.navigateTo({
-    url: `/pages/evaluate/index?orderId=${order.orderId}`
+    url: `/subpkg/coach/evaluate?orderId=${order.orderId}`
   })
 }
 
 // 去打赏
 const goToReward = (order) => {
   uni.navigateTo({
-    url: `/pages/coach/reward?coachId=${order.coachId || order.id}&coachName=${order.coachStageName}`
+    url: `/subpkg/coach/reward?coachId=${order.coachId || order.id}&coachName=${order.coachStageName}`
   })
 }
 
@@ -405,6 +405,11 @@ onMounted(() => {
 
 onLoad(() => {
   // 加载数据
+  loadData(true)
+})
+
+onShow(() => {
+  // 每次页面显示时刷新数据
   loadData(true)
 })
 </script>
