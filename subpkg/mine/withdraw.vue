@@ -1,5 +1,12 @@
 <template>
   <view class="withdraw-wrapper">
+    <!-- 余额信息 -->
+    <view class="balance-card">
+      <view class="balance-label">可提现余额</view>
+      <view class="balance-amount">¥{{ withdrawableBalance }}</view>
+      <view class="balance-tip">当前可申请：¥{{ availableWithdrawBalance }}</view>
+    </view>
+
     <!-- 提现金额 -->
     <view class="section-card">
       <view class="section-title">提现金额</view>
@@ -15,7 +22,7 @@
         />
       </view>
       <view class="balance-info">
-        <text>可提现余额：¥{{ availableBalance }}</text>
+        <text>可提现余额：¥{{ withdrawableBalance }}</text>
         <text class="all-btn" @click="withdrawAll">全部</text>
       </view>
     </view>
@@ -26,42 +33,42 @@
       <view class="channel-list">
         <view
             class="channel-item"
-            :class="{active: withdrawChannel === 'wechat'}"
-            @click="selectChannel('wechat')"
+            :class="{active: accountType === 1}"
+            @click="selectChannel(1)"
         >
           <view class="channel-icon wechat">
             <uni-icons type="chatbubble-filled" size="24" color="#fff" />
           </view>
           <text class="channel-name">提现到微信</text>
           <view class="channel-radio">
-            <view class="radio-dot" v-if="withdrawChannel === 'wechat'"></view>
+            <view class="radio-dot" v-if="accountType === 1"></view>
           </view>
         </view>
         <view
             class="channel-item"
-            :class="{active: withdrawChannel === 'alipay'}"
-            @click="selectChannel('alipay')"
+            :class="{active: accountType === 2}"
+            @click="selectChannel(2)"
         >
           <view class="channel-icon alipay">
             <uni-icons type="chatbubble" size="24" color="#fff" />
           </view>
           <text class="channel-name">提现到支付宝</text>
           <view class="channel-radio">
-            <view class="radio-dot" v-if="withdrawChannel === 'alipay'"></view>
+            <view class="radio-dot" v-if="accountType === 2"></view>
           </view>
         </view>
       </view>
     </view>
 
     <!-- 账户信息 -->
-    <view class="section-card" v-if="withdrawChannel">
+    <view class="section-card" v-if="accountType">
       <view class="section-title">账户信息</view>
       <view class="input-group">
-        <text class="input-label">{{ withdrawChannel === 'wechat' ? '微信昵称' : '支付宝账号' }}</text>
+        <text class="input-label">{{ accountType === 1 ? '微信账号' : '支付宝账号' }}</text>
         <input
             class="input-field"
-            v-model="accountName"
-            :placeholder="withdrawChannel === 'wechat' ? '请输入微信昵称' : '请输入支付宝账号'"
+            v-model="accountNo"
+            :placeholder="accountType === 1 ? '请输入微信账号' : '请输入支付宝账号'"
             placeholder-class="input-placeholder"
         />
       </view>
@@ -80,8 +87,7 @@
     <view class="tip-card">
       <view class="tip-title">提现说明</view>
       <view class="tip-item">1. 提现申请提交后，预计1-3个工作日到账</view>
-      <view class="tip-item">2. 提现手续费为0.5%，最低1元</view>
-      <view class="tip-item">3. 如有问题请联系客服</view>
+      <view class="tip-item">2. 如有问题请联系客服</view>
     </view>
 
     <!-- 底部安全区域 -->
@@ -98,30 +104,34 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getWallet, createWalletWithdraw } from '@/api/billiard/wallet'
+import { getWithdrawableBalance, createWithdrawal } from '@/api/billiard/wallet'
 
-// 可用余额
-const availableBalance = ref('0.00')
+// 可提现余额
+const withdrawableBalance = ref('0.00')
+// 当前可申请
+const availableWithdrawBalance = ref('0.00')
 
 // 提现金额
 const withdrawAmount = ref('')
 
-// 到账方式
-const withdrawChannel = ref('wechat')
+// 到账方式：1-微信，2-支付宝
+const accountType = ref(1)
 
 // 账户信息
-const accountName = ref('')
+const accountNo = ref('')
 const realName = ref('')
 
-// 加载钱包余额
-const loadWallet = async () => {
+// 加载可提现余额
+const loadWithdrawableBalance = async () => {
   try {
-    const res = await getWallet()
+    const res = await getWithdrawableBalance()
+    console.log(res,'==walletBalance')
     if (res.data) {
-      availableBalance.value = (res.data.balance / 100).toFixed(2)
+      withdrawableBalance.value = (res.data.walletBalance / 100).toFixed(2)
+      availableWithdrawBalance.value = (res.data.walletBalance / 100).toFixed(2)
     }
   } catch (error) {
-    console.error('加载钱包失败:', error)
+    console.error('加载可提现余额失败:', error)
   }
 }
 
@@ -142,30 +152,49 @@ const onAmountInput = () => {
 
 // 全部提现
 const withdrawAll = () => {
-  withdrawAmount.value = availableBalance.value
+  withdrawAmount.value = availableWithdrawBalance.value
 }
 
 // 选择到账方式
-const selectChannel = (channel) => {
-  withdrawChannel.value = channel
-  accountName.value = ''
+const selectChannel = (type) => {
+  accountType.value = type
+  accountNo.value = ''
   realName.value = ''
 }
 
 // 是否可以提现
 const canWithdraw = computed(() => {
   const amount = parseFloat(withdrawAmount.value)
+  const available = parseFloat(availableWithdrawBalance.value)
   if (!amount || amount <= 0) return false
-  if (amount > parseFloat(availableBalance.value)) return false
-  if (!accountName.value.trim()) return false
+  if (amount > available) return false
+  if (!accountNo.value.trim()) return false
   if (!realName.value.trim()) return false
   return true
 })
 
 // 处理提现
 const handleWithdraw = async () => {
-  if (!canWithdraw.value) {
-    uni.showToast({ title: '请填写完整信息', icon: 'none' })
+  const amount = parseFloat(withdrawAmount.value)
+  const available = parseFloat(availableWithdrawBalance.value)
+
+  if (!amount || amount <= 0) {
+    uni.showToast({ title: '请输入提现金额', icon: 'none' })
+    return
+  }
+
+  if (amount > available) {
+    uni.showToast({ title: '余额不足', icon: 'none' })
+    return
+  }
+
+  if (!accountNo.value.trim()) {
+    uni.showToast({ title: '请输入账号', icon: 'none' })
+    return
+  }
+
+  if (!realName.value.trim()) {
+    uni.showToast({ title: '请输入真实姓名', icon: 'none' })
     return
   }
 
@@ -173,10 +202,10 @@ const handleWithdraw = async () => {
 
   try {
     // 调用提现接口
-    await createWalletWithdraw({
+    await createWithdrawal({
       amount: parseFloat(withdrawAmount.value) * 100,
-      channel: withdrawChannel.value,
-      accountName: accountName.value,
+      accountType: accountType.value,
+      accountNo: accountNo.value,
       realName: realName.value
     })
 
@@ -193,7 +222,7 @@ const handleWithdraw = async () => {
 }
 
 onMounted(() => {
-  loadWallet()
+  loadWithdrawableBalance()
 })
 </script>
 
@@ -202,6 +231,29 @@ onMounted(() => {
   min-height: 100vh;
   background: #121619;
   padding-bottom: 200rpx;
+}
+
+/* 余额卡片 */
+.balance-card {
+  margin: 30rpx;
+  background: linear-gradient(135deg, #00BB88 0%, #059669 100%);
+  border-radius: 24rpx;
+  padding: 40rpx 30rpx;
+  .balance-label {
+    color: rgba(255,255,255,0.8);
+    font-size: 26rpx;
+    margin-bottom: 12rpx;
+  }
+  .balance-amount {
+    color: #fff;
+    font-size: 56rpx;
+    font-weight: bold;
+    margin-bottom: 8rpx;
+  }
+  .balance-tip {
+    color: rgba(255,255,255,0.7);
+    font-size: 24rpx;
+  }
 }
 
 .section-card {

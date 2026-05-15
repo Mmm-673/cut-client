@@ -242,6 +242,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getAvailablePayChannels, executePayment } from '@/utils/payment'
 import { createOrder } from '@/api/billiard/order'
+import { getCoachDetail } from '@/api/billiard/coach'
 import { onLoad } from '@dcloudio/uni-app'
 import { getWallet } from '@/api/billiard/wallet'
 
@@ -466,6 +467,27 @@ const loadWalletBalance = async () => {
   }
 }
 
+// 加载教练详情
+const loadCoachDetail = async (coachId) => {
+  try {
+    const res = await getCoachDetail({ id: coachId })
+    if (res.data) {
+      const coachData = res.data
+      // 从photos中获取主图作为avatar
+      const mainPhoto = coachData.photos?.find(p => p.isMain) || coachData.photos?.[0]
+      const avatar = mainPhoto?.photoUrl || coachData.avatar || '/static/default-avatar.png'
+      // 更新orderData中的教练信息
+      orderData.value.coachInfo = {
+        ...orderData.value.coachInfo,
+        ...coachData,
+        avatar
+      }
+    }
+  } catch (error) {
+    console.error('加载教练详情失败:', error)
+  }
+}
+
 // 处理操作：创建订单 或 支付
 const handleAction = async () => {
   if (!canAction.value) return
@@ -601,6 +623,10 @@ onMounted(() => {
     isOrderCreated.value = true
     startCountdown()
     loadWalletBalance()
+    // 重新获取教练详情以确保头像等信息最新
+    if (orderData.value.coachInfo?.id) {
+      loadCoachDetail(orderData.value.coachInfo.id)
+    }
   } else if (createDirect.value) {
     // 直接创建订单模式：从 selectedCoach 获取教练信息
     const coach = uni.getStorageSync('selectedCoach')
@@ -639,6 +665,10 @@ onMounted(() => {
 
       isOrderCreated.value = false
       loadWalletBalance()
+      // 获取教练详情以获取最新头像等信息
+      if (coach.id) {
+        loadCoachDetail(coach.id)
+      }
     } else {
       uni.showToast({ title: '教练信息缺失，请重新下单', icon: 'none' })
       setTimeout(() => { uni.reLaunch({ url: '/pages/coach/list' }) }, 1500)

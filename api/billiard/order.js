@@ -147,3 +147,31 @@ export function addTimeOrder(data) {
     data
   })
 }
+
+/**
+ * 删除订单
+ * @param {Object} data - 请求参数
+ * @param {number} data.orderId - 订单ID (billiard_order.id)
+ *
+ * 业务校验：
+ * - 订单归属当前登录用户
+ * - 订单状态必须为 CANCELLED (70)
+ *
+ * @returns {Promise<Object>} 返回删除结果
+ */
+export function deleteOrder(data) {
+  return request({
+    url: '/app-api/billiard/order/delete',
+    method: 'post',
+    data
+  })
+}
+
+export default {
+  getOrderList,
+  getOrderDetail,
+  createOrder,
+  cancelOrder,
+  addTimeOrder,
+  deleteOrder
+}

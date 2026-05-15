@@ -63,23 +63,16 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
+import { useUserStore } from '@/store'
 
 // ---------------------- 状态定义 ----------------------
+const userStore = useUserStore()
+
 // 缓存大小
 const cacheSize = ref('12.5MB')
-// 是否登录（兼容本地存储，也可替换为你的Pinia）
-const isLoggedIn = computed(() => {
-  // 优先用你的Pinia
-  try {
-    // 这里只是兼容示例，实际项目可以保留你的 useUserStore
-    // import { useUserStore } from '@/store/modules/user'
-    // const userStore = useUserStore()
-    // return userStore.isLoggedIn
-    return !!uni.getStorageSync('token')
-  } catch (error) {
-    return !!uni.getStorageSync('token')
-  }
-})
+
+// 是否登录
+const isLoggedIn = computed(() => userStore.checkLoggedIn())
 
 // ---------------------- 交互方法 ----------------------
 const goBack = () => {
@@ -189,15 +182,9 @@ const handleLogout = () => {
     title: '提示',
     content: '确定要退出登录吗？',
     confirmColor: '#EF4444',
-    success: (res) => {
+    success: async (res) => {
       if (res.confirm) {
-        // 清除本地存储
-        uni.removeStorageSync('token')
-        uni.removeStorageSync('userInfo')
-
-        // 清除你的Pinia（如果有的话）
-        // userStore.logout()
-
+        await userStore.logout()
         uni.showToast({ title: '已退出登录', icon: 'success' })
         setTimeout(() => {
           uni.reLaunch({

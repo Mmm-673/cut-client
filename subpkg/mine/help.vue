@@ -21,10 +21,15 @@
             class="faq-item"
             v-for="(item, index) in faqList"
             :key="index"
-            @click="toFaqDetail(item)"
+            @click="toggleFaq(item)"
         >
-          <text class="faq-question">{{ item.question }}</text>
-          <uni-icons type="right" size="20" color="#9CA3AF" />
+          <view class="faq-header">
+            <text class="faq-question">{{ item.question }}</text>
+            <uni-icons :type="item.expanded ? 'top' : 'bottom'" size="20" color="#9CA3AF" />
+          </view>
+          <view v-if="item.expanded" class="faq-answer">
+            <text>{{ item.answer }}</text>
+          </view>
         </view>
       </view>
 
@@ -42,7 +47,7 @@
 
         <!-- 电话客服 -->
         <view class="service-item">
-          <view class="service-icon" style="background: rgba(0, 187, 136, 0.2);">
+          <view class="service-icon" style="background: rgba(0, 187, 136, 0.2)">
             <uni-icons type="phone" size="24" color="#00BB88" />
           </view>
           <view class="service-info">
@@ -54,7 +59,7 @@
 
         <!-- 客服热线 -->
         <view class="service-item">
-          <view class="service-icon" style="background: rgba(251, 191, 36, 0.2);">
+          <view class="service-icon" style="background: rgba(251, 191, 36, 0.2)">
             <uni-icons type="headset" size="24" color="#FBBF24" />
           </view>
           <view class="service-info">
@@ -79,12 +84,42 @@ const refreshing = ref(false)
 
 // 常见问题列表
 const faqList = ref([
-  { question: '如何预约台球陪练？', id: 1 },
-  { question: '订单取消后退款多久到账？', id: 2 },
-  { question: '如何申请成为陪练教练？', id: 3 },
-  { question: '优惠券如何使用？', id: 4 },
-  { question: '如何修改已提交的预约信息？', id: 5 }
+  {
+    question: '如何预约台球陪练？',
+    answer: '您可以通过首页或预约Tab选择合适的助教，点击立即预约后选择球厅和服务时间，确认支付即可完成预约。',
+    id: 1,
+    expanded: false
+  },
+  {
+    question: '订单取消后退款多久到账？',
+    answer: '订单取消后，退款会在1-3个工作日内原路返回到您的支付账户。',
+    id: 2,
+    expanded: false
+  },
+  {
+    question: '如何申请成为陪练教练？',
+    answer: '您可以在"我的"页面点击申请成为教练，提交相关资料并通过审核后即可成为平台认证的陪练教练。',
+    id: 3,
+    expanded: false
+  },
+  {
+    question: '优惠券如何使用？',
+    answer: '在订单确认页面，选择可用的优惠券即可直接抵扣相应金额。',
+    id: 4,
+    expanded: false
+  },
+  {
+    question: '如何修改已提交的预约信息？',
+    answer: '您可以在订单详情页点击修改订单，但订单开始前24小时内可能无法修改。',
+    id: 5,
+    expanded: false
+  }
 ])
+
+// 展开收起FAQ
+const toggleFaq = (item) => {
+  item.expanded = !item.expanded
+}
 
 // 联系客服信息
 const serviceInfo = ref({
@@ -109,10 +144,6 @@ const goBack = () => {
 
 const toService = () => {
   uni.showToast({ title: '联系客服功能开发中', icon: 'none' })
-}
-
-const toFaqDetail = (item) => {
-  uni.navigateTo({ url: `/pages/help/detail?id=${item.id}` })
 }
 
 const makeCall = () => {
@@ -200,18 +231,31 @@ onShow(() => {
   border-radius: 24rpx;
   padding: 0 30rpx;
   .faq-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
     padding: 30rpx 0;
     border-bottom: 1rpx solid rgba(255,255,255,0.05);
     &:last-child {
       border-bottom: none;
     }
+    .faq-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
     .faq-question {
       color: #fff;
       font-size: 30rpx;
       font-weight: 500;
+    }
+    .faq-answer {
+      margin-top: 20rpx;
+      padding: 20rpx;
+      background: rgba(0, 187, 136, 0.1);
+      border-radius: 12rpx;
+      text {
+        color: #9CA3AF;
+        font-size: 26rpx;
+        line-height: 1.6;
+      }
     }
   }
 }

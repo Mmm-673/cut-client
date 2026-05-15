@@ -76,78 +76,98 @@
     >
       <view class="order-container">
         <view
-          class="order-card"
+          class="order-swipe-wrapper"
           v-for="order in orderList"
           :key="order.orderId"
-          @click="goToDetail(order)"
         >
-          <!-- 订单头部 -->
-          <view class="order-header">
-            <view class="order-type">
-              <text class="type-icon">{{ getServiceIcon(order.serviceType) }}</text>
-              <text class="type-name">{{ getServiceTypeName(order.serviceType) }}</text>
-            </view>
-            <view class="order-status" :class="getStatusClass(order.status)">
-              {{ getStatusText(order.status) }}
+          <view
+            class="order-swipe-content"
+            :class="{ swiped: swipedOrderId === order.orderId }"
+            :style="{ transform: getTransform(order) }"
+            @click="handleCardClick(order)"
+            @touchstart="onTouchStart($event, order)"
+            @touchmove="onTouchMove($event, order)"
+            @touchend="onTouchEnd($event, order)"
+          >
+            <view class="order-card">
+              <!-- 订单头部 -->
+              <view class="order-header">
+                <view class="order-type">
+                  <text class="type-icon">{{ getServiceIcon(order.serviceType) }}</text>
+                  <text class="type-name">{{ getServiceTypeName(order.serviceType) }}</text>
+                </view>
+                <view class="order-status" :class="getStatusClass(order.status)">
+                  {{ getStatusText(order.status) }}
+                </view>
+              </view>
+
+              <!-- 助教信息 -->
+              <view class="coach-section">
+                <image class="coach-avatar" :src="order.coachMainPhoto || '/static/default-avatar.png'" mode="aspectFill"></image>
+                <view class="coach-info">
+                  <text class="coach-name">{{ order.coachStageName }}</text>
+                  <text class="order-time">{{ formatBookingTime(order.bookingTime) }}</text>
+                </view>
+                <uni-icons type="right" size="20" color="#9CA3AF" />
+              </view>
+
+              <!-- 订单信息 -->
+              <view class="order-info">
+                <view class="info-item">
+                  <text class="info-label">时长</text>
+                  <text class="info-value">{{ order.serviceDuration }}分钟</text>
+                </view>
+                <view class="info-item">
+                  <text class="info-label">订单号</text>
+                  <text class="info-value">{{ order.orderNo }}</text>
+                </view>
+                <view class="info-item">
+                  <text class="info-label">下单时间</text>
+                  <text class="info-value">{{ formatCreateTime(order.createTime) }}</text>
+                </view>
+              </view>
+
+              <!-- 订单底部 -->
+              <view class="order-footer">
+                <view class="order-price">
+                  <text class="price-label">实付</text>
+                  <text class="price-unit">¥</text>
+                  <text class="price-num">{{ formatAmount(order.totalAmount) }}</text>
+                </view>
+                <view class="order-actions">
+                  <button
+                    v-if="order.status === 10"
+                    class="action-btn cancel"
+                    @click.stop="cancelOrder(order)"
+                  >
+                    取消订单
+                  </button>
+                  <button
+                    v-if="order.status === 50"
+                    class="action-btn review"
+                    @click.stop="goToReview(order)"
+                  >
+                    去评价
+                  </button>
+                  <button
+                    v-if="order.status === 60"
+                    class="action-btn book-again"
+                    @click.stop="bookAgain(order)"
+                  >
+                    再约一次
+                  </button>
+                </view>
+              </view>
             </view>
           </view>
 
-          <!-- 助教信息 -->
-          <view class="coach-section">
-            <image class="coach-avatar" :src="order.coachMainPhoto || '/static/default-avatar.png'" mode="aspectFill"></image>
-            <view class="coach-info">
-              <text class="coach-name">{{ order.coachStageName }}</text>
-              <text class="order-time">{{ formatBookingTime(order.bookingTime) }}</text>
-            </view>
-            <uni-icons type="right" size="20" color="#9CA3AF" />
-          </view>
-
-          <!-- 订单信息 -->
-          <view class="order-info">
-            <view class="info-item">
-              <text class="info-label">时长</text>
-              <text class="info-value">{{ order.serviceDuration }}分钟</text>
-            </view>
-            <view class="info-item">
-              <text class="info-label">订单号</text>
-              <text class="info-value">{{ order.orderNo }}</text>
-            </view>
-            <view class="info-item">
-              <text class="info-label">下单时间</text>
-              <text class="info-value">{{ formatCreateTime(order.createTime) }}</text>
-            </view>
-          </view>
-
-          <!-- 订单底部 -->
-          <view class="order-footer">
-            <view class="order-price">
-              <text class="price-label">实付</text>
-              <text class="price-unit">¥</text>
-              <text class="price-num">{{ formatAmount(order.totalAmount) }}</text>
-            </view>
-            <view class="order-actions">
-              <button
-                v-if="order.status === 10"
-                class="action-btn cancel"
-                @click.stop="cancelOrder(order)"
-              >
-                取消订单
-              </button>
-              <button
-                v-if="order.status === 50"
-                class="action-btn review"
-                @click.stop="goToReview(order)"
-              >
-                去评价
-              </button>
-              <button
-                v-if="order.status === 60"
-                class="action-btn book-again"
-                @click.stop="bookAgain(order)"
-              >
-                再约一次
-              </button>
-            </view>
+          <!-- 删除按钮 -->
+          <view
+            v-if="order.status === 70"
+            class="delete-action"
+            @click="deleteOrderHandler(order)"
+          >
+            <text class="delete-text">删除</text>
           </view>
         </view>
       </view>
@@ -169,7 +189,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import { getOrderList, cancelOrder as cancelOrderApi } from '@/api/billiard/order'
+import { getOrderList, cancelOrder as cancelOrderApi, deleteOrder } from '@/api/billiard/order'
 
 // 当前Tab
 const activeTab = ref(null)
@@ -187,6 +207,13 @@ const pageSize = ref(10)
 
 // 订单列表
 const orderList = ref([])
+
+// 滑动相关
+const swipedOrderId = ref(null)
+const startX = ref(0)
+const currentX = ref(0)
+const isDragging = ref(false)
+const SWIPE_THRESHOLD = 120 // 滑动阈值
 
 /**
  * 状态映射 - 根据API文档
@@ -260,6 +287,86 @@ const formatAmount = (amount) => {
   return (amount / 100).toFixed(2)
 }
 
+// 获取滑动变换
+const getTransform = (order) => {
+  if (swipedOrderId.value === order.orderId) {
+    return 'translateX(-120rpx)'
+  }
+  if (swipedOrderId.value !== order.orderId || !isDragging.value) {
+    return 'translateX(0)'
+  }
+  const offsetX = Math.min(0, currentX.value - startX.value)
+  if (offsetX > -SWIPE_THRESHOLD) {
+    return `translateX(${offsetX}px)`
+  }
+  return 'translateX(-120rpx)'
+}
+
+// 触摸开始
+const onTouchStart = (e, order) => {
+  if (order.status !== 70) return
+  startX.value = e.touches[0].clientX
+  isDragging.value = true
+}
+
+// 触摸移动
+const onTouchMove = (e, order) => {
+  if (!isDragging.value || order.status !== 70) return
+  currentX.value = e.touches[0].clientX
+  const offsetX = currentX.value - startX.value
+  if (offsetX < 0) {
+    // 向左滑动
+  }
+}
+
+// 触摸结束
+const onTouchEnd = (e, order) => {
+  if (!isDragging.value || order.status !== 70) {
+    isDragging.value = false
+    return
+  }
+  const offsetX = currentX.value - startX.value
+  if (offsetX < -SWIPE_THRESHOLD / 2) {
+    swipedOrderId.value = order.orderId
+  } else {
+    swipedOrderId.value = null
+  }
+  isDragging.value = false
+}
+
+// 处理卡片点击
+const handleCardClick = (order) => {
+  if (swipedOrderId.value === order.orderId) {
+    swipedOrderId.value = null
+  } else {
+    swipedOrderId.value = null
+    goToDetail(order)
+  }
+}
+
+// 删除订单
+const deleteOrderHandler = (order) => {
+  uni.showModal({
+    title: '提示',
+    content: '确定要删除这个订单吗？删除后无法恢复。',
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await deleteOrder({ orderId: order.orderId })
+          uni.showToast({ title: '订单已删除', icon: 'success' })
+          swipedOrderId.value = null
+          loadData(true)
+        } catch (error) {
+          uni.showToast({
+            title: error.message || '删除失败，请重试',
+            icon: 'none'
+          })
+        }
+      }
+    }
+  })
+}
+
 // 加载数据
 const loadData = async (isRefresh = false) => {
   if (loading.value) return
@@ -269,6 +376,7 @@ const loadData = async (isRefresh = false) => {
     loadMoreStatus.value = 'more'
     hasMore.value = true
     pageNo.value = 1
+    swipedOrderId.value = null
   } else {
     loadMoreStatus.value = 'loading'
   }
@@ -333,6 +441,7 @@ const loadMore = () => {
 // 切换Tab
 const switchTab = (tab) => {
   activeTab.value = tab
+  swipedOrderId.value = null
   loadData(true)
 }
 
@@ -371,14 +480,14 @@ const contactCoach = (order) => {
 // 去评价
 const goToReview = (order) => {
   uni.navigateTo({
-    url: `/subpkg/coach/evaluate?orderId=${order.orderId}`
+    url: `/subpkg/coach/evaluate?orderId=${order.orderId}&coachId=${order.coachId}`
   })
 }
 
 // 去打赏
 const goToReward = (order) => {
   uni.navigateTo({
-    url: `/subpkg/coach/reward?coachId=${order.coachId || order.id}&coachName=${order.coachStageName}`
+    url: `/subpkg/coach/reward?coachId=${order.coachId}&coachName=${order.coachStageName}`
   })
 }
 
@@ -460,12 +569,49 @@ onShow(() => {
   padding: 20rpx;
 }
 
-/* 订单卡片 */
-.order-card {
+/* 滑动包装器 */
+.order-swipe-wrapper {
+  position: relative;
+  margin-bottom: 20rpx;
+  overflow: hidden;
+  width: 100%;
+}
+
+.order-swipe-content {
+  position: relative;
+  width: 100%;
+  transition: transform 0.3s ease;
+  z-index: 2;
   background: #1E252B;
   border-radius: 24rpx;
+  &.swiped {
+    transform: translateX(-120rpx);
+  }
+}
+
+/* 删除按钮 */
+.delete-action {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 120rpx;
+  background: #EF4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 24rpx 24rpx 0;
+  z-index: 1;
+  .delete-text {
+    color: #fff;
+    font-size: 28rpx;
+    font-weight: 500;
+  }
+}
+
+/* 订单卡片 */
+.order-card {
   padding: 24rpx;
-  margin-bottom: 20rpx;
 }
 
 /* 订单头部 */

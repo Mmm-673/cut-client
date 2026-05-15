@@ -122,8 +122,10 @@
           <text>用户评价 ({{ reviewList.length }})</text>
           <text class="rating-text">{{ coachInfo.overallScore || coachInfo.rating }}分</text>
         </view>
-        <view class="review-list">
-          <view class="review-item" v-for="(review, index) in reviewList" :key="index">
+
+        <!-- 默认显示前2条 -->
+        <view class="review-list" v-if="!showAllReviews">
+          <view class="review-item" v-for="(review, index) in reviewList.slice(0, 2)" :key="index">
             <view class="review-header">
               <image class="review-avatar" :src="review.avatar" mode="aspectFill"></image>
               <view class="review-user">
@@ -140,8 +142,34 @@
             </view>
           </view>
         </view>
-        <view class="more-reviews" @click="viewAllReviews">
-          <text>查看全部{{ reviewList.length }}条评价</text>
+
+        <!-- 展开显示全部（可滚动） -->
+        <scroll-view
+          class="review-list-scroll"
+          scroll-y="true"
+          v-else
+          :style="{ height: '600rpx' }"
+        >
+          <view class="review-item" v-for="(review, index) in reviewList" :key="index">
+            <view class="review-header">
+              <image class="review-avatar" :src="review.avatar" mode="aspectFill"></image>
+              <view class="review-user">
+                <text class="review-name">{{ review.name }}</text>
+                <view class="review-stars">
+                  <uni-icons type="star-filled" size="12" color="#ffc107" v-for="n in review.rating" :key="n"></uni-icons>
+                </view>
+              </view>
+              <text class="review-time">{{ review.time }}</text>
+            </view>
+            <view class="review-content">{{ review.content }}</view>
+            <view class="review-tags">
+              <view class="tag small" v-for="(tag, tagIndex) in review.tags" :key="tagIndex">{{ tag }}</view>
+            </view>
+          </view>
+        </scroll-view>
+
+        <view class="more-reviews" @click="showAllReviews = !showAllReviews">
+          <text>{{ showAllReviews ? '收起评价' : '查看全部' + reviewList.length + '条评价' }}</text>
         </view>
       </view>
 
@@ -206,6 +234,8 @@ const albumList = ref([])
 
 // 评价列表
 const reviewList = ref([])
+// 是否展开全部评价
+const showAllReviews = ref(false)
 
 // 等级映射
 const levelMap = {
@@ -440,7 +470,7 @@ const viewAlbum = () => {
 // 查看全部评价
 const viewAllReviews = () => {
   uni.showToast({
-    title: '查看全部评价',
+    title: '全部评价功能开发中',
     icon: 'none'
   })
 }
@@ -569,7 +599,7 @@ onMounted(() => {
     right: 0;
     bottom: 0;
     z-index: 10;
-    padding: 40rpx;
+    padding: 20rpx;
     display: flex;
     align-items: flex-start;
     gap: 32rpx;
@@ -602,13 +632,18 @@ onMounted(() => {
           padding: 8rpx 20rpx;
           border-radius: 40rpx;
 
-          &.level-0, &.level-1 {
-            background: linear-gradient(135deg, #c0c0c0 0%, #a0a0a0 100%);
-            color: #1a1a1a;
+          &.level-0 {
+            background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+            color: #ffffff;
+          }
+
+          &.level-1 {
+            background: linear-gradient(135deg, #faad14 0%, #d48806 100%);
+            color: #ffffff;
           }
 
           &.level-2 {
-            background: linear-gradient(135deg, #00c896 0%, #00a87a 100%);
+            background: linear-gradient(135deg, #f5222d 0%, #cf1322 100%);
             color: #ffffff;
           }
         }
@@ -828,70 +863,76 @@ onMounted(() => {
   }
 }
 
-.review-list {
+.review-list,
+.review-list-scroll {
   display: flex;
   flex-direction: column;
   gap: 32rpx;
+}
 
-  .review-item {
-    background-color: #2a2a2a;
-    border-radius: 32rpx;
-    padding: 32rpx;
+.review-list-scroll {
+  padding-bottom: 10rpx;
+}
 
-    .review-header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 24rpx;
+.review-item {
+  background-color: #2a2a2a;
+  border-radius: 32rpx;
+  padding: 32rpx;
+  flex-shrink: 0;
 
-      .review-avatar {
-        width: 96rpx;
-        height: 96rpx;
-        border-radius: 50%;
-        margin-right: 24rpx;
+  .review-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 24rpx;
+
+    .review-avatar {
+      width: 96rpx;
+      height: 96rpx;
+      border-radius: 50%;
+      margin-right: 24rpx;
+    }
+
+    .review-user {
+      flex: 1;
+
+      .review-name {
+        font-size: 30rpx;
+        font-weight: 600;
+        color: #ffffff;
+        display: block;
+        margin-bottom: 8rpx;
       }
 
-      .review-user {
-        flex: 1;
-
-        .review-name {
-          font-size: 30rpx;
-          font-weight: 600;
-          color: #ffffff;
-          display: block;
-          margin-bottom: 8rpx;
-        }
-
-        .review-stars {
-          display: flex;
-          gap: 4rpx;
-        }
-      }
-
-      .review-time {
-        font-size: 24rpx;
-        color: #666666;
+      .review-stars {
+        display: flex;
+        gap: 4rpx;
       }
     }
 
-    .review-content {
-      font-size: 28rpx;
-      color: #cccccc;
-      line-height: 1.6;
-      margin-bottom: 24rpx;
+    .review-time {
+      font-size: 24rpx;
+      color: #666666;
     }
+  }
 
-    .review-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16rpx;
+  .review-content {
+    font-size: 28rpx;
+    color: #cccccc;
+    line-height: 1.6;
+    margin-bottom: 24rpx;
+  }
 
-      .tag.small {
-        font-size: 22rpx;
-        padding: 6rpx 20rpx;
-        border-radius: 40rpx;
-        background-color: rgba(0, 200, 150, 0.15);
-        color: #00c896;
-      }
+  .review-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16rpx;
+
+    .tag.small {
+      font-size: 22rpx;
+      padding: 6rpx 20rpx;
+      border-radius: 40rpx;
+      background-color: rgba(0, 200, 150, 0.15);
+      color: #00c896;
     }
   }
 }

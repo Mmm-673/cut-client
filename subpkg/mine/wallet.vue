@@ -22,6 +22,18 @@
           <button class="action-btn recharge" @click="toRecharge">充值</button>
           <button class="action-btn withdraw" @click="toWithdraw">提现</button>
         </view>
+
+        <view class="record-entries">
+          <view class="record-entry" @click="toRechargeRecord">
+            <uni-icons type="list" size="20" color="#fff" />
+            <text class="entry-text">充值记录</text>
+          </view>
+          <view class="entry-divider"></view>
+          <view class="record-entry" @click="toWithdrawRecord">
+            <uni-icons type="list" size="20" color="#fff" />
+            <text class="entry-text">提现记录</text>
+          </view>
+        </view>
       </view>
 
       <!-- 收支统计 -->
@@ -237,6 +249,14 @@ const toRecordDetail = (recordId) => {
   uni.showToast({ title: '详情功能开发中', icon: 'none' })
 }
 
+const toRechargeRecord = () => {
+  uni.navigateTo({ url: '/subpkg/mine/recharge-record' })
+}
+
+const toWithdrawRecord = () => {
+  uni.navigateTo({ url: '/subpkg/mine/withdraw-record' })
+}
+
 // 页面显示刷新数据
 onShow(() => {
   loadAllData()
@@ -325,6 +345,34 @@ onShow(() => {
         border: none;
       }
     }
+  }
+
+  .record-entries {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 30rpx;
+    padding-top: 30rpx;
+    border-top: 1rpx solid rgba(255,255,255,0.15);
+  }
+
+  .record-entry {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8rpx;
+  }
+
+  .entry-text {
+    color: #fff;
+    font-size: 26rpx;
+  }
+
+  .entry-divider {
+    width: 2rpx;
+    height: 40rpx;
+    background: rgba(255,255,255,0.15);
   }
 }
 

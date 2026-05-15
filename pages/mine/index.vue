@@ -70,23 +70,48 @@
       </view>
 
       <!-- ==========================================
-           4. 钱包+优惠券双栏卡片（去掉:has()，加专门class兼容所有端）
+           4. 钱包卡片（新布局）
            ========================================== -->
-      <view class="func-card dual-card">
-        <view class="dual-item" @click="toWallet">
-          <view class="item-icon bg-green">
-            <uni-icons type="wallet" size="28" color="#fff" />
+      <view class="wallet-card" @click="toWallet">
+        <!-- 钱包背景渐变 -->
+        <view class="wallet-bg"></view>
+
+        <!-- 钱包内容 -->
+        <view class="wallet-content">
+          <!-- 左侧：余额信息 -->
+          <view class="wallet-left">
+            <view class="wallet-label">
+              <uni-icons type="wallet-filled" size="18" color="#00BB88" />
+              <text>账户余额</text>
+            </view>
+            <view class="wallet-balance">
+              <text class="currency">¥</text>
+              <text class="amount">{{ wallet.balance }}</text>
+            </view>
+            <view class="wallet-stats">
+              <view class="stat-item">
+                <text class="stat-label">累计充值</text>
+                <text class="stat-value">¥{{ wallet.totalRecharge }}</text>
+              </view>
+              <view class="stat-divider"></view>
+              <view class="stat-item">
+                <text class="stat-label">累计消费</text>
+                <text class="stat-value">¥{{ wallet.totalExpense }}</text>
+              </view>
+            </view>
           </view>
-          <text class="item-title">我的钱包</text>
-          <text class="item-value text-green">¥{{ wallet.balance }}</text>
-        </view>
-        <view class="dual-divider"></view>
-        <view class="dual-item" @click="toCoupon">
-          <view class="item-icon bg-yellow">
-            <uni-icons type="ticket" size="28" color="#fff" />
+
+          <!-- 右侧：快捷操作 -->
+          <view class="wallet-right">
+            <view class="quick-btn recharge-btn" @click.stop="toRecharge">
+              <uni-icons type="plus-filled" size="18" color="#fff" />
+              <text>充值</text>
+            </view>
+            <view class="quick-btn withdraw-btn" @click.stop="toWithdraw">
+              <uni-icons type="minus-filled" size="18" color="#fff" />
+              <text>提现</text>
+            </view>
           </view>
-          <text class="item-title">优惠券</text>
-          <text class="item-value text-yellow">{{ coupon.availableCount }}张可用</text>
         </view>
       </view>
 
@@ -287,7 +312,7 @@ const userStore = useUserStore()
 // 刷新状态
 const refreshing = ref(false)
 // 当前订单分类
-const currentOrderTab = ref(2) // 默认选中待评价，和设计图一致
+const currentOrderTab = ref(0) // 默认选中待付款，和设计图一致
 
 // 用户信息
 const userInfo = ref({
@@ -393,7 +418,7 @@ const loadOrders = async () => {
 // 功能菜单（修正了跳转路径！！对应刚才整合的pages.json）
 const menuList = ref([
   { key: 'collection', title: '我的收藏', icon: 'heart', bgColor: 'rgba(255, 77, 79, 0.2)', color: '#ff4d4f', path: '/subpkg/mine/favorites' },
-  { key: 'help', title: '帮助中心', icon: 'question', bgColor: 'rgba(107, 114, 128, 0.2)', color: '#6B7280', path: '/subpkg/mine/help' },
+  { key: 'help', title: '客服中心', icon: 'headphones', bgColor: 'rgba(107, 114, 128, 0.2)', color: '#6B7280', path: '/subpkg/mine/help' },
 ])
 
 // ---------------------- 计算属性 ----------------------
@@ -473,6 +498,14 @@ const toSetting = () => {
 
 const toWallet = () => {
   uni.navigateTo({ url: '/subpkg/mine/wallet' })
+}
+
+const toRecharge = () => {
+  uni.navigateTo({ url: '/subpkg/mine/recharge' })
+}
+
+const toWithdraw = () => {
+  uni.navigateTo({ url: '/subpkg/mine/withdraw' })
 }
 
 const toCoupon = () => {
@@ -568,9 +601,19 @@ onShow(() => {
    ========================================== */
 .func-card {
   margin: 0 30rpx 30rpx;
-  background: #1E252B;
+  background: linear-gradient(145deg, #1E252B 0%, #1a2024 100%);
   border-radius: 24rpx;
   padding: 30rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
+  border: 1rpx solid rgba(255, 255, 255, 0.03);
+  transition: all 0.3s ease;
+  transform: translateY(0);
+
+  &:active {
+    transform: translateY(2rpx);
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.2);
+  }
+
   .card-header {
     display: flex;
     justify-content: space-between;
@@ -587,6 +630,10 @@ onShow(() => {
       display: flex;
       align-items: center;
       gap: 4rpx;
+      transition: color 0.3s ease;
+      &:active {
+        color: #00BB88;
+      }
     }
   }
 }
@@ -696,57 +743,202 @@ onShow(() => {
 }
 
 /* ==========================================
-   4. 钱包+优惠券双栏卡片（兼容所有端！！去掉:has()）
+   4. 钱包卡片（新布局）
    ========================================== */
-.dual-card {
+.wallet-card {
+  position: relative;
+  margin: 0 30rpx 30rpx;
+  border-radius: 32rpx;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 12rpx 32rpx rgba(0, 187, 136, 0.15);
+  transform: translateY(0);
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  &:active {
+    transform: translateY(4rpx) scale(0.98);
+    box-shadow: 0 4rpx 16rpx rgba(0, 187, 136, 0.2);
+  }
+}
+
+.wallet-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  opacity: 0.95;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -60%;
+    right: -40%;
+    width: 400rpx;
+    height: 400rpx;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+    animation: pulse 8s ease-in-out infinite;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -50%;
+    left: -30%;
+    width: 320rpx;
+    height: 320rpx;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 0, 0, 0.15) 0%, transparent 70%);
+    animation: pulse 10s ease-in-out infinite reverse;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+.wallet-content {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40rpx 36rpx;
+}
+
+.wallet-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.wallet-label {
   display: flex;
   align-items: center;
-  gap: 30rpx;
-  padding: 30rpx 0; /* 上下留通用padding，左右不要因为flex撑宽变窄 */
-  padding-left: 0;
-  padding-right: 0;
-}
-.dual-item {
-  flex: 1;
-  text-align: center;
-  padding: 0 10rpx; /* 左右留间距防溢出 */
-  .item-icon {
-    width: 80rpx;
-    height: 80rpx;
-    border-radius: 50%;
-    margin: 0 auto 12rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  gap: 8rpx;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 26rpx;
+  font-weight: 500;
+
+  text {
+    color: rgba(255, 255, 255, 0.9);
   }
-  .item-title {
-    display: block;
+}
+
+.wallet-balance {
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+
+  .currency {
     color: #fff;
-    font-size: 30rpx;
+    font-size: 32rpx;
     font-weight: 600;
-    margin-bottom: 8rpx;
   }
-  .item-value {
-    font-size: 26rpx;
-    font-weight: 600;
-    &.text-green {
-      color: #00BB88;
-    }
-    &.text-yellow {
-      color: #FBBF24;
-    }
+
+  .amount {
+    color: #fff;
+    font-size: 56rpx;
+    font-weight: 700;
+    letter-spacing: 2rpx;
+    text-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.2);
   }
 }
-.bg-green {
-  background: rgba(0, 187, 136, 0.2);
+
+.wallet-stats {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 8rpx;
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4rpx;
+
+    .stat-label {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 22rpx;
+    }
+
+    .stat-value {
+      color: #fff;
+      font-size: 26rpx;
+      font-weight: 600;
+    }
+  }
+
+  .stat-divider {
+    width: 2rpx;
+    height: 32rpx;
+    background: rgba(255, 255, 255, 0.2);
+  }
 }
-.bg-yellow {
-  background: rgba(251, 191, 36, 0.2);
+
+.wallet-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
 }
-.dual-divider {
-  width: 2rpx;
-  height: 100rpx; /* 固定高度撑住双栏的视觉分隔 */
-  background: rgba(255,255,255,0.1);
+
+.quick-btn {
+  width: 120rpx;
+  height: 64rpx;
+  border-radius: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #fff;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+
+  text {
+    color: #fff;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  &:active {
+    transform: scale(0.92);
+
+    &::before {
+      left: 100%;
+    }
+  }
+}
+
+.recharge-btn {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10rpx);
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.withdraw-btn {
+  background: rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10rpx);
+  border: 1rpx solid rgba(255, 255, 255, 0.15);
 }
 
 /* ==========================================

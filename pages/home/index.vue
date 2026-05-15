@@ -1,133 +1,186 @@
 <template>
   <view class="home-wrapper">
+    <!-- 导航栏 -->
     <view class="navbar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-left">
         <view class="logo-circle">
           <text class="logo-text">8</text>
+          <view class="logo-glow"></view>
         </view>
         <view class="nav-title-group">
           <text class="nav-title">初球</text>
           <text class="nav-subtitle">专业助教预约平台</text>
         </view>
       </view>
-<!--      <view class="nav-right">-->
-<!--        <view class="icon-btn" @click="goSearch">-->
-<!--          <uni-icons type="search" size="20" color="#fff" />-->
-<!--        </view>-->
-<!--        <view class="icon-btn" @click="goNotice">-->
-<!--          <uni-icons type="notification" size="20" color="#fff" />-->
-<!--        </view>-->
-<!--      </view>-->
-    </view>
-
-    <view class="banner-section">
-      <swiper
-          class="banner-swiper"
-          indicator-dots
-          autoplay
-          circular
-          :interval="3500"
-          :duration="400"
-          easing-function="easeInOutCubic"
-          indicator-active-color="#00BB88"
-      >
-        <swiper-item v-for="(item, index) in bannerList" :key="index" @click="handleBannerClick(item)" class="swiper-item">
-          <view class="banner-card">
-            <image class="banner-img" :src="item.img" mode="aspectFill"></image>
-          </view>
-        </swiper-item>
-      </swiper>
-    </view>
-
-    <view class="service-grid">
-      <view
-          class="service-item"
-          v-for="item in serviceList"
-          :key="item.id"
-          hover-class="item-hover"
-          @click="handleServiceClick(item)"
-      >
-        <view class="service-icon-wrap" :style="{background: item.iconBg}">
-          <text class="service-emoji">{{item.icon}}</text>
-        </view>
-        <view class="service-body">
-          <text class="s-title">{{item.title}}</text>
-          <view class="s-price">
-            <text class="s-unit">¥</text>
-            <text class="s-num" :style="{color: item.priceColor}">{{item.price}}</text>
-            <text class="s-unit">/{{item.unit}}</text>
+      <view class="nav-right">
+        <view class="icon-btn" @click="goNotice">
+          <uni-icons type="notification" size="20" color="#fff" />
+          <view class="notice-badge">
+            <text>8</text>
           </view>
         </view>
       </view>
     </view>
 
-    <view class="section-container">
-      <view class="section-header">
-        <view class="title-left">
-          <view class="title-line"></view>
-          <text class="title-text">热门助教</text>
-        </view>
-        <view class="view-more" @click="viewAllHotCoach">
-          <text>全部</text>
-          <uni-icons type="right" size="12" color="#9CA3AF" />
-        </view>
+    <!-- 滚动区域 -->
+    <scroll-view scroll-y class="scroll-container" show-scrollbar="false">
+      <!-- 欢迎语 -->
+      <view class="welcome-section">
+        <text class="greeting">你好 👋</text>
+        <text class="welcome-text">今天想预约哪位助教？</text>
       </view>
 
-      <!-- 热门助教横向滚动 -->
-      <scroll-view class="scroll-view-h" scroll-x="true" show-scrollbar="false">
-        <view class="hot-coach-list">
-          <view class="hot-coach-card" v-for="item in hotCoachList" :key="item.id" @click="goCoachDetail(item)">
-            <view class="hot-img-box">
-              <image class="hot-avatar" :src="item.avatar" mode="aspectFill"></image>
-              <view v-if="item.online" class="online-status">
-                <view class="dot"></view>
-                <text>在线</text>
+      <!-- 轮播图 -->
+      <view class="banner-section">
+        <swiper
+            class="banner-swiper"
+            indicator-dots
+            autoplay
+            circular
+            :interval="3500"
+            :duration="400"
+            easing-function="easeInOutCubic"
+            indicator-active-color="#00BB88"
+        >
+          <swiper-item v-for="(item, index) in bannerList" :key="index" @click="handleBannerClick(item)">
+            <view class="banner-card">
+              <image class="banner-img" :src="item.img" mode="aspectFill"></image>
+              <view class="banner-overlay">
+                <view class="banner-content">
+                  <text class="banner-tag">限时特惠</text>
+                  <text class="banner-title">新人首单立减50元</text>
+                </view>
               </view>
             </view>
-            <view class="hot-info">
-              <text class="hot-name">{{item.name}}</text>
-              <view class="hot-stats">
-                <view class="stat-item">
-                  <uni-icons type="star-filled" size="12" color="#FFB800" />
+          </swiper-item>
+        </swiper>
+      </view>
+
+      <!-- 服务入口 -->
+      <view class="service-section">
+        <view class="section-title-wrap">
+          <text class="section-title">热门服务</text>
+          <text class="section-desc">为您精选优质服务</text>
+        </view>
+        <view class="service-grid">
+          <view
+              class="service-item"
+              v-for="(item, index) in serviceList"
+              :key="item.id"
+              @click="handleServiceClick(item)"
+          >
+            <view class="service-bg" :style="{background: item.bgGradient}"></view>
+            <view class="service-content">
+              <view class="service-icon-wrap" :style="{background: item.iconBg}">
+                <text class="service-emoji">{{item.icon}}</text>
+              </view>
+              <view class="service-body">
+                <text class="s-title">{{item.title}}</text>
+                <view class="s-price">
+                  <text class="s-unit">¥</text>
+                  <text class="s-num" :style="{color: item.priceColor}">{{item.price}}</text>
+                  <text class="s-unit">/{{item.unit}}</text>
+                </view>
+              </view>
+              <view class="service-arrow">
+                <uni-icons type="right" size="16" color="rgba(255,255,255,0.5)" />
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 热门助教 -->
+      <view class="section-container">
+        <view class="section-header">
+          <view class="title-left">
+            <view class="title-decoration">
+              <view class="title-dot"></view>
+              <view class="title-line"></view>
+            </view>
+            <text class="title-text">热门助教</text>
+            <view class="title-badge">TOP</view>
+          </view>
+          <view class="view-more" @click="viewAllHotCoach">
+            <text>全部</text>
+            <uni-icons type="right" size="14" color="#9CA3AF" />
+          </view>
+        </view>
+
+        <scroll-view class="scroll-view-h" scroll-x="true" show-scrollbar="false">
+          <view class="hot-coach-list">
+            <view class="hot-coach-card" v-for="item in hotCoachList" :key="item.id" @click="goCoachDetail(item)">
+              <view class="hot-img-box">
+                <image class="hot-avatar" :src="item.avatar" mode="aspectFill"></image>
+                <view v-if="item.online" class="online-status">
+                  <view class="dot-pulse">
+                    <view class="dot"></view>
+                    <view class="dot-ring"></view>
+                  </view>
+                  <text>在线</text>
+                </view>
+                <view class="score-tag">
+                  <uni-icons type="star-filled" size="10" color="#FFB800" />
                   <text>{{item.score}}</text>
                 </view>
-                <text class="stat-split">|</text>
-                <text class="stat-count">已接{{item.orderCount}}单</text>
+              </view>
+              <view class="hot-info">
+                <text class="hot-name">{{item.name}}</text>
+                <view class="hot-stats">
+                  <text class="stat-count">已接{{item.orderCount}}单</text>
+                  <view class="order-icon">
+                    <uni-icons type="checkbox-filled" size="12" color="#00BB88" />
+                  </view>
+                </view>
               </view>
             </view>
           </view>
-        </view>
-      </scroll-view>
-    </view>
-
-    <view class="section-container last-section">
-      <view class="section-header">
-        <view class="title-left">
-          <view class="title-line blue"></view>
-          <text class="title-text">新人推荐</text>
-        </view>
-        <view class="view-more" @click="viewAllNewCoach">
-          <text>全部</text>
-          <uni-icons type="right" size="12" color="#9CA3AF" />
-        </view>
+        </scroll-view>
       </view>
-      <scroll-view class="scroll-view-h" scroll-x="true" show-scrollbar="false">
-        <view class="new-coach-list">
-          <view
-              class="new-avatar-item"
-              v-for="item in newCoachList"
-              :key="item.id"
-              @click="goCoachDetail(item)"
-          >
-            <view class="new-img-wrap">
-              <image class="new-img" :src="item.avatar" mode="aspectFill"></image>
-              <view class="new-label">NEW</view>
+
+      <!-- 新人推荐 -->
+      <view class="section-container last-section">
+        <view class="section-header">
+          <view class="title-left">
+            <view class="title-decoration">
+              <view class="title-dot blue"></view>
+              <view class="title-line blue"></view>
             </view>
-            <text class="new-name">{{item.name}}</text>
+            <text class="title-text">新人推荐</text>
+            <view class="title-badge blue">NEW</view>
+          </view>
+          <view class="view-more" @click="viewAllNewCoach">
+            <text>全部</text>
+            <uni-icons type="right" size="14" color="#9CA3AF" />
           </view>
         </view>
-      </scroll-view>
-    </view>
+
+        <view class="new-coach-section">
+          <scroll-view class="scroll-view-h" scroll-x="true" show-scrollbar="false">
+            <view class="new-coach-list">
+              <view
+                  class="new-avatar-item"
+                  v-for="(item, index) in newCoachList"
+                  :key="item.id"
+                  @click="goCoachDetail(item)"
+              >
+                <view class="new-img-wrap">
+                  <view class="avatar-ring"></view>
+                  <image class="new-img" :src="item.avatar" mode="aspectFill"></image>
+                  <view class="new-label">
+                    <text>NEW</text>
+                  </view>
+                  <view class="shine-overlay"></view>
+                </view>
+                <text class="new-name">{{item.name}}</text>
+              </view>
+            </view>
+          </scroll-view>
+        </view>
+      </view>
+
+      <view class="safe-bottom"></view>
+    </scroll-view>
   </view>
 </template>
 
@@ -145,8 +198,26 @@ const bannerList = ref([
 ])
 
 const serviceList = ref([
-  { id: 1, title: '台球陪练', price: 99, unit: '小时', priceColor: '#00BB88', icon: '🎱', iconBg: 'rgba(0, 187, 136, 0.15)' },
-  { id: 2, title: '结伴出行', price: 99, unit: '小时', priceColor: '#3B82F6', icon: '🎓', iconBg: 'rgba(59, 130, 246, 0.15)' }
+  {
+    id: 1,
+    title: '台球陪练',
+    price: 99,
+    unit: '小时',
+    priceColor: '#00BB88',
+    icon: '🎱',
+    iconBg: 'rgba(0, 187, 136, 0.2)',
+    bgGradient: 'linear-gradient(135deg, rgba(0, 187, 136, 0.15) 0%, rgba(0, 187, 136, 0.05) 100%)'
+  },
+  {
+    id: 2,
+    title: '专业教学',
+    price: 168,
+    unit: '小时',
+    priceColor: '#3B82F6',
+    icon: '🎓',
+    iconBg: 'rgba(59, 130, 246, 0.2)',
+    bgGradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%)'
+  }
 ])
 
 const hotCoachList = ref([])
@@ -162,7 +233,7 @@ const loadHotCoaches = async () => {
       avatar: item.mainPhotoUrl || 'https://picsum.photos/300/300',
       score: item.overallScore || 5.0,
       orderCount: item.serviceCount || 0,
-      online: true
+      online: Math.random() > 0.3
     })) : []
   } catch (error) {
     console.error('加载热门助教失败:', error)
@@ -208,6 +279,10 @@ const goCoachDetail = (item) => {
   })
 }
 
+const goNotice = () => {
+  uni.showToast({ title: '功能开发中', icon: 'none' })
+}
+
 const initData = async () => {
   loading.value = true
   await Promise.all([
@@ -218,7 +293,6 @@ const initData = async () => {
 }
 
 onLoad(() => {
-  console.log('Home Loaded')
   initData()
 })
 
@@ -232,11 +306,15 @@ onMounted(() => {
 .home-wrapper {
   min-height: 100vh;
   background-color: #121619;
-  padding-top: 180rpx;
-  //padding-bottom: 40rpx;
+  padding-top: 140rpx;
   box-sizing: border-box;
 }
 
+.scroll-container {
+  height: calc(100vh - 140rpx);
+}
+
+/* 导航栏 */
 .navbar {
   position: fixed;
   top: 0;
@@ -248,26 +326,42 @@ onMounted(() => {
   justify-content: space-between;
   padding-left: 30rpx;
   padding-right: 30rpx;
-  padding-bottom: 20rpx;
-  background: rgba(18, 22, 25, 0.95);
-  backdrop-filter: blur(10px);
+  padding-bottom: 24rpx;
+  background: rgba(18, 22, 25, 0.9);
+  backdrop-filter: blur(20rpx);
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.03);
 
   .nav-left {
     display: flex;
     align-items: center;
     .logo-circle {
-      width: 56rpx;
-      height: 56rpx;
-      background: #00BB88;
-      border-radius: 16rpx;
+      width: 60rpx;
+      height: 60rpx;
+      background: linear-gradient(135deg, #00BB88 0%, #059669 100%);
+      border-radius: 18rpx;
       display: flex;
       align-items: center;
       justify-content: center;
       margin-right: 16rpx;
+      position: relative;
+      overflow: hidden;
+
+      .logo-glow {
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 60%);
+        animation: glowPulse 4s ease-in-out infinite;
+      }
+
       .logo-text {
         color: #fff;
-        font-weight: bold;
-        font-size: 32rpx;
+        font-weight: 800;
+        font-size: 34rpx;
+        position: relative;
+        z-index: 1;
       }
     }
     .nav-title-group {
@@ -275,14 +369,16 @@ onMounted(() => {
       flex-direction: column;
       .nav-title {
         color: #fff;
-        font-size: 34rpx;
-        font-weight: 600;
+        font-size: 36rpx;
+        font-weight: 700;
         line-height: 1.2;
+        letter-spacing: -1rpx;
       }
       .nav-subtitle {
-        color: #666;
-        font-size: 26rpx;
-        margin-top: 4rpx;
+        color: #6B7280;
+        font-size: 24rpx;
+        margin-top: 2rpx;
+        font-weight: 500;
       }
     }
   }
@@ -290,124 +386,359 @@ onMounted(() => {
     display: flex;
     gap: 24rpx;
     .icon-btn {
-      background: rgba(255,255,255,0.1);
-      padding: 12rpx;
+      background: rgba(255,255,255,0.06);
+      padding: 14rpx;
       border-radius: 50%;
       display: flex;
       align-items: center;
+      position: relative;
+      transition: all 0.3s ease;
+      border: 1rpx solid rgba(255,255,255,0.06);
+
+      &:active {
+        transform: scale(0.9);
+        background: rgba(255,255,255,0.1);
+      }
+
+      .notice-badge {
+        position: absolute;
+        top: -4rpx;
+        right: -4rpx;
+        min-width: 32rpx;
+        height: 32rpx;
+        background: linear-gradient(135deg, #EF4444, #DC2626);
+        border-radius: 50%;
+        color: #fff;
+        font-size: 18rpx;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 3rpx solid #121619;
+        box-shadow: 0 4rpx 12rpx rgba(239, 68, 68, 0.4);
+        animation: badgeBounce 2s ease-in-out infinite;
+      }
     }
   }
 }
 
+@keyframes glowPulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+@keyframes badgeBounce {
+  0%, 90%, 100% { transform: scale(1); }
+  95% { transform: scale(1.2); }
+}
+
+/* 欢迎语 */
+.welcome-section {
+  padding: 0 30rpx 32rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+
+  .greeting {
+    color: #9CA3AF;
+    font-size: 26rpx;
+    font-weight: 500;
+  }
+
+  .welcome-text {
+    color: #fff;
+    font-size: 36rpx;
+    font-weight: 700;
+    letter-spacing: -1rpx;
+  }
+}
+
+/* 轮播图 */
 .banner-section {
   margin: 0 30rpx 40rpx;
-  border-radius: 30rpx;
+  border-radius: 32rpx;
   overflow: hidden;
+  box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.3);
+
   .banner-swiper {
-    height: 340rpx;
-    border-radius: 30rpx;
+    height: 360rpx;
+    border-radius: 32rpx;
     overflow: hidden;
+
     .banner-card {
       position: relative;
       width: 100%;
       height: 100%;
       overflow: hidden;
       background: #2a3338;
+      border-radius: 32rpx;
     }
     .banner-img {
       width: 100%;
       height: 100%;
+      transform: scale(1.02);
+      transition: transform 0.4s ease;
+    }
+
+    .banner-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60%;
+      background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+      display: flex;
+      align-items: flex-end;
+      padding: 32rpx;
+    }
+
+    .banner-content {
+      display: flex;
+      flex-direction: column;
+      gap: 10rpx;
+
+      .banner-tag {
+        display: inline-block;
+        background: linear-gradient(135deg, #00BB88, #059669);
+        color: #fff;
+        font-size: 20rpx;
+        font-weight: 600;
+        padding: 6rpx 14rpx;
+        border-radius: 50rpx;
+        align-self: flex-start;
+      }
+
+      .banner-title {
+        color: #fff;
+        font-size: 32rpx;
+        font-weight: 700;
+      }
     }
   }
-  .swiper-item {
-    padding: 0 12rpx;
-    box-sizing: border-box;
+}
+
+/* 服务入口 */
+.service-section {
+  padding: 0 30rpx 40rpx;
+
+  .section-title-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6rpx;
+    margin-bottom: 24rpx;
+
+    .section-title {
+      color: #fff;
+      font-size: 32rpx;
+      font-weight: 700;
+    }
+
+    .section-desc {
+      color: #6B7280;
+      font-size: 24rpx;
+    }
   }
 }
 
 .service-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 20rpx;
-  padding: 0 30rpx 40rpx;
+
   .service-item {
+    position: relative;
     background: #1E252B;
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 24rpx;
-    padding: 24rpx;
-    display: flex;
-    align-items: center;
+    border: 1rpx solid rgba(255,255,255,0.05);
+    border-radius: 28rpx;
+    padding: 28rpx;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+    &:active {
+      transform: scale(0.97);
+    }
+
+    .service-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    &:active .service-bg {
+      opacity: 1;
+    }
+
+    .service-content {
+      position: relative;
+      display: flex;
+      align-items: center;
+      z-index: 1;
+    }
+
     .service-icon-wrap {
-      width: 80rpx;
-      height: 80rpx;
-      border-radius: 20rpx;
+      width: 88rpx;
+      height: 88rpx;
+      border-radius: 24rpx;
       display: flex;
       align-items: center;
       justify-content: center;
       margin-right: 20rpx;
+      transition: all 0.3s ease;
+      box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.2);
+
       .service-emoji {
-        font-size: 40rpx;
+        font-size: 44rpx;
       }
     }
-    .s-title {
-      color: #fff;
-      font-size: 32rpx;
-      font-weight: 500;
+
+    .service-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6rpx;
+
+      .s-title {
+        color: #fff;
+        font-size: 34rpx;
+        font-weight: 600;
+      }
+
+      .s-price {
+        display: flex;
+        align-items: baseline;
+
+        .s-unit {
+          font-size: 24rpx;
+          color: #6B7280;
+        }
+
+        .s-num {
+          font-size: 40rpx;
+          font-weight: 800;
+          margin: 0 4rpx;
+          letter-spacing: -1rpx;
+        }
+      }
     }
-    .s-price {
-      margin-top: 4rpx;
-      .s-unit {
-        font-size: 24rpx;
-        color: #9CA3AF;
-      }
-      .s-num {
-        font-size: 36rpx;
-        font-weight: bold;
-        margin: 0 4rpx;
-      }
+
+    .service-arrow {
+      width: 48rpx;
+      height: 48rpx;
+      background: rgba(255,255,255,0.05);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    &:active .service-arrow {
+      background: rgba(255,255,255,0.1);
+      transform: translateX(4rpx);
     }
   }
 }
 
+/* 通用章节 */
 .section-container {
-  padding: 0 30rpx 40rpx;
+  padding: 0 30rpx 44rpx;
+
   .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24rpx;
+    margin-bottom: 28rpx;
+
     .title-left {
       display: flex;
       align-items: center;
-      .title-line {
-        width: 8rpx;
-        height: 32rpx;
-        background: #00BB88;
-        border-radius: 4rpx;
-        margin-right: 16rpx;
+      gap: 12rpx;
+
+      .title-decoration {
+        display: flex;
+        align-items: center;
+        gap: 6rpx;
+
+        .title-dot {
+          width: 12rpx;
+          height: 12rpx;
+          background: #00BB88;
+          border-radius: 50%;
+          box-shadow: 0 0 12rpx rgba(0, 187, 136, 0.5);
+
+          &.blue {
+            background: #3B82F6;
+            box-shadow: 0 0 12rpx rgba(59, 130, 246, 0.5);
+          }
+        }
+
+        .title-line {
+          width: 24rpx;
+          height: 4rpx;
+          background: linear-gradient(90deg, #00BB88, transparent);
+          border-radius: 2rpx;
+
+          &.blue {
+            background: linear-gradient(90deg, #3B82F6, transparent);
+          }
+        }
       }
-      .title-line.blue {
-        background: #3B82F6;
-      }
+
       .title-text {
         color: #fff;
-        font-size: 36rpx;
-        font-weight: 600;
+        font-size: 34rpx;
+        font-weight: 700;
+        letter-spacing: -0.5rpx;
+      }
+
+      .title-badge {
+        background: linear-gradient(135deg, rgba(0, 187, 136, 0.2), rgba(0, 187, 136, 0.08));
+        color: #00BB88;
+        font-size: 18rpx;
+        font-weight: 700;
+        padding: 4rpx 10rpx;
+        border-radius: 8rpx;
+        border: 1rpx solid rgba(0, 187, 136, 0.3);
+
+        &.blue {
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.08));
+          color: #3B82F6;
+          border-color: rgba(59, 130, 246, 0.3);
+        }
       }
     }
+
     .view-more {
       display: flex;
       align-items: center;
+      gap: 6rpx;
+      padding: 8rpx 12rpx;
+      background: rgba(255,255,255,0.04);
+      border-radius: 50rpx;
+      transition: all 0.3s ease;
+
+      &:active {
+        background: rgba(255,255,255,0.08);
+      }
+
       text {
         color: #9CA3AF;
-        font-size: 28rpx;
-        margin-right: 4rpx;
+        font-size: 26rpx;
+        font-weight: 500;
       }
     }
   }
 }
 
-/* 共同样式：隐藏滚动条 */
+.last-section {
+  padding-bottom: 20rpx;
+}
+
+/* 横向滚动 */
 .scroll-view-h {
   width: 100%;
   white-space: nowrap;
@@ -420,133 +751,207 @@ onMounted(() => {
   }
 }
 
-/* --- 热门助教样式优化 --- */
+/* 热门助教 */
 .hot-coach-list {
   display: inline-flex;
-  //padding: 10rpx 30rpx; // 增加内边距防止阴影被截断
 
   .hot-coach-card {
-    width: 240rpx; // 稍微加宽
-    margin-right: 24rpx;
-    background: #1E252B;
-    border-radius: 24rpx;
+    width: 260rpx;
+    margin-right: 20rpx;
+    background: linear-gradient(145deg, #1E252B, #1a2024);
+    border-radius: 28rpx;
     overflow: hidden;
     flex-shrink: 0;
-    box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    transition: all 0.3s ease;
+    box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.25);
+    border: 1rpx solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 
     &:active {
-      transform: translateY(4rpx);
+      transform: translateY(6rpx) scale(0.98);
+      box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.3);
     }
 
-    /* 最后一个去掉右边距 ———— 就是加这一段！ */
     &:last-child {
-      margin-right: 0 !important;
+      margin-right: 0;
     }
-
 
     .hot-img-box {
       position: relative;
       width: 100%;
-      height: 240rpx;
+      height: 260rpx;
+      overflow: hidden;
 
       .hot-avatar {
         width: 100%;
         height: 100%;
         background-color: #2a2e32;
+        transition: transform 0.4s ease;
+      }
+
+      &:active .hot-avatar {
+        transform: scale(1.08);
       }
 
       .online-status {
         position: absolute;
         top: 16rpx;
         left: 16rpx;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
-        padding: 4rpx 12rpx;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10rpx);
+        padding: 6rpx 14rpx;
         border-radius: 50rpx;
         display: flex;
         align-items: center;
-        gap: 6rpx;
-        border: 1rpx solid rgba(0, 187, 136, 0.4);
+        gap: 8rpx;
+        border: 1rpx solid rgba(0, 187, 136, 0.3);
 
-        .dot {
-          width: 10rpx;
-          height: 10rpx;
-          background: #00BB88;
-          border-radius: 50%;
-          box-shadow: 0 0 8rpx #00BB88;
+        .dot-pulse {
+          position: relative;
+
+          .dot {
+            width: 10rpx;
+            height: 10rpx;
+            background: #00BB88;
+            border-radius: 50%;
+            position: relative;
+            z-index: 1;
+          }
+
+          .dot-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10rpx;
+            height: 10rpx;
+            background: rgba(0, 187, 136, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulseRing 2s ease-out infinite;
+          }
         }
 
         text {
           color: #fff;
           font-size: 20rpx;
+          font-weight: 600;
+        }
+      }
+
+      .score-tag {
+        position: absolute;
+        bottom: 16rpx;
+        right: 16rpx;
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(10rpx);
+        padding: 6rpx 12rpx;
+        border-radius: 50rpx;
+        display: flex;
+        align-items: center;
+        gap: 6rpx;
+        border: 1rpx solid rgba(255, 184, 0, 0.25);
+
+        text {
+          color: #FFB800;
+          font-size: 22rpx;
+          font-weight: 700;
         }
       }
     }
 
     .hot-info {
-      padding: 16rpx 20rpx;
+      padding: 20rpx;
 
       .hot-name {
         color: #FFFFFF;
         font-size: 30rpx;
         font-weight: 600;
-        margin-bottom: 8rpx;
+        margin-bottom: 10rpx;
         overflow: hidden;
         text-overflow: ellipsis;
+        display: block;
       }
 
       .hot-stats {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        .stat-item {
-          display: flex;
-          align-items: center;
-          gap: 4rpx;
-          text {
-            color: #FFB800;
-            font-size: 24rpx;
-            font-weight: 500;
-          }
-        }
-
-        .stat-split {
-          color: #333;
-          margin: 0 10rpx;
-          font-size: 20rpx;
-        }
 
         .stat-count {
           color: #9CA3AF;
           font-size: 22rpx;
+          font-weight: 500;
+        }
+
+        .order-icon {
+          width: 36rpx;
+          height: 36rpx;
+          background: rgba(0, 187, 136, 0.12);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
       }
     }
   }
 }
 
+@keyframes pulseRing {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3);
+    opacity: 0;
+  }
+}
+
+/* 新人推荐 */
+.new-coach-section {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.02) 100%);
+  border-radius: 28rpx;
+  padding: 28rpx 0 28rpx 30rpx;
+  margin: 0 -30rpx;
+  border: 1rpx solid rgba(59, 130, 246, 0.1);
+}
+
 .new-coach-list {
   display: inline-flex;
-  //padding: 10rpx 30rpx 20rpx;
   white-space: nowrap;
 
   .new-avatar-item {
-    margin-right: 36rpx;
+    margin-right: 32rpx;
     display: flex;
     flex-direction: column;
     align-items: center;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+
+    &:active {
+      transform: scale(0.95);
+    }
 
     .new-img-wrap {
       position: relative;
-      width: 100rpx;
-      height: 100rpx;
+      width: 112rpx;
+      height: 112rpx;
       padding: 6rpx;
-      background: linear-gradient(135deg, #3B82F6 0%, rgba(59, 130, 246, 0.2) 50%, #3B82F6 100%);
+      background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #3B82F6 100%);
       border-radius: 50%;
-      margin-bottom: 12rpx;
+      margin-bottom: 14rpx;
+      overflow: hidden;
+      animation: rotateGradient 8s linear infinite;
+
+      .avatar-ring {
+        position: absolute;
+        top: 4rpx;
+        left: 4rpx;
+        right: 4rpx;
+        bottom: 4rpx;
+        border-radius: 50%;
+        border: 2rpx dashed rgba(255, 255, 255, 0.3);
+        animation: rotateReverse 12s linear infinite;
+      }
 
       .new-img {
         width: 100%;
@@ -554,45 +959,77 @@ onMounted(() => {
         border-radius: 50%;
         border: 4rpx solid #121619;
         object-fit: cover;
+        position: relative;
+        z-index: 1;
       }
 
       .new-label {
         position: absolute;
-        bottom: 0rpx;
+        bottom: 4rpx;
         right: -4rpx;
         background: linear-gradient(90deg, #FF4D4D, #F63B82);
         color: #fff;
-        font-size: 18rpx;
-        font-weight: bold;
-        padding: 4rpx 12rpx;
+        font-size: 16rpx;
+        font-weight: 800;
+        padding: 5rpx 12rpx;
         border-radius: 50rpx;
         border: 2rpx solid #121619;
         line-height: 1.2;
+        z-index: 2;
+        box-shadow: 0 4rpx 12rpx rgba(246, 59, 130, 0.4);
+      }
+
+      .shine-overlay {
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(
+          45deg,
+          transparent 30%,
+          rgba(255, 255, 255, 0.2) 50%,
+          transparent 70%
+        );
+        animation: shine 3s ease-in-out infinite;
+        z-index: 3;
       }
     }
 
     .new-name {
       color: #E5E7EB;
-      font-size: 24rpx;
-      max-width: 130rpx;
+      font-size: 26rpx;
+      font-weight: 600;
+      max-width: 140rpx;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       text-align: center;
     }
-  }
 
-  /* 最后一个去掉右边距 */
-  .new-avatar-item:last-child {
-    margin-right: 0;
+    &:last-child {
+      margin-right: 0;
+    }
   }
 }
 
-/* 点击效果更柔和 */
-.item-hover {
-  transform: scale(0.96);
-  opacity: 0.85;
-  transition: all 0.2s ease;
+@keyframes rotateGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
+@keyframes rotateReverse {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes shine {
+  0% { transform: translateX(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) rotate(45deg); }
+}
+
+.safe-bottom {
+  height: 40rpx;
+}
 </style>

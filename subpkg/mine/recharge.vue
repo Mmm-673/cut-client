@@ -1,34 +1,40 @@
 <template>
   <view class="recharge-wrapper">
-    <!-- 充值金额选择 -->
+    <!-- 充值套餐 -->
     <view class="section-card">
-      <view class="section-title">选择充值金额</view>
-      <view class="amount-grid">
+      <view class="section-title">选择充值套餐</view>
+      <view class="package-list">
         <view
-            class="amount-item"
-            :class="{active: selectedAmount === item}"
-            v-for="item in amountList"
-            :key="item"
-            @click="selectAmount(item)"
+            class="package-item"
+            :class="{active: selectedPackage?.id === item.id}"
+            v-for="item in packageList"
+            :key="item.id"
+            @click="selectPackage(item)"
         >
-          <text class="amount-value">¥{{ item }}</text>
+          <view class="package-main">
+            <text class="package-pay">¥{{ (item.payPrice / 100).toFixed(2) }}</text>
+            <text class="package-bonus" v-if="item.bonusPrice > 0">+送¥{{ (item.bonusPrice / 100).toFixed(2) }}</text>
+          </view>
+          <view class="package-name" v-if="item.name">{{ item.name }}</view>
         </view>
         <view
-            class="amount-item input-item"
+            class="package-item input-item"
             :class="{active: isCustomAmount}"
             @click="showCustomInput"
         >
-          <text class="amount-value" v-if="!isCustomAmount">自定义</text>
-          <input
-              v-else
-              class="custom-input"
-              type="digit"
-              v-model="customAmount"
-              placeholder="输入金额"
-              placeholder-class="input-placeholder"
-              @focus="onCustomFocus"
-              @blur="onCustomBlur"
-          />
+          <view class="package-main">
+            <text class="package-pay" v-if="!isCustomAmount">自定义</text>
+            <input
+                v-else
+                class="custom-input"
+                type="digit"
+                v-model="customAmount"
+                placeholder="输入金额"
+                placeholder-class="input-placeholder"
+                @focus="onCustomFocus"
+                @blur="onCustomBlur"
+            />
+          </view>
         </view>
       </view>
     </view>
@@ -70,28 +76,31 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { getAvailablePayChannels, executePayment } from '@/utils/payment'
-import { createWalletRecharge } from '@/api/billiard/wallet'
+import { getWalletRechargePackages, createWalletRecharge } from '@/api/billiard/pay'
 
-// 充值金额选项
-const amountList = [10, 50, 100, 200, 500, 1000]
+// 充值套餐列表
+const packageList = ref([])
 
-// 选中的金额
-const selectedAmount = ref(100)
+// 选中的套餐
+const selectedPackage = ref(null)
 const customAmount = ref('')
 const isCustomAmount = ref(false)
 
 // 支付方式
 const selectedPay = ref('wechat')
-const payChannels = computed(() => getAvailablePayChannels())
+const payChannels = computed(() => getAvailablePayChannels().filter(c => c.value !== 'wallet'))
 
 // 最终金额
 const finalAmount = computed(() => {
   if (isCustomAmount.value && customAmount.value) {
     return parseFloat(customAmount.value).toFixed(2)
   }
-  return selectedAmount.value.toFixed(2)
+  if (selectedPackage.value) {
+    return (selectedPackage.value.payPrice / 100).toFixed(2)
+  }
+  return '0.00'
 })
 
 // 是否可以支付
@@ -99,9 +108,24 @@ const canPay = computed(() => {
   return parseFloat(finalAmount.value) > 0
 })
 
-// 选择金额
-const selectAmount = (amount) => {
-  selectedAmount.value = amount
+// 加载套餐列表
+const loadPackages = async () => {
+  try {
+    const res = await getWalletRechargePackages()
+    if (res.data && Array.isArray(res.data)) {
+      packageList.value = res.data
+      if (res.data.length > 0) {
+        selectedPackage.value = res.data[0]
+      }
+    }
+  } catch (error) {
+    console.error('加载套餐失败:', error)
+  }
+}
+
+// 选择套餐
+const selectPackage = (pkg) => {
+  selectedPackage.value = pkg
   isCustomAmount.value = false
   customAmount.value = ''
 }
@@ -109,18 +133,19 @@ const selectAmount = (amount) => {
 // 显示自定义输入
 const showCustomInput = () => {
   isCustomAmount.value = true
+  selectedPackage.value = null
 }
 
 // 自定义金额获得焦点
 const onCustomFocus = () => {
   isCustomAmount.value = true
-  selectedAmount.value = null
+  selectedPackage.value = null
 }
 
 // 自定义金额失去焦点
 const onCustomBlur = () => {
   if (customAmount.value) {
-    selectedAmount.value = null
+    selectedPackage.value = null
   }
 }
 
@@ -136,16 +161,18 @@ const handleRecharge = async () => {
     return
   }
 
-  const amount = parseFloat(finalAmount.value) * 100 // 转换为分
-
   uni.showLoading({ title: '创建充值订单...' })
 
   try {
     // 创建钱包充值订单
-    const orderRes = await createWalletRecharge({
-      amount: amount,
-      channelCode: selectedPay.value === 'wechat' ? 'wx_app' : 'alipay_app'
-    })
+    const params = {}
+    if (selectedPackage.value) {
+      params.packageId = selectedPackage.value.id
+    } else if (isCustomAmount.value && customAmount.value) {
+      params.payPrice = parseFloat(customAmount.value) * 100
+    }
+
+    const orderRes = await createWalletRecharge(params)
 
     const payOrderId = orderRes.data?.payOrderId
 
@@ -159,7 +186,7 @@ const handleRecharge = async () => {
     await executePayment({
       payOrderId: payOrderId,
       payValue: selectedPay.value,
-      orderId: orderRes.data?.payOrderId,
+      orderId: orderRes.data?.id,
       onSuccess: () => {
         uni.showToast({ title: '充值成功', icon: 'success' })
         setTimeout(() => {
@@ -181,6 +208,10 @@ const handleRecharge = async () => {
     uni.showToast({ title: error.message || '充值失败', icon: 'none' })
   }
 }
+
+onMounted(() => {
+  loadPackages()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -204,20 +235,22 @@ const handleRecharge = async () => {
   margin-bottom: 30rpx;
 }
 
-/* 金额选择 */
-.amount-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+/* 套餐列表 */
+.package-list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 20rpx;
 }
 
-.amount-item {
-  height: 120rpx;
+.package-item {
+  width: calc((100% - 40rpx) / 3);
   background: #2a3338;
   border-radius: 16rpx;
+  padding: 24rpx 12rpx;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   border: 2rpx solid transparent;
   transition: all 0.2s;
 
@@ -226,17 +259,35 @@ const handleRecharge = async () => {
     border-color: #00BB88;
   }
 
-  .amount-value {
+  .package-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4rpx;
+  }
+
+  .package-pay {
     color: #fff;
-    font-size: 36rpx;
+    font-size: 32rpx;
     font-weight: 600;
   }
 
+  .package-bonus {
+    color: #00BB88;
+    font-size: 22rpx;
+  }
+
+  .package-name {
+    color: #9CA3AF;
+    font-size: 22rpx;
+    margin-top: 8rpx;
+  }
+
   &.input-item {
-    .amount-value {
+    .package-pay {
       color: #9CA3AF;
     }
-    &.active .amount-value {
+    &.active .package-pay {
       color: #00BB88;
     }
   }
