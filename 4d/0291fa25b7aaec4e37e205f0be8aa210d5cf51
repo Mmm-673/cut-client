@@ -1,0 +1,171 @@
+docs/superpowers/specs/2026-05-15-api-interfaces-integration-design.md
+  66e04ccaee8aef35 1-383
+docs/superpowers/plans/2026-05-15-test-bug-fix-plan.md
+  b40d09ad32d814cf 1-528
+api/billiard/wallet.js
+  74fdd715c75019bf 51-58,60,62-63,68,70-82,84,86,90-120,124-126
+  975475b0521f9105 121-123
+pages/mine/index.vue
+  f0394882eb73fc17 604,607,633-636
+  cad163477404b97a 73,75-101,103-113,503-510,608-616,746,748-810,812,814,816-817,819-833,835-842,844,847-870,872-876,879-884,886-890,892-929,931-941
+pages/home/index.vue
+  cad163477404b97a 3,8,15-19,25-30,33-52,55-82,84-86,91,93-107,109-138,140-147,149-154,157-183,201-220,236,282-285,309,313-317,329-332,338-341,346-358,361-364,372-373,375,378-381,389-390,394-420,425-456,459,461-462,464-465,467,474,479-515,518-539,544-545,547,549,551-581,583-585,590-592,594,597-607,609-624,627-642,646,648-649,654-655,659-688,690,693-711,714,718-727,730-731,737-741,754,759-762,765-767,770-771,775,781-782,788-792,799-801,805-806,808-830,836-856,862,868,871,882-892,899-918,924,928-932,936-937,939,941-954,962-963,968,972-974,978-995,1001-1003,1010-1012,1016-1029,1032-1035
+api/billiard/timer.js
+  74fdd715c75019bf 1-42
+subpkg/mine/setting.vue
+  b40d09ad32d814cf 66,69-70,73-74,185,187
+  f0394882eb73fc17 75
+subpkg/coach/detail.vue
+  f3b1443aa314a666 638-639
+  b40d09ad32d814cf 473
+  f0394882eb73fc17 635-637,640-642,646
+  975475b0521f9105 125-128,145-172,237-238,866-867,871,873-875,877-881,883-886,888-893,895-896,898-903,906-908,912-914,916,918-923,925-935
+subpkg/mine/help.vue
+  b40d09ad32d814cf 24,26-32,50,62,87-116,119-123,239-243,249-259,345
+subpkg/booking/confirm.vue
+  f0394882eb73fc17 245,470-490,626-629,668-671
+pages/order/list.vue
+  66e04ccaee8aef35 79,83-160,164-165,167-170,192,211-217,290-306,308-313,315-323,325-369,379,444,572-576,578-581,583,587-603,605-613,790
+  975475b0521f9105 577,582,584,604
+  f0394882eb73fc17 166,307,314,324
+docs/superpowers/specs/2026-05-15-api-interfaces-supplement-design.md
+  74fdd715c75019bf 1-398
+subpkg/mine/recharge.vue
+  66e04ccaee8aef35 3,5-6,8-12,14-18,21,25-37,79,81,83-84,86-87,100-103,111-124,126-128,136,142,148,168-175,189,211-214,238-242,246-247,250,252,262-269,271,275-283,287,290
+  f0394882eb73fc17 93
+  f3b1443aa314a666 125,284-285
+pages.json
+  f0394882eb73fc17 198-213
+subpkg/mine/info.vue
+  b40d09ad32d814cf 129-133
+subpkg/mine/withdraw.vue
+  66e04ccaee8aef35 3-9,25,36-37,44,49-50,57,64,67,70-71,90,107,109-112,117-118,121,124-125,127,134,155,159-161,168,170-171,205,207-208,225,236-256,464
+  b40d09ad32d814cf 178-197
+  f3b1443aa314a666 257-258
+CLAUDE.md
+  74fdd715c75019bf 7-12,16,20,24-75,77,91-92,94,96,98-102,104-129,131-175,179-203,205,207,209-263,267-269,271,273-277
+docs/superpowers/specs/2026-05-15-test-bug-fix-design.md
+  b40d09ad32d814cf 1-238
+.claude/settings.local.json
+  cad163477404b97a 5-6
+api/billiard/order.js
+  74fdd715c75019bf 149-176
+subpkg/order/detail.vue
+  f3b1443aa314a666 1782
+  975475b0521f9105 390-394,420-423,856-858,865-884,1727-1729,1733,1739,1743,1761-1781
+  b40d09ad32d814cf 3-10,375-376,667-675,735-743,757-761,1153-1182
+  66e04ccaee8aef35 21-26,45-59,213,286-359,366-368,400-417,712-716,719,945-970,983-1067,1100,1783-2019
+  f0394882eb73fc17 687,971-982
+api/billiard/exception.js
+  74fdd715c75019bf 1-34
+subpkg/mine/wallet.vue
+  66e04ccaee8aef35 25-36,252-259,349-376
+docs/superpowers/plans/2026-05-15-api-interfaces-integration-plan.md
+  66e04ccaee8aef35 1-1779
+api/billiard/pay.js
+  74fdd715c75019bf 53-126
+subpkg/mine/recharge-record.vue
+  f0394882eb73fc17 3-9
+  66e04ccaee8aef35 1-2,10-317
+subpkg/mine/withdraw-record.vue
+  66e04ccaee8aef35 1-2,10-323
+  f0394882eb73fc17 3-9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "4d0291fa25b7aaec4e37e205f0be8aa210d5cf51",
+  "prompts": {
+    "66e04ccaee8aef35": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8c8c7e66-ed6e-427e-acd5-f0844477a201",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 4267,
+      "total_deletions": 733,
+      "accepted_lines": 4241,
+      "overriden_lines": 4
+    },
+    "74fdd715c75019bf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bf162462-5b57-4b09-b4ee-fe14cac32d24",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 862,
+      "total_deletions": 124,
+      "accepted_lines": 1010,
+      "overriden_lines": 0
+    },
+    "975475b0521f9105": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "05c63f15-3437-4ee0-8be1-50e4d9a3500a",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 209,
+      "total_deletions": 72,
+      "accepted_lines": 209,
+      "overriden_lines": 0
+    },
+    "b40d09ad32d814cf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "75643cd4-5e5a-49d6-932a-d3d661a14a66",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 951,
+      "total_deletions": 56,
+      "accepted_lines": 1207,
+      "overriden_lines": 0
+    },
+    "cad163477404b97a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "332b410c-db04-4e42-b1f8-69346ea0c61e",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 916,
+      "total_deletions": 283,
+      "accepted_lines": 1282,
+      "overriden_lines": 0
+    },
+    "f0394882eb73fc17": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ad9fe684-826d-4fa5-ae8a-e9f0557cd5a8",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 103,
+      "total_deletions": 61,
+      "accepted_lines": 380,
+      "overriden_lines": 1
+    },
+    "f3b1443aa314a666": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b31e2a77-9abb-4a1d-825d-393c963e9cd7",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 10049,
+      "overriden_lines": 3
+    }
+  }
+}
