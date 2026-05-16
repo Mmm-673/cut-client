@@ -75,7 +75,7 @@
             @click="goToDetail(coach.id)"
         >
           <view class="coach-avatar">
-            <image :src="coach.mainPhotoUrl || coach.avatar || '/static/default-avatar.png'" mode="aspectFill"
+            <image :src="coach.avatar || coach.mainPhotoUrl || '/static/default-avatar.png'" mode="aspectFill"
                    class="avatar-img"></image>
           </view>
 

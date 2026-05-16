@@ -103,7 +103,7 @@
 
               <!-- 助教信息 -->
               <view class="coach-section">
-                <image class="coach-avatar" :src="order.coachMainPhoto || '/static/default-avatar.png'" mode="aspectFill"></image>
+                <image class="coach-avatar" :src="order.coachAvatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
                 <view class="coach-info">
                   <text class="coach-name">{{ order.coachStageName }}</text>
                   <text class="order-time">{{ formatBookingTime(order.bookingTime) }}</text>

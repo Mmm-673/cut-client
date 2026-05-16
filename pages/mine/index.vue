@@ -104,11 +104,11 @@
           <!-- 右侧：快捷操作 -->
           <view class="wallet-right">
             <view class="quick-btn recharge-btn" @click.stop="toRecharge">
-              <uni-icons type="plus-filled" size="18" color="#fff" />
+              <uni-icons type="plus" size="20" color="#059669" />
               <text>充值</text>
             </view>
             <view class="quick-btn withdraw-btn" @click.stop="toWithdraw">
-              <uni-icons type="minus-filled" size="18" color="#fff" />
+              <uni-icons type="minus" size="20" color="#fff" />
               <text>提现</text>
             </view>
           </view>
@@ -930,15 +930,19 @@ onShow(() => {
 }
 
 .recharge-btn {
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(10rpx);
-  border: 1rpx solid rgba(255, 255, 255, 0.3);
+  background: #fff;
+  color: #059669;
+  font-weight: 700;
+
+  text {
+    color: #059669;
+  }
 }
 
 .withdraw-btn {
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10rpx);
-  border: 1rpx solid rgba(255, 255, 255, 0.15);
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
 }
 
 /* ==========================================

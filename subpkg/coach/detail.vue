@@ -294,7 +294,7 @@ const loadCoachData = async () => {
       name: data.name || data.stageName,
       stageName: data.stageName || data.name,
       // 主图用 photos 中的 isMain=true 的图，或者用 avatar/cover 兜底
-      avatar: getMainPhoto(data.photos) || data.avatar || '/static/default-avatar.png',
+      avatar: data.avatar || getMainPhoto(data.photos) ||  '/static/default-avatar.png',
       cover: data.cover || getMainPhoto(data.photos) || '/static/images/profile.jpg',
       level: data.level ?? 0,
       levelText: getLevelText(data.level),

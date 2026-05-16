@@ -230,7 +230,7 @@ const loadHotCoaches = async () => {
     hotCoachList.value = Array.isArray(list) ? list.map(item => ({
       id: item.id,
       name: item.stageName,
-      avatar: item.mainPhotoUrl || 'https://picsum.photos/300/300',
+      avatar: item.avatar || item.mainPhotoUrl || 'https://picsum.photos/300/300',
       score: item.overallScore || 5.0,
       orderCount: item.serviceCount || 0,
       online: Math.random() > 0.3
@@ -247,7 +247,7 @@ const loadNewCoaches = async () => {
     newCoachList.value = Array.isArray(list) ? list.map(item => ({
       id: item.id,
       name: item.stageName,
-      avatar: item.mainPhotoUrl || 'https://picsum.photos/200/200'
+      avatar: item.avatar || item.mainPhotoUrl || 'https://picsum.photos/300/300',
     })) : []
   } catch (error) {
     console.error('加载新人助教失败:', error)

@@ -109,35 +109,32 @@
 
       <!-- 陪练教练卡片 -->
       <view class="info-card coach-card">
-        <view class="card-title-row">
-          <view class="card-title">
-            <text class="title-icon">👤</text>
-            陪练教练
-          </view>
-          <text class="view-more" @click="goToCoachDetail">查看主页 <uni-icons type="right" size="16" color="#00BB88" /></text>
+        <view class="card-title">
+          <text class="title-icon">👤</text>
+          陪练教练
         </view>
 
         <view class="coach-info">
-          <image class="coach-avatar" :src="orderInfo.coachMainPhoto || '/static/default-avatar.png'" mode="aspectFill"></image>
+          <image class="coach-avatar" :src="orderInfo.coachAvatar || orderInfo.coachMainPhoto || '/static/images/profile.jpg'" mode="aspectFill"></image>
           <view class="coach-info-right">
             <view class="coach-name-row">
               <text class="coach-name">{{ orderInfo.coachStageName }}</text>
-              <view class="coach-tag">金牌教练</view>
+              <view class="coach-tag" :style="{ backgroundColor: levelMap[coachInfo.level] ? levelMap[coachInfo.level].color + '20' : 'rgba(0, 187, 136, 0.2)', color: levelMap[coachInfo.level]?.color || '#00BB88' }">
+                {{ levelMap[coachInfo.level]?.text || '初级教练' }}
+              </view>
             </view>
             <view class="coach-stats">
               <view class="stat-item">
                 <uni-icons type="star-filled" size="14" color="#FFC107" />
-                <text>4.9</text>
+                <text>{{ coachInfo.overallScore ? coachInfo.overallScore.toFixed(1) : '暂无' }}</text>
               </view>
               <view class="stat-item">
                 <uni-icons type="checkbox" size="14" color="#9CA3AF" />
-                <text>已完成328单</text>
+                <text>{{ coachInfo.serviceCount ? `已完成${coachInfo.serviceCount}单` : '暂无数据' }}</text>
               </view>
             </view>
-            <view class="coach-tags">
-              <text class="tag">斯诺克</text>
-              <text class="tag">中式八球</text>
-              <text class="tag">花式九球</text>
+            <view class="coach-tags" v-if="coachInfo.tags && coachInfo.tags.length > 0">
+              <text class="tag" v-for="(tag, index) in coachInfo.tags" :key="index">{{ tag }}</text>
             </view>
           </view>
         </view>
@@ -364,6 +361,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { onLoad, onShow } from  "@dcloudio/uni-app"
 import { getOrderDetail, cancelOrder, addTimeOrder, deleteOrder } from '@/api/billiard/order'
+import { getCoachDetail } from '@/api/billiard/coach'
 import { getTimerStatus } from '@/api/billiard/timer'
 import { reportException } from '@/api/billiard/exception'
 import { executePayment, fetchEnabledChannels } from '@/utils/payment'
@@ -444,6 +442,7 @@ const orderInfo = ref({
   orderNo: '',
   coachId: null,
   coachStageName: '',
+  coachAvatar: '',
   coachMainPhoto: '',
   venueName: '',
   venueAddress: '',
@@ -462,6 +461,23 @@ const orderInfo = ref({
   statusText: '',
   serviceTime: ''
 })
+
+// 助教详情信息
+const coachInfo = ref({
+  id: null,
+  stageName: '',
+  level: 0,
+  serviceCount: 0,
+  overallScore: 0,
+  tags: []
+})
+
+// 助教等级映射
+const levelMap = {
+  0: { text: '初级教练', color: '#9CA3AF' },
+  1: { text: '中级教练', color: '#F59E0B' },
+  2: { text: '高级教练', color: '#00BB88' }
+}
 
 /**
  * 状态映射 - 根据API文档
@@ -653,6 +669,25 @@ const contactCoach = () => {
   })
 }
 
+// 加载助教详情
+const loadCoachDetail = async (coachId) => {
+  if (!coachId) return
+  try {
+    const res = await getCoachDetail({ id: coachId })
+    const data = res.data || {}
+    Object.assign(coachInfo.value, {
+      id: data.id,
+      stageName: data.stageName,
+      level: data.level,
+      serviceCount: data.serviceCount,
+      overallScore: data.overallScore,
+      tags: data.tags ? data.tags.split(',').filter(tag => tag.trim()) : []
+    })
+  } catch (error) {
+    console.error('加载助教详情失败:', error)
+  }
+}
+
 // 加载订单详情
 const loadOrderDetail = async (silent = false) => {
   if (!orderId.value) return
@@ -678,6 +713,7 @@ const loadOrderDetail = async (silent = false) => {
       id: data.id,
       orderNo: data.orderNo,
       coachId: data.coachId,
+      coachAvatar: data.coachAvatar,
       coachStageName: data.coachStageName,
       coachMainPhoto: data.coachMainPhoto,
       venueName: data.venueName,
@@ -697,6 +733,11 @@ const loadOrderDetail = async (silent = false) => {
       serviceTime: formatBookingTime(data.bookingTime),
       createTime: formatCreateTime(data.createTime)
     })
+
+    // 加载助教详情
+    if (data.coachId) {
+      loadCoachDetail(data.coachId)
+    }
 
     // 保存支付订单ID和订单ID
     if (data.payOrderId) {
@@ -759,14 +800,6 @@ const goBack = () => {
   uni.navigateBack()
 }
 
-// 跳转教练详情
-const goToCoachDetail = () => {
-  if (orderInfo.value.coachId) {
-    uni.navigateTo({
-      url: `/subpkg/coach/detail?id=${orderInfo.value.coachId}`
-    })
-  }
-}
 
 // 取消订单
 const cancelOrderFunc = async () => {

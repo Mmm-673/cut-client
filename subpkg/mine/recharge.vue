@@ -1,21 +1,19 @@
 <template>
   <view class="recharge-wrapper">
-    <!-- 充值套餐 -->
+    <!-- 充值金额 -->
     <view class="section-card">
-      <view class="section-title">选择充值套餐</view>
+      <view class="section-title">选择充值金额</view>
       <view class="package-list">
         <view
             class="package-item"
-            :class="{active: selectedPackage?.id === item.id}"
-            v-for="item in packageList"
-            :key="item.id"
-            @click="selectPackage(item)"
+            :class="{active: selectedAmount === item}"
+            v-for="item in amountOptions"
+            :key="item"
+            @click="selectAmount(item)"
         >
           <view class="package-main">
-            <text class="package-pay">¥{{ (item.payPrice / 100).toFixed(2) }}</text>
-            <text class="package-bonus" v-if="item.bonusPrice > 0">+送¥{{ (item.bonusPrice / 100).toFixed(2) }}</text>
+            <text class="package-pay">¥{{ item.toFixed(2) }}</text>
           </view>
-          <view class="package-name" v-if="item.name">{{ item.name }}</view>
         </view>
         <view
             class="package-item input-item"
@@ -76,15 +74,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { getAvailablePayChannels, executePayment } from '@/utils/payment'
-import { getWalletRechargePackages, createWalletRecharge } from '@/api/billiard/pay'
+import { createWalletRecharge } from '@/api/billiard/pay'
 
-// 充值套餐列表
-const packageList = ref([])
+// 固定金额选项
+const amountOptions = [300, 500, 1000, 2000]
 
-// 选中的套餐
-const selectedPackage = ref(null)
+// 选中的金额
+const selectedAmount = ref(300)
 const customAmount = ref('')
 const isCustomAmount = ref(false)
 
@@ -97,8 +95,8 @@ const finalAmount = computed(() => {
   if (isCustomAmount.value && customAmount.value) {
     return parseFloat(customAmount.value).toFixed(2)
   }
-  if (selectedPackage.value) {
-    return (selectedPackage.value.payPrice / 100).toFixed(2)
+  if (selectedAmount.value) {
+    return selectedAmount.value.toFixed(2)
   }
   return '0.00'
 })
@@ -108,24 +106,9 @@ const canPay = computed(() => {
   return parseFloat(finalAmount.value) > 0
 })
 
-// 加载套餐列表
-const loadPackages = async () => {
-  try {
-    const res = await getWalletRechargePackages()
-    if (res.data && Array.isArray(res.data)) {
-      packageList.value = res.data
-      if (res.data.length > 0) {
-        selectedPackage.value = res.data[0]
-      }
-    }
-  } catch (error) {
-    console.error('加载套餐失败:', error)
-  }
-}
-
-// 选择套餐
-const selectPackage = (pkg) => {
-  selectedPackage.value = pkg
+// 选择金额
+const selectAmount = (amount) => {
+  selectedAmount.value = amount
   isCustomAmount.value = false
   customAmount.value = ''
 }
@@ -133,19 +116,19 @@ const selectPackage = (pkg) => {
 // 显示自定义输入
 const showCustomInput = () => {
   isCustomAmount.value = true
-  selectedPackage.value = null
+  selectedAmount.value = null
 }
 
 // 自定义金额获得焦点
 const onCustomFocus = () => {
   isCustomAmount.value = true
-  selectedPackage.value = null
+  selectedAmount.value = null
 }
 
 // 自定义金额失去焦点
 const onCustomBlur = () => {
   if (customAmount.value) {
-    selectedPackage.value = null
+    selectedAmount.value = null
   }
 }
 
@@ -164,12 +147,9 @@ const handleRecharge = async () => {
   uni.showLoading({ title: '创建充值订单...' })
 
   try {
-    // 创建钱包充值订单
-    const params = {}
-    if (selectedPackage.value) {
-      params.packageId = selectedPackage.value.id
-    } else if (isCustomAmount.value && customAmount.value) {
-      params.payPrice = parseFloat(customAmount.value) * 100
+    // 创建钱包充值订单 - 直接传递 payPrice (单位分)
+    const params = {
+      payPrice: parseFloat(finalAmount.value) * 100
     }
 
     const orderRes = await createWalletRecharge(params)
@@ -208,10 +188,6 @@ const handleRecharge = async () => {
     uni.showToast({ title: error.message || '充值失败', icon: 'none' })
   }
 }
-
-onMounted(() => {
-  loadPackages()
-})
 </script>
 
 <style lang="scss" scoped>
