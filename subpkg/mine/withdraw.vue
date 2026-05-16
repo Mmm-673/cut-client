@@ -95,8 +95,8 @@
 
     <!-- 底部按钮 -->
     <view class="bottom-bar">
-      <button class="submit-btn" :disabled="!canWithdraw" @click="handleWithdraw">
-        确认提现
+      <button class="submit-btn" :disabled="!canWithdraw || isSubmitting" @click="handleWithdraw">
+        {{ isSubmitting ? '处理中...' : '确认提现' }}
       </button>
     </view>
   </view>
@@ -120,6 +120,9 @@ const accountType = ref(1)
 // 账户信息
 const accountNo = ref('')
 const realName = ref('')
+
+// 防重复提交
+const isSubmitting = ref(false)
 
 // 加载可提现余额
 const loadWithdrawableBalance = async () => {
@@ -175,6 +178,8 @@ const canWithdraw = computed(() => {
 
 // 处理提现
 const handleWithdraw = async () => {
+  if (isSubmitting.value) return
+
   const amount = parseFloat(withdrawAmount.value)
   const available = parseFloat(availableWithdrawBalance.value)
 
@@ -198,12 +203,13 @@ const handleWithdraw = async () => {
     return
   }
 
+  isSubmitting.value = true
   uni.showLoading({ title: '提交中...' })
 
   try {
     // 调用提现接口
     await createWithdrawal({
-      amount: parseFloat(withdrawAmount.value) * 100,
+      amount: Math.round(parseFloat(withdrawAmount.value) * 100),
       accountType: accountType.value,
       accountNo: accountNo.value,
       realName: realName.value
@@ -218,6 +224,8 @@ const handleWithdraw = async () => {
     uni.hideLoading()
     console.error('提现失败:', error)
     uni.showToast({ title: error.message || '提现失败', icon: 'none' })
+  } finally {
+    isSubmitting.value = false
   }
 }
 

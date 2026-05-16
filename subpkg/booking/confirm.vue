@@ -420,12 +420,16 @@ const formatTime = (timestamp) => {
 }
 
 // 下拉刷新
-const onRefresh = () => {
+const onRefresh = async () => {
   refreshing.value = true
-  setTimeout(() => {
+  try {
+    if (orderData.value.coachInfo?.id) {
+      await loadCoachDetail(orderData.value.coachInfo.id)
+    }
+    await loadWalletBalance()
+  } finally {
     refreshing.value = false
-    uni.showToast({ title: '刷新成功', icon: 'success' })
-  }, 1000)
+  }
 }
 
 // 重新选择球厅
@@ -648,8 +652,8 @@ onMounted(() => {
         serviceType: serviceType.value,
         serviceDuration: duration,
         quantity: quantity,
-        serviceAmount: price * quantity * 100, // 分
-        payAmount: price * quantity * 100,
+        serviceAmount: Math.round(price * quantity * 100), // 分
+        payAmount: Math.round(price * quantity * 100),
         travelAmount: 0,
         travelDiscountAmount: 0
       }

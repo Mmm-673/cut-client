@@ -175,7 +175,10 @@ const request = async config => {
       }
 
       if (code !== 0) {
-        toast(msg);
+        // silent 模式跳过全局提示（适用于静默刷新等场景）
+        if (!config.silent) {
+          toast(msg);
+        }
         return reject(msg || '请求失败');
       }
 
@@ -192,7 +195,9 @@ const request = async config => {
       } else if (message.includes('Request failed with status code')) {
         message = '系统接口' + message.slice(-3) + '异常'
       }
-      toast(message)
+      if (!config.silent) {
+        toast(message)
+      }
       reject(error)
     })
   })

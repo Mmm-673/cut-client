@@ -233,6 +233,19 @@ const uploadAvatarAction = async () => {
     sizeType: ['compressed'],
     success: async (res) => {
       const tempFilePath = res.tempFilePaths[0]
+
+      // 校验文件大小
+      try {
+        const fileInfo = await uni.getFileInfo({ filePath: tempFilePath })
+        const size = fileInfo?.size || fileInfo?.[1]?.size || 0
+        if (size > 5 * 1024 * 1024) {
+          uni.showToast({ title: '图片不能超过5MB', icon: 'none' })
+          return
+        }
+      } catch (e) {
+        // getFileInfo 不可用时跳过大小校验
+      }
+
       uni.showLoading({ title: '上传中...' })
       try {
         const uploadRes = await uploadFile(tempFilePath, 'avatar')
@@ -254,9 +267,14 @@ const editNickname = () => {
     title: '修改昵称',
     editable: true,
     content: userInfo.value.nickname,
+    placeholderText: '请输入昵称（最多30字）',
     success: async (res) => {
       if (res.confirm && res.content.trim()) {
         const nickname = res.content.trim()
+        if (nickname.length > 30) {
+          uni.showToast({ title: '昵称不能超过30个字符', icon: 'none' })
+          return
+        }
         if (await saveUserInfo({ nickname })) {
           userInfo.value.nickname = nickname
         }
@@ -289,9 +307,14 @@ const editIntro = () => {
     title: '修改个人简介',
     editable: true,
     content: userInfo.value.introduction,
+    placeholderText: '请输入简介（最多500字）',
     success: async (res) => {
       if (res.confirm) {
         const introduction = res.content.trim()
+        if (introduction.length > 500) {
+          uni.showToast({ title: '简介不能超过500个字符', icon: 'none' })
+          return
+        }
         if (await saveUserInfo({ introduction })) {
           userInfo.value.introduction = introduction
         }

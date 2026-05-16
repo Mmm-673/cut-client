@@ -31,6 +31,7 @@
                 placeholder-class="input-placeholder"
                 @focus="onCustomFocus"
                 @blur="onCustomBlur"
+                @input="onAmountInput"
             />
           </view>
         </view>
@@ -68,7 +69,7 @@
         <text class="total-label">支付金额：</text>
         <text class="total-price">¥{{ finalAmount }}</text>
       </view>
-      <button class="pay-btn" :disabled="!canPay" @click="handleRecharge">立即充值</button>
+      <button class="pay-btn" :disabled="!canPay || isSubmitting" @click="handleRecharge">{{ isSubmitting ? '处理中...' : '立即充值' }}</button>
     </view>
   </view>
 </template>
@@ -85,6 +86,9 @@ const amountOptions = [300, 500, 1000, 2000]
 const selectedAmount = ref(300)
 const customAmount = ref('')
 const isCustomAmount = ref(false)
+
+// 防重复提交
+const isSubmitting = ref(false)
 
 // 支付方式
 const selectedPay = ref('wechat')
@@ -103,7 +107,8 @@ const finalAmount = computed(() => {
 
 // 是否可以支付
 const canPay = computed(() => {
-  return parseFloat(finalAmount.value) > 0
+  const amount = parseFloat(finalAmount.value)
+  return amount > 0 && amount <= 50000
 })
 
 // 选择金额
@@ -132,6 +137,19 @@ const onCustomBlur = () => {
   }
 }
 
+// 金额输入格式化：只允许数字和一个小数点，小数最多2位
+const onAmountInput = () => {
+  let value = customAmount.value.replace(/[^\d.]/g, '')
+  const parts = value.split('.')
+  if (parts.length > 2) {
+    value = parts[0] + '.' + parts.slice(1).join('')
+  }
+  if (parts[1] && parts[1].length > 2) {
+    value = parts[0] + '.' + parts[1].slice(0, 2)
+  }
+  customAmount.value = value
+}
+
 // 选择支付方式
 const selectPay = (value) => {
   selectedPay.value = value
@@ -139,17 +157,19 @@ const selectPay = (value) => {
 
 // 处理充值
 const handleRecharge = async () => {
+  if (isSubmitting.value) return
   if (!canPay.value) {
     uni.showToast({ title: '请输入充值金额', icon: 'none' })
     return
   }
 
+  isSubmitting.value = true
   uni.showLoading({ title: '创建充值订单...' })
 
   try {
     // 创建钱包充值订单 - 直接传递 payPrice (单位分)
     const params = {
-      payPrice: parseFloat(finalAmount.value) * 100
+      payPrice: Math.round(parseFloat(finalAmount.value) * 100)
     }
 
     const orderRes = await createWalletRecharge(params)
@@ -186,6 +206,8 @@ const handleRecharge = async () => {
     uni.hideLoading()
     console.error('充值失败:', error)
     uni.showToast({ title: error.message || '充值失败', icon: 'none' })
+  } finally {
+    isSubmitting.value = false
   }
 }
 </script>

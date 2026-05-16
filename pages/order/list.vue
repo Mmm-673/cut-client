@@ -381,24 +381,38 @@ const loadData = async (isRefresh = false) => {
     loadMoreStatus.value = 'loading'
   }
 
+  // 快照当前参数，防止异步请求期间参数被修改
+  const currentPage = pageNo.value
+  const currentTab = activeTab.value
+
   try {
     const params = {
-      pageNo: pageNo.value,
+      pageNo: currentPage,
       pageSize: pageSize.value
     }
 
-    if (activeTab.value !== null) {
-      params.status = activeTab.value
+    if (currentTab !== null) {
+      params.status = currentTab
     }
 
     const res = await getOrderList(params)
     const data = res.data || {}
     const list = data.list || data.records || []
 
+    // 请求回来后验证 Tab 是否已切换，若已切换则丢弃数据
+    if (activeTab.value !== currentTab) {
+      loading.value = false
+      refreshing.value = false
+      return
+    }
+
     if (isRefresh) {
       orderList.value = list
     } else {
-      orderList.value = [...orderList.value, ...list]
+      // 用 orderId 去重后追加
+      const existingIds = new Set(orderList.value.map(o => o.orderId))
+      const newItems = list.filter(o => !existingIds.has(o.orderId))
+      orderList.value = [...orderList.value, ...newItems]
     }
 
     // 判断是否还有更多数据
@@ -459,11 +473,14 @@ const cancelOrder = async (order) => {
     content: '确定要取消这个订单吗？',
     success: async (res) => {
       if (res.confirm) {
+        uni.showLoading({ title: '取消中...' })
         try {
           await cancelOrderApi({ orderId: order.orderId })
+          uni.hideLoading()
           uni.showToast({ title: '订单已取消', icon: 'success' })
           loadData(true)
         } catch (error) {
+          uni.hideLoading()
           uni.showToast({
             title: error.message || '取消失败，请重试', icon: 'none' })
         }

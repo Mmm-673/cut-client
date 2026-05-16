@@ -256,6 +256,7 @@ import { onShow } from  "@dcloudio/uni-app"
 import { getVenueList } from '@/api/billiard/venue'
 import { regeocode } from '@/api/billiard/amap'
 import { createOrder } from '@/api/billiard/order'
+import { debounce } from '@/utils/common'
 
 // ---------------------- 状态定义 ----------------------
 // 刷新/加载状态
@@ -707,10 +708,10 @@ const closeCityPicker = () => {
 }
 
 // ---------------------- 搜索相关方法 ----------------------
-const handleSearch = () => {
+const handleSearch = debounce(() => {
   hasMore.value = true
   loadHallList()
-}
+}, 300)
 
 const clearSearch = () => {
   searchKeyword.value = ''

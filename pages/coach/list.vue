@@ -148,6 +148,7 @@ import {ref, onMounted} from 'vue'
 import {onShow} from  "@dcloudio/uni-app"
 import {getCoachList} from '@/api/billiard/coach'
 import {regeocode} from '@/api/billiard/amap'
+import {debounce} from '@/utils/common'
 
 const statusBarHeight = ref(0)
 const scrollHeight = ref(0)
@@ -459,9 +460,9 @@ const switchSort = async (index) => {
 }
 
 // 搜索
-const handleSearch = () => {
+const handleSearch = debounce(() => {
   loadData(true)
-}
+}, 300)
 
 // 清除搜索
 const clearSearch = () => {

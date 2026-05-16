@@ -93,11 +93,11 @@ export function getPayChannelsByEnabled(enabledCodes) {
 
   // 渠道编码映射
   const codeToChannel = {
-    'wx_pub': { value: 'wechat', label: '微信支付', icon: 'chatbubble-filled', bgColor: '#07C160', channelCode: PAY_CHANNEL.WX_MINIPROGRAM },
-    'wx_lite': { value: 'wechat', label: '微信支付', icon: 'chatbubble-filled', bgColor: '#07C160', channelCode: PAY_CHANNEL.WX_MINIPROGRAM },
-    'wx_app': { value: 'wechat', label: '微信支付', icon: 'chatbubble-filled', bgColor: '#07C160', channelCode: PAY_CHANNEL.WX_APP },
-    'alipay_app': { value: 'alipay', label: '支付宝', icon: 'chatbubble', bgColor: '#1677FF', channelCode: PAY_CHANNEL.ALIPAY_APP },
-    'wallet': { value: 'wallet', label: '钱包余额', icon: 'wallet', bgColor: '#00BB88', channelCode: PAY_CHANNEL.WALLET }
+    'wx_pub': { value: 'wechat', label: '微信支付', icon: 'chatbubble-filled', bgColor: '#07C160', channelCode: PAY_CHANNEL.WX_MINIPROGRAM, platforms: ['mp-weixin'] },
+    'wx_lite': { value: 'wechat', label: '微信支付', icon: 'chatbubble-filled', bgColor: '#07C160', channelCode: PAY_CHANNEL.WX_MINIPROGRAM, platforms: ['mp-weixin'] },
+    'wx_app': { value: 'wechat', label: '微信支付', icon: 'chatbubble-filled', bgColor: '#07C160', channelCode: PAY_CHANNEL.WX_APP, platforms: ['app-plus'] },
+    'alipay_app': { value: 'alipay', label: '支付宝', icon: 'chatbubble', bgColor: '#1677FF', channelCode: PAY_CHANNEL.ALIPAY_APP, platforms: ['app-plus'] },
+    'wallet': { value: 'wallet', label: '钱包余额', icon: 'wallet', bgColor: '#00BB88', channelCode: PAY_CHANNEL.WALLET, platforms: ['mp-weixin', 'app-plus', 'h5'] }
   }
 
   const result = []
@@ -105,7 +105,7 @@ export function getPayChannelsByEnabled(enabledCodes) {
   // 遍历后端返回的渠道
   enabledCodes.forEach(code => {
     const channel = codeToChannel[code]
-    if (channel && channel.platForm === currentPlatform) {
+    if (channel && channel.platforms && channel.platforms.includes(currentPlatform)) {
       result.push(channel)
     }
   })
@@ -397,6 +397,11 @@ export function pollPayStatus(options) {
         }
 
         if (attempts >= maxAttempts) {
+          uni.showModal({
+            title: '支付结果确认中',
+            content: '暂未收到支付结果，请在「我的订单」中查看最新状态，如有疑问请联系客服',
+            showCancel: false
+          })
           resolve({ paid: false, timeout: true, ...result })
           return
         }

@@ -28,7 +28,8 @@
           </text>
         </view>
       </view>
-      <view class="score-desc">{{ scoreDesc[currentScore - 1] }}</view>
+      <view class="score-desc" v-if="currentScore > 0">{{ scoreDesc[currentScore - 1] }}</view>
+      <view class="score-desc" v-else>请点击星星评分</view>
     </view>
 
     <!-- 评价标签区 -->
@@ -97,8 +98,8 @@
 
     <!-- 底部操作栏 -->
     <view class="bottom-bar">
-      <view class="submit-btn" @click="handleSubmit">
-        提交评价
+      <view class="submit-btn" :class="{ 'submitting': isSubmitting }" @click="handleSubmit">
+        {{ isSubmitting ? '提交中...' : '提交评价' }}
       </view>
     </view>
   </view>
@@ -122,7 +123,7 @@ const orderId = ref(null);
 const coachId = ref(null);
 
 // 星级评分相关
-const currentScore = ref(5);
+const currentScore = ref(0);
 const scoreDesc = ['非常不满意', '不满意', '一般', '满意', '非常满意'];
 
 // 标签相关
@@ -133,6 +134,9 @@ const selectedTags = ref([]);
 const evaluateContent = ref('');
 const isAnonymous = ref(false);
 const uploadedImages = ref([]);
+
+// 防重复提交
+const isSubmitting = ref(false);
 
 // 获取主图URL
 const getMainPhoto = (photos) => {
@@ -217,6 +221,21 @@ const handleUploadImage = async () => {
     sourceType: ['album', 'camera'],
     success: async (res) => {
       const tempFilePaths = res.tempFilePaths;
+
+      // 校验文件大小
+      for (const filePath of tempFilePaths) {
+        try {
+          const fileInfo = await uni.getFileInfo({ filePath })
+          const size = fileInfo?.size || fileInfo?.[1]?.size || 0
+          if (size > 5 * 1024 * 1024) {
+            uni.showToast({ title: '图片不能超过5MB', icon: 'none' })
+            return
+          }
+        } catch (e) {
+          // getFileInfo 不可用时跳过大小校验
+        }
+      }
+
       uni.showLoading({ title: '上传中...' });
 
       try {
@@ -255,6 +274,8 @@ const goBack = () => {
 
 // 提交评价
 const handleSubmit = async () => {
+  if (isSubmitting.value) return
+
   // 校验
   if (currentScore.value === 0) {
     return uni.showToast({
@@ -270,6 +291,7 @@ const handleSubmit = async () => {
     });
   }
 
+  isSubmitting.value = true
   uni.showLoading({ title: '提交中...' });
 
   try {
@@ -300,6 +322,8 @@ const handleSubmit = async () => {
       title: error.message || '提交失败，请重试',
       icon: 'none'
     });
+  } finally {
+    isSubmitting.value = false
   }
 };
 </script>
