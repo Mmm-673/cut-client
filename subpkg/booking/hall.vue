@@ -254,9 +254,9 @@
 import { ref, onMounted, computed } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
 import { getVenueList } from '@/api/billiard/venue'
-import { regeocode } from '@/api/billiard/amap'
 import { createOrder } from '@/api/billiard/order'
 import { debounce } from '@/utils/common'
+import { getLocation, extractStreet, formatDistance, showPermissionModal, openAppSetting } from '@/utils/location'
 
 // ---------------------- 状态定义 ----------------------
 // 刷新/加载状态
@@ -453,15 +453,6 @@ const formatPrice = (price) => {
   return (price / 100).toFixed(2)
 }
 
-// 格式化距离
-const formatDistance = (distance) => {
-  if (distance === null || distance === undefined) return ''
-  if (distance < 1) {
-    return `${Math.round(distance * 1000)}m`
-  }
-  return `${distance.toFixed(1)}km`
-}
-
 // ---------------------- 时间选择器方法 ----------------------
 // picker-view 列变化时
 const onPickerChange = (e) => {
@@ -536,166 +527,31 @@ const confirmTime = () => {
 }
 
 // ---------------------- 位置相关方法 ----------------------
-// 打开应用设置页面（兼容 iOS、Android、鸿蒙）
-const openAppSetting = () => {
-  // #ifdef APP-PLUS
-  // 获取系统信息判断平台
-  const systemInfo = uni.getSystemInfoSync()
-  const platform = systemInfo.platform
-
-  if (platform === 'ios') {
-    // iOS 平台 - 跳转到应用设置
-    plus.runtime.openURL(plus.runtime.appid ? 'app-settings:' : 'prefs:root=LOCATION_SERVICES')
-  } else if (platform === 'android') {
-    // Android 平台 - 跳转应用详情页
-    const main = plus.android.runtimeMainActivity()
-    const Intent = plus.android.importClass('android.content.Intent')
-    const Settings = plus.android.importClass('android.provider.Settings')
-    const Uri = plus.android.importClass('android.net.Uri')
-    const packageName = main.getPackageName()
-
-    try {
-      // 先尝试直接打开应用详情页
-      const intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-      const uri = Uri.fromParts('package', packageName, null)
-      intent.setData(uri)
-      main.startActivity(intent)
-    } catch (e) {
-      // 失败则尝试打开设置主页
-      try {
-        const intent = new Intent(Settings.ACTION_SETTINGS)
-        main.startActivity(intent)
-      } catch (e2) {
-        uni.showToast({ title: '打开设置失败', icon: 'none' })
-      }
-    }
-  } else {
-    // 其他平台（鸿蒙）- 尝试通用方式
-    try {
-      const osName = systemInfo.osName || ''
-      if (osName.toLowerCase().includes('harmony') || systemInfo.systemName?.toLowerCase().includes('harmony')) {
-        // 鸿蒙系统处理
-        const main = plus.android.runtimeMainActivity()
-        const Intent = plus.android.importClass('android.content.Intent')
-        const Settings = plus.android.importClass('android.provider.Settings')
-        try {
-          const intent = new Intent(Settings.ACTION_APPLICATION_SETTINGS)
-          main.startActivity(intent)
-        } catch (he) {
-          const intent = new Intent(Settings.ACTION_SETTINGS)
-          main.startActivity(intent)
-        }
-      } else {
-        uni.openSetting({
-          fail: () => {
-            uni.showToast({ title: '打开设置失败', icon: 'none' })
-          }
-        })
-      }
-    } catch (e) {
-      uni.openSetting({
-        fail: () => {
-          uni.showToast({ title: '打开设置失败', icon: 'none' })
-        }
-      })
-    }
-  }
-  // #endif
-}
-
-// 获取当前位置
-const getCurrentLocation = () => {
+// 获取当前位置（使用统一封装）
+const getCurrentLocation = async () => {
+  if (locating.value) return
   locating.value = true
-  // uni.getLocation 本身就会自动申请权限
-  doGetLocation()
-}
 
-// 实际执行定位的函数
-const doGetLocation = () => {
-  uni.getLocation({
-    type: 'gcj02',
-    altitude: true,
-    success: async (res) => {
-      console.log('定位成功:', res)
-      currentLocation.value = {
-        longitude: res.longitude,
-        latitude: res.latitude
-      }
-
-      // 调用后端逆地址解析接口
-      try {
-        const geoRes = await regeocode({
-          longitude: res.longitude,
-          latitude: res.latitude
-        })
-        console.log('逆地址解析结果:', geoRes)
-        console.log('逆地址解析数据:', JSON.stringify(geoRes.data))
-        if (geoRes.data) {
-          // 优先取 street，其次 township，最后 formattedAddress
-          currentStreet.value = geoRes.data.street || geoRes.data.township || geoRes.data.district || ''
-          console.log('设置街道为:', currentStreet.value)
-        }
-      } catch (e) {
-        console.error('逆地址解析失败:', e)
-      }
-
-      locating.value = false
-      hasMore.value = true
-      hallList.value = []
-      loadHallList()
-    },
-    fail: (err) => {
-      console.error('定位失败:', err)
-      locating.value = false
-      showPermissionModal(err)
+  try {
+    const { longitude, latitude, regeocodeData } = await getLocation({ needRegeocode: true })
+    currentLocation.value = { longitude, latitude }
+    currentStreet.value = extractStreet(regeocodeData)
+    hasMore.value = true
+    hallList.value = []
+    loadHallList()
+  } catch (err) {
+    console.error('定位失败:', err)
+    if (err.message === 'permission_denied') {
+      showPermissionModal({
+        content: '您未开启定位权限，将无法获取附近球厅。是否前往开启？',
+        onSuccess: getCurrentLocation
+      })
+    } else {
+      uni.showToast({ title: '定位失败，请检查定位功能', icon: 'none' })
     }
-  })
-}
-
-// 显示权限引导弹窗
-const showPermissionModal = (err) => {
-  // #ifdef MP-WEIXIN
-  if (err && err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize'))) {
-    uni.showModal({
-      title: '定位权限未开启',
-      content: '您未开启定位权限，将无法获取附近球厅。是否前往开启？',
-      confirmText: '去开启',
-      success: (res) => {
-        if (res.confirm) {
-          uni.openSetting({
-            success: (settingRes) => {
-              if (settingRes.authSetting['scope.userLocation']) {
-                getCurrentLocation()
-              }
-            },
-            fail: () => {
-              uni.showToast({ title: '打开设置失败', icon: 'none' })
-            }
-          })
-        }
-      }
-    })
-  } else {
-    uni.showToast({ title: '定位失败，请检查定位功能', icon: 'none' })
+  } finally {
+    locating.value = false
   }
-  // #endif
-
-  // #ifdef APP-PLUS
-  uni.showModal({
-    title: '定位权限未开启',
-    content: '您未开启定位权限，将无法获取附近球厅。是否前往开启？',
-    confirmText: '去开启',
-    success: (res) => {
-      if (res.confirm) {
-        openAppSetting()
-      }
-    }
-  })
-  // #endif
-
-  // #ifdef H5
-  uni.showToast({ title: '定位失败，请检查浏览器定位权限', icon: 'none' })
-  // #endif
 }
 
 // 切换定位/城市

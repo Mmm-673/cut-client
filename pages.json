@@ -297,6 +297,7 @@
     }
   },
   "requiredPrivateInfos": [
-    "getLocation"
+    "getLocation",
+    "chooseLocation"
   ]
 }

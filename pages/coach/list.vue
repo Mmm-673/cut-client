@@ -147,8 +147,8 @@
 import {ref, onMounted} from 'vue'
 import {onShow} from  "@dcloudio/uni-app"
 import {getCoachList} from '@/api/billiard/coach'
-import {regeocode} from '@/api/billiard/amap'
 import {debounce} from '@/utils/common'
+import {getLocation, extractCity, formatDistance, showPermissionModal} from '@/utils/location'
 
 const statusBarHeight = ref(0)
 const scrollHeight = ref(0)
@@ -210,112 +210,30 @@ const getTagClass = (tag) => {
   return tagClassMap[tag] || 'tag-default'
 }
 
-// 格式化距离显示
-const formatDistance = (distance) => {
-  if (distance === null || distance === undefined || distance === '') {
-    return ''
-  }
-  if (typeof distance === 'number') {
-    return distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`
-  }
-  return distance
-}
-
-// 获取当前位置
-const getCurrentLocation = () => {
+// 获取当前位置（使用统一封装）
+const getCurrentLocation = async () => {
+  if (locating.value) return
   locating.value = true
-  // uni.getLocation 本身就会自动申请权限
-  doGetLocation()
-}
 
-// 实际执行定位的函数
-const doGetLocation = () => {
-  uni.getLocation({
-    type: 'gcj02',
-    altitude: true,
-    success: async (res) => {
-      console.log('定位成功:', res)
-      currentLocation.value = {
-        longitude: res.longitude,
-        latitude: res.latitude
-      }
-
-      // 调用后端逆地址解析接口获取城市
-      try {
-        const geoRes = await regeocode({
-          longitude: res.longitude,
-          latitude: res.latitude
-        })
-        console.log('逆地址解析结果:', geoRes)
-        if (geoRes.data) {
-          // 兼容直辖市：处理 city 为 "[]" 字符串或空数组的情况
-          let city = geoRes.data.city
-          // 如果是字符串格式的 "[]"，当作空处理
-          if (city === '[]') {
-            city = null
-          } else if (Array.isArray(city)) {
-            city = city.length > 0 ? city[0] : null
-          }
-          currentCity.value = city || geoRes.data.province || ''
-        }
-      } catch (e) {
-        console.error('逆地址解析失败:', e)
-      }
-
-      locating.value = false
+  try {
+    const { longitude, latitude, regeocodeData } = await getLocation({ needRegeocode: true })
+    currentLocation.value = { longitude, latitude }
+    currentCity.value = extractCity(regeocodeData)
+    loadData(true)
+  } catch (err) {
+    console.error('定位失败:', err)
+    if (err.message === 'permission_denied') {
+      showPermissionModal({
+        content: '您未开启定位权限，将无法按距离排序。是否前往开启？',
+        onSuccess: getCurrentLocation
+      })
+    } else {
+      uni.showToast({ title: '定位失败，将使用默认排序', icon: 'none' })
       loadData(true)
-    },
-    fail: (err) => {
-      console.error('定位失败:', err)
-      locating.value = false
-      showPermissionModal(err)
     }
-  })
-}
-
-// 显示权限引导弹窗
-const showPermissionModal = (err) => {
-  // #ifdef MP-WEIXIN
-  if (err && err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize'))) {
-    uni.showModal({
-      title: '定位权限未开启',
-      content: '您未开启定位权限，将无法按距离排序。是否前往开启？',
-      confirmText: '去开启',
-      success: (res) => {
-        if (res.confirm) {
-          uni.openSetting({
-            success: (settingRes) => {
-              if (settingRes.authSetting['scope.userLocation']) {
-                getCurrentLocation()
-              }
-            }
-          })
-        }
-      }
-    })
-  } else {
-    uni.showToast({ title: '定位失败，请检查定位功能', icon: 'none' })
+  } finally {
+    locating.value = false
   }
-  // #endif
-
-  // #ifdef APP-PLUS
-  uni.showModal({
-    title: '定位权限未开启',
-    content: '您未开启定位权限，将无法按距离排序。是否前往开启？',
-    confirmText: '去开启',
-    success: (res) => {
-      if (res.confirm) {
-        // 这里应该调用 openAppSetting，但这个函数在 coach/list.vue 里没有定义
-        // 暂时直接用 uni.openSetting
-        uni.openSetting()
-      }
-    }
-  })
-  // #endif
-
-  // #ifdef H5
-  uni.showToast({ title: '定位失败，请检查浏览器定位权限', icon: 'none' })
-  // #endif
 }
 
 // 加载数据
