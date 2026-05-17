@@ -686,8 +686,8 @@ const openFilter = () => {
 
 // 导航
 const navigateTo = (hall) => {
-  const lat = hall.latitude || 39.908823
-  const lng = hall.longitude || 116.397470
+  const lat = hall.latitude ?? 39.908823
+  const lng = hall.longitude ?? 116.397470
   const name = hall.name
   const address = hall.address
 
@@ -717,7 +717,7 @@ const navigateTo = (hall) => {
         url = `baidumap://map/marker?location=${lat},${lng}&title=${encodeURIComponent(name)}&addr=${encodeURIComponent(address)}`
       } else if (index === 1) {
         // 高德地图
-        url = `amap://viewMarker?lat=${lat}&lng=${lng}&title=${encodeURIComponent(name)}&address=${encodeURIComponent(address)}`
+        url = `amap://viewMarker?lat=${lat}&lon=${lng}&title=${encodeURIComponent(name)}&address=${encodeURIComponent(address)}`
       } else if (index === 2) {
         // 腾讯地图
         url = `qqmap://map/marker?coord=${lat},${lng}&title=${encodeURIComponent(name)}&address=${encodeURIComponent(address)}`
@@ -741,9 +741,7 @@ const navigateTo = (hall) => {
         pkg: index === 0 ? 'com.baidu.BaiduMap' : index === 1 ? 'com.autonavi.minimap' : 'com.tencent.map'
       }, (result) => {
         if (result) {
-          uni.redirectTo({
-            url: url
-          })
+          plus.runtime.openURL(url)
         } else {
           // 地图未安装，尝试使用本机地图
           uni.openLocation({
