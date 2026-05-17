@@ -686,8 +686,8 @@ const openFilter = () => {
 
 // 导航
 const navigateTo = (hall) => {
-  const lat = hall.latitude || 39.908823
-  const lng = hall.longitude || 116.397470
+  const lat = hall.latitude ?? 39.908823
+  const lng = hall.longitude ?? 116.397470
   const name = hall.name
   const address = hall.address
 
