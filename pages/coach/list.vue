@@ -296,8 +296,11 @@ const loadData = async (isRefresh = false) => {
     } else if (currentSort.value === 0) {
       // 智能排序：添加城市
       params.city = currentCity.value
+      params.longitude = currentLocation.value.longitude
+      params.latitude = currentLocation.value.latitude
     }
 
+    console.log("🚀 ~ loadData ~ params:", params)
     const res = await getCoachList(params)
     const data = res.data || {}
     // 兼容不同的返回结构：list / records / rows
@@ -365,6 +368,7 @@ const switchSort = async (index) => {
     }
   } else if (index === 0) {
     // 智能排序：需要城市信息
+    console.log("🚀 ~ switchSort ~ currentCity:", currentCity)
     if (!currentCity.value) {
       // 还没有城市信息，先获取定位，getCurrentLocation内部会调用loadData
       if (!currentLocation.value.longitude || !currentLocation.value.latitude) {
