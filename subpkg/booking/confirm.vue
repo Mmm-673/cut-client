@@ -479,7 +479,7 @@ const loadCoachDetail = async (coachId) => {
       const coachData = res.data
       // 从photos中获取主图作为avatar
       const mainPhoto = coachData.photos?.find(p => p.isMain) || coachData.photos?.[0]
-      const avatar = mainPhoto?.photoUrl || coachData.avatar || '/static/default-avatar.png'
+      const avatar = coachData.avatar || mainPhoto?.photoUrl || '/static/default-avatar.png'
       // 更新orderData中的教练信息
       orderData.value.coachInfo = {
         ...orderData.value.coachInfo,
