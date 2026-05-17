@@ -169,34 +169,39 @@ export const getLocation = ({
     }
 
     // #ifdef APP-PLUS
-    const systemInfo = uni.getSystemInfoSync()
-    // Android 权限申请
-    if (systemInfo.platform === 'android') {
-      plus.android.requestPermissions(
-          ['android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION'],
-          (result) => {
-            // 检查授权结果 - 使用标准方式检查
-            const granted = result.granted || []
-            if (granted.length > 0 &&
-                (granted.includes('android.permission.ACCESS_FINE_LOCATION') ||
-                 granted.includes('android.permission.ACCESS_COARSE_LOCATION'))) {
-              // 授权成功
-              doLocate()
-            } else {
-              // 权限被拒绝
+    try {
+      const systemInfo = uni.getSystemInfoSync()
+      // Android 权限申请
+      if (systemInfo.platform === 'android') {
+        plus.android.requestPermissions(
+            ['android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION'],
+            (result) => {
+              // 检查授权结果 - 使用标准方式检查
+              const granted = result.granted || []
+              if (granted.length > 0 &&
+                  (granted.includes('android.permission.ACCESS_FINE_LOCATION') ||
+                   granted.includes('android.permission.ACCESS_COARSE_LOCATION'))) {
+                // 授权成功
+                doLocate()
+              } else {
+                // 权限被拒绝
+                isLocating = false
+                reject(new Error('permission_denied'))
+              }
+            },
+            (error) => {
+              console.error('权限申请失败：', error)
               isLocating = false
-              reject(new Error('permission_denied'))
+              reject(new Error('permission_error'))
             }
-          },
-          (error) => {
-            console.error('权限申请失败：', error)
-            isLocating = false
-            reject(new Error('permission_error'))
-          }
-      )
-    } else {
-      // iOS 直接执行定位，系统会自动弹授权
-      doLocate()
+        )
+      } else {
+        // iOS 直接执行定位，系统会自动弹授权
+        doLocate()
+      }
+    } catch (e) {
+      isLocating = false
+      reject(e)
     }
     // #endif
 
