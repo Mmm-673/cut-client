@@ -10,8 +10,6 @@
         refresher-enabled
         :refresher-triggered="refreshing"
         @refresherrefresh="onRefresh"
-        @scrolltolower="onLoadMore"
-        :lower-threshold="50"
     >
       <!-- 服务信息选择 -->
       <view class="info-card" v-if="!isReselect">
@@ -70,6 +68,9 @@
           <text v-else-if="currentStreet">{{ currentStreet }}</text>
           <text v-else>定位失败</text>
         </text>
+        <view v-if="locationDenied && !locating" class="retry-btn" @click="getCurrentLocation">
+          重试定位
+        </view>
       </view>
 
       <!-- 筛选标签 -->
@@ -182,15 +183,6 @@
         <text class="empty-text">暂无球厅</text>
       </view>
 
-      <!-- 加载提示 -->
-      <view class="load-tip" v-if="!hasMore && hallList.length > 0">
-        已加载全部球厅
-      </view>
-      <view class="load-tip loading" v-if="loading && page > 1">
-        <uni-icons type="spinner-cycle" size="20" color="#9CA3AF" style="animation: spin 1s linear infinite; margin-right: 12rpx;"></uni-icons>
-        加载中...
-      </view>
-
       <!-- 底部安全区域 -->
       <view class="safe-area-bottom" ></view>
     </scroll-view>
@@ -262,9 +254,6 @@ import { getLocation, extractStreet, formatDistance, showPermissionModal, openAp
 // 刷新/加载状态
 const refreshing = ref(false)
 const loading = ref(false)
-const hasMore = ref(true)
-const offset = ref(0)  // 偏移量，用于分页
-const pageSize = ref(25)  // 每页条数
 
 // 搜索关键词
 const searchKeyword = ref('')
@@ -274,6 +263,7 @@ const currentTab = ref('nearest')
 
 // 定位相关
 const locating = ref(false)
+const locationDenied = ref(false) // 记录是否已拒绝定位权限
 const currentLocation = ref({
   longitude: null,
   latitude: null
@@ -536,15 +526,19 @@ const getCurrentLocation = async () => {
     const { longitude, latitude, regeocodeData } = await getLocation({ needRegeocode: true })
     currentLocation.value = { longitude, latitude }
     currentStreet.value = extractStreet(regeocodeData)
-    hasMore.value = true
+    locationDenied.value = false // 重置权限拒绝状态
     hallList.value = []
     loadHallList()
   } catch (err) {
     console.error('定位失败:', err)
     if (err.message === 'permission_denied') {
+      locationDenied.value = true // 标记权限被拒绝
       showPermissionModal({
         content: '您未开启定位权限，将无法获取附近球厅。是否前往开启？',
-        onSuccess: getCurrentLocation
+        onSuccess: () => {
+          locationDenied.value = false // 用户去设置了，重置状态
+          getCurrentLocation()
+        }
       })
     } else {
       uni.showToast({ title: '定位失败，请检查定位功能', icon: 'none' })
@@ -596,7 +590,7 @@ const loadHallList = async () => {
   loading.value = true
   try {
     const params = {
-      limit: pageSize.value
+      limit: 100
     }
 
     // 关键词搜索
@@ -614,29 +608,12 @@ const loadHallList = async () => {
     // 排序类型
     params.sortType = currentSortType.value
 
-    // 偏移量（分页）
-    params.offset = offset.value
-
     const res = await getVenueList(params)
     // 给没有封面的场馆加随机默认图
-    const list = (res.data || []).map(item => ({
+    hallList.value = (res.data || []).map(item => ({
       ...item,
       defaultImage: getRandomDefaultImage()
     }))
-
-    if (offset.value === 0) {
-      // 第一页替换
-      hallList.value = list
-    } else {
-      // 后续页追加
-      hallList.value = [...hallList.value, ...list]
-    }
-
-    // 更新偏移量
-    offset.value += list.length
-
-    // 判断是否还有更多
-    hasMore.value = list.length >= pageSize.value
   } catch (error) {
     console.error('加载球厅列表失败:', error)
     uni.showToast({
@@ -652,21 +629,12 @@ const loadHallList = async () => {
 // 下拉刷新
 const onRefresh = () => {
   refreshing.value = true
-  offset.value = 0
-  hasMore.value = true
-  loadHallList()
-}
-
-// 上拉加载更多
-const onLoadMore = () => {
-  if (!hasMore.value || loading.value) return
   loadHallList()
 }
 
 // 切换筛选标签
 const switchTab = (val) => {
   currentTab.value = val
-  hasMore.value = true
   hallList.value = []
 
   // 如果切换到"距离最近"且没有定位信息，先获取定位
@@ -793,15 +761,64 @@ const navigateTo = (hall) => {
   // #endif
 }
 
+// 验证电话号码是否有效
+const isValidPhone = (phone) => {
+  if (!phone || typeof phone !== 'string') return false
+
+  const cleanedPhone = phone.trim()
+  if (!cleanedPhone) return false
+
+  // 手机号正则：1开头，11位数字
+  const mobileReg = /^1[3-9]\d{9}$/
+
+  // 固定电话正则：支持 010-12345678 或 020-12345678 或 0755-12345678 格式
+  // 也支持不带横线的 400/800 电话
+  const landlineReg = /^(0\d{2,3}-?\d{7,8}|400-?\d{3}-?\d{4}|800-?\d{3}-?\d{4})$/
+
+  // 先去掉所有横线再验证手机号
+  const phoneWithoutDash = cleanedPhone.replace(/-/g, '')
+
+  return mobileReg.test(phoneWithoutDash) || landlineReg.test(cleanedPhone)
+}
+
 // 拨打电话
 const callPhone = (hall) => {
-  if (hall.phone) {
+  let phones = []
+
+  // 处理 phones 字段，兼容数组和字符串两种格式
+  if (hall.phones) {
+    if (Array.isArray(hall.phones)) {
+      phones = hall.phones
+    } else if (typeof hall.phones === 'string') {
+      phones = [hall.phones]
+    }
+  }
+
+  // 过滤空值和无效电话号码
+  const validPhones = phones.filter(p => isValidPhone(p))
+
+  if (validPhones.length === 0) {
+    uni.showToast({ title: '暂无有效联系电话', icon: 'none' })
+    return
+  }
+
+  if (validPhones.length === 1) {
+    // 只有一个电话，直接拨打
     uni.makePhoneCall({
-      phoneNumber: hall.phone,
+      phoneNumber: validPhones[0],
       fail: () => uni.showToast({ title: '拨打失败', icon: 'none' })
     })
   } else {
-    uni.showToast({ title: '暂无联系电话', icon: 'none' })
+    // 多个电话，让用户选择
+    uni.showActionSheet({
+      itemList: validPhones,
+      success: (res) => {
+        uni.makePhoneCall({
+          phoneNumber: validPhones[res.tapIndex],
+          fail: () => uni.showToast({ title: '拨打失败', icon: 'none' })
+        })
+      }
+    })
   }
 }
 
@@ -873,7 +890,7 @@ const chooseHall = async (hall) => {
   } catch (error) {
     console.error('创建订单失败:', error)
     uni.showToast({
-      title: error.message || '创建订单失败，请重试',
+      title: error || '创建订单失败，请重试',
       icon: 'none',
       duration: 2000
     })
@@ -912,9 +929,9 @@ onShow(() => {
     calculateDefaultTime()
   }
 
-  // 从设置回来后，如果还没有定位信息，尝试重新获取定位
+  // 从设置回来后，如果还没有定位信息且未拒绝过权限，尝试重新获取定位
   if (!currentLocation.value.longitude || !currentLocation.value.latitude) {
-    if (!locating.value) {
+    if (!locating.value && !locationDenied.value) {
       getCurrentLocation()
     }
   }
@@ -1059,6 +1076,14 @@ onShow(() => {
     gap: 8rpx;
     color: #00BB88;
     font-size: 26rpx;
+  }
+  .retry-btn {
+    color: #00BB88;
+    font-size: 24rpx;
+    padding: 8rpx 16rpx;
+    border: 1rpx solid #00BB88;
+    border-radius: 32rpx;
+    flex-shrink: 0;
   }
 }
 
