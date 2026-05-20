@@ -170,7 +170,9 @@ const selectCoach = () => {
 
 // 选择球厅
 const selectHall = () => {
-  uni.showToast({ title: '选择球厅功能开发中', icon: 'none' })
+  uni.navigateTo({
+    url: '/subpkg/booking/hall'
+  })
 }
 
 // 去确认页
@@ -187,12 +189,32 @@ const goToConfirm = () => {
     uni.showToast({ title: '请先选择时间', icon: 'none' })
     return
   }
+  // 根据服务类型判断是否需要球厅（假设id=3是斯诺克，可能不需要球厅，根据实际需求调整）
+  const needHall = selectedService.value.id !== 3
+  if (needHall && !selectedHall.value) {
+    uni.showToast({ title: '请先选择球厅', icon: 'none' })
+    return
+  }
   uni.navigateTo({
     url: '/subpkg/booking/confirm'
   })
 }
 
-onLoad(() => {
+onLoad((options) => {
+  // 统一处理两种入口
+  // 重置所有选择状态
+  selectedCoach.value = null
+  selectedService.value = null
+  selectedHall.value = null
+  selectedDate.value = 0
+  selectedTime.value = ''
+
+  // 从storage读取之前可能保存的助教信息
+  const savedCoach = uni.getStorageSync('selectedCoach')
+  if (savedCoach) {
+    selectedCoach.value = savedCoach
+  }
+
   // 默认选中第一个服务
   selectedService.value = serviceList.value[0]
 })

@@ -94,6 +94,11 @@ const goToHome = () => {
 onLoad((options) => {
   if (options.orderId) {
     orderId.value = Number(options.orderId)
+  } else {
+    uni.showToast({ title: '订单信息缺失', icon: 'none' })
+    setTimeout(() => {
+      uni.switchTab({ url: '/pages/home/index' })
+    }, 1500)
   }
 })
 

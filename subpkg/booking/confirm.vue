@@ -295,6 +295,36 @@ const initTimePickerData = () => {
   updateMinuteColumns(0, 0)
 }
 
+// 设置时间选择器默认值
+const setDefaultPickerValue = (targetTime) => {
+  const targetDate = new Date(targetTime)
+  const now = new Date()
+
+  // 计算日期索引
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const targetStartOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate())
+  const dateIndex = Math.floor((targetStartOfDay - startOfDay) / (24 * 60 * 60 * 1000))
+
+  if (dateIndex < 0 || dateIndex >= dateColumns.value.length) return
+
+  updateHourColumns(dateIndex)
+
+  // 计算小时索引
+  const targetHour = targetDate.getHours()
+  let hourIndex = hourColumns.value.findIndex(h => h.hour === targetHour)
+  if (hourIndex === -1) hourIndex = 0
+
+  updateMinuteColumns(dateIndex, hourIndex)
+
+  // 计算分钟索引
+  const targetMinute = targetDate.getMinutes()
+  let minuteIndex = minuteColumns.value.findIndex(m => m.minute >= targetMinute)
+  if (minuteIndex === -1) minuteIndex = Math.max(0, minuteColumns.value.length - 1)
+
+  pickerValue.value = [dateIndex, hourIndex, minuteIndex]
+  selectedDateTime.value = { dateIndex, hourIndex, minuteIndex }
+}
+
 const updateHourColumns = (dateIndex) => {
   const now = new Date()
   const startHour = dateIndex === 0 ? now.getHours() : 0
@@ -399,6 +429,7 @@ const payList = computed(() => {
 const canAction = computed(() => {
   if (!userAgree.value) return false
   if (isSubmitting.value) return false
+  if (orderExpired.value) return false
 
   if (!isOrderCreated.value) {
     return orderData.value.bookingTime !== undefined
@@ -583,6 +614,9 @@ const submitPayment = async () => {
   }
 }
 
+// 订单是否已过期
+const orderExpired = ref(false)
+
 // 支付倒计时
 const startCountdown = () => {
   if (!orderData.value || !orderData.value.expireTime) return
@@ -593,6 +627,7 @@ const startCountdown = () => {
 
     if (diff <= 0) {
       countdownText.value = '00:00'
+      orderExpired.value = true
       if (countdownTimer.value) {
         clearInterval(countdownTimer.value)
       }
@@ -666,6 +701,9 @@ onMounted(() => {
       const minute = String(Math.ceil(now.getMinutes() / 5) * 5).padStart(2, '0')
       orderData.value.timeText = `今天 ${month}.${day} ${hour}:${minute}`
       orderData.value.bookingTime = now.getTime()
+
+      // 设置时间选择器默认值
+      setDefaultPickerValue(now)
 
       isOrderCreated.value = false
       loadWalletBalance()

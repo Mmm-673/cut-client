@@ -1,13 +1,6 @@
 
 <template>
   <view class="detail-container">
-    <!-- 头部导航栏 -->
-    <view class="nav-bar">
-      <view class="nav-action" @click="handleToggleFavorite">
-        <uni-icons :type="isFavorite ? 'heart-filled' : 'heart'" size="20" :color="isFavorite ? '#ff4d4f' : '#fff'"></uni-icons>
-      </view>
-    </view>
-
     <!-- 下拉刷新区域 -->
     <scroll-view
         scroll-y
@@ -17,6 +10,13 @@
         :refresher-triggered="refreshing"
         @refresherrefresh="onRefresh"
     >
+      <!-- 头部导航栏 -->
+      <view class="nav-bar">
+        <view class="nav-action" @click="handleToggleFavorite">
+          <uni-icons :type="isFavorite ? 'heart-filled' : 'heart'" size="20" :color="isFavorite ? '#ff4d4f' : '#fff'"></uni-icons>
+        </view>
+      </view>
+
       <!-- 头部信息区域 -->
       <view class="header-section">
         <image class="header-bg" :src="coachInfo.cover || '/static/images/profile.jpg'" mode="aspectFill"></image>
@@ -413,6 +413,10 @@ const handleToggleFavorite = async () => {
     uni.showToast({ title: '教练信息加载中', icon: 'none' })
     return
   }
+  // 乐观更新：先更新UI
+  const wasFavorite = isFavorite.value
+  isFavorite.value = !wasFavorite
+
   try {
     uni.showLoading({ title: '处理中...' })
     console.log('发送收藏请求, coachId:', coachInfo.id)
@@ -425,6 +429,12 @@ const handleToggleFavorite = async () => {
     })
   } catch (error) {
     console.error('收藏操作失败:', error)
+    // 失败回滚
+    isFavorite.value = wasFavorite
+    uni.showToast({
+      title: '操作失败，请重试',
+      icon: 'none'
+    })
   } finally {
     uni.hideLoading()
   }
@@ -489,9 +499,7 @@ const bookNow = () => {
   })
 
   // 判断服务类型：1=台球陪练(需要选择球厅)，2=陪游(直接创建订单)
-  // 根据服务名称或ID判断类型
-  const serviceName = selectedService.value.name || ''
-  const isCompanion = serviceName.includes('陪游') || selectedService.value.type === 2
+  const isCompanion = selectedService.value.type === 2
 
   if (isCompanion) {
     // 陪游服务，直接跳转确认订单页创建订单
@@ -539,7 +547,7 @@ onMounted(() => {
 
 /* 头部导航栏 */
 .nav-bar {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
@@ -549,7 +557,9 @@ onMounted(() => {
   justify-content: flex-end;
   align-items: center;
   padding: 0 30rpx;
-  z-index: 100;
+  padding-top: calc(constant(safe-area-inset-top) + 20rpx);
+  padding-top: calc(env(safe-area-inset-top) + 20rpx);
+  z-index: 10;
 
   .nav-back, .nav-action {
     width: 60rpx;
@@ -575,6 +585,7 @@ onMounted(() => {
   position: relative;
   height: 640rpx;
   overflow: hidden;
+  //margin-top: -90rpx;
 
   .header-bg {
     width: 100%;
@@ -872,6 +883,8 @@ onMounted(() => {
 
 .review-list-scroll {
   padding-bottom: 10rpx;
+  //padding: 0 40rpx 10rpx;
+  //margin: 0 -40rpx;
 }
 
 .review-item {
@@ -879,7 +892,7 @@ onMounted(() => {
   border-radius: 32rpx;
   padding: 32rpx;
   flex-shrink: 0;
-
+  margin-bottom: 10rpx;
   .review-header {
     display: flex;
     align-items: center;
@@ -938,7 +951,7 @@ onMounted(() => {
 }
 
 .more-reviews {
-  margin-top: 32rpx;
+  margin-top: 16rpx;
   padding: 28rpx;
   background-color: #2a2a2a;
   border-radius: 24rpx;

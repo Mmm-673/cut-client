@@ -166,6 +166,8 @@ const isSubmitting = ref(false)
 // 切换Tab
 const switchTab = (tab) => {
   activeTab.value = tab
+  // 清空所有字段
+  form.value.mobile = ''
   form.value.code = ''
   form.value.password = ''
 }

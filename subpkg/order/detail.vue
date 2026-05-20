@@ -372,6 +372,10 @@ const orderId = ref(null)
 const loading = ref(false)
 // 订单不存在状态
 const orderNotExist = ref(false)
+// 缓存的球厅图片（避免轮询时随机变化）
+let cachedVenuePhotoUrl = null
+// 请求锁，防止重复请求
+let isRequesting = false
 // 支付弹窗显示状态
 const showPayPopup = ref(false)
 // 选中的支付方式
@@ -663,10 +667,16 @@ const openHallNavigate = () => {
 
 // 【新增】联系教练
 const contactCoach = () => {
-  uni.makePhoneCall({
-    phoneNumber: '13800008888', // 这里替换为教练的实际手机号
-    fail: () => uni.showToast({ title: '拨打电话失败', icon: 'none' })
-  })
+  // 优先使用订单数据里的教练手机号
+  const phone = orderInfo.value?.coachMobile || coachInfo?.mobile
+  if (phone) {
+    uni.makePhoneCall({
+      phoneNumber: phone,
+      fail: () => uni.showToast({ title: '拨打电话失败', icon: 'none' })
+    })
+  } else {
+    uni.showToast({ title: '暂无教练联系方式', icon: 'none' })
+  }
 }
 
 // 加载助教详情
@@ -691,7 +701,10 @@ const loadCoachDetail = async (coachId) => {
 // 加载订单详情
 const loadOrderDetail = async (silent = false) => {
   if (!orderId.value) return
+  // 如果正在请求中，直接返回，防止重复请求
+  if (isRequesting) return
 
+  isRequesting = true
   if (!silent) {
     loading.value = true
   }
@@ -709,6 +722,18 @@ const loadOrderDetail = async (silent = false) => {
     orderNotExist.value = false
 
     // 更新订单信息 - 完全按API文档字段处理
+    // 处理球厅图片：优先用后端返回的，其次用缓存的，最后才随机获取一次
+    let venuePhotoUrl = data.venuePhotoUrl
+    if (!venuePhotoUrl) {
+      if (!cachedVenuePhotoUrl) {
+        cachedVenuePhotoUrl = getRandomDefaultImage()
+      }
+      venuePhotoUrl = cachedVenuePhotoUrl
+    } else {
+      // 后端返回了真实图片，更新缓存
+      cachedVenuePhotoUrl = venuePhotoUrl
+    }
+
     Object.assign(orderInfo.value, {
       id: data.id,
       orderNo: data.orderNo,
@@ -716,11 +741,12 @@ const loadOrderDetail = async (silent = false) => {
       coachAvatar: data.coachAvatar,
       coachStageName: data.coachStageName,
       coachMainPhoto: data.coachMainPhoto,
+      coachMobile: data.coachMobile, // 教练手机号
       venueName: data.venueName,
       venueAddress: data.venueAddress,
       venueLongitude: data.venueLongitude,
       venueLatitude: data.venueLatitude,
-      venuePhotoUrl: data.venuePhotoUrl || getRandomDefaultImage(),
+      venuePhotoUrl: venuePhotoUrl,
       serviceType: data.serviceType,
       bookingTime: data.bookingTime,
       serviceDuration: data.serviceDuration,
@@ -763,11 +789,10 @@ const loadOrderDetail = async (silent = false) => {
     // 终态停止轮训
     if (isFinalStatus(data.status)) {
       stopPolling()
-    }
-
-    // 状态改变也停止轮训
-    if (lastStatus !== null && lastStatus !== data.status) {
+    } else if (lastStatus !== null && lastStatus !== data.status) {
+      // 状态改变时，先停止旧轮询再重新启动新轮询
       stopPolling()
+      startPolling()
     }
     lastStatus = data.status
   } catch (error) {
@@ -787,6 +812,7 @@ const loadOrderDetail = async (silent = false) => {
     if (!silent) {
       loading.value = false
     }
+    isRequesting = false
   }
 }
 
@@ -1039,10 +1065,10 @@ const startTimerPolling = () => {
   // 立即加载一次
   loadTimerStatus()
 
-  // 5秒轮询一次服务端
-  timerPollingInterval = setInterval(loadTimerStatus, 5000)
+  // 10秒轮询一次服务端（放慢速度）
+  timerPollingInterval = setInterval(loadTimerStatus, 10000)
 
-  // 本地每秒递减，用于平滑显示
+  // 本地每秒递减，用于平滑显示（这个保留，因为是本地计算）
   localTimerInterval = setInterval(() => {
     if (timerInfo.value.remainingSeconds > 0) {
       timerInfo.value.remainingSeconds--
@@ -1120,7 +1146,7 @@ onMounted(() => {
   // 加载支付渠道
   loadPayChannels()
 
-  // 加载数据
+  // 加载数据并启动轮询（只在初始化时执行一次）
   if (orderId.value) {
     loadOrderDetail()
     startPolling()
@@ -1134,23 +1160,25 @@ onUnmounted(() => {
 })
 
 onShow(() => {
-  // 每次页面显示时刷新订单详情
-  if (orderId.value) {
+  // 页面显示时只刷新一次数据，不频繁重启轮询
+  if (orderId.value && !pollingTimer) {
     loadOrderDetail()
-    // 重新开始轮询（如果之前停止了）
-    if (!pollingTimer) {
-      startPolling()
-    }
+    startPolling()
   }
 })
 
 // ---------------------- 状态轮训 ----------------------
 // 轮询定时器
 let pollingTimer = null
-const POLLING_INTERVAL = 3000 // 3秒轮询一次
+const POLLING_INTERVAL = 8000 // 8秒轮询一次（放慢速度）
 
 // 开始轮训
 const startPolling = () => {
+  // 如果已经是终态，不要开始轮询
+  if (isFinalStatus(orderInfo.value.status)) {
+    return
+  }
+
   stopPolling() // 先停止之前的
   pollingTimer = setInterval(() => {
     if (orderId.value) {
@@ -1169,7 +1197,7 @@ const stopPolling = () => {
 
 // 判断是否是终态（不需要轮训的状态）
 const isFinalStatus = (status) => {
-  return status === 50 || status === 60 || status === 70 // 已完成/已取消/已退款
+  return status === 50 || status === 60 || status === 70 || status === 80 // 已完成/已取消/已退款
 }
 
 // 记录上次状态

@@ -241,6 +241,7 @@ const loadHotCoaches = async () => {
     })) : []
   } catch (error) {
     console.error('加载热门助教失败:', error)
+    uni.showToast({ title: '加载热门助教失败', icon: 'none' })
   }
 }
 
@@ -255,6 +256,7 @@ const loadNewCoaches = async () => {
     })) : []
   } catch (error) {
     console.error('加载新人助教失败:', error)
+    uni.showToast({ title: '加载新人助教失败', icon: 'none' })
   }
 }
 

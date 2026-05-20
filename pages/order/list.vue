@@ -432,7 +432,8 @@ const loadData = async (isRefresh = false) => {
     }
   } catch (error) {
     console.error('加载订单列表失败:', error)
-    loadMoreStatus.value = 'more'
+    loadMoreStatus.value = 'noMore'
+    uni.showToast({ title: '加载失败', icon: 'none' })
   } finally {
     loading.value = false
     refreshing.value = false
@@ -510,8 +511,16 @@ const goToReward = (order) => {
 
 // 再约一次
 const bookAgain = (order) => {
-  uni.switchTab({
-    url: '/pages/home/index'
+  uni.showModal({
+    title: '提示',
+    content: '确定要再次预约吗？',
+    success: (res) => {
+      if (res.confirm) {
+        uni.switchTab({
+          url: '/pages/home/index'
+        })
+      }
+    }
   })
 }
 

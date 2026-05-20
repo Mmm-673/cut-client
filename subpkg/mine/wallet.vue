@@ -98,6 +98,9 @@ const showBalance = ref(true)
 // 当前月份
 const currentMonth = ref('本月')
 
+// 当前选中的月份数据
+const selectedMonthData = ref({ year: new Date().getFullYear(), month: new Date().getMonth() + 1 })
+
 // 钱包数据
 const wallet = ref({
   balance: 0,
@@ -150,23 +153,6 @@ const loadWallet = async () => {
   }
 }
 
-// 加载本月收支统计
-const loadStatData = async () => {
-  try {
-    const timeRange = getCurrentMonthRange()
-    const res = await getWalletTransactionSummary({
-      createTime: timeRange
-    })
-    if (res.data) {
-      statData.value = {
-        income: ((res.data.totalIncome || 0) / 100).toFixed(2),
-        expense: ((res.data.totalExpense || 0) / 100).toFixed(2)
-      }
-    }
-  } catch (error) {
-    console.error('加载收支统计失败:', error)
-  }
-}
 
 // 加载交易记录
 const loadTransactions = async () => {
@@ -176,13 +162,26 @@ const loadTransactions = async () => {
       pageSize: 10
     })
     const list = res.data?.list || []
+    // 时间格式化为 MM-dd HH:mm:ss (24小时制)
+    const formatTime = (ts) => {
+      if (!ts) return ''
+      const d = new Date(Number(ts))
+
+      const month = String(d.getMonth() + 1).padStart(2, '0') // 月份从0开始，必须加1
+      const date = String(d.getDate()).padStart(2, '0')
+      const hours = String(d.getHours()).padStart(2, '0')
+      const minutes = String(d.getMinutes()).padStart(2, '0')
+      const seconds = String(d.getSeconds()).padStart(2, '0')
+
+      return `${month}-${date} ${hours}:${minutes}:${seconds}`
+    }
     recordList.value = list.map(item => {
       const bizInfo = bizTypeMap[item.bizType] || bizTypeMap[3]
       const isIncome = item.bizType === 1 || item.bizType === 2 || item.bizType === 4 || item.bizType === 5
       return {
         id: item.id || Date.now(),
         title: item.title || bizInfo.title,
-        time: item.createTime || '',
+        time: formatTime(item.createTime) || '',
         icon: bizInfo.icon,
         iconBg: bizInfo.iconBg,
         iconColor: bizInfo.iconColor,
@@ -223,9 +222,69 @@ const onRefresh = () => {
   })
 }
 
+// 获取指定月份的时间范围
+const getMonthRange = (year, month) => {
+  const startDate = `${year}-${String(month).padStart(2, '0')}-01 00:00:00`
+  // 获取该月最后一天
+  const lastDay = new Date(year, month, 0).getDate()
+  const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')} 23:59:59`
+  return [startDate, endDate]
+}
+
+// 生成最近几个月的选项
+const getMonthOptions = () => {
+  const now = new Date()
+  const options = []
+  // 本月
+  options.push({ label: '本月', year: now.getFullYear(), month: now.getMonth() + 1 })
+  // 近5个月
+  for (let i = 1; i <= 5; i++) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    options.push({
+      label: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
+      year: date.getFullYear(),
+      month: date.getMonth() + 1
+    })
+  }
+  return options
+}
+
 // 选择月份
 const selectMonth = () => {
-  uni.showToast({ title: '月份选择功能开发中', icon: 'none' })
+  const options = getMonthOptions()
+  uni.showActionSheet({
+    itemList: options.map(o => o.label),
+    success: (res) => {
+      const selected = options[res.tapIndex]
+      selectedMonthData.value = { year: selected.year, month: selected.month }
+      currentMonth.value = selected.label
+      // 重新加载该月的数据
+      loadStatDataByMonth(selected.year, selected.month)
+    }
+  })
+}
+
+// 加载指定月份的收支统计
+const loadStatDataByMonth = async (year, month) => {
+  try {
+    const timeRange = getMonthRange(year, month)
+    const res = await getWalletTransactionSummary({
+      createTime: timeRange
+    })
+    if (res.data) {
+      statData.value = {
+        income: ((res.data.totalIncome || 0) / 100).toFixed(2),
+        expense: ((res.data.totalExpense || 0) / 100).toFixed(2)
+      }
+    }
+  } catch (error) {
+    console.error('加载收支统计失败:', error)
+  }
+}
+
+// 修改原有的loadStatData，使其调用带月份的版本
+const loadStatData = async () => {
+  await loadStatDataByMonth(selectedMonthData.value.year, selectedMonthData.value.month)
 }
 
 // 路由跳转方法

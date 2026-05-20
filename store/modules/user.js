@@ -186,6 +186,7 @@ export const useUserStore = defineStore('user', () => {
     smsLogin: smsLoginAction,
     passwordLogin: passwordLoginAction,
     logOut: logOutAction,
+    logout: logOutAction,
     clearLoginInfo,
     resetPassword: resetPasswordAction,
     updatePassword: updatePasswordAction,

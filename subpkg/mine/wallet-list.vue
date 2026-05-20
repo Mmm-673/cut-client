@@ -289,7 +289,7 @@ const loadTransactions = async (isRefresh = false) => {
         iconColor: bizInfo.iconColor,
         amount: (isIncome ? '+' : '-') + '¥' + (Math.abs(item.price || 0) / 100).toFixed(2),
         amountColor: isIncome ? '#00BB88' : '#EF4444',
-        createTime: item.createTime
+        createTime: formatTime(item.createTime)
       }
     })
 

@@ -329,7 +329,8 @@ const loadData = async (isRefresh = false) => {
     }
   } catch (error) {
     console.error('加载助教列表失败:', error)
-    loadMoreStatus.value = 'more'
+    loadMoreStatus.value = 'noMore'
+    uni.showToast({ title: '加载失败', icon: 'none' })
   } finally {
     loading.value = false
     refreshing.value = false
@@ -357,13 +358,14 @@ const switchTab = (index) => {
 
 // 切换排序
 const switchSort = async (index) => {
+  const prevSort = currentSort.value
   currentSort.value = index
 
   if (index === 1) {
     // 距离最近：需要获取定位
     if (!currentLocation.value.longitude || !currentLocation.value.latitude) {
-      // 还没有定位信息，先获取定位，getCurrentLocation内部会调用loadData
-      getCurrentLocation()
+      // 还没有定位信息，先获取定位，传入回调处理权限拒绝的情况
+      getCurrentLocationWithFallback(prevSort)
       return
     }
   } else if (index === 0) {
@@ -379,6 +381,34 @@ const switchSort = async (index) => {
   }
 
   loadData(true)
+}
+
+// 获取当前位置（带失败回退）
+const getCurrentLocationWithFallback = async (fallbackSort) => {
+  if (locating.value) return
+  locating.value = true
+
+  try {
+    const { longitude, latitude, regeocodeData } = await getLocation({ needRegeocode: true })
+    currentLocation.value = { longitude, latitude }
+    currentCity.value = extractCity(regeocodeData)
+    loadData(true)
+  } catch (err) {
+    console.error('定位失败:', err)
+    // 恢复原排序
+    currentSort.value = fallbackSort
+    if (err.message === 'permission_denied') {
+      showPermissionModal({
+        content: '您未开启定位权限，将无法按距离排序。是否前往开启？',
+        onSuccess: () => getCurrentLocationWithFallback(fallbackSort)
+      })
+    } else {
+      uni.showToast({ title: '获取定位失败，已恢复默认排序', icon: 'none', duration: 2000 })
+      loadData(true)
+    }
+  } finally {
+    locating.value = false
+  }
 }
 
 // 搜索
