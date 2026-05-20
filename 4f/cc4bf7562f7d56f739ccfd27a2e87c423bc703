@@ -1,0 +1,25 @@
+subpkg/coach/detail.vue
+  e13768cffb8b5840 140-153,179-192,481,491-501,961-990
+subpkg/coach/evaluate.vue
+  e13768cffb8b5840 111-112,244-246
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "4fcc4bf7562f7d56f739ccfd27a2e87c423bc703",
+  "prompts": {
+    "e13768cffb8b5840": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9f788c4a-0981-4354-ac15-5dc3994cb8cc",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 88,
+      "total_deletions": 48,
+      "accepted_lines": 268,
+      "overriden_lines": 0
+    }
+  }
+}
