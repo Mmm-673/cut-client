@@ -1,0 +1,65 @@
+store/modules/user.js
+  e13768cffb8b5840 189
+pages/login/index.vue
+  9121cc5006a4f4ff 169-170
+subpkg/mine/wallet.vue
+  e13768cffb8b5840 101-103
+  9121cc5006a4f4ff 225-251,254-287
+TEST_LIST.md
+  9121cc5006a4f4ff 1-61
+subpkg/order/detail.vue
+  9121cc5006a4f4ff 670-679,744
+  e13768cffb8b5840 375-378,704-705,707,725-736,749,792-793,795,815,1068-1069,1071,1149,1163-1164,1166,1173,1177-1181,1200
+docs/superpowers/specs/2026-05-18-bug-fix-design.md
+  9121cc5006a4f4ff 1-107
+pages/coach/list.vue
+  9121cc5006a4f4ff 332-333,361,367-368,386-413
+subpkg/booking/pay-success.vue
+  9121cc5006a4f4ff 97-101
+pages/order/list.vue
+  9121cc5006a4f4ff 435-436,514-523
+pages/home/index.vue
+  9121cc5006a4f4ff 244,259
+docs/superpowers/plans/2026-05-18-bug-fix-plan.md
+  9121cc5006a4f4ff 1-908
+pages/booking/index.vue
+  9121cc5006a4f4ff 173-175,192-197,203-217
+subpkg/coach/detail.vue
+  9121cc5006a4f4ff 416-419,432-437,502
+  e13768cffb8b5840 13-19,550,560-562
+subpkg/booking/confirm.vue
+  9121cc5006a4f4ff 298-327,432,617-619,630,705-707
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "5c1d22ec9db959f2699108fcb2c78dc95d810dbb",
+  "prompts": {
+    "9121cc5006a4f4ff": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "119c3cc0-d383-46db-9b2e-50283e9e94ea",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 1278,
+      "total_deletions": 16,
+      "accepted_lines": 8614,
+      "overriden_lines": 1
+    },
+    "e13768cffb8b5840": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9f788c4a-0981-4354-ac15-5dc3994cb8cc",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 61,
+      "total_deletions": 46,
+      "accepted_lines": 253,
+      "overriden_lines": 4
+    }
+  }
+}
