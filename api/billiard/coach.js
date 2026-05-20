@@ -132,20 +132,6 @@ export function createReview(data) {
   })
 }
 
-/**
- * 上传评价图片
- * @param {string} filePath - 图片文件路径
- * @returns {Promise<Object>} 返回上传结果
- * @returns {string} returns.data.url - 图片 URL
- */
-export function uploadReviewImage(filePath) {
-  return request({
-    url: '/app-api/billiard/review/upload-image',
-    method: 'post',
-    filePath,
-    name: 'file'
-  })
-}
 
 /**
  * 助教列表单条数据结构（用于参考）

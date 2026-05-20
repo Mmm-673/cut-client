@@ -108,7 +108,8 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import { createReview, uploadReviewImage, getCoachDetail } from '@/api/billiard/coach';
+import { createReview, getCoachDetail } from '@/api/billiard/coach'
+import { uploadFile } from '@/api/billiard/user';
 
 // 教练信息
 const coachInfo = reactive({
@@ -157,7 +158,7 @@ const loadCoachDetail = async (id) => {
   try {
     const res = await getCoachDetail({ id });
     const data = res.data || {};
-    coachInfo.avatar = getMainPhoto(data.photos) || data.avatar || '';
+    coachInfo.avatar = data.avatar || getMainPhoto(data.photos)  || '';
     coachInfo.name = data.stageName || data.name || '';
   } catch (error) {
   }
@@ -240,9 +241,9 @@ const handleUploadImage = async () => {
 
       try {
         for (const filePath of tempFilePaths) {
-          const result = await uploadReviewImage(filePath);
-          if (result.data) {
-            uploadedImages.value.push(result.data.url);
+          const result = await uploadFile(filePath, 'review');
+          if (result.code === 0 && result.data) {
+            uploadedImages.value.push(result.data);
           }
         }
         uni.hideLoading();

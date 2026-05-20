@@ -12,14 +12,14 @@
           <text class="nav-subtitle">专业助教预约平台</text>
         </view>
       </view>
-      <view class="nav-right">
-        <view class="icon-btn" @click="goNotice">
-          <uni-icons type="notification" size="20" color="#fff" />
-          <view class="notice-badge">
-            <text>8</text>
-          </view>
-        </view>
-      </view>
+<!--      <view class="nav-right">-->
+<!--        <view class="icon-btn" @click="goNotice">-->
+<!--          <uni-icons type="notification" size="20" color="#fff" />-->
+<!--          <view class="notice-badge">-->
+<!--            <text>8</text>-->
+<!--          </view>-->
+<!--        </view>-->
+<!--      </view>-->
     </view>
 
     <!-- 滚动区域 -->

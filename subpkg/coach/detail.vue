@@ -137,6 +137,20 @@
               <text class="review-time">{{ review.time }}</text>
             </view>
             <view class="review-content">{{ review.content }}</view>
+            <!-- 评价图片 -->
+            <view class="review-images" v-if="review.images && review.images.length > 0">
+              <image
+                class="review-image"
+                v-for="(img, imgIndex) in review.images.slice(0, 3)"
+                :key="imgIndex"
+                :src="img"
+                mode="aspectFill"
+                @click="previewReviewImage(index, imgIndex)"
+              ></image>
+              <view class="review-image-more" v-if="review.images.length > 3" @click="previewReviewImage(index, 0)">
+                <text>+{{ review.images.length - 3 }}</text>
+              </view>
+            </view>
             <view class="review-tags">
               <view class="tag small" v-for="(tag, tagIndex) in review.tags" :key="tagIndex">{{ tag }}</view>
             </view>
@@ -162,6 +176,20 @@
               <text class="review-time">{{ review.time }}</text>
             </view>
             <view class="review-content">{{ review.content }}</view>
+            <!-- 评价图片 -->
+            <view class="review-images" v-if="review.images && review.images.length > 0">
+              <image
+                class="review-image"
+                v-for="(img, imgIndex) in review.images.slice(0, 3)"
+                :key="imgIndex"
+                :src="img"
+                mode="aspectFill"
+                @click="previewReviewImage(index, imgIndex)"
+              ></image>
+              <view class="review-image-more" v-if="review.images.length > 3" @click="previewReviewImage(index, 0)">
+                <text>+{{ review.images.length - 3 }}</text>
+              </view>
+            </view>
             <view class="review-tags">
               <view class="tag small" v-for="(tag, tagIndex) in review.tags" :key="tagIndex">{{ tag }}</view>
             </view>
@@ -396,15 +424,6 @@ const onRefresh = () => {
   loadCoachData()
 }
 
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack()
-}
-
-// 分享教练
-const shareCoach = () => {
-  uni.showToast({ title: '分享功能', icon: 'none' })
-}
 
 // 收藏/取消收藏
 const handleToggleFavorite = async () => {
@@ -459,12 +478,23 @@ const selectService = (service) => {
   })
 }
 
-// 预览图片
+// 预览相册图片
 const previewImage = (index) => {
   if (albumList.value.length > 0) {
     uni.previewImage({
       urls: albumList.value,
       current: index
+    })
+  }
+}
+
+// 预览评价图片
+const previewReviewImage = (reviewIndex, imageIndex) => {
+  const review = reviewList.value[reviewIndex]
+  if (review && review.images && review.images.length > 0) {
+    uni.previewImage({
+      urls: review.images,
+      current: imageIndex
     })
   }
 }
@@ -477,13 +507,6 @@ const viewAlbum = () => {
   })
 }
 
-// 查看全部评价
-const viewAllReviews = () => {
-  uni.showToast({
-    title: '全部评价功能开发中',
-    icon: 'none'
-  })
-}
 
 // 立即预约
 const bookNow = () => {
@@ -933,6 +956,36 @@ onMounted(() => {
     color: #cccccc;
     line-height: 1.6;
     margin-bottom: 24rpx;
+  }
+
+  .review-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16rpx;
+    margin-bottom: 24rpx;
+
+    .review-image {
+      width: 160rpx;
+      height: 160rpx;
+      border-radius: 16rpx;
+      background-color: #333333;
+    }
+
+    .review-image-more {
+      width: 160rpx;
+      height: 160rpx;
+      border-radius: 16rpx;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      text {
+        font-size: 36rpx;
+        color: #ffffff;
+        font-weight: 600;
+      }
+    }
   }
 
   .review-tags {
