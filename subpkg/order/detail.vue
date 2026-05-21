@@ -668,7 +668,7 @@ const openHallNavigate = () => {
 // 【新增】联系教练
 const contactCoach = () => {
   // 优先使用订单数据里的教练手机号
-  const phone = orderInfo.value?.coachMobile || coachInfo?.mobile
+  const phone = orderInfo.value?.coachPhone || ''
   if (phone) {
     uni.makePhoneCall({
       phoneNumber: phone,
@@ -741,7 +741,7 @@ const loadOrderDetail = async (silent = false) => {
       coachAvatar: data.coachAvatar,
       coachStageName: data.coachStageName,
       coachMainPhoto: data.coachMainPhoto,
-      coachMobile: data.coachMobile, // 教练手机号
+      coachPhone: data.coachPhone, // 教练手机号
       venueName: data.venueName,
       venueAddress: data.venueAddress,
       venueLongitude: data.venueLongitude,
