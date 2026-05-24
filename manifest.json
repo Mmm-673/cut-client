@@ -21,9 +21,9 @@
         "distribute" : {
             "android" : {
                 "package" : "com.aksjzt.qiuleme.user",
+                "abiFilters" : [ "armeabi-v7a", "arm64-v8a" ],
                 "permissions" : [
                     "<uses-permission android:name=\"android.permission.CHANGE_NETWORK_STATE\"/>",
-                    "<uses-permission android:name=\"android.permission.MOUNT_UNMOUNT_FILESYSTEMS\"/>",
                     "<uses-permission android:name=\"android.permission.VIBRATE\"/>",
                     "<uses-permission android:name=\"android.permission.READ_LOGS\"/>",
                     "<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\"/>",
@@ -39,7 +39,9 @@
                     "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>",
                     "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>",
                     "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>",
-                    "<uses-permission android:name=\"android.permission.ACCESS_LOCATION_EXTRA_COMMANDS\"/>"
+                    "<uses-permission android:name=\"android.permission.ACCESS_LOCATION_EXTRA_COMMANDS\"/>",
+                    "<uses-permission android:name=\"android.permission.RECEIVE_BOOT_COMPLETED\"/>",
+                    "<uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\"/>"
                 ]
             },
             "ios" : {
@@ -105,7 +107,6 @@
             }
         }
     },
-    "quickapp" : {},
     "mp-weixin" : {
         "appid" : "wx02d7bf0f5a282673",
         "setting" : {
@@ -118,95 +119,12 @@
             "subPackages" : true
         },
         "usingComponents" : true,
-        "requiredPrivateInfos": [
-            "makePhoneCall"
-        ],
         "permission" : {
             "scope.userLocation" : {
                 "desc" : "您的位置信息将用于获取附近球厅"
             }
         },
-        "requiredPrivateInfos" : [ "getLocation", "chooseLocation" ]
-    },
-    "mp-alipay" : {
-        "appid" : "",
-        "setting" : {
-            "urlCheck" : false,
-            "es6" : true,
-            "minified" : true,
-            "postcss" : true
-        },
-        "usingComponents" : true
-    },
-    "mp-baidu" : {
-        "appid" : "",
-        "setting" : {
-            "urlCheck" : false,
-            "es6" : true,
-            "minified" : true,
-            "postcss" : true
-        },
-        "usingComponents" : true
-    },
-    "mp-toutiao" : {
-        "appid" : "",
-        "setting" : {
-            "urlCheck" : false,
-            "es6" : true,
-            "minified" : true,
-            "postcss" : true
-        },
-        "usingComponents" : true
-    },
-    "mp-xhs" : {
-        "appid" : "",
-        "setting" : {
-            "urlCheck" : false,
-            "es6" : true,
-            "minified" : true,
-            "postcss" : true
-        },
-        "usingComponents" : true
-    },
-    "mp-kuaishou" : {
-        "appid" : "",
-        "setting" : {
-            "urlCheck" : false,
-            "es6" : true,
-            "minified" : true,
-            "postcss" : true
-        },
-        "usingComponents" : true
-    },
-    "mp-lark" : {
-        "appid" : "",
-        "setting" : {
-            "urlCheck" : false,
-            "es6" : true,
-            "minified" : true,
-            "postcss" : true
-        },
-        "usingComponents" : true
-    },
-    "mp-jd" : {
-        "appid" : "",
-        "setting" : {
-            "urlCheck" : false,
-            "es6" : true,
-            "minified" : true,
-            "postcss" : true
-        },
-        "usingComponents" : true
-    },
-    "harmony" : {
-        "appid" : "",
-        "setting" : {
-            "urlCheck" : false,
-            "es6" : true,
-            "minified" : true,
-            "postcss" : true
-        },
-        "usingComponents" : true
+        "requiredPrivateInfos" : [ "getLocation" ]
     },
     "vueVersion" : "3",
     "h5" : {
