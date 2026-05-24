@@ -79,6 +79,13 @@ function checkLogin() {
   userStore.userId = uni.getStorageSync('auth_user_id') || ''
   userStore.nickname = uni.getStorageSync('auth_nickname') || ''
   userStore.mobile = uni.getStorageSync('auth_mobile') || ''
+
+  // 🔥【新增补丁 A】静态登录成功后，自动触发极光别名绑定
+  // #ifdef APP-PLUS
+  if (userStore.userId) {
+    bindPushAlias(userStore.userId)
+  }
+  // #endif
 }
 
 // 3. 极光推送核心初始化及通知监听函数
@@ -104,20 +111,23 @@ function initPushService() {
 
     const extras = result.extras
     if (extras) {
-      // 🛠️ 业务路由场景 A：教练接受了台球陪练预约，点击通知直接跳转到预约详情单
-      if (extras.type === 'coach_accept' && extras.bookingId) {
-        proxy.$tab.navigateTo(`/pages/booking/info?id=${extras.bookingId}`)
-      }
+      // 加一个小延时保护，防止 App 被冷启动拉起时，页面栈尚未初始化完毕导致路由跳转失败
+      setTimeout(() => {
+        // 🛠️ 业务路由场景 A：教练接受了台球陪练预约，点击通知直接跳转到预约详情单
+        if (extras.type === 'coach_accept' && extras.bookingId) {
+          proxy.$tab.navigateTo(`/pages/booking/info?id=${extras.bookingId}`)
+        }
 
-      // 🛠️ 业务路由场景 B：系统向学员发放了台球优惠券，点击跳转到我的优惠券列表
-      if (extras.type === 'coupon') {
-        proxy.$tab.navigateTo(`/pages/mine/coupon/index`)
-      }
+        // 🛠️ 业务路由场景 B：系统向学员发放了台球优惠券，点击跳转到我的优惠券列表
+        if (extras.type === 'coupon') {
+          proxy.$tab.navigateTo(`/pages/mine/coupon/index`)
+        }
 
-      // 🛠️ 业务路由场景 C：收到了来自教练端的即时通讯消息，跳转到具体的聊天房间
-      if (extras.type === 'chat' && extras.roomId) {
-        proxy.$tab.navigateTo(`/pages/chat/room?id=${extras.roomId}`)
-      }
+        // 🛠️ 业务路由场景 C：收到了来自教练端的即时通讯消息，跳转到具体的聊天房间
+        if (extras.type === 'chat' && extras.roomId) {
+          proxy.$tab.navigateTo(`/pages/chat/room?id=${extras.roomId}`)
+        }
+      }, 300)
     }
   })
 
@@ -126,12 +136,23 @@ function initPushService() {
     if (result.registerID) {
       console.log('【极光用户端】当前设备 RegID 获取成功:', result.registerID)
       // 稳稳妥妥地存入本地缓存
-      // 后续等用户走完 checkLogin() 或在 login/index 登录成功后，可以直接取出来发给后端用于绑定
       uni.setStorageSync('device_reg_id', result.registerID)
     } else {
       console.log('【极光用户端】RegID 还在由极光服务器异步生成中，等待下一次轮询...')
     }
   })
+}
+
+// 🔥【新增补丁 B】封装统一的别名绑定函数，建立设备与具体用户ID的映射
+function bindPushAlias(userId) {
+  // 为用户端定制唯一的别名规则，形如 client_user_10023，方便后端做双端区分推送
+  const targetAlias = `1_${userId}`
+
+  JPush.setAlias({
+    alias: targetAlias,
+    sequence: 1 // 操作序列号
+  })
+  console.log('【极光用户端】已向云端发起用户别名绑定绑定，目标别名:', targetAlias)
 }
 </script>
 
