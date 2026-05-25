@@ -83,7 +83,7 @@
             <view class="service-right">
               <view class="price-row">
                 <text class="price-symbol">¥</text>
-                <text class="price">{{ service.price }}</text>
+                <text class="price">{{ formatPrice(service.price) }}</text>
                 <text class="price-unit">/{{ service.unit }}</text>
               </view>
               <view class="select-btn" :class="{active: selectedService?.id === service.id}" @click="selectService(service)">
@@ -210,7 +210,7 @@
     <view class="bottom-bar">
       <view class="price-info">
         <text class="price-symbol">¥</text>
-        <text class="price">{{ selectedService?.price || coachInfo.price }}</text>
+        <text class="price">{{ formatPrice(selectedService?.price || coachInfo.price) }}</text>
         <text class="price-unit">/{{ selectedService?.unit || '小时' }}起</text>
       </view>
       <view class="book-btn" @click="bookNow">立即预约</view>
@@ -222,6 +222,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { onLoad } from "@dcloudio/uni-app"
 import { getCoachDetail, toggleCoachFavorite, getCoachReviews } from '@/api/billiard/coach'
+import { formatPrice } from '@/utils/common'
 
 // 状态栏和安全区域高度
 const statusBarHeight = ref(0)
@@ -331,7 +332,7 @@ const loadCoachData = async () => {
       orderCount: data.serviceCount || data.orderCount || 0,
       serviceCount: data.serviceCount || data.orderCount || 0,
       distance: formatDistance(data.distance),
-      price: data.price || 0,
+      price: data.hourlyPrice || data.price || 0,
       tags: data.tags || [],
       intro: data.introduction || data.intro || '这位助教很神秘，什么都没写~',
       introduction: data.introduction || data.intro || '这位助教很神秘，什么都没写~'
@@ -343,10 +344,11 @@ const loadCoachData = async () => {
     } else if (data.services && Array.isArray(data.services)) {
       services.value = data.services
     } else {
-      // 默认服务项目（和截图一致）
+      // 默认服务项目（使用接口返回的 hourlyPrice）
+      const coachPrice = data.hourlyPrice || data.price || 9900
       services.value = [
-        { id: 1, name: '台球陪练', desc: '2小时起步，包含基础动作指导、技术纠错、实战演练', sales: 86, price: 99, unit: '小时', hot: true },
-        { id: 2, name: '陪游服务', desc: '5小时起步，全天陪同打球+游玩，包含餐饮交通补贴', sales: 42, price: 399, unit: '天', hot: false }
+        { id: 1,type:1, name: '台球陪练', desc: '2小时起步，包含基础动作指导、技术纠错、实战演练', sales: 86, price: coachPrice, unit: '小时', hot: true },
+        { id: 2, type:2,name: '陪游服务', desc: '5小时起步，陪同打球+游玩，包含餐饮交通补贴', sales: 42, price: Math.round(coachPrice * 5), unit: '次', hot: false }
       ]
     }
 

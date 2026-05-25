@@ -106,3 +106,18 @@ export function getSystemInfo() {
     }
   }
 }
+
+/**
+ * 格式化价格（分转元）
+ * @param {number} cents - 价格（分）
+ * @param {boolean} keepDecimal - 是否保留小数位，默认 true
+ * @returns {string} 格式化后的价格
+ */
+export function formatPrice(cents, keepDecimal = true) {
+  if (cents === null || cents === undefined) return '0'
+  const yuan = cents / 100
+  if (keepDecimal) {
+    return yuan.toFixed(2)
+  }
+  return yuan.toString()
+}

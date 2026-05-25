@@ -113,7 +113,7 @@
             <view class="bottom-row">
               <view class="price-row">
                 <text class="price-symbol">¥</text>
-                <text class="price">{{ coach.price || 0 }}</text>
+                <text class="price">{{ formatPrice(coach.hourlyPrice) }}</text>
                 <text class="price-unit">/小时</text>
               </view>
               <view class="action-buttons">
@@ -147,7 +147,7 @@
 import {ref, onMounted} from 'vue'
 import {onShow} from  "@dcloudio/uni-app"
 import {getCoachList} from '@/api/billiard/coach'
-import {debounce} from '@/utils/common'
+import {debounce, formatPrice} from '@/utils/common'
 import {getLocation, extractCity, formatDistance, showPermissionModal} from '@/utils/location'
 
 const statusBarHeight = ref(0)
