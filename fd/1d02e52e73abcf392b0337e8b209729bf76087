@@ -1,0 +1,27 @@
+utils/common.js
+  7453dc17cc51b89b 109-123
+pages/coach/list.vue
+  7453dc17cc51b89b 116,150
+subpkg/coach/detail.vue
+  7453dc17cc51b89b 86,213,225,335,347-348
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "fd1d02e52e73abcf392b0337e8b209729bf76087",
+  "prompts": {
+    "7453dc17cc51b89b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "232f9d31-769f-49c1-9a96-d80e98bd0d2b",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 25,
+      "total_deletions": 8,
+      "accepted_lines": 131,
+      "overriden_lines": 2
+    }
+  }
+}
