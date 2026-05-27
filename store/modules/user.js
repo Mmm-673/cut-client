@@ -23,6 +23,7 @@ import {
   validateSmsCode
 } from '@/api/auth'
 import defAva from '@/static/images/profile.jpg'
+import { syncPushForUser } from '@/utils/jpush'
 
 export const useUserStore = defineStore('user', () => {
   // 状态
@@ -97,11 +98,21 @@ export const useUserStore = defineStore('user', () => {
           userId: data.userId,
           mobile: loginData.mobile
         })
+        bindPushAfterLogin()
         resolve(data)
       }).catch(error => {
         reject(error)
       })
     })
+  }
+
+  const bindPushAfterLogin = (id) => {
+    // #ifdef APP-PLUS
+    const userId = id
+    if (userId) {
+      syncPushForUser(userId)
+    }
+    // #endif
   }
 
   // 退出登录

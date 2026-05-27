@@ -130,6 +130,38 @@ export function getSafeArea() {
   }
 }
 
+// 兼容旧代码 - 登录页面还在用这些函数
+export const openPermissionSettings = () => {
+  // #ifdef APP-PLUS
+  const systemInfo = uni.getSystemInfoSync()
+  const platform = systemInfo.platform
+
+  if (platform === 'ios') {
+    plus.runtime.openURL('app-settings:')
+  } else if (platform === 'android') {
+    const main = plus.android.runtimeMainActivity()
+    const Intent = plus.android.importClass('android.content.Intent')
+    const Settings = plus.android.importClass('android.provider.Settings')
+    const Uri = plus.android.importClass('android.net.Uri')
+    const packageName = main.getPackageName()
+
+    try {
+      const intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+      const uri = Uri.fromParts('package', packageName, null)
+      intent.setData(uri)
+      main.startActivity(intent)
+    } catch (e) {
+      try {
+        const intent = new Intent(Settings.ACTION_SETTINGS)
+        main.startActivity(intent)
+      } catch (e2) {
+        uni.showToast({ title: '打开设置失败', icon: 'none' })
+      }
+    }
+  }
+  // #endif
+}
+
 /**
  * 获取状态栏高度
  */
@@ -144,6 +176,7 @@ export function getStatusBarHeight() {
 
 export default {
   isH5,
+  openPermissionSettings,
   isMP,
   isMPWeixin,
   isMPAlipay,
