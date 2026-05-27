@@ -29,6 +29,8 @@ function initApp() {
   // 初始化应用配置
   initConfig()
   // 设置全局状态栏高度
+
+  // #ifdef APP-PLUS
   setStatusBarHeight()
   // #endif
 
