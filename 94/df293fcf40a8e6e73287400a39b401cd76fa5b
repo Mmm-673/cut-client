@@ -1,0 +1,29 @@
+subpkg/booking/hall.vue
+  f5ad275f78ff4a1e 867-873,884
+subpkg/booking/confirm.vue
+  f5ad275f78ff4a1e 564-568,572-581,665,674-680
+api/billiard/order.js
+  f5ad275f78ff4a1e 82
+subpkg/coach/detail.vue
+  f5ad275f78ff4a1e 225,515,531-593
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "94df293fcf40a8e6e73287400a39b401cd76fa5b",
+  "prompts": {
+    "f5ad275f78ff4a1e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0f8f649d-d07c-4d64-aa10-343d15af4cd6",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 108,
+      "total_deletions": 66,
+      "accepted_lines": 1399,
+      "overriden_lines": 0
+    }
+  }
+}
