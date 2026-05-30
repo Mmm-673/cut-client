@@ -222,6 +222,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { onLoad } from "@dcloudio/uni-app"
 import { getCoachDetail, toggleCoachFavorite, getCoachReviews } from '@/api/billiard/coach'
+import { createOrder } from '@/api/billiard/order'
 import { formatPrice } from '@/utils/common'
 
 // 状态栏和安全区域高度
@@ -511,7 +512,7 @@ const viewAlbum = () => {
 
 
 // 立即预约
-const bookNow = () => {
+const bookNow = async () => {
   if (!selectedService.value) {
     uni.showToast({ title: '请先选择服务项目', icon: 'none' })
     return
@@ -527,8 +528,69 @@ const bookNow = () => {
   const isCompanion = selectedService.value.type === 2
 
   if (isCompanion) {
-    // 陪游服务，直接跳转确认订单页创建订单
-    uni.navigateTo({ url: '/subpkg/booking/confirm?createDirect=1' })
+    // 陪游服务，先直接创建订单
+    try {
+      uni.showLoading({ title: '创建订单中...' })
+
+      // 计算默认预约时间（1小时后）
+      const bookingTime = Date.now() + 3600000
+
+      // 陪游服务时长：默认300分钟（5小时）
+      const serviceDuration = 300
+      const quantity = 5
+
+      // 创建订单
+      const createParams = {
+        coachId: coachInfo.id,
+        serviceType: 2, // 陪游
+        bookingTime: bookingTime,
+        serviceDuration: serviceDuration,
+        quantity: quantity,
+        serviceItemId: selectedService.value.id
+      }
+
+      const createRes = await createOrder(createParams)
+      const resultData = createRes.data || {}
+
+      // 格式化时间显示
+      const date = new Date(bookingTime)
+      const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hour = String(date.getHours()).padStart(2, '0')
+      const minute = String(date.getMinutes()).padStart(2, '0')
+      const weekDay = weekDays[date.getDay()]
+      const timeText = `${weekDay} ${month}.${day} ${hour}:${minute}`
+
+      // 保存订单数据到 storage
+      uni.setStorageSync('createdOrderData', {
+        ...resultData,
+        coachInfo: coachInfo,
+        selectedService: selectedService.value,
+        serviceType: 2, // 陪游
+        serviceDuration: serviceDuration,
+        quantity: quantity,
+        bookingTime: bookingTime,
+        timeText: timeText
+      })
+
+      uni.hideLoading()
+      uni.showToast({ title: '订单创建成功', icon: 'success' })
+
+      // 跳转到确认支付页
+      setTimeout(() => {
+        uni.redirectTo({ url: '/subpkg/booking/confirm' })
+      }, 500)
+
+    } catch (error) {
+      uni.hideLoading()
+      console.error('创建订单失败:', error)
+      uni.showToast({
+        title: error.message || '创建订单失败，请重试',
+        icon: 'none',
+        duration: 2000
+      })
+    }
   } else {
     // 台球陪练，需要选择球厅
     uni.navigateTo({ url: '/subpkg/booking/hall' })

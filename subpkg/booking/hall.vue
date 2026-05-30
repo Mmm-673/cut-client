@@ -864,6 +864,13 @@ const chooseHall = async (hall) => {
 
     console.log('创建订单参数:', createParams)
 
+    // 如果有选中的服务项目，传递服务项目ID
+    if (coachInfo.value.selectedService?.id) {
+      createParams.serviceItemId = coachInfo.value.selectedService.id
+    }
+
+    console.log('创建订单参数（含服务项目）:', createParams)
+
     // 调用创建订单接口
     const createRes = await createOrder(createParams)
 
@@ -874,6 +881,7 @@ const chooseHall = async (hall) => {
       ...createRes.data,
       coachInfo: coachInfo.value,
       hallInfo: hall,
+      serviceType: 1, // 台球陪练
       serviceDuration: orderInfo.value.duration * 60,
       quantity: orderInfo.value.duration,
       bookingTime: selectedBookingTime.value,

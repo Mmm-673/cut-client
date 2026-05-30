@@ -79,6 +79,7 @@ export function getOrderDetail(params) {
  * @param {number} data.bookingTime - 预约服务开始时间（毫秒时间戳）
  * @param {number} data.serviceDuration - 预定时长（分钟），台球陪练 >= 120，陪游 >= 300
  * @param {number} data.quantity - 份数或小时数，用于金额计算
+ * @param {number} [data.serviceItemId] - 选中的服务项目ID，用于确定价格
  * @param {number} [data.venueId] - 台球陪练可传合作球厅ID；陪游不强制
  * @param {string} [data.venueName] - 服务地址名称（球厅或陪游约定地点）
  * @param {string} [data.venueAddress] - 服务地址文本，陪游场景可由前端约定地点回填

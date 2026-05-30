@@ -561,11 +561,24 @@ const handleCreateOrder = async () => {
       venueLatitude: orderData.value.hallInfo?.latitude || orderData.value.venueLatitude
     }
 
+    // 如果有选中的服务项目，传递服务项目ID
+    if (orderData.value.selectedService?.id) {
+      createParams.serviceItemId = orderData.value.selectedService.id
+    }
+
     const createRes = await createOrder(createParams)
     const resultData = createRes.data || {}
 
-    // 合并数据
-    orderData.value = { ...orderData.value, ...resultData }
+    // 合并数据 - 确保使用后端返回的价格数据
+    orderData.value = {
+      ...orderData.value,
+      ...resultData,
+      // 确保价格相关字段使用后端返回的数据
+      serviceAmount: resultData.serviceAmount ?? 0,
+      travelAmount: resultData.travelAmount ?? 0,
+      travelDiscountAmount: resultData.travelDiscountAmount ?? 0,
+      payAmount: resultData.payAmount ?? 0
+    }
     isOrderCreated.value = true
 
     // 保存到 storage
@@ -649,7 +662,7 @@ const startCountdown = () => {
 
 // ---------------------- 生命周期 ----------------------
 onLoad((options) => {
-  createDirect.value = options.createDirect === '1'
+  // 不再需要 createDirect 参数，订单已在 detail 页创建
   initTimePickerData()
 })
 
@@ -658,6 +671,13 @@ onMounted(() => {
   const createdOrder = uni.getStorageSync('createdOrderData')
   if (createdOrder) {
     orderData.value = createdOrder
+    // 设置服务类型
+    if (createdOrder.serviceType !== undefined) {
+      serviceType.value = createdOrder.serviceType
+    } else if (createdOrder.hallInfo) {
+      // 如果有球厅信息，默认是台球陪练
+      serviceType.value = 1
+    }
     uni.removeStorageSync('createdOrderData')
     isOrderCreated.value = true
     startCountdown()
@@ -665,55 +685,6 @@ onMounted(() => {
     // 重新获取教练详情以确保头像等信息最新
     if (orderData.value.coachInfo?.id) {
       loadCoachDetail(orderData.value.coachInfo.id)
-    }
-  } else if (createDirect.value) {
-    // 直接创建订单模式：从 selectedCoach 获取教练信息
-    const coach = uni.getStorageSync('selectedCoach')
-    if (coach) {
-      orderData.value = { coachInfo: coach }
-
-      // 判断服务类型
-      const serviceName = coach.selectedService?.name || ''
-      const isCompanion = serviceName.includes('陪游') || coach.selectedService?.type === 2
-      serviceType.value = isCompanion ? 2 : 1
-
-      // 设置默认值
-      const price = coach.selectedService?.price || coach.price || 0
-      const duration = serviceType.value === 1 ? 120 : 300 // 陪练2小时，陪游5小时
-      const quantity = serviceType.value === 1 ? 2 : 5
-
-      orderData.value = {
-        ...orderData.value,
-        serviceType: serviceType.value,
-        serviceDuration: duration,
-        quantity: quantity,
-        serviceAmount: Math.round(price * quantity * 100), // 分
-        payAmount: Math.round(price * quantity * 100),
-        travelAmount: 0,
-        travelDiscountAmount: 0
-      }
-
-      // 设置默认时间
-      const now = new Date(Date.now() + 3600000) // 1小时后
-      const month = String(now.getMonth() + 1).padStart(2, '0')
-      const day = String(now.getDate()).padStart(2, '0')
-      const hour = String(now.getHours()).padStart(2, '0')
-      const minute = String(Math.ceil(now.getMinutes() / 5) * 5).padStart(2, '0')
-      orderData.value.timeText = `今天 ${month}.${day} ${hour}:${minute}`
-      orderData.value.bookingTime = now.getTime()
-
-      // 设置时间选择器默认值
-      setDefaultPickerValue(now)
-
-      isOrderCreated.value = false
-      loadWalletBalance()
-      // 获取教练详情以获取最新头像等信息
-      if (coach.id) {
-        loadCoachDetail(coach.id)
-      }
-    } else {
-      uni.showToast({ title: '教练信息缺失，请重新下单', icon: 'none' })
-      setTimeout(() => { uni.reLaunch({ url: '/pages/coach/list' }) }, 1500)
     }
   } else {
     uni.showToast({ title: '订单数据缺失，请重新下单', icon: 'none' })
