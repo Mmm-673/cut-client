@@ -93,7 +93,7 @@
 
             <view class="rating-row">
               <uni-icons type="star-filled" size="14" color="#FFD700"></uni-icons>
-              <text class="rating">{{ coach.overallScore || coach.rating || 5.0 }}</text>
+              <text class="rating">{{ coach.overallScore }}</text>
               <text class="review-count">({{ coach.serviceCount || coach.reviewCount || 0 }}单)</text>
               <view class="coach-tags">
                 <view

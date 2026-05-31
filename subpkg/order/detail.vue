@@ -180,6 +180,7 @@
 
     <!-- 已接单/即将开始 -->
     <view class="bottom-bar" v-if="orderInfo.status === 30">
+      <button class="action-btn cancel" @click="cancelOrderFunc">取消订单</button>
       <button class="action-btn contact-coach" @click="contactCoach">
         <uni-icons type="phone" size="18" color="#00BB88" />
         联系教练
@@ -225,43 +226,66 @@
         <!-- 时长选择 -->
         <view class="add-time-popup-content">
           <view class="add-time-tip">请选择需要延长的服务时长</view>
+          <view class="add-time-limit-tip">
+            {{ orderInfo.serviceType === 2 ? '陪游最少加5小时' : '台球最少加2小时' }}
+          </view>
           <view class="add-time-options">
             <view
-              v-for="option in addTimeOptions"
-              :key="option.value"
-              class="add-time-option"
-              :class="{ active: selectedAddMinutes === option.value }"
-              @click="selectedAddMinutes = option.value"
+                v-for="option in addTimeOptions"
+                :key="option.value"
+                class="add-time-option"
+                :class="{ active: selectedAddMinutes === option.value || (option.value === 'custom' && showCustomInput) }"
+                @click="handleOptionSelect(option)"
             >
               <text class="option-label">{{ option.label }}</text>
+            </view>
+          </view>
+          <!-- 自定义输入框 -->
+          <view class="custom-input-wrapper" v-if="showCustomInput">
+            <view class="custom-input-row">
+              <input
+                  class="custom-input"
+                  type="number"
+                  v-model="customMinutes"
+                  :placeholder="'最少' + (orderInfo.serviceType === 2 ? '5' : '2') + '小时'"
+                  placeholder-class="input-placeholder"
+                  @input="handleCustomInput"
+              />
+              <text class="custom-unit">小时</text>
             </view>
           </view>
         </view>
       </view>
     </view>
 
+
     <!-- 支付弹窗 -->
     <view class="pay-popup-mask" v-if="showPayPopup" @click="closePayPopup">
       <view class="pay-popup-wrapper" @click.stop>
         <!-- 头部 -->
         <view class="pay-popup-header">
-          <text class="close-btn" @click="closePayPopup">取消</text>
           <text class="pay-popup-title">选择支付方式</text>
-          <text class="confirm-btn" :class="{ disabled: isPaying }" @click="confirmPay">
-            {{ isPaying ? '支付中...' : '确认' }}
-          </text>
+          <text class="pay-popup-close" @click="closePayPopup">×</text>
         </view>
-        <!-- 金额 -->
         <view class="pay-popup-content">
           <view class="pay-amount-row">
             <text class="pay-label">支付金额</text>
-            <text class="pay-amount">¥{{ formatAmount(orderInfo.payAmount) }}</text>
+            <text class="pay-amount">¥{{ formatAmount(currentPayAmount) }}</text>
           </view>
-          <!-- 支付方式列表 -->
-          <view class="pay-method-list">
+          <!-- 倒计时提示 -->
+          <view v-if="addTimePayOrderId && !isAddTimeExpired && addTimeCountdownText" class="pay-countdown-tip">
+            <uni-icons type="clock" size="16" color="#00BB88" />
+            <text>请在 {{ addTimeCountdownText }} 内完成支付</text>
+          </view>
+          <!-- 过期提示 -->
+          <view v-if="addTimePayOrderId && isAddTimeExpired" class="pay-expire-tip">
+            <uni-icons type="info" size="16" color="#F59E0B" />
+            <text>该订单已过期，请重新发起加钟请求</text>
+          </view>
+          <view class="pay-method-list" v-if="payList.length > 0">
             <view
               v-for="item in payList"
-              :key="item.value"
+              :key="item.channelCode || item.value"
               class="pay-method-item"
               :class="{ active: selectedPay === item.value }"
               @click="selectPay(item.value)"
@@ -277,6 +301,17 @@
               </view>
             </view>
           </view>
+          <view v-else class="pay-empty-tip">暂无可用支付方式，请稍后重试</view>
+        </view>
+        <view class="pay-popup-footer">
+          <button
+            class="pay-submit-btn"
+            :class="{ disabled: isPaying || !selectedPayItem || !currentPayOrderId || isAddTimeExpired }"
+            :disabled="isPaying || !selectedPayItem || !currentPayOrderId || isAddTimeExpired"
+            @click="confirmPay"
+          >
+            {{ isPaying ? '支付中...' : (isAddTimeExpired ? '已过期' : '确认支付') }}
+          </button>
         </view>
       </view>
     </view>
@@ -378,8 +413,8 @@ let cachedVenuePhotoUrl = null
 let isRequesting = false
 // 支付弹窗显示状态
 const showPayPopup = ref(false)
-// 选中的支付方式
-const selectedPay = ref('wechat')
+// 选中的支付渠道编码
+const selectedPay = ref('')
 // 支付中状态
 const isPaying = ref(false)
 // 创建订单时保存的支付订单ID
@@ -417,11 +452,11 @@ const exceptionType = ref(1)
 const exceptionReason = ref('')
 const evidenceUrls = ref([])
 
-// 加钟时长选项
+// 加钟时长选项（单位：小时）
 const addTimeOptions = ref([
-  { label: '2小时', value: 120 },
-  { label: '4小时', value: 240 },
-  { label: '6小时', value: 360 },
+  { label: '2小时', value: 2 },
+  { label: '4小时', value: 4 },
+  { label: '6小时', value: 6 },
   { label: '自定义', value: 'custom' }
 ])
 // 【新增】倒计时相关
@@ -432,10 +467,30 @@ const countdownSeconds = ref('00')
 
 // 支付方式列表（从后端获取）
 const payList = ref([])
+const selectedPayItem = computed(() => {
+  return payList.value.find(item => item.value === selectedPay.value) || null
+})
+const currentPayOrderId = computed(() => addTimePayOrderId.value || payOrderId.value)
+const pendingAddTimeMinutes = ref(0)
+const pendingAddTimeAmount = ref(0) // 后端返回的加钟金额（分）
+const addTimeExpireTime = ref(0) // 后端返回的加钟支付过期时间（毫秒）
+const addTimeCountdownText = ref('') // 倒计时显示文本
+let addTimeCountdownTimer = null // 倒计时定时器
+
+const isAddTimeExpired = computed(() => {
+  if (!addTimeExpireTime.value) return false
+  return Date.now() > addTimeExpireTime.value
+})
+const currentPayAmount = computed(() => {
+  if (addTimePayOrderId.value) {
+    return pendingAddTimeAmount.value
+  }
+  return orderInfo.value.payAmount || orderInfo.value.totalAmount || 0
+})
 
 // 是否显示底部操作栏
 const showBottomBar = computed(() => {
-  return [10, 20, 30, 40, 50, 60].includes(orderInfo.status)
+  return [10, 20, 30, 40, 50, 60].includes(orderInfo.value.status)
 })
 
 /**
@@ -473,6 +528,7 @@ const coachInfo = ref({
   level: 0,
   serviceCount: 0,
   overallScore: 0,
+  hourlyPrice: 0,
   tags: []
 })
 
@@ -496,6 +552,9 @@ const statusMap = {
   70: { text: '已取消' },
   80: { text: '退款中' }
 }
+
+const CANCELLABLE_ORDER_STATUSES = [10, 20, 30]
+const canCancelOrder = (status) => CANCELLABLE_ORDER_STATUSES.includes(Number(status))
 
 // 获取状态图标
 const getStatusIcon = (status) => {
@@ -629,14 +688,13 @@ const loadPayChannels = async () => {
   try {
     const channels = await fetchEnabledChannels(10)
     payList.value = channels
-    // 默认选中第一个
-    if (channels.length > 0) {
-      selectedPay.value = channels[0].value
+    if (!channels.some(item => item.value === selectedPay.value)) {
+      selectedPay.value = channels[0]?.value || ''
     }
   } catch (error) {
     console.error('加载支付渠道失败:', error)
-    // 使用本地默认渠道
     payList.value = []
+    selectedPay.value = ''
   }
 }
 
@@ -691,6 +749,7 @@ const loadCoachDetail = async (coachId) => {
       level: data.level,
       serviceCount: data.serviceCount,
       overallScore: data.overallScore,
+      hourlyPrice: data.hourlyPrice || data.price || 0,
       tags: data.tags ? data.tags.split(',').filter(tag => tag.trim()) : []
     })
   } catch (error) {
@@ -829,6 +888,11 @@ const goBack = () => {
 
 // 取消订单
 const cancelOrderFunc = async () => {
+  if (!canCancelOrder(orderInfo.value.status)) {
+    uni.showToast({ title: '当前状态不可取消', icon: 'none' })
+    return
+  }
+
   uni.showModal({
     title: '提示',
     content: '确定要取消这个订单吗？',
@@ -838,6 +902,7 @@ const cancelOrderFunc = async () => {
           await cancelOrder({ orderId: orderId.value })
           uni.showToast({ title: '订单已取消', icon: 'success' })
           stopCountdown()
+          stopTimerPolling()
           setTimeout(() => {
             loadOrderDetail()
           }, 1500)
@@ -850,50 +915,79 @@ const cancelOrderFunc = async () => {
 }
 
 // 去支付
-const payOrder = () => {
-  // 显示支付弹窗
+const payOrder = async () => {
+  if (!payOrderId.value) {
+    uni.showToast({ title: '支付订单信息缺失', icon: 'none' })
+    return
+  }
+  if (payList.value.length === 0) {
+    await loadPayChannels()
+  }
+  if (payList.value.length === 0) {
+    uni.showToast({ title: '暂无可用支付方式', icon: 'none' })
+    return
+  }
   showPayPopup.value = true
 }
 
 // 确认支付
 const confirmPay = async () => {
-  // 判断是加钟支付还是普通订单支付
-  const currentPayOrderId = addTimePayOrderId.value || payOrderId.value
+  const payChannel = selectedPayItem.value
 
-  if (!currentPayOrderId || !currentOrderId.value) {
+  if (!currentPayOrderId.value || !currentOrderId.value) {
     uni.showToast({ title: '支付订单信息缺失', icon: 'none' })
+    return
+  }
+
+  if (!payChannel) {
+    uni.showToast({ title: '请选择支付方式', icon: 'none' })
+    return
+  }
+
+  // 检查加钟支付是否已过期
+  if (addTimePayOrderId.value && isAddTimeExpired.value) {
+    uni.showModal({
+      title: '提示',
+      content: '该加钟订单已过期，请重新发起加钟请求',
+      showCancel: false,
+      success: () => {
+        closePayPopup()
+      }
+    })
     return
   }
 
   isPaying.value = true
   try {
     await executePayment({
-      payOrderId: currentPayOrderId,
+      payOrderId: currentPayOrderId.value,
       orderId: currentOrderId.value,
-      payValue: selectedPay.value,
+      payValue: payChannel.value,
+      channelCode: payChannel.channelCode,
       onSuccess: (payResult) => {
-        // 支付成功
         uni.showToast({
           title: addTimePayOrderId.value ? '加钟成功' : '支付成功',
           icon: 'success'
         })
         showPayPopup.value = false
-        // 清空加钟相关状态
         addTimePayOrderId.value = null
+        pendingAddTimeMinutes.value = 0
+        pendingAddTimeAmount.value = 0
+        addTimeExpireTime.value = 0
         setTimeout(() => {
           loadOrderDetail()
         }, 1500)
       },
       onCancel: () => {
-        // 支付取消
         uni.showToast({ title: '支付已取消', icon: 'none' })
       },
       onError: (error) => {
-        // 支付失败
-        uni.showToast({
-          title: error.message || '支付失败，请重试',
-          icon: 'none'
-        })
+        if (!error.pending) {
+          uni.showToast({
+            title: error.message || '支付失败，请重试',
+            icon: 'none'
+          })
+        }
       }
     })
   } catch (error) {
@@ -906,13 +1000,21 @@ const confirmPay = async () => {
 // 关闭支付弹窗时清空加钟状态
 const closePayPopup = () => {
   showPayPopup.value = false
+  // 停止倒计时
+  stopAddTimeCountdown()
+  // 清空加钟相关状态
   addTimePayOrderId.value = null
+  pendingAddTimeMinutes.value = 0
+  pendingAddTimeAmount.value = 0
+  addTimeExpireTime.value = 0
 }
 
 // 加钟 - 打开弹窗
 const addTime = () => {
   showAddTimePopup.value = true
-  selectedAddMinutes.value = 120 // 默认选2小时
+  // 根据服务类型设置默认值和最小值
+  const minHours = orderInfo.value.serviceType === 2 ? 5 : 2
+  selectedAddMinutes.value = minHours // 默认选最小小时数
   showCustomInput.value = false
   customMinutes.value = ''
 }
@@ -923,12 +1025,18 @@ const closeAddTimePopup = () => {
   isAddingTime.value = false
   showCustomInput.value = false
   customMinutes.value = ''
+  // 注意：不清空加钟业务数据（addTimePayOrderId等），因为关闭弹窗后可能还要显示支付弹窗
+  // 业务数据在 closePayPopup() 或支付成功后才清空
 }
 
 // 处理选项选择
 const handleOptionSelect = (option) => {
   if (option.value === 'custom') {
     showCustomInput.value = true
+    // 设置自定义输入的默认值为最小值
+    const minHours = orderInfo.value.serviceType === 2 ? 5 : 2
+    customMinutes.value = String(minHours)
+    selectedAddMinutes.value = minHours
   } else {
     showCustomInput.value = false
     selectedAddMinutes.value = option.value
@@ -936,27 +1044,44 @@ const handleOptionSelect = (option) => {
 }
 
 // 处理自定义输入
-const handleCustomInput = (e) => {
-  const val = parseInt(e.detail.value)
-  if (val > 0) {
-    selectedAddMinutes.value = val
+const handleCustomInput = () => {
+  const minHours = orderInfo.value.serviceType === 2 ? 5 : 2
+  let val = parseInt(customMinutes.value)
+  if (isNaN(val) || val < minHours) {
+    val = minHours
+    customMinutes.value = String(val)
   }
+  selectedAddMinutes.value = val
 }
+
 
 // 确认加钟
 const confirmAddTime = async () => {
   if (isAddingTime.value) return
 
+  // 验证时长
+  const minHours = orderInfo.value.serviceType === 2 ? 5 : 2
+  if (selectedAddMinutes.value < minHours) {
+    uni.showToast({
+      title: orderInfo.value.serviceType === 2 ? '陪游最少加5小时' : '台球最少加2小时',
+      icon: 'none'
+    })
+    return
+  }
+
   isAddingTime.value = true
   try {
-    // 调用加钟接口
+    // 调用加钟接口（转换为分钟）
     const res = await addTimeOrder({
       orderId: orderId.value,
-      addMinutes: selectedAddMinutes.value
+      addMinutes: selectedAddMinutes.value * 60
     })
 
-    // 获取加钟支付订单ID
-    addTimePayOrderId.value = res.data
+    // 获取加钟支付订单ID、金额和过期时间
+    addTimePayOrderId.value = res.data.payOrderId
+    pendingAddTimeAmount.value = res.data.addAmount
+    addTimeExpireTime.value = res.data.expireTime
+    pendingAddTimeMinutes.value = selectedAddMinutes.value * 60 // 保存分钟数
     currentOrderId.value = orderId.value
 
     // 关闭加钟弹窗
@@ -964,6 +1089,9 @@ const confirmAddTime = async () => {
 
     // 显示支付弹窗
     showPayPopup.value = true
+
+    // 启动倒计时
+    startAddTimeCountdown()
 
     // 重新加载支付渠道（可选）
     await loadPayChannels()
@@ -1025,6 +1153,53 @@ const formatSeconds = (seconds) => {
   const m = Math.floor((seconds % 3600) / 60)
   const s = seconds % 60
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+// 更新加钟倒计时显示
+const updateAddTimeCountdown = () => {
+  if (!addTimeExpireTime.value) {
+    addTimeCountdownText.value = ''
+    return
+  }
+
+  const now = Date.now()
+  const diff = Math.max(0, addTimeExpireTime.value - now)
+
+  if (diff <= 0) {
+    addTimeCountdownText.value = '已过期'
+    return
+  }
+
+  const totalSeconds = Math.floor(diff / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  addTimeCountdownText.value = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+}
+
+// 启动加钟倒计时
+const startAddTimeCountdown = () => {
+  // 先清除之前的定时器
+  if (addTimeCountdownTimer) {
+    clearInterval(addTimeCountdownTimer)
+    addTimeCountdownTimer = null
+  }
+
+  // 更新一次显示
+  updateAddTimeCountdown()
+
+  // 启动定时器每秒更新
+  addTimeCountdownTimer = setInterval(() => {
+    updateAddTimeCountdown()
+  }, 1000)
+}
+
+// 停止加钟倒计时
+const stopAddTimeCountdown = () => {
+  if (addTimeCountdownTimer) {
+    clearInterval(addTimeCountdownTimer)
+    addTimeCountdownTimer = null
+  }
+  addTimeCountdownText.value = ''
 }
 
 // 默认占位图
@@ -1157,6 +1332,7 @@ onUnmounted(() => {
   stopCountdown()
   stopPolling()
   stopTimerPolling()
+  stopAddTimeCountdown()
 })
 
 onShow(() => {
@@ -1621,6 +1797,10 @@ let lastStatus = null
   background: #1E252B;
   border-radius: 32rpx 32rpx 0 0;
   animation: slideUp 0.3s ease;
+  max-height: 78vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 @keyframes slideUp {
@@ -1635,98 +1815,152 @@ let lastStatus = null
 .pay-popup-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 30rpx;
+  justify-content: center;
+  position: relative;
+  padding: 28rpx 30rpx;
   border-bottom: 1rpx solid rgba(255,255,255,0.05);
-  .close-btn {
-    color: #9CA3AF;
-    font-size: 30rpx;
-  }
+  flex-shrink: 0;
   .pay-popup-title {
     color: #fff;
     font-size: 32rpx;
     font-weight: 600;
   }
-  .confirm-btn {
-    color: #00BB88;
-    font-size: 30rpx;
-    font-weight: 600;
-    &.disabled {
-      color: rgba(0, 187, 136, 0.5);
-      pointer-events: none;
-    }
+  .pay-popup-close {
+    position: absolute;
+    right: 30rpx;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 52rpx;
+    height: 52rpx;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9CA3AF;
+    font-size: 40rpx;
+    line-height: 1;
+    background: rgba(255,255,255,0.06);
   }
 }
 
 .pay-popup-content {
-  padding: 30rpx;
-  padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
-  padding-bottom: calc(30rpx + constant(safe-area-inset-bottom));
+  flex: 1;
+  overflow-y: auto;
+  padding: 24rpx 30rpx 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .pay-amount-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30rpx;
-  padding-bottom: 30rpx;
-  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  align-items: flex-end;
+  gap: 24rpx;
+  margin-bottom: 24rpx;
+  padding: 24rpx;
+  border-radius: 24rpx;
+  background: rgba(255,255,255,0.04);
   .pay-label {
     color: #9CA3AF;
-    font-size: 28rpx;
+    font-size: 26rpx;
   }
   .pay-amount {
     color: #00BB88;
-    font-size: 40rpx;
+    font-size: 44rpx;
     font-weight: 700;
+    line-height: 1;
   }
 }
 
+.pay-countdown-tip {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 16rpx;
+  margin-bottom: 24rpx;
+  border-radius: 16rpx;
+  background: rgba(0, 187, 136, 0.1);
+  color: #00BB88;
+  font-size: 24rpx;
+}
+
+.pay-expire-tip {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 16rpx;
+  margin-bottom: 24rpx;
+  border-radius: 16rpx;
+  background: rgba(245, 158, 11, 0.1);
+  color: #F59E0B;
+  font-size: 24rpx;
+}
+
 .pay-method-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+
   .pay-method-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 24rpx 0;
-    border-bottom: 1rpx solid rgba(255,255,255,0.05);
-    &:last-child {
-      border-bottom: none;
-    }
+    min-height: 112rpx;
+    padding: 24rpx;
+    border-radius: 24rpx;
+    background: #2A3338;
+    border: 2rpx solid transparent;
+    box-sizing: border-box;
+
     .pay-method-left {
       display: flex;
       align-items: center;
-      gap: 16rpx;
+      gap: 18rpx;
+      min-width: 0;
+      flex: 1;
+
       .pay-method-icon {
-        width: 70rpx;
-        height: 70rpx;
+        width: 72rpx;
+        height: 72rpx;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
       }
+
       .pay-method-name {
         color: #fff;
         font-size: 30rpx;
         font-weight: 500;
+        flex: 1;
+        min-width: 0;
       }
+
       .pay-method-balance {
         color: #9CA3AF;
         font-size: 24rpx;
       }
     }
+
     .pay-method-radio {
       width: 40rpx;
       height: 40rpx;
-      border: 3rpx solid #2a3338;
+      margin-left: 16rpx;
+      border: 3rpx solid #4B5563;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
+
     &.active {
+      border-color: rgba(0, 187, 136, 0.9);
+      background: rgba(0, 187, 136, 0.14);
+
       .pay-method-radio {
         border-color: #00BB88;
+
         .radio-dot {
           width: 20rpx;
           height: 20rpx;
@@ -1735,6 +1969,41 @@ let lastStatus = null
         }
       }
     }
+  }
+}
+
+.pay-empty-tip {
+  padding: 48rpx 24rpx;
+  text-align: center;
+  color: #9CA3AF;
+  font-size: 28rpx;
+}
+
+.pay-popup-footer {
+  flex-shrink: 0;
+  padding: 24rpx 30rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid rgba(255,255,255,0.05);
+  background: #1E252B;
+}
+
+.pay-submit-btn {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: 44rpx;
+  border: none;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+
+  &::after {
+    border: none;
+  }
+
+  &.disabled {
+    opacity: 0.5;
   }
 }
 
@@ -1791,6 +2060,12 @@ let lastStatus = null
   .add-time-tip {
     color: #9CA3AF;
     font-size: 28rpx;
+    margin-bottom: 40rpx;
+    text-align: center;
+  }
+  .add-time-limit-tip {
+    color: #F59E0B;
+    font-size: 24rpx;
     margin-bottom: 40rpx;
     text-align: center;
   }

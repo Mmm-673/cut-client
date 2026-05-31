@@ -258,7 +258,7 @@ const loadCoachInfo = async (id) => {
       id: data.id,
       name: data.stageName || data.name,
       stageName: data.stageName || data.name,
-      avatar: getMainPhoto(data.photos) || data.avatar || '/static/default-avatar.png',
+      avatar:  data.avatar || getMainPhoto(data.photos) || '/static/default-avatar.png',
       level: data.level ?? 0,
       levelText: getLevelText(data.level),
       overallScore: data.overallScore ?? data.rating ?? 0

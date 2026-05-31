@@ -308,6 +308,17 @@ const radius = ref(5)
 // 创建订单中状态（跟踪正在创建的球厅ID）
 const creatingHallId = ref(null)
 
+const getNextValidTime = () => {
+  const next = new Date()
+  const nextMinute = Math.ceil((next.getMinutes() + 1) / 5) * 5
+  if (nextMinute >= 60) {
+    next.setHours(next.getHours() + 1, 0, 0, 0)
+  } else {
+    next.setMinutes(nextMinute, 0, 0)
+  }
+  return next
+}
+
 // ---------------------- 时间选择器数据 ----------------------
 // 生成日期列（从今天开始往后7天）
 const generateDateColumns = () => {
@@ -331,8 +342,8 @@ const generateDateColumns = () => {
 // 生成小时列
 const generateHourColumns = (dateIndex = 0) => {
   const columns = []
-  const now = new Date()
-  const startHour = dateIndex === 0 ? now.getHours() : 0
+  const nextValidTime = getNextValidTime()
+  const startHour = dateIndex === 0 ? nextValidTime.getHours() : 0
   const endHour = 23
 
   for (let i = startHour; i <= endHour; i++) {
@@ -347,19 +358,11 @@ const generateHourColumns = (dateIndex = 0) => {
 // 生成分钟列（5分钟间隔）
 const generateMinuteColumns = (dateIndex = 0, hourIndex = 0) => {
   const columns = []
-  const now = new Date()
+  const nextValidTime = getNextValidTime()
   const isToday = dateIndex === 0
   const currentHour = hourColumns.value[hourIndex]?.hour
 
-  let startMinute = 0
-  if (isToday) {
-    if (currentHour === now.getHours()) {
-      startMinute = Math.ceil(now.getMinutes() / 5) * 5
-    }
-  }
-  if (startMinute >= 60) {
-    startMinute = 0
-  }
+  const startMinute = isToday && currentHour === nextValidTime.getHours() ? nextValidTime.getMinutes() : 0
   for (let i = startMinute; i < 60; i += 5) {
     columns.push({
       minute: i,
@@ -432,7 +435,12 @@ const calculateDefaultTime = () => {
   const hour = String(targetTime.getHours()).padStart(2, '0')
   const minute = String(targetTime.getMinutes()).padStart(2, '0')
 
-  orderInfo.value.timeText = `今天 ${month}.${day} ${hour}:${minute}`
+  const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const targetDay = new Date(targetTime.getFullYear(), targetTime.getMonth(), targetTime.getDate()).getTime()
+  const weekDay = today === targetDay ? '今天' : weekDays[targetTime.getDay()]
+
+  orderInfo.value.timeText = `${weekDay} ${month}.${day} ${hour}:${minute}`
   selectedBookingTime.value = targetTime.getTime()
 }
 
@@ -499,8 +507,17 @@ const confirmTime = () => {
     return
   }
 
-  const date = dateItem.date
+  const date = new Date(dateItem.date.getTime())
   date.setHours(hourItem.hour, minuteItem.minute, 0, 0)
+
+  if (date.getTime() <= Date.now()) {
+    uni.showToast({ title: '请选择未来时间', icon: 'none' })
+    hourColumns.value = generateHourColumns(0)
+    minuteColumns.value = generateMinuteColumns(0, 0)
+    pickerValue.value = [0, 0, 0]
+    selectedDateTime.value = { dateIndex: 0, hourIndex: 0, minuteIndex: 0 }
+    return
+  }
 
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
@@ -845,6 +862,11 @@ const chooseHall = async (hall) => {
     uni.showToast({ title: '请先选择服务时间', icon: 'none' })
     return
   }
+  if (selectedBookingTime.value <= Date.now()) {
+    uni.showToast({ title: '预约时间已过，请重新选择', icon: 'none' })
+    calculateDefaultTime()
+    return
+  }
 
   creatingHallId.value = hall.id
   try {
@@ -862,19 +884,13 @@ const chooseHall = async (hall) => {
       venueLatitude: hall.latitude
     }
 
-    console.log('创建订单参数:', createParams)
-
     // 如果有选中的服务项目，传递服务项目ID
     if (coachInfo.value.selectedService?.id) {
       createParams.serviceItemId = coachInfo.value.selectedService.id
     }
 
-    console.log('创建订单参数（含服务项目）:', createParams)
-
     // 调用创建订单接口
     const createRes = await createOrder(createParams)
-
-    console.log('创建订单成功:', createRes.data)
 
     // 保存订单数据到 storage，供 confirm.vue 使用
     uni.setStorageSync('createdOrderData', {

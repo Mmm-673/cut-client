@@ -136,7 +136,7 @@
                 </view>
                 <view class="order-actions">
                   <button
-                    v-if="order.status === 10"
+                    v-if="canCancelOrder(order.status)"
                     class="action-btn cancel"
                     @click.stop="cancelOrder(order)"
                   >
@@ -234,6 +234,10 @@ const statusMap = {
   60: { text: '已完成', class: 'completed' },
   70: { text: '已取消', class: 'cancelled' }
 }
+
+const CANCELLABLE_ORDER_STATUSES = [10, 20, 30]
+
+const canCancelOrder = (status) => CANCELLABLE_ORDER_STATUSES.includes(Number(status))
 
 // 获取状态文本
 const getStatusText = (status) => {
@@ -469,6 +473,11 @@ const goToDetail = (order) => {
 
 // 取消订单
 const cancelOrder = async (order) => {
+  if (!canCancelOrder(order.status)) {
+    uni.showToast({ title: '当前状态不可取消', icon: 'none' })
+    return
+  }
+
   uni.showModal({
     title: '提示',
     content: '确定要取消这个订单吗？',

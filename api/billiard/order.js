@@ -139,7 +139,9 @@ export function cancelOrder(data) {
  * - addMinutes > 0
  *
  * @returns {Promise<Object>} 返回加钟结果
- * @returns {number} returns.data - addTimePayOrderId（pay_order.id，前端用于拉起支付）
+ * @returns {number} returns.data.payOrderId - 加钟支付单 ID（pay_order.id，前端用于拉起支付）
+ * @returns {number} returns.data.addAmount - 本次加钟金额（分）
+ * @returns {number} returns.data.expireTime - 加钟支付单过期时间（毫秒时间戳）
  */
 export function addTimeOrder(data) {
   return request({

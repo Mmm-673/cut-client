@@ -240,7 +240,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { getAvailablePayChannels, executePayment } from '@/utils/payment'
+import { fetchEnabledChannels, executePayment } from '@/utils/payment'
 import { createOrder } from '@/api/billiard/order'
 import { getCoachDetail } from '@/api/billiard/coach'
 import { onLoad } from '@dcloudio/uni-app'
@@ -250,7 +250,7 @@ import { getWallet } from '@/api/billiard/wallet'
 const refreshing = ref(false)
 const isSubmitting = ref(false)
 const userAgree = ref(true)
-const selectedPay = ref('wechat')
+const selectedPay = ref('')
 const showTimePicker = ref(false)
 const createDirect = ref(false)
 const isOrderCreated = ref(false)
@@ -268,6 +268,9 @@ const countdownText = ref('')
 // 钱包余额
 const walletBalance = ref(null)
 
+// 支付方式
+const payList = ref([])
+
 // 时间选择器相关
 const pickerValue = ref([0, 0, 0])
 const selectedDateTime = ref({ dateIndex: 0, hourIndex: 0, minuteIndex: 0 })
@@ -279,6 +282,17 @@ const coachInfo = ref({ badgeBg: 'rgba(0, 187, 136, 0.2)' })
 const dateColumns = ref([])
 const hourColumns = ref([])
 const minuteColumns = ref([])
+
+const getNextValidTime = () => {
+  const next = new Date()
+  const nextMinute = Math.ceil((next.getMinutes() + 1) / 5) * 5
+  if (nextMinute >= 60) {
+    next.setHours(next.getHours() + 1, 0, 0, 0)
+  } else {
+    next.setMinutes(nextMinute, 0, 0)
+  }
+  return next
+}
 
 // 初始化时间选择器数据
 const initTimePickerData = () => {
@@ -297,7 +311,7 @@ const initTimePickerData = () => {
 
 // 设置时间选择器默认值
 const setDefaultPickerValue = (targetTime) => {
-  const targetDate = new Date(targetTime)
+  const targetDate = new Date(Math.max(Number(targetTime) || 0, getNextValidTime().getTime()))
   const now = new Date()
 
   // 计算日期索引
@@ -326,8 +340,8 @@ const setDefaultPickerValue = (targetTime) => {
 }
 
 const updateHourColumns = (dateIndex) => {
-  const now = new Date()
-  const startHour = dateIndex === 0 ? now.getHours() : 0
+  const nextValidTime = getNextValidTime()
+  const startHour = dateIndex === 0 ? nextValidTime.getHours() : 0
   const hours = []
   for (let i = startHour; i <= 23; i++) {
     hours.push({ hour: i, hourText: String(i).padStart(2, '0') + '时' })
@@ -336,14 +350,10 @@ const updateHourColumns = (dateIndex) => {
 }
 
 const updateMinuteColumns = (dateIndex, hourIndex) => {
-  const now = new Date()
+  const nextValidTime = getNextValidTime()
   const isToday = dateIndex === 0
   const currentHour = hourColumns.value[hourIndex]?.hour
-  let startMinute = 0
-  if (isToday && currentHour === now.getHours()) {
-    startMinute = Math.ceil(now.getMinutes() / 5) * 5
-  }
-  if (startMinute >= 60) startMinute = 0
+  const startMinute = isToday && currentHour === nextValidTime.getHours() ? nextValidTime.getMinutes() : 0
   const minutes = []
   for (let i = startMinute; i < 60; i += 5) {
     minutes.push({ minute: i, minuteText: String(i).padStart(2, '0') + '分' })
@@ -388,8 +398,14 @@ const confirmTime = () => {
     return
   }
 
-  const date = dateItem.date
+  const date = new Date(dateItem.date.getTime())
   date.setHours(hourItem.hour, minuteItem.minute, 0, 0)
+
+  if (date.getTime() <= Date.now()) {
+    uni.showToast({ title: '请选择未来时间', icon: 'none' })
+    setDefaultPickerValue(getNextValidTime().getTime())
+    return
+  }
 
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
@@ -408,21 +424,32 @@ const confirmTime = () => {
 // 服务类型名称
 const serviceTypeName = computed(() => serviceType.value === 1 ? '台球陪练' : '陪游')
 
-// 支付方式列表
-const payList = computed(() => {
-  const channels = getAvailablePayChannels()
-  if (channels.length > 0 && !selectedPay.value) {
-    selectedPay.value = channels[0].value
+const selectedPayChannel = computed(() => payList.value.find(item => item.value === selectedPay.value))
+
+const applyWalletBalance = (channels) => {
+  return channels.map(channel => ({
+    ...channel,
+    ...(channel.value === 'wallet' && walletBalance.value !== null ? { balance: walletBalance.value } : {})
+  }))
+}
+
+const ensureSelectedPay = () => {
+  if (!payList.value.some(item => item.value === selectedPay.value)) {
+    selectedPay.value = payList.value[0]?.value || ''
   }
-  // 填充钱包余额
-  if (walletBalance.value !== null) {
-    const walletChannel = channels.find(c => c.value === 'wallet')
-    if (walletChannel) {
-      walletChannel.balance = walletBalance.value
-    }
+}
+
+const loadPayChannels = async () => {
+  try {
+    const channels = await fetchEnabledChannels(10)
+    payList.value = applyWalletBalance(channels)
+    ensureSelectedPay()
+  } catch (error) {
+    console.error('加载支付方式失败:', error)
+    payList.value = []
+    ensureSelectedPay()
   }
-  return channels
-})
+}
 
 // ---------------------- 计算属性 ----------------------
 // 是否可以操作
@@ -434,7 +461,7 @@ const canAction = computed(() => {
   if (!isOrderCreated.value) {
     return orderData.value.bookingTime !== undefined
   } else {
-    return orderData.value.payOrderId !== undefined
+    return orderData.value.payOrderId !== null && orderData.value.payOrderId !== undefined && !!selectedPayChannel.value
   }
 })
 
@@ -496,6 +523,7 @@ const loadWalletBalance = async () => {
     const res = await getWallet()
     if (res.data && res.data.balance !== undefined) {
       walletBalance.value = (res.data.balance / 100).toFixed(2)
+      payList.value = applyWalletBalance(payList.value)
     }
   } catch (error) {
     console.error('加载钱包余额失败:', error)
@@ -545,6 +573,11 @@ const handleCreateOrder = async () => {
     uni.showToast({ title: '请选择服务时间', icon: 'none' })
     return
   }
+  if (orderData.value.bookingTime <= Date.now()) {
+    uni.showToast({ title: '预约时间已过，请重新选择', icon: 'none' })
+    setDefaultPickerValue(getNextValidTime().getTime())
+    return
+  }
 
   isSubmitting.value = true
   try {
@@ -584,6 +617,7 @@ const handleCreateOrder = async () => {
     // 保存到 storage
     uni.setStorageSync('createdOrderData', orderData.value)
     startCountdown()
+    await loadPayChannels()
 
     uni.showToast({ title: '订单创建成功', icon: 'success' })
   } catch (error) {
@@ -598,12 +632,19 @@ const handleCreateOrder = async () => {
 const submitPayment = async () => {
   if (!canAction.value || !orderData.value.payOrderId) return
 
+  const payChannel = selectedPayChannel.value
+  if (!payChannel) {
+    uni.showToast({ title: '请选择支付方式', icon: 'none' })
+    return
+  }
+
   isSubmitting.value = true
   try {
     await executePayment({
       payOrderId: orderData.value.payOrderId,
       orderId: orderData.value.orderId,
       payValue: selectedPay.value,
+      channelCode: payChannel.channelCode,
       onSuccess: (payResult) => {
         uni.showToast({ title: '支付成功', icon: 'success' })
         setTimeout(() => {
@@ -614,12 +655,14 @@ const submitPayment = async () => {
         uni.showToast({ title: '支付已取消', icon: 'none' })
       },
       onError: (error) => {
-        uni.showToast({ title: error.message || '支付失败，请重试', icon: 'none' })
+        if (!error.pending) {
+          uni.showToast({ title: error.message || '支付失败，请重试', icon: 'none' })
+        }
       }
     })
   } catch (error) {
     console.error('支付失败:', error)
-    if (!error.canceled) {
+    if (!error.canceled && !error.pending) {
       uni.showToast({ title: error.message || '支付失败，请重试', icon: 'none' })
     }
   } finally {
@@ -666,7 +709,7 @@ onLoad((options) => {
   initTimePickerData()
 })
 
-onMounted(() => {
+onMounted(async () => {
   // 从 storage 获取已创建的订单数据
   const createdOrder = uni.getStorageSync('createdOrderData')
   if (createdOrder) {
@@ -681,7 +724,8 @@ onMounted(() => {
     uni.removeStorageSync('createdOrderData')
     isOrderCreated.value = true
     startCountdown()
-    loadWalletBalance()
+    await loadWalletBalance()
+    await loadPayChannels()
     // 重新获取教练详情以确保头像等信息最新
     if (orderData.value.coachInfo?.id) {
       loadCoachDetail(orderData.value.coachInfo.id)
