@@ -1,0 +1,42 @@
+api/billiard/order.js
+  7fe77f6265e646bd 142-144
+subpkg/order/detail.vue
+  7fe77f6265e646bd 229-231,234-238,243-256,261,268,273-278,280-285,288,304-314,416-417,455,457-459,470-489,493,531,556-558,691-692,697,752,891-895,905,918-929,935,937,942-959,963,965-966,974-976,985-990,1003-1005,1007-1009,1015-1017,1028-1029,1036-1039,1047-1052,1054,1057,1062-1071,1074,1077,1080-1084,1093-1095,1158-1204,1335,1800-1803,1818-1820,1822,1828-1842,1847-1850,1856-1861,1864,1868,1870,1874-1897,1899-1902,1907-1913,1917-1920,1922-1923,1930,1935-1936,1938,1944,1948-1949,1954,1956,1958-1960,1963,1975-2009,2066-2071
+subpkg/booking/confirm.vue
+  bcf3aabb95cbb209 576-580
+subpkg/booking/hall.vue
+  bcf3aabb95cbb209 865-869
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "95ae5725d8cbc8a1b61302b73b4c642bd3c9ddf7",
+  "prompts": {
+    "7fe77f6265e646bd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "18da5f5d-3627-4e07-b9a4-f899cbf56d9d",
+        "model": "doubao-seed-2.0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 179,
+      "total_deletions": 35,
+      "accepted_lines": 345,
+      "overriden_lines": 0
+    },
+    "bcf3aabb95cbb209": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "91017604-af47-47cd-91ac-9071e9c75d6b",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 10,
+      "total_deletions": 0,
+      "accepted_lines": 10,
+      "overriden_lines": 0
+    }
+  }
+}
