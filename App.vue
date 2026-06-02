@@ -82,6 +82,7 @@ function checkLogin() {
   userStore.expiresTime = expireDate
   userStore.userId = uni.getStorageSync('auth_user_id') || ''
   userStore.nickname = uni.getStorageSync('auth_nickname') || ''
+  userStore.avatar = uni.getStorageSync('auth_avatar') || ''
   userStore.mobile = uni.getStorageSync('auth_mobile') || ''
 
   // 🔥 静态登录成功后，自动触发极光别名绑定
@@ -91,6 +92,11 @@ function checkLogin() {
     syncPushForUser(userId)
   }
   // #endif
+
+  // Token 有效，跳转到首页
+  setTimeout(() => {
+    proxy.$tab.reLaunch('/pages/home/index')
+  }, 100)
 }
 </script>
 
