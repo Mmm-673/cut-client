@@ -3,12 +3,12 @@
     <!-- ==========================================
          1. 统一的自定义顶部导航栏（适配上安全区）
          ========================================== -->
-    <view class="nav-bar">
-      <!-- 占位对称用（右侧没有按钮） -->
-      <view class="nav-placeholder"></view>
-      <text class="nav-title">我的</text>
-      <view class="nav-placeholder"></view>
-    </view>
+<!--    <view class="nav-bar">-->
+<!--      &lt;!&ndash; 占位对称用（右侧没有按钮） &ndash;&gt;-->
+<!--      <view class="nav-placeholder"></view>-->
+<!--      <text class="nav-title">我的</text>-->
+<!--      <view class="nav-placeholder"></view>-->
+<!--    </view>-->
 
     <!-- ==========================================
          2. 统一的滚动容器（撑满剩余+适配下安全区）
@@ -558,6 +558,7 @@ onShow(() => {
   background: #121619;
   display: flex;
   flex-direction: column;
+  padding-top: 130rpx;
 }
 
 /* ==========================================
@@ -594,6 +595,7 @@ onShow(() => {
 .my-scroll {
   flex: 1;
   width: 100%;
+
 }
 
 /* ==========================================
