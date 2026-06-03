@@ -1,0 +1,42 @@
+pages/scan/index.vue
+  20dc26e3cfab1dff 1-8,10-213
+pages.json
+  20dc26e3cfab1dff 53-56,60
+utils/location.js
+  05a08c50075a2c66 18-19,23-24,45,155-160
+utils/platform.js
+  05a08c50075a2c66 73-76,91-111,127,161,165-166,210
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "4449a3815749345284dbcde995e201501b0bb0d2",
+  "prompts": {
+    "05a08c50075a2c66": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "295cc886-b471-4c4f-8dfb-a2b53b7b7b00",
+        "model": "doubao-seed-2.0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 41,
+      "total_deletions": 31,
+      "accepted_lines": 441,
+      "overriden_lines": 0
+    },
+    "20dc26e3cfab1dff": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f44137ee-8545-44e4-af29-e6152cc81476",
+        "model": "doubao-seed-2.0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 305,
+      "total_deletions": 23,
+      "accepted_lines": 1288,
+      "overriden_lines": 5
+    }
+  }
+}
