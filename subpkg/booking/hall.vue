@@ -576,13 +576,11 @@ const closeCityPicker = () => {
 
 // ---------------------- 搜索相关方法 ----------------------
 const handleSearch = debounce(() => {
-  hasMore.value = true
   loadHallList()
 }, 300)
 
 const clearSearch = () => {
   searchKeyword.value = ''
-  hasMore.value = true
   loadHallList()
 }
 
