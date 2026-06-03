@@ -70,7 +70,10 @@ export function isIOS() {
   // #ifdef APP-PLUS
   try {
     const systemInfo = uni.getSystemInfoSync()
-    return systemInfo.platform === 'ios'
+    // 兼容鸿蒙系统上的 iOS 检测
+    const platform = systemInfo.platform
+    const osName = systemInfo.osName || systemInfo.systemName || ''
+    return platform === 'ios' || (osName.toLowerCase().includes('ios') && !osName.toLowerCase().includes('harmony'))
   } catch (e) {
     return false
   }
@@ -85,7 +88,27 @@ export function isAndroid() {
   // #ifdef APP-PLUS
   try {
     const systemInfo = uni.getSystemInfoSync()
-    return systemInfo.platform === 'android'
+    // 兼容鸿蒙系统上的 Android 检测（鸿蒙也可能返回 android）
+    const platform = systemInfo.platform
+    const osName = systemInfo.osName || systemInfo.systemName || ''
+    return platform === 'android' || (osName.toLowerCase().includes('android') && !osName.toLowerCase().includes('harmony'))
+  } catch (e) {
+    return false
+  }
+  // #endif
+  return false
+}
+
+/**
+ * 是否为鸿蒙 Next 平台（独立鸿蒙系统）
+ */
+export function isHarmonyNext() {
+  // #ifdef APP-PLUS
+  try {
+    const systemInfo = uni.getSystemInfoSync()
+    const platform = systemInfo.platform
+    const osName = systemInfo.osName || systemInfo.systemName || ''
+    return platform === 'harmony' || osName.toLowerCase().includes('harmony')
   } catch (e) {
     return false
   }
@@ -101,7 +124,7 @@ export function getPlatformName() {
   if (isMPWeixin()) return '微信小程序'
   if (isMPAlipay()) return '支付宝小程序'
   if (isMP()) return '小程序'
-  if (isHarmony()) return '鸿蒙'
+  if (isHarmony() || isHarmonyNext()) return '鸿蒙'
   if (isIOS()) return 'iOS'
   if (isAndroid()) return 'Android'
   if (isApp()) return 'App'
@@ -135,10 +158,12 @@ export const openPermissionSettings = () => {
   // #ifdef APP-PLUS
   const systemInfo = uni.getSystemInfoSync()
   const platform = systemInfo.platform
+  const osName = systemInfo.osName || systemInfo.systemName || ''
 
   if (platform === 'ios') {
     plus.runtime.openURL('app-settings:')
-  } else if (platform === 'android') {
+  } else if (platform === 'android' || osName.toLowerCase().includes('harmony')) {
+    // Android 或鸿蒙系统
     const main = plus.android.runtimeMainActivity()
     const Intent = plus.android.importClass('android.content.Intent')
     const Settings = plus.android.importClass('android.provider.Settings')
@@ -182,6 +207,7 @@ export default {
   isMPAlipay,
   isApp,
   isHarmony,
+  isHarmonyNext,
   isIOS,
   isAndroid,
   getPlatformName,

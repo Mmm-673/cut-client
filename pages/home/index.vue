@@ -12,14 +12,6 @@
           <text class="nav-subtitle">专业助教预约平台</text>
         </view>
       </view>
-<!--      <view class="nav-right">-->
-<!--        <view class="icon-btn" @click="goNotice">-->
-<!--          <uni-icons type="notification" size="20" color="#fff" />-->
-<!--          <view class="notice-badge">-->
-<!--            <text>8</text>-->
-<!--          </view>-->
-<!--        </view>-->
-<!--      </view>-->
     </view>
 
     <!-- 滚动区域 -->
@@ -285,9 +277,6 @@ const goCoachDetail = (item) => {
   })
 }
 
-const goNotice = () => {
-  uni.showToast({ title: '功能开发中', icon: 'none' })
-}
 
 // 静默查询球厅列表（智能排序，让后端根据经纬度落库）
 const queryVenueListSilently = async () => {

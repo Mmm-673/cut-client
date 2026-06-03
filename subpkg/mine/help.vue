@@ -1,18 +1,13 @@
 <template>
   <view class="help-page-wrapper">
 
-    <scroll-view
-        scroll-y
-        class="help-scroll"
-        refresher-enabled
-        :refresher-triggered="refreshing"
-        @refresherrefresh="onRefresh"
-    >
-      <!-- 搜索框 -->
-      <view class="search-box">
-        <uni-icons type="search" size="20" color="#9CA3AF" />
-        <input class="search-input" placeholder="搜索常见问题" placeholder-class="search-placeholder" />
-      </view>
+<!--    <scroll-view-->
+<!--        scroll-y-->
+<!--        class="help-scroll"-->
+<!--        refresher-enabled-->
+<!--        :refresher-triggered="refreshing"-->
+<!--        @refresherrefresh="onRefresh"-->
+<!--    >-->
 
       <!-- 常见问题 -->
       <view class="section-title">常见问题</view>
@@ -48,7 +43,7 @@
         <!-- 电话客服 -->
         <view class="service-item">
           <view class="service-icon" style="background: rgba(0, 187, 136, 0.2)">
-            <uni-icons type="phone" size="24" color="#00BB88" />
+            <uni-icons type="chat" size="24" color="#00BB88" />
           </view>
           <view class="service-info">
             <text class="service-title">电话客服</text>
@@ -60,7 +55,7 @@
         <!-- 客服热线 -->
         <view class="service-item">
           <view class="service-icon" style="background: rgba(251, 191, 36, 0.2)">
-            <uni-icons type="headset" size="24" color="#FBBF24" />
+            <uni-icons type="phone" size="24" color="#FBBF24" />
           </view>
           <view class="service-info">
             <text class="service-title">客服热线</text>
@@ -69,9 +64,7 @@
         </view>
       </view>
 
-      <!-- 底部安全区域 -->
-      <view class="safe-area-bottom"></view>
-    </scroll-view>
+<!--    </scroll-view>-->
   </view>
 </template>
 
@@ -94,24 +87,6 @@ const faqList = ref([
     question: '订单取消后退款多久到账？',
     answer: '订单取消后，退款会在1-3个工作日内原路返回到您的支付账户。',
     id: 2,
-    expanded: false
-  },
-  {
-    question: '如何申请成为陪练教练？',
-    answer: '您可以在"我的"页面点击申请成为教练，提交相关资料并通过审核后即可成为平台认证的陪练教练。',
-    id: 3,
-    expanded: false
-  },
-  {
-    question: '优惠券如何使用？',
-    answer: '在订单确认页面，选择可用的优惠券即可直接抵扣相应金额。',
-    id: 4,
-    expanded: false
-  },
-  {
-    question: '如何修改已提交的预约信息？',
-    answer: '您可以在订单详情页点击修改订单，但订单开始前24小时内可能无法修改。',
-    id: 5,
     expanded: false
   }
 ])
@@ -168,6 +143,7 @@ onShow(() => {
   background: #121619;
   display: flex;
   flex-direction: column;
+  padding-top: 20rpx;
 }
 
 /* 顶部导航栏 */
@@ -195,6 +171,7 @@ onShow(() => {
 .help-scroll {
   flex: 1;
   width: 100%;
+  margin-top: 20rpx;
 }
 
 /* 搜索框 */
@@ -326,7 +303,7 @@ onShow(() => {
       background: #00BB88;
       color: #fff;
       border-radius: 40rpx;
-      padding: 16rpx 32rpx;
+      //padding: 16rpx 32rpx;
       font-size: 28rpx;
       border: none;
       &::after {

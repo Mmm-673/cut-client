@@ -33,19 +33,6 @@
             </view>
           </view>
 
-          <!-- 清理缓存 -->
-          <view class="menu-item" @click="cleanCache">
-            <view class="menu-left">
-              <view class="menu-icon-box" style="background: rgba(251, 191, 36, 0.2);">
-                <uni-icons type="trash" size="24" color="#FBBF24" />
-              </view>
-              <text class="menu-text">清理缓存</text>
-            </view>
-            <view class="menu-right">
-              <text class="menu-meta">{{ cacheSize }}</text>
-              <uni-icons type="right" size="20" color="#9CA3AF" />
-            </view>
-          </view>
         </view>
       </view>
 
@@ -68,8 +55,6 @@ import { useUserStore } from '@/store'
 // ---------------------- 状态定义 ----------------------
 const userStore = useUserStore()
 
-// 缓存大小
-const cacheSize = ref('12.5MB')
 
 // 是否登录
 const isLoggedIn = computed(() => userStore.checkLoggedIn())
@@ -129,51 +114,6 @@ const checkUpgrade = () => {
   // #ifndef MP-WEIXIN
   uni.showToast({ title: '检查更新功能仅小程序支持', icon: 'none' })
   // #endif
-}
-
-// 获取缓存大小
-const getCacheSize = () => {
-  try {
-    const storageInfo = uni.getStorageInfoSync()
-    const sizeKB = storageInfo.currentSize
-    if (sizeKB > 1024) {
-      cacheSize.value = (sizeKB / 1024).toFixed(1) + 'MB'
-    } else {
-      cacheSize.value = sizeKB + 'KB'
-    }
-  } catch (e) {
-    cacheSize.value = '0KB'
-  }
-}
-
-// 清理缓存
-const cleanCache = () => {
-  uni.showModal({
-    title: '提示',
-    content: '确定要清理缓存吗？',
-    confirmColor: '#00BB88',
-    success: (res) => {
-      if (res.confirm) {
-        uni.showLoading({ title: '清理中...' })
-        try {
-          // 只清理非登录相关的缓存
-          const keys = uni.getStorageInfoSync().keys || []
-          keys.forEach((key) => {
-            // 保留登录相关的key
-            if (!key.includes('token') && !key.includes('user') && !key.includes('auth')) {
-              uni.removeStorageSync(key)
-            }
-          })
-          getCacheSize()
-          uni.hideLoading()
-          uni.showToast({ title: '清理成功', icon: 'success' })
-        } catch (e) {
-          uni.hideLoading()
-          uni.showToast({ title: '清理失败', icon: 'none' })
-        }
-      }
-    }
-  })
 }
 
 // 退出登录

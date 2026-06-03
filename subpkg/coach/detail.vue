@@ -19,10 +19,10 @@
 
       <!-- 头部信息区域 -->
       <view class="header-section">
-        <image class="header-bg" :src="coachInfo.cover || '/static/images/profile.jpg'" mode="aspectFill"></image>
+        <image class="header-bg" :src="coachInfo.cover" mode="aspectFill"></image>
         <view class="header-overlay"></view>
         <view class="header-content">
-          <image class="avatar" :src="coachInfo.avatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
+          <image class="avatar" :src="coachInfo.avatar" mode="aspectFill"></image>
           <view class="info">
             <view class="name-row">
               <text class="name">{{ coachInfo.stageName || coachInfo.name }}</text>
@@ -99,7 +99,6 @@
         <view class="section-title">
           <uni-icons type="image" size="18" color="#00c896"></uni-icons>
           <text>个人相册 ({{ albumList.length }})</text>
-          <text class="see-more" @click="viewAlbum">查看全部</text>
         </view>
         <scroll-view class="album-scroll" scroll-x="true" :show-scrollbar="false">
           <view class="album-grid">
@@ -202,7 +201,7 @@
       </view>
 
       <!-- 底部安全区域留白 -->
-      <view class="safe-area-bottom"></view>
+<!--      <view class="safe-area-bottom"></view>-->
     </scroll-view>
 
 
@@ -500,14 +499,6 @@ const previewReviewImage = (reviewIndex, imageIndex) => {
       current: imageIndex
     })
   }
-}
-
-// 查看相册
-const viewAlbum = () => {
-  uni.showToast({
-    title: '查看全部相册',
-    icon: 'none'
-  })
 }
 
 

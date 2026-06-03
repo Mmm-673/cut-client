@@ -15,10 +15,13 @@ export const openAppSetting = () => {
   // #ifdef APP-PLUS
   const systemInfo = uni.getSystemInfoSync()
   const platform = systemInfo.platform
+  const osName = (systemInfo.osName || systemInfo.systemName || '').toLowerCase()
+  const isHarmony = osName.includes('harmony')
 
   if (platform === 'ios') {
     plus.runtime.openURL(plus.runtime.appid ? 'app-settings:' : 'prefs:root=LOCATION_SERVICES')
-  } else if (platform === 'android') {
+  } else if (platform === 'android' || isHarmony) {
+    // Android 或鸿蒙系统
     const main = plus.android.runtimeMainActivity()
     const Intent = plus.android.importClass('android.content.Intent')
     const Settings = plus.android.importClass('android.provider.Settings')
@@ -39,25 +42,7 @@ export const openAppSetting = () => {
       }
     }
   } else {
-    try {
-      const osName = systemInfo.osName || ''
-      if (osName.toLowerCase().includes('harmony') || systemInfo.systemName?.toLowerCase().includes('harmony')) {
-        const main = plus.android.runtimeMainActivity()
-        const Intent = plus.android.importClass('android.content.Intent')
-        const Settings = plus.android.importClass('android.provider.Settings')
-        try {
-          const intent = new Intent(Settings.ACTION_APPLICATION_SETTINGS)
-          main.startActivity(intent)
-        } catch (he) {
-          const intent = new Intent(Settings.ACTION_SETTINGS)
-          main.startActivity(intent)
-        }
-      } else {
-        uni.openSetting({ fail: () => uni.showToast({ title: '打开设置失败', icon: 'none' }) })
-      }
-    } catch (e) {
-      uni.openSetting({ fail: () => uni.showToast({ title: '打开设置失败', icon: 'none' }) })
-    }
+    uni.openSetting({ fail: () => uni.showToast({ title: '打开设置失败', icon: 'none' }) })
   }
   // #endif
 }
@@ -132,7 +117,6 @@ export const getLocation = ({
         type,
         altitude: true,
         success: async (res) => {
-          console.log('定位成功:', res)
           const location = {
             longitude: res.longitude,
             latitude: res.latitude
@@ -141,7 +125,6 @@ export const getLocation = ({
           try {
             if (needRegeocode) {
               const geoRes = await regeocode(location)
-              console.log('逆地址解析结果:', geoRes)
               resolve({
                 ...location,
                 regeocodeData: geoRes.data
@@ -150,14 +133,12 @@ export const getLocation = ({
               resolve(location)
             }
           } catch (e) {
-            console.error('逆地址解析失败:', e)
             resolve(location)
           } finally {
             isLocating = false
           }
         },
         fail: (err) => {
-          console.error('定位失败:', err)
           isLocating = false
           if (err && err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize') || err.errMsg.includes('denied'))) {
             reject(new Error('permission_denied'))
@@ -171,8 +152,12 @@ export const getLocation = ({
     // #ifdef APP-PLUS
     try {
       const systemInfo = uni.getSystemInfoSync()
-      // Android 权限申请
-      if (systemInfo.platform === 'android') {
+      const platform = systemInfo.platform
+      const osName = (systemInfo.osName || systemInfo.systemName || '').toLowerCase()
+      const isHarmony = osName.includes('harmony')
+
+      // Android 或鸿蒙系统权限申请
+      if (platform === 'android' || isHarmony) {
         plus.android.requestPermissions(
             ['android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION'],
             (result) => {
@@ -190,7 +175,6 @@ export const getLocation = ({
               }
             },
             (error) => {
-              console.error('权限申请失败：', error)
               isLocating = false
               reject(new Error('permission_error'))
             }
