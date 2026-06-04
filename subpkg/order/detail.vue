@@ -111,11 +111,11 @@
       <view class="info-card coach-card">
         <view class="card-title">
           <text class="title-icon">👤</text>
-          陪练教练
+          裁教教练
         </view>
 
         <view class="coach-info">
-          <image class="coach-avatar" :src="orderInfo.coachAvatar || orderInfo.coachMainPhoto || '/static/images/profile.jpg'" mode="aspectFill"></image>
+          <image class="coach-avatar" :src="orderInfo.coachAvatar || orderInfo.coachMainPhoto" mode="aspectFill"></image>
           <view class="coach-info-right">
             <view class="coach-name-row">
               <text class="coach-name">{{ orderInfo.coachStageName }}</text>
@@ -227,7 +227,7 @@
         <view class="add-time-popup-content">
           <view class="add-time-tip">请选择需要延长的服务时长</view>
           <view class="add-time-limit-tip">
-            {{ orderInfo.serviceType === 2 ? '陪游最少加5小时' : '台球最少加2小时' }}
+            最少加10分钟
           </view>
           <view class="add-time-options">
             <view
@@ -247,11 +247,11 @@
                   class="custom-input"
                   type="number"
                   v-model="customMinutes"
-                  :placeholder="'最少' + (orderInfo.serviceType === 2 ? '5' : '2') + '小时'"
+                  placeholder="最少10分钟"
                   placeholder-class="input-placeholder"
                   @input="handleCustomInput"
               />
-              <text class="custom-unit">小时</text>
+              <text class="custom-unit">分钟</text>
             </view>
           </view>
         </view>
@@ -452,11 +452,11 @@ const exceptionType = ref(1)
 const exceptionReason = ref('')
 const evidenceUrls = ref([])
 
-// 加钟时长选项（单位：小时）
+// 加钟时长选项（单位：分钟）
 const addTimeOptions = ref([
-  { label: '2小时', value: 2 },
-  { label: '4小时', value: 4 },
-  { label: '6小时', value: 6 },
+  { label: '10分钟', value: 10 },
+  { label: '30分钟', value: 30 },
+  { label: '60分钟', value: 60 },
   { label: '自定义', value: 'custom' }
 ])
 // 【新增】倒计时相关
@@ -1012,9 +1012,9 @@ const closePayPopup = () => {
 // 加钟 - 打开弹窗
 const addTime = () => {
   showAddTimePopup.value = true
-  // 根据服务类型设置默认值和最小值
-  const minHours = orderInfo.value.serviceType === 2 ? 5 : 2
-  selectedAddMinutes.value = minHours // 默认选最小小时数
+  // 设置默认值为10分钟
+  const minMinutes = 10
+  selectedAddMinutes.value = minMinutes // 默认选最小分钟数
   showCustomInput.value = false
   customMinutes.value = ''
 }
@@ -1034,9 +1034,9 @@ const handleOptionSelect = (option) => {
   if (option.value === 'custom') {
     showCustomInput.value = true
     // 设置自定义输入的默认值为最小值
-    const minHours = orderInfo.value.serviceType === 2 ? 5 : 2
-    customMinutes.value = String(minHours)
-    selectedAddMinutes.value = minHours
+    const minMinutes = 10
+    customMinutes.value = String(minMinutes)
+    selectedAddMinutes.value = minMinutes
   } else {
     showCustomInput.value = false
     selectedAddMinutes.value = option.value
@@ -1045,10 +1045,10 @@ const handleOptionSelect = (option) => {
 
 // 处理自定义输入
 const handleCustomInput = () => {
-  const minHours = orderInfo.value.serviceType === 2 ? 5 : 2
+  const minMinutes = 10
   let val = parseInt(customMinutes.value)
-  if (isNaN(val) || val < minHours) {
-    val = minHours
+  if (isNaN(val) || val < minMinutes) {
+    val = minMinutes
     customMinutes.value = String(val)
   }
   selectedAddMinutes.value = val
@@ -1060,10 +1060,10 @@ const confirmAddTime = async () => {
   if (isAddingTime.value) return
 
   // 验证时长
-  const minHours = orderInfo.value.serviceType === 2 ? 5 : 2
-  if (selectedAddMinutes.value < minHours) {
+  const minMinutes = 10
+  if (selectedAddMinutes.value < minMinutes) {
     uni.showToast({
-      title: orderInfo.value.serviceType === 2 ? '陪游最少加5小时' : '台球最少加2小时',
+      title: '最少加10分钟',
       icon: 'none'
     })
     return
@@ -1071,17 +1071,17 @@ const confirmAddTime = async () => {
 
   isAddingTime.value = true
   try {
-    // 调用加钟接口（转换为分钟）
+    // 调用加钟接口（直接使用分钟数）
     const res = await addTimeOrder({
       orderId: orderId.value,
-      addMinutes: selectedAddMinutes.value * 60
+      addMinutes: selectedAddMinutes.value
     })
 
     // 获取加钟支付订单ID、金额和过期时间
     addTimePayOrderId.value = res.data.payOrderId
     pendingAddTimeAmount.value = res.data.addAmount
     addTimeExpireTime.value = res.data.expireTime
-    pendingAddTimeMinutes.value = selectedAddMinutes.value * 60 // 保存分钟数
+    pendingAddTimeMinutes.value = selectedAddMinutes.value // 保存分钟数
     currentOrderId.value = orderId.value
 
     // 关闭加钟弹窗

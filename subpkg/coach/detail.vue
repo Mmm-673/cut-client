@@ -338,19 +338,44 @@ const loadCoachData = async () => {
       introduction: data.introduction || data.intro || '这位助教很神秘，什么都没写~'
     })
 
-    // 服务项目（如果接口返回）
-    if (data.serviceItems && Array.isArray(data.serviceItems)) {
-      services.value = data.serviceItems
-    } else if (data.services && Array.isArray(data.services)) {
-      services.value = data.services
-    } else {
-      // 默认服务项目（使用接口返回的 hourlyPrice）
-      const coachPrice = data.hourlyPrice || data.price || 9900
-      services.value = [
-        { id: 1,type:1, name: '台球陪练', desc: '2小时起步，包含基础动作指导、技术纠错、实战演练', sales: 86, price: coachPrice, unit: '小时', hot: true },
-        { id: 2, type:2,name: '陪游服务', desc: '5小时起步，陪同打球+游玩，包含餐饮交通补贴', sales: 42, price: Math.round(coachPrice * 5), unit: '次', hot: false }
-      ]
-    }
+
+    const defaultServices = [
+      {
+        id: 1,
+        type: 1,
+        name: '台球陪练',
+        desc: '2小时起步，包含基础动作指导、技术纠错、实战演练',
+        sales: 86,
+        unit: '小时',
+        hot: true
+      },
+      {
+        id: 2,
+        type: 2,
+        name: '陪游服务',
+        desc: '5小时起步，陪同打球+游玩，包含餐饮交通补贴',
+        sales: 42,
+        unit: '段',
+        hot: false
+      }
+    ]
+
+    services.value = data.serviceItemList
+        .map(item => {
+          const localConfig = defaultServices.find(
+              service => service.type === item.serviceType
+          )
+          // 找不到配置直接丢弃
+          if (!localConfig) return null
+          return {
+            ...localConfig,
+            ...item,
+            type: item.serviceType,
+            name: item.serviceName,
+            price: item.hourlyPrice
+          }
+        })
+        .filter(Boolean)
 
     // 相册（从 photos 数组中提取 photoUrl）
     if (data.photos && Array.isArray(data.photos)) {
