@@ -1,0 +1,23 @@
+subpkg/order/detail.vue
+  c1850fd39d3a531c 230,250,254,455,457-459,1015-1017,1037-1039,1048,1050-1051,1063-1064,1066,1074,1077,1084
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "53e3bc1720ff0722ad92551eb5bcbac73b0f9056",
+  "prompts": {
+    "c1850fd39d3a531c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4c2b487e-10a8-46c0-baef-00dadb584a42",
+        "model": "doubao-seed-2.0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 31,
+      "total_deletions": 31,
+      "accepted_lines": 2109,
+      "overriden_lines": 205
+    }
+  }
+}
