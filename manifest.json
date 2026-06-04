@@ -17,7 +17,8 @@
         "modules" : {
             "Camera" : {},
             "Geolocation" : {},
-            "Push" : {}
+            "Push" : {},
+            "Barcode" : {}
         },
         "distribute" : {
             "android" : {
