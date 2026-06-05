@@ -17,7 +17,8 @@
         "modules" : {
             "Camera" : {},
             "Geolocation" : {},
-            "Push" : {}
+            "Push" : {},
+            "Payment" : {}
         },
         "distribute" : {
             "android" : {
@@ -73,7 +74,17 @@
                     }
                 },
                 "maps" : {},
-                "push" : {}
+                "push" : {},
+                "payment" : {
+                    "alipay" : {
+                        "__platform__" : [ "android" ]
+                    },
+                    "weixin" : {
+                        "__platform__" : [ "ios", "android" ],
+                        "appid" : "",
+                        "UniversalLinks" : ""
+                    }
+                }
             },
             "icons" : {
                 "android" : {
