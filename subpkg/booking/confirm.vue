@@ -140,8 +140,9 @@
             @click="selectPay(item.value)"
         >
           <view class="pay-left">
-            <view class="pay-icon" :style="{background: item.bgColor}">
-              <uni-icons :type="item.icon" size="24" color="#fff" />
+            <view class="pay-icon" :style="{background: item.icon && item.icon.startsWith('/') ? 'transparent' : item.bgColor}">
+              <image v-if="item.icon && item.icon.startsWith('/')" :src="item.icon" class="pay-icon-img" mode="aspectFit" />
+              <uni-icons v-else :type="item.icon" size="24" color="#fff" />
             </view>
             <text class="pay-name">{{ item.label }}</text>
             <text class="pay-balance" v-if="item.balance !== undefined">（可用余额：¥{{ item.balance }}）</text>
@@ -1001,6 +1002,10 @@ onUnmounted(() => {
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      .pay-icon-img {
+        width: 56rpx;
+        height: 56rpx;
+      }
     }
     .pay-name {
       color: #fff;

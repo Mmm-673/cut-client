@@ -18,7 +18,8 @@
             "Camera" : {},
             "Geolocation" : {},
             "Push" : {},
-            "Barcode" : {}
+            "Barcode" : {},
+            "Payment" : {}
         },
         "distribute" : {
             "android" : {
@@ -74,7 +75,12 @@
                     }
                 },
                 "maps" : {},
-                "push" : {}
+                "push" : {},
+                "payment" : {
+                    "alipay" : {
+                        "__platform__" : [ "ios", "android" ]
+                    }
+                }
             },
             "icons" : {
                 "android" : {

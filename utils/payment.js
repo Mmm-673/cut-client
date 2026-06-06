@@ -28,7 +28,7 @@ const ALL_PAY_CHANNELS = [
     value: 'wechat',
     label: '微信支付',
     channelCode: PAY_CHANNEL.WX_MINIPROGRAM, // 默认用JSAPI，App会覆盖
-    icon: 'chatbubble-filled',
+    icon: '/static/images/pay/wechat.png',
     bgColor: '#07C160',
     platforms: ['mp-weixin', 'app-plus']
   },
@@ -36,7 +36,7 @@ const ALL_PAY_CHANNELS = [
     value: 'alipay',
     label: '支付宝',
     channelCode: PAY_CHANNEL.ALIPAY_APP,
-    icon: 'chatbubble',
+    icon: '/static/images/pay/alipay.png',
     bgColor: '#1677FF',
     platforms: ['app-plus']
   },
@@ -107,10 +107,10 @@ export function getPayChannelsByEnabled(enabledCodes) {
 
   // 渠道编码映射
   const codeToChannel = {
-    'wx_pub': { value: 'wechat', label: '微信支付', icon: 'chatbubble-filled', bgColor: '#07C160', channelCode: 'wx_pub', platforms: ['mp-weixin'] },
-    'wx_lite': { value: 'wechat', label: '微信支付', icon: 'chatbubble-filled', bgColor: '#07C160', channelCode: 'wx_lite', platforms: ['mp-weixin'] },
-    'wx_app': { value: 'wechat', label: '微信支付', icon: 'chatbubble-filled', bgColor: '#07C160', channelCode: PAY_CHANNEL.WX_APP, platforms: ['app-plus'] },
-    'alipay_app': { value: 'alipay', label: '支付宝', icon: 'chatbubble', bgColor: '#1677FF', channelCode: PAY_CHANNEL.ALIPAY_APP, platforms: ['app-plus'] },
+    'wx_pub': { value: 'wechat', label: '微信支付', icon: '/static/images/pay/wechat.png', bgColor: '#07C160', channelCode: 'wx_pub', platforms: ['mp-weixin'] },
+    'wx_lite': { value: 'wechat', label: '微信支付', icon: '/static/images/pay/wechat.png', bgColor: '#07C160', channelCode: 'wx_lite', platforms: ['mp-weixin'] },
+    'wx_app': { value: 'wechat', label: '微信支付', icon: '/static/images/pay/wechat.png', bgColor: '#07C160', channelCode: PAY_CHANNEL.WX_APP, platforms: ['app-plus'] },
+    'alipay_app': { value: 'alipay', label: '支付宝', icon: '/static/images/pay/alipay.png', bgColor: '#1677FF', channelCode: PAY_CHANNEL.ALIPAY_APP, platforms: ['app-plus'] },
     'wallet': { value: 'wallet', label: '钱包余额', icon: 'wallet', bgColor: '#00BB88', channelCode: PAY_CHANNEL.WALLET, platforms: ['mp-weixin', 'app-plus', 'h5'] }
   }
 
@@ -241,15 +241,18 @@ function wechatAppPay(payParams) {
  * @returns {Promise} 支付结果
  */
 function alipayAppPay(payParams) {
+  console.log(payParams,'支付信息')
   return new Promise((resolve, reject) => {
     // #ifdef APP-PLUS
     uni.requestPayment({
       provider: 'alipay',
       orderInfo: payParams.orderString || payParams,
       success: (res) => {
+        console.log(res)
         resolve({ success: true, ...res })
       },
       fail: (err) => {
+        console.log(err)
         console.error('App支付宝支付失败:', err)
         if (err.errMsg && err.errMsg.includes('cancel')) {
           reject({ success: false, canceled: true, message: '支付已取消', ...err })

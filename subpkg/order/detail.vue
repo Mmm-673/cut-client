@@ -291,8 +291,9 @@
               @click="selectPay(item.value)"
             >
               <view class="pay-method-left">
-                <view class="pay-method-icon" :style="{ background: item.bgColor }">
-                  <uni-icons :type="item.icon" size="20" color="#fff" />
+                <view class="pay-method-icon" :style="{ background: item.icon && item.icon.startsWith('/') ? 'transparent' : item.bgColor }">
+                  <image v-if="item.icon && item.icon.startsWith('/')" :src="item.icon" class="pay-method-icon-img" mode="aspectFit" />
+                  <uni-icons v-else :type="item.icon" size="20" color="#fff" />
                 </view>
                 <text class="pay-method-name">{{ item.label }}</text>
               </view>
@@ -1926,6 +1927,10 @@ let lastStatus = null
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        .pay-method-icon-img {
+          width: 56rpx;
+          height: 56rpx;
+        }
       }
 
       .pay-method-name {
