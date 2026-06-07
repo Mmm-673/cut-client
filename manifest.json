@@ -34,6 +34,7 @@
                     "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.CAMERA\"/>",
                     "<uses-permission android:name=\"android.permission.GET_ACCOUNTS\"/>",
+                    "<uses-permission android:name=\"android.permission.CALL_PHONE\"/>",
                     "<uses-permission android:name=\"android.permission.READ_PHONE_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.CHANGE_WIFI_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>",
@@ -49,6 +50,7 @@
             },
             "ios" : {
                 "bundleID" : "com.aksjzt.qiuleme.user",
+                "bundleIdentifier" : "com.aksjzt.qiuleme.user",
                 "dSYMs" : false,
                 "plist" : {
                     "NSCameraUsageDescription" : "需要访问您的相机进行拍照",

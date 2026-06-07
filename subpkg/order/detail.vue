@@ -250,6 +250,7 @@
                   placeholder="最少10分钟"
                   placeholder-class="input-placeholder"
                   @input="handleCustomInput"
+                  @blur="handleCustomBlur"
               />
               <text class="custom-unit">分钟</text>
             </view>
@@ -728,9 +729,13 @@ const openHallNavigate = () => {
 const contactCoach = () => {
   // 优先使用订单数据里的教练手机号
   const phone = orderInfo.value?.coachPhone || ''
+  console.log(phone,'====phone')
   if (phone) {
     uni.makePhoneCall({
       phoneNumber: phone,
+      success: () => {
+        console.log('成功唤起拨号盘')
+      },
       fail: () => uni.showToast({ title: '拨打电话失败', icon: 'none' })
     })
   } else {
@@ -1046,13 +1051,20 @@ const handleOptionSelect = (option) => {
 
 // 处理自定义输入
 const handleCustomInput = () => {
-  const minMinutes = 10
-  let val = parseInt(customMinutes.value)
-  if (isNaN(val) || val < minMinutes) {
-    val = minMinutes
-    customMinutes.value = String(val)
+  const val = parseInt(customMinutes.value)
+  if (!isNaN(val)) {
+    selectedAddMinutes.value = val
   }
-  selectedAddMinutes.value = val
+}
+
+// 失焦时兜底校验：低于最小值则补足
+const handleCustomBlur = () => {
+  const minMinutes = 10
+  const val = parseInt(customMinutes.value)
+  if (isNaN(val) || val < minMinutes) {
+    customMinutes.value = String(minMinutes)
+    selectedAddMinutes.value = minMinutes
+  }
 }
 
 
