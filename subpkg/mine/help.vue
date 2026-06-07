@@ -122,10 +122,20 @@ const toService = () => {
 }
 
 const makeCall = () => {
-  uni.makePhoneCall({
-    phoneNumber: serviceInfo.value.hotline,
-    fail: () => uni.showToast({ title: '拨打失败', icon: 'none' })
-  })
+  if(!serviceInfo.value.hotline) {
+      uni.showToast({ title: '暂无有效联系电话', icon: 'none' })
+      return
+  }
+  // #ifdef APP-PLUS
+  // 只有【打包成 Android / iOS App】时，才会执行这里
+  plus.runtime.openURL(`tel:${serviceInfo.value.hotline}`);
+  // #endif
+
+  // #ifndef APP-PLUS
+  // 只有【不是 App】时（微信小程序、H5、快应用）才执行这里
+  uni.makePhoneCall({ phoneNumber: serviceInfo.value.hotline });
+  // #endif
+
 }
 
 onMounted(() => {

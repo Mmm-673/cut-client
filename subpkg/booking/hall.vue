@@ -818,20 +818,29 @@ const callPhone = (hall) => {
   }
 
   if (validPhones.length === 1) {
-    // 只有一个电话，直接拨打
-    uni.makePhoneCall({
-      phoneNumber: validPhones[0],
-      fail: () => uni.showToast({ title: '拨打失败', icon: 'none' })
-    })
+    // #ifdef APP-PLUS
+    // 只有【打包成 Android / iOS App】时，才会执行这里
+    plus.runtime.openURL(`tel:${validPhones[0]}`);
+    // #endif
+
+    // #ifndef APP-PLUS
+    // 只有【不是 App】时（微信小程序、H5、快应用）才执行这里
+    uni.makePhoneCall({ phoneNumber: validPhones[0] });
+    // #endif
   } else {
     // 多个电话，让用户选择
     uni.showActionSheet({
       itemList: validPhones,
       success: (res) => {
-        uni.makePhoneCall({
-          phoneNumber: validPhones[res.tapIndex],
-          fail: () => uni.showToast({ title: '拨打失败', icon: 'none' })
-        })
+        // #ifdef APP-PLUS
+        // 只有【打包成 Android / iOS App】时，才会执行这里
+        plus.runtime.openURL(`tel:${validPhones[res.tapIndex]}`);
+        // #endif
+
+        // #ifndef APP-PLUS
+        // 只有【不是 App】时（微信小程序、H5、快应用）才执行这里
+        uni.makePhoneCall({ phoneNumber: validPhones[res.tapIndex] });
+        // #endif
       }
     })
   }

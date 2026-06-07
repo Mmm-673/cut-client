@@ -730,17 +730,20 @@ const contactCoach = () => {
   // 优先使用订单数据里的教练手机号
   const phone = orderInfo.value?.coachPhone || ''
   console.log(phone,'====phone')
-  if (phone) {
-    uni.makePhoneCall({
-      phoneNumber: phone,
-      success: () => {
-        console.log('成功唤起拨号盘')
-      },
-      fail: () => uni.showToast({ title: '拨打电话失败', icon: 'none' })
-    })
-  } else {
-    uni.showToast({ title: '暂无教练联系方式', icon: 'none' })
+
+  if (!phone) {
+    uni.showToast({ title: '暂无联系电话', icon: 'none' })
+    return
   }
+  // #ifdef APP-PLUS
+  // 只有【打包成 Android / iOS App】时，才会执行这里
+  plus.runtime.openURL(`tel:${phone}`);
+  // #endif
+
+  // #ifndef APP-PLUS
+  // 只有【不是 App】时（微信小程序、H5、快应用）才执行这里
+  uni.makePhoneCall({ phoneNumber: phone });
+  // #endif
 }
 
 // 加载助教详情
