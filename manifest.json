@@ -65,9 +65,6 @@
             },
             "sdkConfigs" : {
                 "geolocation" : {
-                    "system" : {
-                        "__platform__" : [ "ios", "android" ]
-                    },
                     "amap" : {
                         "name" : "amapfhUygwdG",
                         "__platform__" : [ "ios", "android" ],
@@ -78,6 +75,7 @@
                 "maps" : {
                     "amap" : {
                         "name" : "amapfhUygwdG",
+                        "__platform__" : [ "ios", "android" ],
                         "appkey_ios" : "e75dc80ba5f8a4c874451e0eb3da4174",
                         "appkey_android" : "55c8e69f17f96cc7f5158970ea381664"
                     }
