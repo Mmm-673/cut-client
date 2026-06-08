@@ -18,13 +18,9 @@
             "Camera" : {},
             "Geolocation" : {},
             "Push" : {},
-<<<<<<< HEAD
-            "Payment" : {}
-=======
             "Barcode" : {},
             "Payment" : {},
             "Maps" : {}
->>>>>>> af43fe1662c874208c495816f8ff688924bc7c71
         },
         "distribute" : {
             "android" : {
@@ -76,18 +72,6 @@
                         "appkey_android" : "55c8e69f17f96cc7f5158970ea381664"
                     }
                 },
-<<<<<<< HEAD
-                "maps" : {},
-                "push" : {},
-                "payment" : {
-                    "alipay" : {
-                        "__platform__" : [ "android" ]
-                    },
-                    "weixin" : {
-                        "__platform__" : [ "ios", "android" ],
-                        "appid" : "",
-                        "UniversalLinks" : ""
-=======
                 "maps" : {
                     "amap" : {
                         "name" : "amapfhUygwdG",
@@ -100,7 +84,6 @@
                 "payment" : {
                     "alipay" : {
                         "__platform__" : [ "ios", "android" ]
->>>>>>> af43fe1662c874208c495816f8ff688924bc7c71
                     }
                 }
             },
