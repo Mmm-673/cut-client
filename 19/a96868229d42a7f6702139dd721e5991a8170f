@@ -1,0 +1,54 @@
+App.vue
+  5800210a2af3e45c 25-26
+pages/order/list.vue
+  5800210a2af3e45c 553-557
+subpkg/booking/hall.vue
+  5800210a2af3e45c 672-680
+subpkg/mine/favorites.vue
+  f3b1443aa314a666 101
+pages/home/index.vue
+  5800210a2af3e45c 210
+subpkg/mine/wallet-list.vue
+  5800210a2af3e45c 6,11,103-107,147-150,303,423-433,640-655
+pages/coach/list.vue
+  5800210a2af3e45c 43,236,276,343
+subpkg/coach/evaluate.vue
+  5800210a2af3e45c 319-321,590-598
+subpkg/coach/detail.vue
+  5800210a2af3e45c 418
+subpkg/booking/confirm.vue
+  5800210a2af3e45c 715-740,742-745
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "19a96868229d42a7f6702139dd721e5991a8170f",
+  "prompts": {
+    "5800210a2af3e45c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ad583c47-5985-4005-a56b-6c5609e2ac57",
+        "model": "doubao-seed-2.0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 102,
+      "total_deletions": 62,
+      "accepted_lines": 5509,
+      "overriden_lines": 0
+    },
+    "f3b1443aa314a666": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b31e2a77-9abb-4a1d-825d-393c963e9cd7",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "Ma",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1182,
+      "overriden_lines": 1
+    }
+  }
+}
