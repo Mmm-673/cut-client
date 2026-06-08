@@ -36,8 +36,8 @@
             :class="{active: accountType === 1}"
             @click="selectChannel(1)"
         >
-          <view class="channel-icon wechat">
-            <uni-icons type="chatbubble-filled" size="24" color="#fff" />
+          <view class="channel-icon">
+            <image src="/static/images/pay/wechat.png" class="channel-icon-img" mode="aspectFit" />
           </view>
           <text class="channel-name">提现到微信</text>
           <view class="channel-radio">
@@ -49,8 +49,8 @@
             :class="{active: accountType === 2}"
             @click="selectChannel(2)"
         >
-          <view class="channel-icon alipay">
-            <uni-icons type="chatbubble" size="24" color="#fff" />
+          <view class="channel-icon">
+            <image src="/static/images/pay/alipay.png" class="channel-icon-img" mode="aspectFit" />
           </view>
           <text class="channel-name">提现到支付宝</text>
           <view class="channel-radio">
@@ -343,12 +343,9 @@ onMounted(() => {
       justify-content: center;
       margin-right: 20rpx;
 
-      &.wechat {
-        background: #07C160;
-      }
-
-      &.alipay {
-        background: #1677FF;
+      .channel-icon-img {
+        width: 56rpx;
+        height: 56rpx;
       }
     }
 

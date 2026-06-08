@@ -18,7 +18,13 @@
             "Camera" : {},
             "Geolocation" : {},
             "Push" : {},
+<<<<<<< HEAD
             "Payment" : {}
+=======
+            "Barcode" : {},
+            "Payment" : {},
+            "Maps" : {}
+>>>>>>> af43fe1662c874208c495816f8ff688924bc7c71
         },
         "distribute" : {
             "android" : {
@@ -33,7 +39,6 @@
                     "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.CAMERA\"/>",
                     "<uses-permission android:name=\"android.permission.GET_ACCOUNTS\"/>",
-                    "<uses-permission android:name=\"android.permission.READ_PHONE_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.CHANGE_WIFI_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>",
                     "<uses-permission android:name=\"android.permission.FLASHLIGHT\"/>",
@@ -48,6 +53,7 @@
             },
             "ios" : {
                 "bundleID" : "com.aksjzt.qiuleme.user",
+                "bundleIdentifier" : "com.aksjzt.qiuleme.user",
                 "dSYMs" : false,
                 "plist" : {
                     "NSCameraUsageDescription" : "需要访问您的相机进行拍照",
@@ -63,16 +69,14 @@
             },
             "sdkConfigs" : {
                 "geolocation" : {
-                    "system" : {
-                        "__platform__" : [ "android" ]
-                    },
                     "amap" : {
                         "name" : "amapfhUygwdG",
-                        "__platform__" : [ "android" ],
-                        "appkey_ios" : "",
+                        "__platform__" : [ "ios", "android" ],
+                        "appkey_ios" : "e75dc80ba5f8a4c874451e0eb3da4174",
                         "appkey_android" : "55c8e69f17f96cc7f5158970ea381664"
                     }
                 },
+<<<<<<< HEAD
                 "maps" : {},
                 "push" : {},
                 "payment" : {
@@ -83,6 +87,20 @@
                         "__platform__" : [ "ios", "android" ],
                         "appid" : "",
                         "UniversalLinks" : ""
+=======
+                "maps" : {
+                    "amap" : {
+                        "name" : "amapfhUygwdG",
+                        "__platform__" : [ "ios", "android" ],
+                        "appkey_ios" : "e75dc80ba5f8a4c874451e0eb3da4174",
+                        "appkey_android" : "55c8e69f17f96cc7f5158970ea381664"
+                    }
+                },
+                "push" : {},
+                "payment" : {
+                    "alipay" : {
+                        "__platform__" : [ "ios", "android" ]
+>>>>>>> af43fe1662c874208c495816f8ff688924bc7c71
                     }
                 }
             },

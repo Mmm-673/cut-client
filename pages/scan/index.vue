@@ -25,31 +25,23 @@ const handleScan = () => {
   uni.scanCode({
     success: (res) => {
       console.log('扫码结果:', res)
-
-      // 解析扫码结果，提取助教 ID
-      let coachId = null
-
-      // 尝试直接将结果作为 ID
-      if (res.result && !isNaN(res.result)) {
-        coachId = res.result
-      } else {
-        // 尝试从 URL 中提取 ID（格式如 xxx?id=123）
-        try {
-          const url = new URL(res.result)
-          coachId = url.searchParams.get('id')
-        } catch (e) {
-          // 尝试从字符串中查找数字 ID
-          const match = res.result.match(/\d+/)
-          if (match) {
-            coachId = match[0]
-          }
-        }
+      let result
+      try {
+        result = JSON.parse(res.result)
+      } catch (e) {
+        result = null
       }
-
-      if (coachId) {
+      if (!result || typeof result !== 'object') {
+        uni.showToast({
+          title: '二维码无效，请重新扫描',
+          icon: 'none'
+        })
+        return
+      }
+      if (result?.coachId) {
         // 跳转到助教详情页，不自动返回
         uni.navigateTo({
-          url: `/subpkg/coach/detail?id=${coachId}`
+          url: `/subpkg/coach/detail?id=${result?.coachId}`
         })
       } else {
         uni.showToast({

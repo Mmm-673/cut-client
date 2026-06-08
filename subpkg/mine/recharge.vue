@@ -49,8 +49,9 @@
             :key="item.value"
             @click="selectPay(item.value)"
         >
-          <view class="pay-icon" :style="{background: item.bgColor}">
-            <uni-icons :type="item.icon" size="24" color="#fff" />
+          <view class="pay-icon" :style="{background: item.icon && item.icon.startsWith('/') ? 'transparent' : item.bgColor}">
+            <image v-if="item.icon && item.icon.startsWith('/')" :src="item.icon" class="pay-icon-img" mode="aspectFit" />
+            <uni-icons v-else :type="item.icon" size="24" color="#fff" />
           </view>
           <text class="pay-name">{{ item.label }}</text>
           <view class="pay-radio">
@@ -323,6 +324,10 @@ const handleRecharge = async () => {
       align-items: center;
       justify-content: center;
       margin-right: 20rpx;
+      .pay-icon-img {
+        width: 56rpx;
+        height: 56rpx;
+      }
     }
 
     .pay-name {

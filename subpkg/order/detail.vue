@@ -250,6 +250,7 @@
                   placeholder="最少10分钟"
                   placeholder-class="input-placeholder"
                   @input="handleCustomInput"
+                  @blur="handleCustomBlur"
               />
               <text class="custom-unit">分钟</text>
             </view>
@@ -291,8 +292,9 @@
               @click="selectPay(item.value)"
             >
               <view class="pay-method-left">
-                <view class="pay-method-icon" :style="{ background: item.bgColor }">
-                  <uni-icons :type="item.icon" size="20" color="#fff" />
+                <view class="pay-method-icon" :style="{ background: item.icon && item.icon.startsWith('/') ? 'transparent' : item.bgColor }">
+                  <image v-if="item.icon && item.icon.startsWith('/')" :src="item.icon" class="pay-method-icon-img" mode="aspectFit" />
+                  <uni-icons v-else :type="item.icon" size="20" color="#fff" />
                 </view>
                 <text class="pay-method-name">{{ item.label }}</text>
               </view>
@@ -727,14 +729,21 @@ const openHallNavigate = () => {
 const contactCoach = () => {
   // 优先使用订单数据里的教练手机号
   const phone = orderInfo.value?.coachPhone || ''
-  if (phone) {
-    uni.makePhoneCall({
-      phoneNumber: phone,
-      fail: () => uni.showToast({ title: '拨打电话失败', icon: 'none' })
-    })
-  } else {
-    uni.showToast({ title: '暂无教练联系方式', icon: 'none' })
+  console.log(phone,'====phone')
+
+  if (!phone) {
+    uni.showToast({ title: '暂无联系电话', icon: 'none' })
+    return
   }
+  // #ifdef APP-PLUS
+  // 只有【打包成 Android / iOS App】时，才会执行这里
+  plus.runtime.openURL(`tel:${phone}`);
+  // #endif
+
+  // #ifndef APP-PLUS
+  // 只有【不是 App】时（微信小程序、H5、快应用）才执行这里
+  uni.makePhoneCall({ phoneNumber: phone });
+  // #endif
 }
 
 // 加载助教详情
@@ -1045,13 +1054,20 @@ const handleOptionSelect = (option) => {
 
 // 处理自定义输入
 const handleCustomInput = () => {
-  const minMinutes = 10
-  let val = parseInt(customMinutes.value)
-  if (isNaN(val) || val < minMinutes) {
-    val = minMinutes
-    customMinutes.value = String(val)
+  const val = parseInt(customMinutes.value)
+  if (!isNaN(val)) {
+    selectedAddMinutes.value = val
   }
-  selectedAddMinutes.value = val
+}
+
+// 失焦时兜底校验：低于最小值则补足
+const handleCustomBlur = () => {
+  const minMinutes = 10
+  const val = parseInt(customMinutes.value)
+  if (isNaN(val) || val < minMinutes) {
+    customMinutes.value = String(minMinutes)
+    selectedAddMinutes.value = minMinutes
+  }
 }
 
 
@@ -1926,6 +1942,10 @@ let lastStatus = null
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        .pay-method-icon-img {
+          width: 56rpx;
+          height: 56rpx;
+        }
       }
 
       .pay-method-name {
