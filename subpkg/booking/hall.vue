@@ -669,10 +669,15 @@ const openFilter = () => {
 
 // 导航
 const navigateTo = (hall) => {
-  const lat = hall.latitude ?? 39.908823
-  const lng = hall.longitude ?? 116.397470
-  const name = hall.name
-  const address = hall.address
+  if (!hall.latitude || !hall.longitude) {
+    uni.showToast({ title: '该球厅暂无位置信息', icon: 'none' })
+    return
+  }
+
+  const lat = hall.latitude
+  const lng = hall.longitude
+  const name = hall.name || '球厅'
+  const address = hall.address || ''
 
   // #ifdef MP-WEIXIN
   // 小程序直接使用本机地图

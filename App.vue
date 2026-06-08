@@ -22,6 +22,8 @@ onShow(() => {
   // #ifdef APP-PLUS
   retryPushSyncIfNeeded()
   // #endif
+  // 检查登录状态
+  checkLogin()
 })
 
 // 初始化应用

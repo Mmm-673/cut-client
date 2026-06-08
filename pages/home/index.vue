@@ -207,7 +207,7 @@ const serviceList = ref([
   {
     id: 2,
     title: '专业教学',
-    price: 168,
+    price: 88,
     unit: '小时',
     priceColor: '#3B82F6',
     icon: '🎓',

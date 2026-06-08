@@ -550,6 +550,11 @@ onMounted(() => {
 onLoad(() => {
   // 加载数据
   loadData(true)
+
+  // 监听评价完成事件
+  uni.$on('orderEvaluated', () => {
+    loadData(true)
+  })
 })
 
 onShow(() => {

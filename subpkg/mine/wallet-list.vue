@@ -3,10 +3,12 @@
     <scroll-view
         scroll-y
         class="record-scroll"
+        :scroll-top="scrollTop"
         refresher-enabled
         :refresher-triggered="refreshing"
         @refresherrefresh="onRefresh"
         @scrolltolower="onLoadMore"
+        @scroll="onScroll"
         :lower-threshold="50"
     >
       <!-- 分类切换栏 -->
@@ -98,6 +100,11 @@
       <!-- 底部安全区域 -->
       <view class="safe-area-bottom"></view>
     </scroll-view>
+
+    <!-- 返回顶部按钮 -->
+    <view class="scroll-top-btn" v-if="showBackTop" @click="scrollToTop">
+      <uni-icons type="arrowup" size="20" color="#fff"></uni-icons>
+    </view>
   </view>
 </template>
 
@@ -136,6 +143,10 @@ const currentMonth = now.getMonth() + 1
 const pickerDate = ref(`${currentYear}-${String(currentMonth).padStart(2, '0')}`)
 const pickerStart = ref(`${currentYear - 2}-${String(currentMonth).padStart(2, '0')}`)
 const pickerEnd = ref(`${currentYear}-${String(currentMonth).padStart(2, '0')}`)
+
+// 返回顶部相关
+const scrollTop = ref(0)
+const showBackTop = ref(false)
 
 // 统计数据
 const statData = ref({
@@ -289,7 +300,7 @@ const loadTransactions = async (isRefresh = false) => {
         iconColor: bizInfo.iconColor,
         amount: (isIncome ? '+' : '-') + '¥' + (Math.abs(item.price || 0) / 100).toFixed(2),
         amountColor: isIncome ? '#00BB88' : '#EF4444',
-        createTime: formatTime(item.createTime)
+        createTime: item.createTime // 保留原始时间戳用于分组
       }
     })
 
@@ -407,6 +418,17 @@ const goBack = () => {
 
 const toRecordDetail = (recordId) => {
   uni.showToast({ title: '详情功能开发中', icon: 'none' })
+}
+
+// 滚动监听
+const onScroll = (e) => {
+  showBackTop.value = e.detail.scrollTop > 500
+}
+
+// 返回顶部
+const scrollToTop = () => {
+  scrollTop.value = 0
+  showBackTop.value = false
 }
 
 // ---------------------- 生命周期 ----------------------
@@ -614,5 +636,21 @@ onShow(() => {
   height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
   width: 100%;
+}
+
+/* 返回顶部按钮 */
+.scroll-top-btn {
+  position: fixed;
+  right: 30rpx;
+  bottom: 120rpx;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00BB88, #059669);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 16rpx rgba(0, 187, 136, 0.4);
+  z-index: 999;
 }
 </style>

@@ -61,11 +61,6 @@
             <text class="stats-num">{{ stats.finishOrder }}</text>
             <text class="stats-label">已完成</text>
           </view>
-          <view class="stats-divider"></view>
-          <view class="stats-item">
-            <text class="stats-num">{{ stats.avgScore }}</text>
-            <text class="stats-label">平均评分</text>
-          </view>
         </view>
       </view>
 

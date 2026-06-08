@@ -712,28 +712,37 @@ onLoad((options) => {
 
 onMounted(async () => {
   // 从 storage 获取已创建的订单数据
-  const createdOrder = uni.getStorageSync('createdOrderData')
-  if (createdOrder) {
-    orderData.value = createdOrder
-    // 设置服务类型
-    if (createdOrder.serviceType !== undefined) {
-      serviceType.value = createdOrder.serviceType
-    } else if (createdOrder.hallInfo) {
-      // 如果有球厅信息，默认是台球陪练
-      serviceType.value = 1
+  try {
+    const createdOrder = uni.getStorageSync('createdOrderData')
+    console.log('确认订单页面获取到的订单数据:', createdOrder)
+
+    if (createdOrder && Object.keys(createdOrder).length > 0) {
+      orderData.value = createdOrder
+      // 设置服务类型
+      if (createdOrder.serviceType !== undefined) {
+        serviceType.value = createdOrder.serviceType
+      } else if (createdOrder.hallInfo) {
+        // 如果有球厅信息，默认是台球陪练
+        serviceType.value = 1
+      }
+      uni.removeStorageSync('createdOrderData')
+      isOrderCreated.value = true
+      startCountdown()
+      await loadWalletBalance()
+      await loadPayChannels()
+      // 重新获取教练详情以确保头像等信息最新
+      if (orderData.value.coachInfo?.id) {
+        loadCoachDetail(orderData.value.coachInfo.id)
+      }
+    } else {
+      console.error('订单数据为空')
+      uni.showToast({ title: '订单数据缺失，请重新下单', icon: 'none', duration: 2000 })
+      setTimeout(() => { uni.reLaunch({ url: '/pages/coach/list' }) }, 2000)
     }
-    uni.removeStorageSync('createdOrderData')
-    isOrderCreated.value = true
-    startCountdown()
-    await loadWalletBalance()
-    await loadPayChannels()
-    // 重新获取教练详情以确保头像等信息最新
-    if (orderData.value.coachInfo?.id) {
-      loadCoachDetail(orderData.value.coachInfo.id)
-    }
-  } else {
-    uni.showToast({ title: '订单数据缺失，请重新下单', icon: 'none' })
-    setTimeout(() => { uni.reLaunch({ url: '/pages/coach/list' }) }, 1500)
+  } catch (error) {
+    console.error('获取订单数据失败:', error)
+    uni.showToast({ title: '加载数据失败，请重试', icon: 'none', duration: 2000 })
+    setTimeout(() => { uni.reLaunch({ url: '/pages/coach/list' }) }, 2000)
   }
 })
 

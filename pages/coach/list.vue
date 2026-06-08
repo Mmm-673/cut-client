@@ -40,20 +40,12 @@
             class="sort-item"
             :class="{ active: currentSort === 0 }"
             @click="switchSort(0)"
-        >
-          <text>智能排序</text>
-          <uni-icons v-if="currentSort === 0" type="bottom" size="12" color="#00d4aa"></uni-icons>
+        >距离最近
         </view>
         <view
             class="sort-item"
             :class="{ active: currentSort === 1 }"
             @click="switchSort(1)"
-        >距离最近
-        </view>
-        <view
-            class="sort-item"
-            :class="{ active: currentSort === 2 }"
-            @click="switchSort(2)"
         >好评优先
         </view>
       </view>
@@ -241,15 +233,7 @@ const loadData = async (isRefresh = false) => {
   if (loading.value) return
 
   // 如果是距离排序但没有经纬度，先获取定位
-  if (currentSort.value === 1 && (!currentLocation.value.longitude || !currentLocation.value.latitude)) {
-    if (!locating.value) {
-      getCurrentLocation()
-    }
-    return
-  }
-
-  // 如果是智能排序但没有城市信息，先获取定位
-  if (currentSort.value === 0 && !currentCity.value) {
+  if (currentSort.value === 0 && (!currentLocation.value.longitude || !currentLocation.value.latitude)) {
     if (!locating.value) {
       getCurrentLocation()
     }
@@ -289,13 +273,8 @@ const loadData = async (isRefresh = false) => {
     }
 
     // 根据排序类型添加不同的参数
-    if (currentSort.value === 1) {
+    if (currentSort.value === 0) {
       // 距离最近：添加经纬度
-      params.longitude = currentLocation.value.longitude
-      params.latitude = currentLocation.value.latitude
-    } else if (currentSort.value === 0) {
-      // 智能排序：添加城市
-      params.city = currentCity.value
       params.longitude = currentLocation.value.longitude
       params.latitude = currentLocation.value.latitude
     }
@@ -361,22 +340,12 @@ const switchSort = async (index) => {
   const prevSort = currentSort.value
   currentSort.value = index
 
-  if (index === 1) {
+  if (index === 0) {
     // 距离最近：需要获取定位
     if (!currentLocation.value.longitude || !currentLocation.value.latitude) {
       // 还没有定位信息，先获取定位，传入回调处理权限拒绝的情况
       getCurrentLocationWithFallback(prevSort)
       return
-    }
-  } else if (index === 0) {
-    // 智能排序：需要城市信息
-    console.log("🚀 ~ switchSort ~ currentCity:", currentCity)
-    if (!currentCity.value) {
-      // 还没有城市信息，先获取定位，getCurrentLocation内部会调用loadData
-      if (!currentLocation.value.longitude || !currentLocation.value.latitude) {
-        getCurrentLocation()
-        return
-      }
     }
   }
 

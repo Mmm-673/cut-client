@@ -3,10 +3,12 @@
   <view class="evaluate-page">
     <!-- 教练信息区 -->
     <view class="coach-info">
-      <image class="coach-avatar" :src="coachInfo.avatar" mode="aspectFill" />
-      <view class="coach-name">{{ coachInfo.name }}</view>
-      <view class="coach-desc">
-        {{ coachInfo.serviceType }} · {{ coachInfo.serviceTime }}
+      <image class="coach-avatar" :src="coachInfo.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+      <view class="coach-name">{{ coachInfo.name || '助教' }}</view>
+      <view class="coach-desc" v-if="coachInfo.serviceType || coachInfo.serviceTime">
+        <text v-if="coachInfo.serviceType">{{ coachInfo.serviceType }}</text>
+        <text v-if="coachInfo.serviceType && coachInfo.serviceTime"> · </text>
+        <text v-if="coachInfo.serviceTime">{{ coachInfo.serviceTime }}</text>
       </view>
     </view>
 
@@ -88,11 +90,12 @@
       <view class="anonymous-left">
         <text class="iconfont">👤</text>
         <text class="anonymous-text">匿名评价</text>
+        <text class="anonymous-status" :class="{ active: isAnonymous }">{{ isAnonymous ? '（已开启）' : '（已关闭）' }}</text>
       </view>
       <switch
           :checked="isAnonymous"
           @change="handleAnonymousChange"
-          color="#00b578"
+          color="#00BB88"
       />
     </view>
 
@@ -312,6 +315,9 @@ const handleSubmit = async () => {
       title: '评价提交成功',
       icon: 'success'
     });
+
+    // 通知订单列表刷新
+    uni.$emit('orderEvaluated')
 
     setTimeout(() => {
       uni.switchTab({ url: '/pages/order/list' });
@@ -580,6 +586,15 @@ $transition: all 0.3s ease;
     .anonymous-text {
       font-size: 28rpx;
       color: $text-secondary;
+    }
+
+    .anonymous-status {
+      font-size: 24rpx;
+      color: #9CA3AF;
+      &.active {
+        color: #00BB88;
+        font-weight: 600;
+      }
     }
   }
 }

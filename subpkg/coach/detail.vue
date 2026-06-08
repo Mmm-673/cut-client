@@ -415,7 +415,7 @@ const loadReviews = async () => {
     const res = await getCoachReviews({
       coachId: coachId.value,
       pageNo: 1,
-      pageSize: 10
+      pageSize: 50 // 加载更多评价
     })
     const data = res.data || {}
     const list = data.list || data.records || data.rows || []

@@ -51,7 +51,7 @@
             <view class="bottom-row">
               <view class="price-row">
                 <text class="price-symbol">¥</text>
-                <text class="price">{{ coach.price || 0 }}</text>
+                <text class="price">{{ formatPrice(coach.hourlyPrice || coach.price) }}</text>
                 <text class="price-unit">/小时</text>
               </view>
               <view class="action-buttons">
@@ -92,6 +92,12 @@ const pageNo = ref(1)
 const pageSize = ref(20)
 const coachList = ref([])
 const hasMore = ref(true)
+
+// 格式化价格
+const formatPrice = (price) => {
+  if (!price) return '0'
+  return (price / 100).toFixed(2)
+}
 
 // 等级映射
 const levelMap = {
