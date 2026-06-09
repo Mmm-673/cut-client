@@ -19,7 +19,7 @@
       <!-- 欢迎语 -->
       <view class="welcome-section">
         <text class="greeting">你好 👋</text>
-        <text class="welcome-text">今天想预约哪位助教？</text>
+        <text class="welcome-text">今天想预约哪位教练？</text>
       </view>
 
       <!-- 轮播图 -->
@@ -348,6 +348,7 @@ onMounted(() => {
 }
 
 .scroll-container {
+  padding-top: 90rpx;
   height: calc(100vh - 140rpx);
 }
 

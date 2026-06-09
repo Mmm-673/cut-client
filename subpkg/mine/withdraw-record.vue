@@ -1,12 +1,12 @@
 <template>
   <view class="record-page-wrapper">
-    <view class="nav-bar">
-      <view class="nav-back" @click="goBack">
-        <uni-icons type="left" size="20" color="#fff" />
-      </view>
-      <text class="nav-title">提现记录</text>
-      <view class="nav-placeholder"></view>
-    </view>
+<!--    <view class="nav-bar">-->
+<!--      <view class="nav-back" @click="goBack">-->
+<!--        <uni-icons type="left" size="20" color="#fff" />-->
+<!--      </view>-->
+<!--      <text class="nav-title">提现记录</text>-->
+<!--      <view class="nav-placeholder"></view>-->
+<!--    </view>-->
 
     <scroll-view
       scroll-y
@@ -174,6 +174,7 @@ onShow(() => {
 .record-page-wrapper {
   min-height: 100vh;
   background: #121619;
+  background-color: #121619;
   display: flex;
   flex-direction: column;
 }

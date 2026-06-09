@@ -8,16 +8,9 @@
 <!--      <text class="nav-title">确认订单</text>-->
 <!--      <view class="nav-right"></view>-->
 <!--    </view>-->
+    <view class="order-content">
 
-    <scroll-view
-        scroll-y
-        class="order-scroll"
-        refresher-enabled
-        :refresher-triggered="refreshing"
-        @refresherrefresh="onRefresh"
-    >
-
-      <!-- 教练信息 -->
+    <!-- 教练信息 -->
       <view class="coach-card" v-if="orderData.coachInfo">
         <image class="coach-avatar" :src="orderData.coachInfo.avatar" mode="aspectFill"></image>
         <view class="coach-info">
@@ -169,7 +162,7 @@
 
       <!-- 底部安全区域 -->
       <view class="safe-bottom"></view>
-    </scroll-view>
+    </view>
 
     <!-- 底部支付栏 -->
     <view class="bottom-bar">
@@ -248,7 +241,6 @@ import { onLoad } from '@dcloudio/uni-app'
 import { getWallet } from '@/api/billiard/wallet'
 
 // ---------------------- 状态定义 ----------------------
-const refreshing = ref(false)
 const isSubmitting = ref(false)
 const userAgree = ref(true)
 const selectedPay = ref('')
@@ -478,18 +470,6 @@ const formatTime = (timestamp) => {
   return `${month}.${day} ${hour}:${minute}`
 }
 
-// 下拉刷新
-const onRefresh = async () => {
-  refreshing.value = true
-  try {
-    if (orderData.value.coachInfo?.id) {
-      await loadCoachDetail(orderData.value.coachInfo.id)
-    }
-    await loadWalletBalance()
-  } finally {
-    refreshing.value = false
-  }
-}
 
 // 重新选择球厅
 const reselectHall = () => {
@@ -785,12 +765,13 @@ onUnmounted(() => {
   }
 }
 
-.order-scroll {
+.order-content {
   flex: 1;
   width: 100%;
-  height: 0; /* 关键：让 scroll-view 有明确高度 */
   padding-bottom: 200rpx;
   box-sizing: border-box;
+  overflow-y: auto; /* 允许内容垂直滚动 */
+  -webkit-overflow-scrolling: touch; /* iOS 惯性滚动支持 */
 }
 
 /* 教练信息 */

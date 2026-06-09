@@ -184,7 +184,6 @@
       </view>
 
       <!-- 底部安全区域 -->
-      <view class="safe-area-bottom" ></view>
     </scroll-view>
 
     <!-- 时间选择器弹窗 -->
@@ -249,6 +248,7 @@ import { getVenueList } from '@/api/billiard/venue'
 import { createOrder } from '@/api/billiard/order'
 import { debounce } from '@/utils/common'
 import { getLocation, extractStreet, formatDistance, showPermissionModal, openAppSetting } from '@/utils/location'
+import {openMapNavigation} from "../../utils/platform";
 
 // ---------------------- 状态定义 ----------------------
 // 刷新/加载状态
@@ -679,106 +679,13 @@ const navigateTo = (hall) => {
   const name = hall.name || '球厅'
   const address = hall.address || ''
 
-  // #ifdef MP-WEIXIN
-  // 小程序直接使用本机地图
-  uni.openLocation({
+  openMapNavigation({
     latitude: lat,
     longitude: lng,
     name: name,
     address: address,
-    scale: 18,
-    fail: () => {
-      uni.showToast({ title: '打开地图失败', icon: 'none' })
-    }
+    mode: 'driving'
   })
-  // #endif
-
-  // #ifdef APP-PLUS
-  // App端让用户选择地图
-  uni.showActionSheet({
-    itemList: ['百度地图', '高德地图', '腾讯地图', '本机地图'],
-    success: (res) => {
-      const index = res.tapIndex
-      let url = ''
-      if (index === 0) {
-        // 百度地图
-        url = `baidumap://map/marker?location=${lat},${lng}&title=${encodeURIComponent(name)}&addr=${encodeURIComponent(address)}`
-      } else if (index === 1) {
-        // 高德地图
-        url = `amap://viewMarker?lat=${lat}&lon=${lng}&title=${encodeURIComponent(name)}&address=${encodeURIComponent(address)}`
-      } else if (index === 2) {
-        // 腾讯地图
-        url = `qqmap://map/marker?coord=${lat},${lng}&title=${encodeURIComponent(name)}&address=${encodeURIComponent(address)}`
-      } else {
-        // 本机地图
-        uni.openLocation({
-          latitude: lat,
-          longitude: lng,
-          name: name,
-          address: address,
-          scale: 18,
-          fail: () => {
-            uni.showToast({ title: '打开地图失败', icon: 'none' })
-          }
-        })
-        return
-      }
-      // 检查地图是否安装
-      plus.runtime.isApplicationExist({
-        app: index === 0 ? 'baidumap' : index === 1 ? 'amap' : 'qqmap',
-        pkg: index === 0 ? 'com.baidu.BaiduMap' : index === 1 ? 'com.autonavi.minimap' : 'com.tencent.map'
-      }, (result) => {
-        if (result) {
-          plus.runtime.openURL(url)
-        } else {
-          // 地图未安装，尝试使用本机地图
-          uni.openLocation({
-            latitude: lat,
-            longitude: lng,
-            name: name,
-            address: address,
-            scale: 18,
-            fail: () => {
-              uni.showToast({ title: '未找到可用的地图应用', icon: 'none' })
-            }
-          })
-        }
-      })
-    }
-  })
-  // #endif
-
-  // #ifdef H5
-  // H5端让用户选择
-  uni.showActionSheet({
-    itemList: ['百度地图', '高德地图', '本机地图'],
-    success: (res) => {
-      const index = res.tapIndex
-      let url = ''
-      if (index === 0) {
-        // 百度地图
-        url = `https://api.map.baidu.com/marker?location=${lat},${lng}&title=${encodeURIComponent(name)}&output=html`
-      } else if (index === 1) {
-        // 高德地图
-        url = `https://restapi.amap.com/v3/staticmap?center=${lng},${lat}&zoom=18&size=512*512&markers=mid,,A:${lng},${lat}`
-      } else {
-        // 本机地图
-        uni.openLocation({
-          latitude: lat,
-          longitude: lng,
-          name: name,
-          address: address,
-          scale: 18,
-          fail: () => {
-            uni.showToast({ title: '打开地图失败', icon: 'none' })
-          }
-        })
-        return
-      }
-      window.location.href = url
-    }
-  })
-  // #endif
 }
 
 // 验证电话号码是否有效

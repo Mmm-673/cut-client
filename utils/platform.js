@@ -199,6 +199,80 @@ export function getStatusBarHeight() {
   }
 }
 
+/**
+ * 打开地图导航（多端兼容）
+ */
+export function openMapNavigation(options) {
+  const { latitude, longitude, name = '目的地', address = '', mode = 'driving' } = options
+
+  if (!latitude || !longitude) {
+    uni.showToast({ title: '地址信息有误', icon: 'none' })
+    return
+  }
+
+  // #ifdef APP-PLUS
+  // App 端尝试调用系统地图应用
+  const lat = parseFloat(latitude)
+  const lon = parseFloat(longitude)
+
+  if (isIOS()) {
+    // iOS 先尝试高德地图，再尝试百度地图，最后用系统地图
+    const aMapUrl = `iosamap://path?sourceApplication=${encodeURIComponent('球了么裁教')}&daddr=${lat},${lon}&dname=${encodeURIComponent(name)}&dev=0&t=${mode === 'driving' ? '0' : '2'}`
+    const baiduUrl = `baidumap://map/direction?destination=name:${encodeURIComponent(name)}|latlng:${lat},${lon}&mode=${mode === 'driving' ? 'driving' : 'walking'}&coord_type=gcj02`
+
+    plus.runtime.openURL(aMapUrl, (err) => {
+      // 高德地图打不开，试百度
+      plus.runtime.openURL(baiduUrl, (err2) => {
+        // 都打不开，用系统地图
+        uni.openLocation({
+          latitude: lat,
+          longitude: lon,
+          name: name,
+          address: address,
+          scale: 18
+        })
+      })
+    })
+  } else if (isAndroid() || isHarmony()) {
+    // Android 和鸿蒙使用相同的地图应用方案
+    const aMapUrl = `amapuri://route/plan/?daddr=${lat},${lon}&dname=${encodeURIComponent(name)}&dev=0&t=${mode === 'driving' ? '0' : '2'}`
+    const baiduUrl = `baidumap://map/direction?destination=name:${encodeURIComponent(name)}|latlng:${lat},${lon}&mode=${mode === 'driving' ? 'driving' : 'walking'}&coord_type=gcj02`
+
+    plus.runtime.openURL(aMapUrl, (err) => {
+      plus.runtime.openURL(baiduUrl, (err2) => {
+        uni.openLocation({
+          latitude: lat,
+          longitude: lon,
+          name: name,
+          address: address,
+          scale: 18
+        })
+      })
+    })
+  } else {
+    // 其他系统用通用方案
+    uni.openLocation({
+      latitude: lat,
+      longitude: lon,
+      name: name,
+      address: address,
+      scale: 18
+    })
+  }
+  // #endif
+
+  // #ifndef APP-PLUS
+  // 小程序和 H5 直接用 uni.openLocation
+  uni.openLocation({
+    latitude: parseFloat(latitude),
+    longitude: parseFloat(longitude),
+    name: name,
+    address: address,
+    scale: 18
+  })
+  // #endif
+}
+
 export default {
   isH5,
   openPermissionSettings,
@@ -212,5 +286,6 @@ export default {
   isAndroid,
   getPlatformName,
   getSafeArea,
-  getStatusBarHeight
+  getStatusBarHeight,
+  openMapNavigation
 }

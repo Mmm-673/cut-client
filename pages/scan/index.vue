@@ -12,6 +12,8 @@
         <text class="scan-btn-text">点击扫码</text>
       </view>
     </view>
+    <view class="safe-area-floor"></view>
+
   </view>
 </template>
 
@@ -83,7 +85,7 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .scan-wrapper {
-  min-height: 100vh;
+  height: 100vh;
   background-color: #121619;
 }
 
@@ -201,5 +203,10 @@ onMounted(() => {
 @keyframes glowPulse {
   0%, 100% { transform: scale(1); opacity: 0.5; }
   50% { transform: scale(1.2); opacity: 0.8; }
+}
+.safe-area-floor {
+  height: constant(safe-area-inset-bottom);
+  height: env(safe-area-inset-bottom);
+  background-color: red; /* 👉 这个颜色每页自己改 */
 }
 </style>

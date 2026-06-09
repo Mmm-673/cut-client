@@ -1,71 +1,71 @@
 <template>
   <view class="wallet-page-wrapper">
-    <scroll-view
-        scroll-y
-        class="wallet-scroll"
-        refresher-enabled
-        :refresher-triggered="refreshing"
-        @refresherrefresh="onRefresh"
-    >
-      <!-- 余额卡片 -->
-      <view class="balance-card">
-        <view class="balance-header">
-          <text class="balance-label">账户余额 (元)</text>
-          <view class="eye-btn" @click="toggleBalance">
-            <uni-icons :type="showBalance ? 'eye' : 'eye-slash'" size="20" color="#fff" />
-          </view>
-        </view>
-
-        <text class="balance-num">{{ showBalance ? formatBalance(wallet.balance) : '****' }}</text>
-
-        <view class="action-btns">
-          <button class="action-btn recharge" @click="toRecharge">充值</button>
-          <button class="action-btn withdraw" @click="toWithdraw">提现</button>
-        </view>
-
-        <view class="record-entries">
-          <view class="record-entry" @click="toRechargeRecord">
-            <uni-icons type="list" size="20" color="#fff" />
-            <text class="entry-text">充值记录</text>
-          </view>
-          <view class="entry-divider"></view>
-          <view class="record-entry" @click="toWithdrawRecord">
-            <uni-icons type="list" size="20" color="#fff" />
-            <text class="entry-text">提现记录</text>
-          </view>
+    <!-- 余额卡片 -->
+    <view class="balance-card">
+      <view class="balance-header">
+        <text class="balance-label">账户余额 (元)</text>
+        <view class="eye-btn" @click="toggleBalance">
+          <uni-icons :type="showBalance ? 'eye' : 'eye-slash'" size="20" color="#fff" />
         </view>
       </view>
 
-      <!-- 收支统计 -->
-      <view class="stat-card">
-        <view class="stat-header">
-          <text class="stat-title">收支统计</text>
-          <view class="month-select" @click="selectMonth">
-            <text class="month-text">{{ currentMonth }}</text>
-            <uni-icons type="down" size="16" color="#9CA3AF" />
-          </view>
-        </view>
+      <text class="balance-num">{{ showBalance ? formatBalance(wallet.balance) : '****' }}</text>
 
-        <view class="stat-data">
-          <view class="stat-item">
-            <text class="stat-label">总收入</text>
-            <text class="stat-value income">¥{{ statData.income }}</text>
-          </view>
-          <view class="stat-divider"></view>
-          <view class="stat-item">
-            <text class="stat-label">总支出</text>
-            <text class="stat-value expense">¥{{ statData.expense }}</text>
-          </view>
+      <view class="action-btns">
+        <button class="action-btn recharge" @click="toRecharge">充值</button>
+        <button class="action-btn withdraw" @click="toWithdraw">提现</button>
+      </view>
+
+      <view class="record-entries">
+        <view class="record-entry" @click="toRechargeRecord">
+          <uni-icons type="list" size="20" color="#fff" />
+          <text class="entry-text">充值记录</text>
+        </view>
+        <view class="entry-divider"></view>
+        <view class="record-entry" @click="toWithdrawRecord">
+          <uni-icons type="list" size="20" color="#fff" />
+          <text class="entry-text">提现记录</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 收支统计 -->
+    <view class="stat-card">
+      <view class="stat-header">
+        <text class="stat-title">收支统计</text>
+        <view class="month-select" @click="selectMonth">
+          <text class="month-text">{{ currentMonth }}</text>
+          <uni-icons type="down" size="16" color="#9CA3AF" />
         </view>
       </view>
 
-      <!-- 交易记录 -->
-      <view class="record-card">
-        <view class="record-header">
-          <text class="record-title">交易记录</text>
-          <text class="view-more" @click="toAllRecord">查看全部 <uni-icons type="right" size="16" color="#9CA3AF" /></text>
+      <view class="stat-data">
+        <view class="stat-item">
+          <text class="stat-label">总收入</text>
+          <text class="stat-value income">¥{{ statData.income }}</text>
         </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-label">总支出</text>
+          <text class="stat-value expense">¥{{ statData.expense }}</text>
+        </view>
+      </view>
+    </view>
 
+    <!-- 交易记录 -->
+    <view class="record-card">
+      <view class="record-header">
+        <text class="record-title">交易记录</text>
+        <text class="view-more" @click="toAllRecord">查看全部 <uni-icons type="right" size="16" color="#9CA3AF" /></text>
+      </view>
+
+      <scroll-view
+          scroll-y
+          class="record-scroll"
+          refresher-enabled
+          :refresher-triggered="refreshing"
+          @refresherrefresh="onRefresh"
+      >
         <view class="record-list">
           <view class="record-item" v-for="record in recordList" :key="record.id" @click="toRecordDetail(record.id)">
             <view class="record-icon" :style="{background: record.iconBg}">
@@ -78,11 +78,11 @@
             <text class="record-amount" :style="{color: record.amountColor}">{{ record.amount }}</text>
           </view>
         </view>
-      </view>
+      </scroll-view>
+    </view>
 
-      <!-- 底部安全区域 -->
-      <view class="safe-area-bottom"></view>
-    </scroll-view>
+<!--    &lt;!&ndash; 底部安全区域 &ndash;&gt;-->
+    <view class="safe-area-bottom"></view>
   </view>
 </template>
 
@@ -352,8 +352,8 @@ onShow(() => {
   }
 }
 
-.wallet-scroll {
-  flex: 1;
+.record-scroll {
+  height: 400rpx; /* 设置合适的高度 */
   width: 100%;
 }
 

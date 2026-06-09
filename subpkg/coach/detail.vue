@@ -201,7 +201,7 @@
       </view>
 
       <!-- 底部安全区域留白 -->
-<!--      <view class="safe-area-bottom"></view>-->
+      <view class="safe-area-bottom"></view>
     </scroll-view>
 
 
@@ -644,7 +644,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .detail-container {
   min-height: 100vh;
-  background-color: #1a1a1a;
+  background-color: #2a2a2a;
   position: relative;
 }
 
@@ -1108,8 +1108,8 @@ onMounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: #252525;
-  border-top: 2rpx solid #333333;
+  background-color: #1E252B;
+  border-top: 2rpx solid #2a2a2a;
   padding: 16rpx 32rpx;
   padding-bottom: calc(16rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));

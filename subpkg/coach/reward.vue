@@ -611,12 +611,14 @@ onBackPress(() => {
 
 /* 底部栏 */
 .bottom-bar {
-  background-color: #1a1a1a;
+  //background-color: #1a1a1a;
   padding: 12rpx 24rpx;
   display: flex;
   align-items: center;
   border-top: 2rpx solid #2a2a2a;
-
+  background-color: #1E252B;
+  padding-bottom: calc(16rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   .total-amount {
     flex: 1;
 

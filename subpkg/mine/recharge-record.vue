@@ -1,12 +1,12 @@
 <template>
   <view class="record-page-wrapper">
-    <view class="nav-bar">
-      <view class="nav-back" @click="goBack">
-        <uni-icons type="left" size="20" color="#fff" />
-      </view>
-      <text class="nav-title">充值记录</text>
-      <view class="nav-placeholder"></view>
-    </view>
+<!--    <view class="nav-bar">-->
+<!--      <view class="nav-back" @click="goBack">-->
+<!--        <uni-icons type="left" size="20" color="#fff" />-->
+<!--      </view>-->
+<!--      <text class="nav-title">充值记录</text>-->
+<!--      <view class="nav-placeholder"></view>-->
+<!--    </view>-->
 
     <scroll-view
       scroll-y

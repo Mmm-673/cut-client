@@ -1,6 +1,6 @@
 // 应用全局配置
 export default {
-  baseUrl: 'http://114.67.69.228',
+  baseUrl: 'http://web.qiulem.com',
   // 应用信息
   appInfo: {
     // 应用名称
@@ -10,7 +10,7 @@ export default {
     // 应用logo
     logo: "/static/logo.png",
     // 官方网站
-    site_url: "http://114.67.69.228",
+    site_url: "http://web.qiulem.com/homepage",
     // 政策协议
     agreements: [{
         title: "隐私政策",

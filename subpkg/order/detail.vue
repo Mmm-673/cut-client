@@ -402,6 +402,7 @@ import { getCoachDetail } from '@/api/billiard/coach'
 import { getTimerStatus } from '@/api/billiard/timer'
 import { reportException } from '@/api/billiard/exception'
 import { executePayment, fetchEnabledChannels } from '@/utils/payment'
+import {openMapNavigation} from "../../utils/platform";
 
 // 订单ID
 const orderId = ref(null)
@@ -719,9 +720,13 @@ const openHallNavigate = () => {
     params.longitude = orderInfo.value.venueLongitude
     params.latitude = orderInfo.value.venueLatitude
   }
-  uni.openLocation({
-    ...params,
-    fail: () => uni.showToast({ title: '打开地图失败', icon: 'none' })
+
+  openMapNavigation({
+    latitude: params.latitude,
+    longitude: params.longitude ,
+    name: params.name,
+    address: params.address,
+    mode: 'driving'
   })
 }
 
