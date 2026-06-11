@@ -47,22 +47,14 @@ function parseExtras(extras) {
 function handleNotificationNavigation(extras) {
   const data = parseExtras(extras)
   jpushLog('info', '处理通知点击跳转', data)
-
+  // ====== 核心修复 1：点击通知后，立即清空 App 本地及极光服务器的角标数量 ======
+  // #ifdef APP-PLUS
+  jpushLog('info', '开始清空应用角标...')
+  // 传 0 代表清空角标
+  callJPushApi('setBadge', 0)
   setTimeout(() => {
     console.log(data,'==========处理通知点击跳转')
-    // try {
-    // //   if (data.type === 'new_order' && data.orderId) {
-    // //     jpushLog('info', '跳转订单详情', { orderId: data.orderId })
-    // //     uni.navigateTo({ url: `/subpkg/order/detail?id=${data.orderId}` })
-    // //   } else if (data.type === 'income_wallet') {
-    // //     jpushLog('info', '跳转钱包页')
-    // //     uni.navigateTo({ url: '/subpkg/mine/wallet/index' })
-    // //   } else {
-    // //     jpushLog('warn', '通知 extras 无匹配跳转类型', data)
-    // //   }
-    // // } catch (e) {
-    // //   jpushLog('error', '通知点击跳转失败', e)
-    // // }
+    uni.navigateTo({ url: `/pages/home/index` })
   }, 300)
 }
 
@@ -342,6 +334,9 @@ export function getDeviceRegId() {
 /** App 回到前台时，若已登录但尚无 RegID 则补同步 */
 export function retryPushSyncIfNeeded() {
   // #ifdef APP-PLUS
+  // ====== 兜底：只要回到前台，就重置一次角标 ======
+  callJPushApi('setBadge', 0)
+  // ============================================
   if (!getAccessToken()) return
   const userId = uni.getStorageSync('auth_user_id') || ''
   if (!userId) return
