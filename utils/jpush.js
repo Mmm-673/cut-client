@@ -52,6 +52,10 @@ function handleNotificationNavigation(extras) {
   jpushLog('info', '开始清空应用角标...')
   // 传 0 代表清空角标
   callJPushApi('setBadge', 0)
+
+  // 如果是 Android 且配置了厂商通道，部分手机需要同时调用：
+  // callJPushApi('setBadgeNumber', 0)
+  // #endif
   setTimeout(() => {
     console.log(data,'==========处理通知点击跳转')
     uni.navigateTo({ url: `/pages/home/index` })

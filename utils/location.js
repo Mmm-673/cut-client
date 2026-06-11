@@ -143,7 +143,7 @@ const fetchCoordinates = ({
     const doLocate = () => {
       uni.getLocation({
         type,
-        altitude: true,
+        altitude: false,
         success: (res) => {
           finish({
             longitude: res.longitude,
