@@ -338,7 +338,7 @@ const loadCoachData = async () => {
         name: '台球陪练',
         desc: '2小时起步，包含基础动作指导、技术纠错、实战演练',
         sales: 86,
-        unit: '小时',
+        unit: '',
         hot: true,
         hourTime: 2,
       },
@@ -348,7 +348,7 @@ const loadCoachData = async () => {
         name: '陪游服务',
         desc: '5小时起步，陪同打球+游玩，包含餐饮交通补贴',
         sales: 42,
-        unit: '段',
+        unit: '',
         hot: false,
         hourTime: 5,
       }
