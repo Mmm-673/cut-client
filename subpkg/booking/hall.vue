@@ -246,7 +246,7 @@ import { ref, onMounted, computed } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
 import { getVenueList } from '@/api/billiard/venue'
 import { createOrder } from '@/api/billiard/order'
-import { debounce } from '@/utils/common'
+import { debounce, showLoading, hideLoading } from '@/utils/common'
 import { getLocation, extractStreet, formatDistance, showPermissionModal, openAppSetting } from '@/utils/location'
 import {openMapNavigation} from "../../utils/platform";
 
@@ -538,6 +538,7 @@ const confirmTime = () => {
 const getCurrentLocation = async () => {
   if (locating.value) return
   locating.value = true
+  showLoading('定位中...')
 
   try {
     const { longitude, latitude, regeocodeData } = await getLocation({ needRegeocode: true })
@@ -562,6 +563,7 @@ const getCurrentLocation = async () => {
     }
   } finally {
     locating.value = false
+    hideLoading()
   }
 }
 
@@ -603,6 +605,7 @@ const loadHallList = async () => {
   if (loading.value) return
 
   loading.value = true
+  showLoading('加载中...')
   try {
     const params = {
       limit: 100
@@ -638,6 +641,7 @@ const loadHallList = async () => {
   } finally {
     loading.value = false
     refreshing.value = false
+    hideLoading()
   }
 }
 

@@ -32,7 +32,8 @@ export function submitPayOrder(data) {
   return request({
     url: '/app-api/pay/order/submit',
     method: 'post',
-    data
+    data,
+    timeout: 30000 // 单独设置超时时间为 30 秒
   })
 }
 

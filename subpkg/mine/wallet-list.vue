@@ -440,10 +440,11 @@ onShow(() => {
 
 <style lang="scss" scoped>
 .record-all-wrapper {
-  min-height: 100vh;
+  height: 100vh;
   background: #121619;
   display: flex;
   flex-direction: column;
+  overflow: hidden; /* 防止容器本身滚动 */
 }
 
 /* 顶部导航栏 */
@@ -477,6 +478,7 @@ onShow(() => {
 .record-scroll {
   flex: 1;
   width: 100%;
+  height: 0; /* 重要：flex布局中设置height:0可确保正确计算剩余空间 */
 }
 
 /* 分类切换栏 */

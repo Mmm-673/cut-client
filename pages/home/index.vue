@@ -1,10 +1,10 @@
 <template>
   <view class="home-wrapper">
     <!-- 导航栏 -->
-    <view class="navbar" :style="{ paddingTop: statusBarHeight + 'px' }">
+    <view class="navbar" :style="{ paddingTop: statusBarHeight + 'rpx', height: navBarHeight + 'rpx' }">
       <view class="nav-left">
         <view class="logo-circle">
-          <text class="logo-text">8</text>
+          <image class="logo-img" :src="globalConfig.appInfo.logo" mode="aspectFit"></image>
           <view class="logo-glow"></view>
         </view>
         <view class="nav-title-group">
@@ -15,7 +15,7 @@
     </view>
 
     <!-- 滚动区域 -->
-    <scroll-view scroll-y class="scroll-container" show-scrollbar="false">
+    <scroll-view scroll-y class="scroll-container" show-scrollbar="false" :style="{ paddingTop: navBarHeight + 'rpx', height: `calc(100vh)` }">
       <!-- 欢迎语 -->
       <view class="welcome-section">
         <text class="greeting">你好 👋</text>
@@ -182,8 +182,14 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getNewCoachList, getHotCoachList } from '@/api/billiard/coach'
 import { getVenueList } from '@/api/billiard/venue'
 import { getLocation, showPermissionModal } from '@/utils/location'
+import { isIOS } from '@/utils/platform'
+import {
+  useConfigStore
+} from '@/store'
+const globalConfig = useConfigStore().config
 
 const statusBarHeight = ref(0)
+const navBarHeight = ref(0)
 const loading = ref(false)
 const locationDenied = ref(false) // 记录是否已拒绝定位权限
 const hasQueriedVenue = ref(false) // 记录是否已查询过球厅列表
@@ -335,7 +341,11 @@ onShow(() => {
 
 onMounted(() => {
   const systemInfo = uni.getSystemInfoSync()
-  statusBarHeight.value = systemInfo.statusBarHeight || 0
+
+  // 导航栏内容高度（根据平台调整）
+  const navContentHeight = isIOS() ? 88 : 80 // iOS通常需要更高的导航栏
+  statusBarHeight.value = isIOS() ? 110 : systemInfo.statusBarHeight + 15 || 0
+  navBarHeight.value = statusBarHeight.value + navContentHeight + 8
 })
 </script>
 
@@ -343,13 +353,12 @@ onMounted(() => {
 .home-wrapper {
   min-height: 100vh;
   background-color: #121619;
-  padding-top: 140rpx;
   box-sizing: border-box;
 }
 
 .scroll-container {
-  padding-top: 90rpx;
-  height: calc(100vh - 140rpx);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* 导航栏 */

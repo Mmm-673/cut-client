@@ -1,15 +1,8 @@
 
 <template>
   <view class="detail-container">
-    <!-- 下拉刷新区域 -->
-    <scroll-view
-        scroll-y
-        class="scroll-view"
-        :style="{ height: scrollViewHeight + 'px' }"
-        refresher-enabled
-        :refresher-triggered="refreshing"
-        @refresherrefresh="onRefresh"
-    >
+    <!-- 内容区域 -->
+    <view class="content-wrapper">
       <!-- 头部导航栏 -->
       <view class="nav-bar">
         <view class="nav-action" @click="handleToggleFavorite">
@@ -202,7 +195,7 @@
 
       <!-- 底部安全区域留白 -->
       <view class="safe-area-bottom"></view>
-    </scroll-view>
+    </view>
 
 
     <!-- 底部操作栏 -->
@@ -227,7 +220,6 @@ import { formatPrice } from '@/utils/common'
 // 状态栏和安全区域高度
 const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
-const scrollViewHeight = ref(0)
 const coachId = ref(null)
 const loading = ref(false)
 
@@ -347,7 +339,8 @@ const loadCoachData = async () => {
         desc: '2小时起步，包含基础动作指导、技术纠错、实战演练',
         sales: 86,
         unit: '小时',
-        hot: true
+        hot: true,
+        hourTime: 2,
       },
       {
         id: 2,
@@ -356,7 +349,8 @@ const loadCoachData = async () => {
         desc: '5小时起步，陪同打球+游玩，包含餐饮交通补贴',
         sales: 42,
         unit: '段',
-        hot: false
+        hot: false,
+        hourTime: 5,
       }
     ]
 
@@ -372,7 +366,7 @@ const loadCoachData = async () => {
             ...item,
             type: item.serviceType,
             name: item.serviceName,
-            price: item.hourlyPrice
+            price: item.hourlyPrice * localConfig.hourTime
           }
         })
         .filter(Boolean)
@@ -626,14 +620,6 @@ onMounted(() => {
   statusBarHeight.value = systemInfo.statusBarHeight || 0
   safeAreaBottom.value = systemInfo.safeAreaInsets?.bottom || 0
 
-  // 计算 scroll-view 高度 - 需要减去底部栏高度和安全区域
-  const bottomBarHeight = 60 + safeAreaBottom.value
-
-  // 使用 setTimeout 确保 DOM 渲染完成
-  setTimeout(() => {
-    scrollViewHeight.value = systemInfo.windowHeight - bottomBarHeight
-  }, 100)
-
   // 加载数据
   if (coachId.value) {
     loadCoachData()
@@ -646,6 +632,12 @@ onMounted(() => {
   min-height: 100vh;
   background-color: #2a2a2a;
   position: relative;
+}
+
+.content-wrapper {
+  min-height: calc(100vh - 120rpx); /* 减去底部栏高度 */
+  background-color: #1a1a1a;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 120rpx); /* 确保内容不会被底部栏遮挡 */
 }
 
 /* 头部导航栏 */

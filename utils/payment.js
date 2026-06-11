@@ -6,6 +6,42 @@
 import { isMPWeixin, isApp } from '@/utils/platform'
 import { submitPayOrder, getEnableChannelCodeList, getPayOrder } from '@/api/billiard/pay'
 
+// 支付请求状态管理，用于防止重复提交
+const payRequestStates = new Map()
+
+// 支付请求状态枚举
+const PAY_REQUEST_STATUS = {
+  PENDING: 'pending',  // 支付中
+  TIMEOUT: 'timeout',  // 超时
+  FAILED: 'failed',    // 失败
+  SUCCESS: 'success'   // 成功
+}
+
+// 检查支付请求状态
+function checkPayRequestState(payOrderId, channelCode) {
+  const key = `${payOrderId}_${channelCode}`
+  return payRequestStates.get(key)
+}
+
+// 设置支付请求状态
+function setPayRequestState(payOrderId, channelCode, status) {
+  const key = `${payOrderId}_${channelCode}`
+  payRequestStates.set(key, {
+    status,
+    timestamp: Date.now()
+  })
+
+  // 清理过期的状态（24小时后自动清理）
+  const expiredKeys = []
+  const now = Date.now()
+  payRequestStates.forEach((value, k) => {
+    if (now - value.timestamp > 24 * 60 * 60 * 1000) {
+      expiredKeys.push(k)
+    }
+  })
+  expiredKeys.forEach(key => payRequestStates.delete(key))
+}
+
 /**
  * 支付渠道编码
  */
@@ -317,6 +353,8 @@ async function confirmPayOrderPaid(payOrderId) {
 export async function executePayment(options) {
   const { payOrderId, payValue, channelCode: selectedChannelCode, orderId, onSuccess, onCancel, onError } = options
 
+  console.log('executePayment 调用参数:', options)
+
   try {
     if (payOrderId === null || payOrderId === undefined || payOrderId === '') {
       throw new Error('支付订单信息缺失')
@@ -324,14 +362,44 @@ export async function executePayment(options) {
 
     // 1. 获取支付渠道编码
     const channelCode = selectedChannelCode || getChannelCode(payValue)
+
+    console.log('支付渠道编码:', channelCode)
     if (!channelCode) {
       throw new Error('不支持的支付方式')
     }
 
-    // 2. 调用后端接口提交支付，获取支付参数
+    // 2. 检查支付请求状态，防止重复提交
+    const currentState = checkPayRequestState(payOrderId, channelCode)
+    const now = Date.now()
+
+    // 如果是 pending 状态且未超时（5分钟内），阻止重复提交
+    if (currentState && currentState.status === PAY_REQUEST_STATUS.PENDING && (now - currentState.timestamp < 5 * 60 * 1000)) {
+      throw new Error('支付请求处理中，请稍后再试')
+    }
+
+    // 如果是 timeout 状态且未超过冷却期（30秒），优先查单确认
+    if (currentState && currentState.status === PAY_REQUEST_STATUS.TIMEOUT && (now - currentState.timestamp < 30 * 1000)) {
+      try {
+        console.log('支付超时，优先查单确认')
+        const payResult = await confirmPayOrderPaid(payOrderId)
+        if (onSuccess && typeof onSuccess === 'function') {
+          onSuccess(payResult)
+        }
+        setPayRequestState(payOrderId, channelCode, PAY_REQUEST_STATUS.SUCCESS)
+        return payResult
+      } catch (error) {
+        console.log('查单未确认支付成功，继续支付流程')
+      }
+    }
+
+    // 设置支付请求状态为 pending
+    setPayRequestState(payOrderId, channelCode, PAY_REQUEST_STATUS.PENDING)
+
+    // 3. 调用后端接口提交支付，获取支付参数
     const submitRes = await submitPayOrder({
       id: payOrderId,
-      channelCode: channelCode
+      channelCode: channelCode,
+      displayMode: payValue === 'alipay' ? 'app' : undefined // 支付宝支付添加 displayMode: 'app'
     })
 
     const resultData = submitRes.data || {}
@@ -369,6 +437,7 @@ export async function executePayment(options) {
     } else if (isApp() && payValue === 'wechat') {
       await wechatAppPay(payParams)
     } else if (isApp() && payValue === 'alipay') {
+      // 支付宝支付
       await alipayAppPay(payParams)
     } else {
       throw new Error('不支持的支付方式或平台')
@@ -383,6 +452,15 @@ export async function executePayment(options) {
     return payResult
   } catch (error) {
     console.error('支付出错:', error)
+
+    // 更新支付请求状态
+    if (error.message && error.message.includes('timeout')) {
+      setPayRequestState(payOrderId, channelCode, PAY_REQUEST_STATUS.TIMEOUT)
+    } else if (error.canceled) {
+      // 支付取消不更新状态，允许重新尝试
+    } else {
+      setPayRequestState(payOrderId, channelCode, PAY_REQUEST_STATUS.FAILED)
+    }
 
     // 处理支付取消
     if (error.canceled) {

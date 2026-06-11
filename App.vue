@@ -95,10 +95,24 @@ function checkLogin() {
   }
   // #endif
 
-  // Token 有效，跳转到首页
-  setTimeout(() => {
-    proxy.$tab.reLaunch('/pages/home/index')
-  }, 100)
+  // Token 有效时，处理页面跳转逻辑
+  // 检查当前页面路由，避免停留在登录页面
+  const pages = getCurrentPages()
+  if (pages.length > 0) {
+    const currentPage = pages[pages.length - 1].route
+    // 如果当前在登录页面，跳转到首页
+    if (currentPage === 'pages/login/index') {
+      setTimeout(() => {
+        proxy.$tab.switchTab('/pages/home/index')
+      }, 100)
+    }
+    // 如果在其他页面，保持当前页面状态
+  } else {
+    // 如果页面路由栈为空（应用被杀掉后台重新打开），跳转到首页
+    setTimeout(() => {
+      proxy.$tab.switchTab('/pages/home/index')
+    }, 100)
+  }
 }
 </script>
 

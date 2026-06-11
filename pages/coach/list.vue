@@ -51,6 +51,19 @@
       </view>
     </view>
 
+    <!-- 定位信息 -->
+    <view class="location-box">
+      <uni-icons type="location" size="18" color="#00BB88" />
+      <text class="location-text">
+        <text v-if="locating">定位中...</text>
+        <text v-else-if="currentCity">{{ currentCity }}</text>
+        <text v-else>定位失败</text>
+      </text>
+      <view v-if="locationDenied && !locating" class="retry-btn" @click="getCurrentLocation">
+        重试定位
+      </view>
+    </view>
+
     <scroll-view
         class="list-scroll"
         scroll-y="true"
@@ -158,6 +171,7 @@ const hasMore = ref(true)
 
 // 定位相关
 const locating = ref(false)
+const locationDenied = ref(false) // 记录是否已拒绝定位权限
 const currentLocation = ref({
   longitude: null,
   latitude: null
@@ -211,13 +225,18 @@ const getCurrentLocation = async () => {
     const { longitude, latitude, regeocodeData } = await getLocation({ needRegeocode: true })
     currentLocation.value = { longitude, latitude }
     currentCity.value = extractCity(regeocodeData)
+    locationDenied.value = false // 重置权限拒绝状态
     loadData(true)
   } catch (err) {
     console.error('定位失败:', err)
     if (err.message === 'permission_denied') {
+      locationDenied.value = true // 标记权限被拒绝
       showPermissionModal({
         content: '您未开启定位权限，将无法按距离排序。是否前往开启？',
-        onSuccess: getCurrentLocation
+        onSuccess: () => {
+          locationDenied.value = false // 用户去设置了，重置状态
+          getCurrentLocation()
+        }
       })
     } else {
       uni.showToast({ title: '定位失败，将使用默认排序', icon: 'none' })
@@ -361,15 +380,20 @@ const getCurrentLocationWithFallback = async (fallbackSort) => {
     const { longitude, latitude, regeocodeData } = await getLocation({ needRegeocode: true })
     currentLocation.value = { longitude, latitude }
     currentCity.value = extractCity(regeocodeData)
+    locationDenied.value = false // 重置权限拒绝状态
     loadData(true)
   } catch (err) {
     console.error('定位失败:', err)
     // 恢复原排序
     currentSort.value = fallbackSort
     if (err.message === 'permission_denied') {
+      locationDenied.value = true // 标记权限被拒绝
       showPermissionModal({
         content: '您未开启定位权限，将无法按距离排序。是否前往开启？',
-        onSuccess: () => getCurrentLocationWithFallback(fallbackSort)
+        onSuccess: () => {
+          locationDenied.value = false // 用户去设置了，重置状态
+          getCurrentLocationWithFallback(fallbackSort)
+        }
       })
     } else {
       uni.showToast({ title: '获取定位失败，已恢复默认排序', icon: 'none', duration: 2000 })
@@ -434,9 +458,9 @@ onMounted(() => {
 })
 
 onShow(() => {
-  // 从设置回来后，如果还没有定位信息，尝试重新获取定位
+  // 从设置回来后，如果还没有定位信息且未拒绝过权限，尝试重新获取定位
   if ((!currentLocation.value.longitude || !currentLocation.value.latitude) || !currentCity.value) {
-    if (!locating.value) {
+    if (!locating.value && !locationDenied.value) {
       getCurrentLocation()
     }
   }
@@ -548,6 +572,27 @@ onShow(() => {
 
   .coach-list {
     padding: 20rpx 30rpx;
+  }
+}
+
+/* 定位信息 */
+.location-box {
+  margin: 0 30rpx 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  .location-text {
+    color: #fff;
+    font-size: 26rpx;
+    flex: 1;
+  }
+  .retry-btn {
+    color: #00BB88;
+    font-size: 24rpx;
+    padding: 8rpx 16rpx;
+    border: 1rpx solid #00BB88;
+    border-radius: 32rpx;
+    flex-shrink: 0;
   }
 }
 

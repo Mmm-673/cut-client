@@ -435,6 +435,7 @@ const ensureSelectedPay = () => {
 const loadPayChannels = async () => {
   try {
     const channels = await fetchEnabledChannels(10)
+    console.log('获取到的支付渠道列表:', channels)
     payList.value = applyWalletBalance(channels)
     ensureSelectedPay()
   } catch (error) {
