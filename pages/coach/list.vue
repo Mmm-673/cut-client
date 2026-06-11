@@ -152,7 +152,7 @@
 import {ref, onMounted} from 'vue'
 import {onShow} from  "@dcloudio/uni-app"
 import {getCoachList} from '@/api/billiard/coach'
-import {debounce, formatPrice} from '@/utils/common'
+import {debounce, formatPrice, showLoading, hideLoading} from '@/utils/common'
 import {getLocation, extractCity, formatDistance, showPermissionModal} from '@/utils/location'
 
 const statusBarHeight = ref(0)
@@ -220,9 +220,12 @@ const getTagClass = (tag) => {
 const getCurrentLocation = async () => {
   if (locating.value) return
   locating.value = true
+  showLoading('定位中...')
 
   try {
     const { longitude, latitude, regeocodeData } = await getLocation({ needRegeocode: true })
+
+    console.log(longitude, latitude, regeocodeData,'====locating')
     currentLocation.value = { longitude, latitude }
     currentCity.value = extractCity(regeocodeData)
     locationDenied.value = false // 重置权限拒绝状态
@@ -244,6 +247,7 @@ const getCurrentLocation = async () => {
     }
   } finally {
     locating.value = false
+    hideLoading()
   }
 }
 
@@ -260,6 +264,7 @@ const loadData = async (isRefresh = false) => {
   }
 
   loading.value = true
+  showLoading('加载中...')
   if (isRefresh) {
     loadMoreStatus.value = 'more'
     hasMore.value = true
@@ -332,6 +337,7 @@ const loadData = async (isRefresh = false) => {
   } finally {
     loading.value = false
     refreshing.value = false
+    hideLoading()
   }
 }
 
@@ -375,6 +381,7 @@ const switchSort = async (index) => {
 const getCurrentLocationWithFallback = async (fallbackSort) => {
   if (locating.value) return
   locating.value = true
+  showLoading('定位中...')
 
   try {
     const { longitude, latitude, regeocodeData } = await getLocation({ needRegeocode: true })
@@ -401,6 +408,7 @@ const getCurrentLocationWithFallback = async (fallbackSort) => {
     }
   } finally {
     locating.value = false
+    hideLoading()
   }
 }
 
@@ -458,10 +466,14 @@ onMounted(() => {
 })
 
 onShow(() => {
-  // 从设置回来后，如果还没有定位信息且未拒绝过权限，尝试重新获取定位
+  // 从后台返回时，如果还没有定位信息且未拒绝过权限，尝试重新获取定位
+  console.log(currentLocation,currentCity)
   if ((!currentLocation.value.longitude || !currentLocation.value.latitude) || !currentCity.value) {
     if (!locating.value && !locationDenied.value) {
-      getCurrentLocation()
+      // 稍微延迟一下，确保页面完全渲染后再定位
+      setTimeout(() => {
+        getCurrentLocation()
+      }, 500)
     }
   }
 })

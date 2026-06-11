@@ -7,6 +7,8 @@ import { regeocode } from '@/api/billiard/amap'
 
 // 定位状态
 let isLocating = false
+// 定位超时定时器
+let locationTimeout = null
 
 /**
  * 打开应用设置页面（兼容 iOS、Android、鸿蒙）
@@ -102,7 +104,8 @@ export const showPermissionModal = ({
  */
 export const getLocation = ({
                               needRegeocode = true,
-                              type = 'gcj02'
+                              type = 'gcj02',
+                              timeout = 15000 // 定位超时时间，默认15秒
                             } = {}) => {
   return new Promise((resolve, reject) => {
     if (isLocating) {
@@ -112,11 +115,24 @@ export const getLocation = ({
 
     isLocating = true
 
+    // 设置定位超时定时器
+    locationTimeout = setTimeout(() => {
+      isLocating = false
+      locationTimeout = null
+      reject(new Error('定位超时'))
+    }, timeout)
+
     const doLocate = () => {
       uni.getLocation({
         type,
         altitude: true,
         success: async (res) => {
+          // 清除超时定时器
+          if (locationTimeout) {
+            clearTimeout(locationTimeout)
+            locationTimeout = null
+          }
+
           const location = {
             longitude: res.longitude,
             latitude: res.latitude
@@ -139,6 +155,12 @@ export const getLocation = ({
           }
         },
         fail: (err) => {
+          // 清除超时定时器
+          if (locationTimeout) {
+            clearTimeout(locationTimeout)
+            locationTimeout = null
+          }
+
           isLocating = false
           if (err && err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize') || err.errMsg.includes('denied'))) {
             reject(new Error('permission_denied'))
@@ -161,6 +183,12 @@ export const getLocation = ({
         plus.android.requestPermissions(
             ['android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION'],
             (result) => {
+              // 清除超时定时器
+              if (locationTimeout) {
+                clearTimeout(locationTimeout)
+                locationTimeout = null
+              }
+
               // 检查授权结果 - 使用标准方式检查
               const granted = result.granted || []
               if (granted.length > 0 &&
@@ -175,6 +203,12 @@ export const getLocation = ({
               }
             },
             (error) => {
+              // 清除超时定时器
+              if (locationTimeout) {
+                clearTimeout(locationTimeout)
+                locationTimeout = null
+              }
+
               isLocating = false
               reject(new Error('permission_error'))
             }
@@ -184,6 +218,12 @@ export const getLocation = ({
         doLocate()
       }
     } catch (e) {
+      // 清除超时定时器
+      if (locationTimeout) {
+        clearTimeout(locationTimeout)
+        locationTimeout = null
+      }
+
       isLocating = false
       reject(e)
     }

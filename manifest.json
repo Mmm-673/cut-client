@@ -254,8 +254,8 @@
             },
             "JG-JCore" : {
                 "JPUSH_APPKEY_ANDROID" : "54ce33979670871f9952e1f5",
-                "JPUSH_APPKEY_IOS" : "developer-default",
-                "JPUSH_CHANNEL_ANDROID" : "54ce33979670871f9952e1f5",
+                "JPUSH_APPKEY_IOS" : "54ce33979670871f9952e1f5",
+                "JPUSH_CHANNEL_ANDROID" : "developer-default",
                 "JPUSH_CHANNEL_IOS" : "developer-default",
                 "__plugin_info__" : {
                     "name" : "极光推送 JCore 官方 SDK",
