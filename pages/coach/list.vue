@@ -56,10 +56,11 @@
       <uni-icons type="location" size="18" color="#00BB88" />
       <text class="location-text">
         <text v-if="locating">定位中...</text>
+        <text v-else-if="locationDenied">定位权限未开启</text>
         <text v-else-if="currentCity">{{ currentCity }}</text>
         <text v-else>定位失败</text>
       </text>
-      <view v-if="locationDenied && !locating" class="retry-btn" @click="getCurrentLocation">
+      <view v-if="!locating && (locationDenied || !currentCity)" class="retry-btn" @click="getCurrentLocation">
         重试定位
       </view>
     </view>
@@ -216,55 +217,117 @@ const getTagClass = (tag) => {
   return tagClassMap[tag] || 'tag-default'
 }
 
-// 获取当前位置（使用统一封装）
-const getCurrentLocation = async () => {
-  if (locating.value) return
+const LOCATION_RETRY_COUNT = 2
+const LOCATION_RETRY_DELAY = 600
+
+let pageInitPromise = null
+
+const getLocationWithRetry = async () => {
+  let lastError = null
+  for (let attempt = 0; attempt <= LOCATION_RETRY_COUNT; attempt++) {
+    try {
+      return await getLocation({ needRegeocode: true })
+    } catch (err) {
+      lastError = err
+      if (err?.message === 'permission_denied') {
+        throw err
+      }
+      if (attempt < LOCATION_RETRY_COUNT) {
+        await new Promise(resolve => setTimeout(resolve, LOCATION_RETRY_DELAY * (attempt + 1)))
+      }
+    }
+  }
+  throw lastError
+}
+
+const handleLocationError = (err, onRetry) => {
+  console.error('定位失败:', err)
+  if (err?.message === 'permission_denied') {
+    locationDenied.value = true
+    showPermissionModal({
+      content: '您未开启定位权限，将无法按距离排序。是否前往开启？',
+      onSuccess: () => {
+        locationDenied.value = false
+        onRetry && onRetry()
+      }
+    })
+    return false
+  }
+  return false
+}
+
+const hasCoordinates = () => currentLocation.value.longitude && currentLocation.value.latitude
+
+// 确保已获取定位（距离排序依赖经纬度，用于切换排序等场景）
+const ensureLocation = async () => {
+  if (hasCoordinates()) {
+    return true
+  }
+
   locating.value = true
   showLoading('定位中...')
 
   try {
-    const { longitude, latitude, regeocodeData } = await getLocation({ needRegeocode: true })
-
-    console.log(longitude, latitude, regeocodeData,'====locating')
+    const { longitude, latitude, regeocodeData } = await getLocationWithRetry()
     currentLocation.value = { longitude, latitude }
     currentCity.value = extractCity(regeocodeData)
-    locationDenied.value = false // 重置权限拒绝状态
-    loadData(true)
+    locationDenied.value = false
+    return true
   } catch (err) {
-    console.error('定位失败:', err)
-    if (err.message === 'permission_denied') {
-      locationDenied.value = true // 标记权限被拒绝
-      showPermissionModal({
-        content: '您未开启定位权限，将无法按距离排序。是否前往开启？',
-        onSuccess: () => {
-          locationDenied.value = false // 用户去设置了，重置状态
-          getCurrentLocation()
-        }
-      })
-    } else {
-      uni.showToast({ title: '定位失败，将使用默认排序', icon: 'none' })
-      loadData(true)
-    }
+    return handleLocationError(err, () => refreshPageData())
   } finally {
     locating.value = false
     hideLoading()
   }
 }
 
-// 加载数据
-const loadData = async (isRefresh = false) => {
-  if (loading.value) return
-
-  // 如果是距离排序但没有经纬度，先获取定位
-  if (currentSort.value === 0 && (!currentLocation.value.longitude || !currentLocation.value.latitude)) {
-    if (!locating.value) {
-      getCurrentLocation()
-    }
-    return
+// 页面初始化：定位完成后拉取列表，全程保持定位中状态
+const refreshPageData = async () => {
+  if (pageInitPromise) {
+    return pageInitPromise
   }
 
+  pageInitPromise = (async () => {
+    locating.value = true
+    showLoading('定位中...')
+    try {
+      if (currentSort.value === 0 && !hasCoordinates()) {
+        const { longitude, latitude, regeocodeData } = await getLocationWithRetry()
+        currentLocation.value = { longitude, latitude }
+        currentCity.value = extractCity(regeocodeData)
+        locationDenied.value = false
+      }
+      showLoading('加载中...')
+      await fetchCoachList(true)
+    } catch (err) {
+      handleLocationError(err, () => refreshPageData())
+    } finally {
+      locating.value = false
+      hideLoading()
+    }
+  })().finally(() => {
+    pageInitPromise = null
+  })
+
+  return pageInitPromise
+}
+
+// 手动重试定位
+const getCurrentLocation = async () => {
+  currentLocation.value = { longitude: null, latitude: null }
+  currentCity.value = ''
+  locationDenied.value = false
+  await refreshPageData()
+}
+
+// 请求助教列表数据
+const fetchCoachList = async (isRefresh = false) => {
+  if (loading.value) return
+
   loading.value = true
-  showLoading('加载中...')
+  if (!locating.value) {
+    showLoading('加载中...')
+  }
   if (isRefresh) {
     loadMoreStatus.value = 'more'
     hasMore.value = true
@@ -337,13 +400,28 @@ const loadData = async (isRefresh = false) => {
   } finally {
     loading.value = false
     refreshing.value = false
-    hideLoading()
+    if (!locating.value) {
+      hideLoading()
+    }
   }
+}
+
+const loadData = async (isRefresh = false) => {
+  if (currentSort.value === 0 && !hasCoordinates()) {
+    return refreshPageData()
+  }
+  await fetchCoachList(isRefresh)
 }
 
 // 下拉刷新
 const onRefresh = () => {
   refreshing.value = true
+  if (currentSort.value === 0 && !hasCoordinates()) {
+    refreshPageData().finally(() => {
+      refreshing.value = false
+    })
+    return
+  }
   loadData(true)
 }
 
@@ -366,50 +444,14 @@ const switchSort = async (index) => {
   currentSort.value = index
 
   if (index === 0) {
-    // 距离最近：需要获取定位
-    if (!currentLocation.value.longitude || !currentLocation.value.latitude) {
-      // 还没有定位信息，先获取定位，传入回调处理权限拒绝的情况
-      getCurrentLocationWithFallback(prevSort)
+    const located = await ensureLocation()
+    if (!located) {
+      currentSort.value = prevSort
       return
     }
   }
 
   loadData(true)
-}
-
-// 获取当前位置（带失败回退）
-const getCurrentLocationWithFallback = async (fallbackSort) => {
-  if (locating.value) return
-  locating.value = true
-  showLoading('定位中...')
-
-  try {
-    const { longitude, latitude, regeocodeData } = await getLocation({ needRegeocode: true })
-    currentLocation.value = { longitude, latitude }
-    currentCity.value = extractCity(regeocodeData)
-    locationDenied.value = false // 重置权限拒绝状态
-    loadData(true)
-  } catch (err) {
-    console.error('定位失败:', err)
-    // 恢复原排序
-    currentSort.value = fallbackSort
-    if (err.message === 'permission_denied') {
-      locationDenied.value = true // 标记权限被拒绝
-      showPermissionModal({
-        content: '您未开启定位权限，将无法按距离排序。是否前往开启？',
-        onSuccess: () => {
-          locationDenied.value = false // 用户去设置了，重置状态
-          getCurrentLocationWithFallback(fallbackSort)
-        }
-      })
-    } else {
-      uni.showToast({ title: '获取定位失败，已恢复默认排序', icon: 'none', duration: 2000 })
-      loadData(true)
-    }
-  } finally {
-    locating.value = false
-    hideLoading()
-  }
 }
 
 // 搜索
@@ -461,20 +503,11 @@ onMounted(() => {
     })
   }, 100)
 
-  // 默认智能排序，先获取定位
-  getCurrentLocation()
 })
 
 onShow(() => {
-  // 从后台返回时，如果还没有定位信息且未拒绝过权限，尝试重新获取定位
-  console.log(currentLocation,currentCity)
-  if ((!currentLocation.value.longitude || !currentLocation.value.latitude) || !currentCity.value) {
-    if (!locating.value && !locationDenied.value) {
-      // 稍微延迟一下，确保页面完全渲染后再定位
-      setTimeout(() => {
-        getCurrentLocation()
-      }, 500)
-    }
+  if (locationDenied.value || !coachList.value.length || !hasCoordinates()) {
+    refreshPageData()
   }
 })
 </script>

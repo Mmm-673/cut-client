@@ -181,7 +181,7 @@ import { ref, onMounted } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getNewCoachList, getHotCoachList } from '@/api/billiard/coach'
 import { getVenueList } from '@/api/billiard/venue'
-import { getLocation, showPermissionModal } from '@/utils/location'
+import { getLocation, showPermissionModal, prefetchLocation } from '@/utils/location'
 import { isIOS } from '@/utils/platform'
 import {
   useConfigStore
@@ -258,24 +258,17 @@ const loadNewCoaches = async () => {
   }
 }
 
-const handleBannerClick = (i) => uni.switchTab({
-  url: '/pages/coach/list'
-})
-const handleServiceClick = (i) => uni.switchTab({
-  url: '/pages/coach/list'
-})
-
-const viewAllHotCoach = () => {
+const goCoachList = () => {
+  prefetchLocation()
   uni.switchTab({
     url: '/pages/coach/list'
   })
 }
 
-const viewAllNewCoach = () => {
-  uni.switchTab({
-    url: '/pages/coach/list'
-  })
-}
+const handleBannerClick = () => goCoachList()
+const handleServiceClick = () => goCoachList()
+const viewAllHotCoach = () => goCoachList()
+const viewAllNewCoach = () => goCoachList()
 
 const goCoachDetail = (item) => {
   uni.navigateTo({

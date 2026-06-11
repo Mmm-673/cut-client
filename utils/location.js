@@ -5,10 +5,17 @@ import { regeocode } from '@/api/billiard/amap'
  * 封装 uni.getLocation + 逆地址解析 + 权限处理
  */
 
-// 定位状态
-let isLocating = false
+// 坐标获取中的共享 Promise，避免并发调用互相拒绝
+let coordinatesPromise = null
 // 定位超时定时器
 let locationTimeout = null
+
+const clearLocationTimeout = () => {
+  if (locationTimeout) {
+    clearTimeout(locationTimeout)
+    locationTimeout = null
+  }
+}
 
 /**
  * 打开应用设置页面（兼容 iOS、Android、鸿蒙）
@@ -85,6 +92,7 @@ export const showPermissionModal = ({
     success: (res) => {
       if (res.confirm) {
         openAppSetting()
+        onSuccess && onSuccess()
       }
     }
   })
@@ -96,76 +104,57 @@ export const showPermissionModal = ({
 }
 
 /**
- * 获取定位 + 逆地址解析
- * @param {Object} options
- * @param {Boolean} options.needRegeocode - 是否需要逆地址解析（默认 true）
- * @param {String} options.type - 定位坐标系类型（默认 gcj02，因为已配置高德）
- * @returns {Promise}
+ * 提前发起定位（导航跳转前调用，与页面内 getLocation 共享同一次坐标请求）
  */
-export const getLocation = ({
-                              needRegeocode = true,
-                              type = 'gcj02',
-                              timeout = 15000 // 定位超时时间，默认15秒
-                            } = {}) => {
-  return new Promise((resolve, reject) => {
-    if (isLocating) {
-      reject(new Error('正在定位中，请稍候'))
-      return
-    }
+export const prefetchLocation = (options = {}) => {
+  return fetchCoordinates(options).catch(() => {})
+}
 
-    isLocating = true
+/**
+ * 获取经纬度坐标（并发调用共享同一次定位请求）
+ */
+const fetchCoordinates = ({
+                            type = 'gcj02',
+                            timeout = 15000
+                          } = {}) => {
+  if (coordinatesPromise) {
+    return coordinatesPromise
+  }
 
-    // 设置定位超时定时器
+  coordinatesPromise = new Promise((resolve, reject) => {
     locationTimeout = setTimeout(() => {
-      isLocating = false
-      locationTimeout = null
+      coordinatesPromise = null
+      clearLocationTimeout()
       reject(new Error('定位超时'))
     }, timeout)
+
+    const finish = (location) => {
+      clearLocationTimeout()
+      coordinatesPromise = null
+      resolve(location)
+    }
+
+    const fail = (err) => {
+      clearLocationTimeout()
+      coordinatesPromise = null
+      reject(err)
+    }
 
     const doLocate = () => {
       uni.getLocation({
         type,
         altitude: true,
-        success: async (res) => {
-          // 清除超时定时器
-          if (locationTimeout) {
-            clearTimeout(locationTimeout)
-            locationTimeout = null
-          }
-
-          const location = {
+        success: (res) => {
+          finish({
             longitude: res.longitude,
             latitude: res.latitude
-          }
-
-          try {
-            if (needRegeocode) {
-              const geoRes = await regeocode(location)
-              resolve({
-                ...location,
-                regeocodeData: geoRes.data
-              })
-            } else {
-              resolve(location)
-            }
-          } catch (e) {
-            resolve(location)
-          } finally {
-            isLocating = false
-          }
+          })
         },
         fail: (err) => {
-          // 清除超时定时器
-          if (locationTimeout) {
-            clearTimeout(locationTimeout)
-            locationTimeout = null
-          }
-
-          isLocating = false
           if (err && err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize') || err.errMsg.includes('denied'))) {
-            reject(new Error('permission_denied'))
+            fail(new Error('permission_denied'))
           } else {
-            reject(err)
+            fail(err)
           }
         }
       })
@@ -178,54 +167,28 @@ export const getLocation = ({
       const osName = (systemInfo.osName || systemInfo.systemName || '').toLowerCase()
       const isHarmony = osName.includes('harmony')
 
-      // Android 或鸿蒙系统权限申请
       if (platform === 'android' || isHarmony) {
         plus.android.requestPermissions(
             ['android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION'],
             (result) => {
-              // 清除超时定时器
-              if (locationTimeout) {
-                clearTimeout(locationTimeout)
-                locationTimeout = null
-              }
-
-              // 检查授权结果 - 使用标准方式检查
               const granted = result.granted || []
               if (granted.length > 0 &&
                   (granted.includes('android.permission.ACCESS_FINE_LOCATION') ||
                    granted.includes('android.permission.ACCESS_COARSE_LOCATION'))) {
-                // 授权成功
                 doLocate()
               } else {
-                // 权限被拒绝
-                isLocating = false
-                reject(new Error('permission_denied'))
+                fail(new Error('permission_denied'))
               }
             },
-            (error) => {
-              // 清除超时定时器
-              if (locationTimeout) {
-                clearTimeout(locationTimeout)
-                locationTimeout = null
-              }
-
-              isLocating = false
-              reject(new Error('permission_error'))
+            () => {
+              fail(new Error('permission_error'))
             }
         )
       } else {
-        // iOS 直接执行定位，系统会自动弹授权
         doLocate()
       }
     } catch (e) {
-      // 清除超时定时器
-      if (locationTimeout) {
-        clearTimeout(locationTimeout)
-        locationTimeout = null
-      }
-
-      isLocating = false
-      reject(e)
+      fail(e)
     }
     // #endif
 
@@ -233,6 +196,37 @@ export const getLocation = ({
     doLocate()
     // #endif
   })
+
+  return coordinatesPromise
+}
+
+/**
+ * 获取定位 + 逆地址解析
+ * @param {Object} options
+ * @param {Boolean} options.needRegeocode - 是否需要逆地址解析（默认 true）
+ * @param {String} options.type - 定位坐标系类型（默认 gcj02，因为已配置高德）
+ * @returns {Promise}
+ */
+export const getLocation = async ({
+                                    needRegeocode = true,
+                                    type = 'gcj02',
+                                    timeout = 15000
+                                  } = {}) => {
+  const location = await fetchCoordinates({ type, timeout })
+
+  if (needRegeocode) {
+    try {
+      const geoRes = await regeocode(location)
+      return {
+        ...location,
+        regeocodeData: geoRes.data
+      }
+    } catch (e) {
+      return location
+    }
+  }
+
+  return location
 }
 
 /**
