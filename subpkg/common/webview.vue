@@ -5,30 +5,37 @@
 </template>
 
 <script>
-  export default {
-    data() {
-      return {
-        params: {},
-        webviewStyles: {
-          progress: {
-            color: "#FF3333"
-          }
+export default {
+  data() {
+    return {
+      params: {},
+      webviewStyles: {
+        progress: {
+          color: "#FF3333"
         }
       }
-    },
-    props: {
-      src: {
-        type: [String],
-        default: null
-      }
-    },
-    onLoad(event) {
-      this.params = event
-      if (event.title) {
-        uni.setNavigationBarTitle({
-          title: event.title
-        })
-      }
+    }
+  },
+  props: {
+    src: {
+      type: [String],
+      default: null
+    }
+  },
+  onLoad(event) {
+    const url = event.url ? decodeURIComponent(event.url) : ''
+    const title = event.title ? decodeURIComponent(event.title) : ''
+
+    this.params = {
+      ...event,
+      url
+    }
+
+    if (title) {
+      uni.setNavigationBarTitle({
+        title
+      })
     }
   }
+}
 </script>

@@ -155,7 +155,12 @@ const codeCountdown = ref(0)
 let countdownTimer = null
 
 // 协议勾选
-const agree = ref(true)
+const agree = ref(false)
+
+const agreementUrls = {
+  user: 'https://www.baidu.com',
+  privacy: 'https://www.baidu.com'
+}
 
 // 显示密码
 const showPassword = ref(false)
@@ -184,7 +189,7 @@ const checkPhone = () => {
     return false
   }
   if (!agree.value) {
-    uni.showToast({ title: '请先同意用户协议和隐私政策', icon: 'none' })
+    uni.showToast({ title: '请先阅读并同意隐私政策', icon: 'none' })
     return false
   }
   return true
@@ -291,10 +296,9 @@ const wechatLogin = () => {
 
 // 跳转用户协议/隐私政策
 const goToAgree = (type) => {
+  const title = type === 'user' ? '用户协议' : '隐私政策'
   uni.navigateTo({
-    url: type === 'user'
-      ? '/subpkg/common/textview?type=user'
-      : '/subpkg/common/textview?type=privacy'
+    url: `/subpkg/common/webview?url=${encodeURIComponent(agreementUrls[type])}&title=${encodeURIComponent(title)}`
   })
 }
 

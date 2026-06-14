@@ -138,7 +138,7 @@
               <view class="title-dot blue"></view>
               <view class="title-line blue"></view>
             </view>
-            <text class="title-text">新人推荐</text>
+            <text class="title-text">新人精选</text>
             <view class="title-badge blue">NEW</view>
           </view>
           <view class="view-more" @click="viewAllNewCoach">

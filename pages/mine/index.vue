@@ -81,7 +81,15 @@
             </view>
             <view class="wallet-balance">
               <text class="currency">¥</text>
-              <text class="amount">{{ wallet.balance }}</text>
+              <text class="amount">{{ balanceVisible ? formattedBalance : '******' }}</text>
+              <view class="balance-eye-hit" @click.stop.prevent="toggleBalanceVisible">
+                <uni-icons
+                  class="balance-eye"
+                  :type="balanceVisible ? 'eye' : 'eye-slash'"
+                  size="20"
+                  color="rgba(255, 255, 255, 0.85)"
+                />
+              </view>
             </view>
             <view class="wallet-stats">
               <view class="stat-item">
@@ -344,6 +352,17 @@ const wallet = ref({
   totalExpense: 0,
   totalRecharge: 0
 })
+const balanceVisible = ref(true)
+
+const formatAmount = (amount) => {
+  const value = Number(amount) || 0
+  return value.toLocaleString('zh-CN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+}
+
+const formattedBalance = computed(() => formatAmount(wallet.value.balance))
 
 // 加载钱包数据
 const loadWallet = async () => {
@@ -501,6 +520,10 @@ const toRecharge = () => {
 
 const toWithdraw = () => {
   uni.navigateTo({ url: '/subpkg/mine/withdraw' })
+}
+
+const toggleBalanceVisible = () => {
+  balanceVisible.value = !balanceVisible.value
 }
 
 const toCoupon = () => {
@@ -848,6 +871,22 @@ onShow(() => {
     font-weight: 700;
     letter-spacing: 2rpx;
     text-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.2);
+  }
+
+  .balance-eye-hit {
+    width: 64rpx;
+    height: 64rpx;
+    margin-left: 8rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+  }
+
+  .balance-eye {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 

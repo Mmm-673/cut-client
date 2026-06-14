@@ -9,7 +9,8 @@
       "mcp__codegraph__codegraph_explore",
       "mcp__codegraph__codegraph_node",
       "mcp__codegraph__codegraph_search",
-      "Bash(npm audit *)"
+      "Bash(npm audit *)",
+      "Skill(superpowers:using-git-worktrees)"
     ]
   }
 }

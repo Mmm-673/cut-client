@@ -14,6 +14,14 @@
       <!-- 服务信息选择 -->
       <view class="info-card" v-if="!isReselect">
         <view class="card-title">预约信息</view>
+        <view class="info-row" @click="showTimePicker = true">
+          <text class="label">服务时间</text>
+          <view class="value-wrap">
+            <text class="value">{{ orderInfo.timeText }}</text>
+            <uni-icons type="right" size="18" color="#9CA3AF" />
+          </view>
+        </view>
+
 
         <view class="info-row">
           <text class="label">服务时长</text>
@@ -27,14 +35,6 @@
                 <uni-icons type="plus" size="20" :color="orderInfo.duration >= 8 ? '#2a3338' : '#00BB88'" />
               </view>
             </view>
-          </view>
-        </view>
-
-        <view class="info-row" @click="showTimePicker = true">
-          <text class="label">服务时间</text>
-          <view class="value-wrap">
-            <text class="value">{{ orderInfo.timeText }}</text>
-            <uni-icons type="right" size="18" color="#9CA3AF" />
           </view>
         </view>
       </view>

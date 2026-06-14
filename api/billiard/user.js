@@ -83,3 +83,11 @@ export function updateMobile(data) {
     data
   })
 }
+
+export function cancelAccount(data) {
+  return request({
+    url: '/app-api/billiard/user/cancel-account',
+    method: 'post',
+    data
+  })
+}

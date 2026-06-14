@@ -33,7 +33,7 @@
       <view class="service-card">
         <!-- 二维码 -->
         <view class="qr-section">
-          <image class="qr-image" :src="serviceInfo.qrImage" mode="aspectFill"></image>
+          <image class="qr-image" :src="serviceInfo.qrImage" mode="aspectFill" @longpress="saveQrImage"></image>
           <text class="qr-tip">{{ serviceInfo.qrTip }}</text>
         </view>
 
@@ -98,9 +98,9 @@ const toggleFaq = (item) => {
 
 // 联系客服信息
 const serviceInfo = ref({
-  qrImage: 'https://via.placeholder.com/200', // 替换为你的二维码图片地址
+  qrImage: '/static/images/qrImage.png',
   qrTip: '微信扫码添加客服好友，一对一咨询',
-  hotline: '400-888-8888'
+  hotline: '15900560488'
 })
 
 // 下拉刷新
@@ -112,13 +112,16 @@ const onRefresh = () => {
   }, 1000)
 }
 
-// 路由跳转方法
-const goBack = () => {
-  uni.navigateBack()
-}
-
-const toService = () => {
-  uni.showToast({ title: '联系客服功能开发中', icon: 'none' })
+const saveQrImage = () => {
+  uni.saveImageToPhotosAlbum({
+    filePath: serviceInfo.value.qrImage,
+    success: () => {
+      uni.showToast({ title: '保存成功', icon: 'success' })
+    },
+    fail: () => {
+      uni.showToast({ title: '保存失败，请重试', icon: 'none' })
+    }
+  })
 }
 
 const makeCall = () => {
