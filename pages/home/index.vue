@@ -180,8 +180,6 @@
 import { ref, onMounted } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getNewCoachList, getHotCoachList } from '@/api/billiard/coach'
-import { getVenueList } from '@/api/billiard/venue'
-import { getLocation, showPermissionModal, prefetchLocation } from '@/utils/location'
 import { isIOS } from '@/utils/platform'
 import {
   useConfigStore
@@ -259,7 +257,6 @@ const loadNewCoaches = async () => {
 }
 
 const goCoachList = () => {
-  prefetchLocation()
   uni.switchTab({
     url: '/pages/coach/list'
   })
@@ -277,37 +274,6 @@ const goCoachDetail = (item) => {
 }
 
 
-// 静默查询球厅列表（智能排序，让后端根据经纬度落库）
-const queryVenueListSilently = async () => {
-  if (hasQueriedVenue.value) return
-
-  try {
-    // 先尝试获取定位
-    const { longitude, latitude } = await getLocation({ needRegeocode: false })
-
-    // 获取到定位后，调用球厅列表接口（智能排序=距离最近）
-    await getVenueList({
-      longitude,
-      latitude,
-      sortType: 1,
-      limit: 100
-    })
-
-    hasQueriedVenue.value = true
-    locationDenied.value = false
-  } catch (error) {
-    console.log('静默查询球厅失败:', error)
-
-    // 如果是权限拒绝，提示用户
-    if (error.message === 'permission_denied' || error.message === 'permission_denied_always') {
-      locationDenied.value = true
-      showPermissionModal({
-        title: '需要定位权限',
-        content: '获取附近球厅需要您的位置信息，是否前往开启？'
-      })
-    }
-  }
-}
 
 const initData = async () => {
   loading.value = true
@@ -316,21 +282,12 @@ const initData = async () => {
     loadNewCoaches()
   ])
   loading.value = false
-
-  // 静默查询球厅列表
-  queryVenueListSilently()
 }
 
 onLoad(() => {
   initData()
 })
 
-onShow(() => {
-  // 从设置回来时，如果之前拒绝了权限且还没查询成功过，重新尝试查询
-  if (locationDenied.value && !hasQueriedVenue.value) {
-    queryVenueListSilently()
-  }
-})
 
 onMounted(() => {
   const systemInfo = uni.getSystemInfoSync()
