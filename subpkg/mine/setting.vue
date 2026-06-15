@@ -91,8 +91,8 @@ const showCancelAccountPopup = ref(false)
 const cancelReason = ref('')
 const isCancelingAccount = ref(false)
 const agreementUrls = {
-  user: 'https://www.baidu.com',
-  privacy: 'https://www.baidu.com'
+  user: 'http://web.qiulem.com/agreement/userAgreement.html',
+  privacy: 'http://web.qiulem.com/agreement/userPrivacy.html'
 }
 
 // ---------------------- 交互方法 ----------------------
