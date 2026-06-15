@@ -130,7 +130,7 @@
                 }
             },
             "splashscreen" : {
-              "useOriginalMsgbox" : true
+                "useOriginalMsgbox" : true
             }
         },
         "nativePlugins" : {
