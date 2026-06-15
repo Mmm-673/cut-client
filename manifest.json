@@ -69,7 +69,9 @@
                 },
                 "entitlements" : {
                     "com.apple.security.application-groups" : []
-                }
+                },
+                "pushRegisterMode" : "manual",
+                "privacyRegisterMode" : "manual"
             },
             "sdkConfigs" : {
                 "geolocation" : {
@@ -126,6 +128,9 @@
                         "spotlight@3x" : "unpackage/res/icons/120x120.png"
                     }
                 }
+            },
+            "splashscreen" : {
+              "useOriginalMsgbox" : true
             }
         },
         "nativePlugins" : {

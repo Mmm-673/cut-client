@@ -6,41 +6,50 @@ import { useUserStore } from '@/store/modules/user'
 import { getCurrentInstance } from "vue"
 import { onLaunch, onShow} from '@dcloudio/uni-app'
 import { initPushService, syncPushForUser, retryPushSyncIfNeeded } from '@/utils/jpush'
+import { shouldShowIosPrivacy, setPrivacyAgreedCallback } from '@/utils/privacy'
 
-
-// 1. 【核心修改】放弃 import UTS 组件，改为引入传统原生插件对象
-// #ifdef APP-PLUS
-// #endif
 
 const { proxy } = getCurrentInstance()
 
 onLaunch(() => {
+  setPrivacyAgreedCallback(continueAppInit)
   initApp()
 })
 
 onShow(() => {
   // #ifdef APP-PLUS
+  if (shouldShowIosPrivacy()) {
+    return
+  }
   retryPushSyncIfNeeded()
   // #endif
-  // 检查登录状态
   checkLogin()
 })
 
 // 初始化应用
 function initApp() {
-  // 初始化应用配置
+  // 本地配置不涉隐私，需尽早初始化，避免登录页渲染时报错
   initConfig()
-  // 设置全局状态栏高度
 
   // #ifdef APP-PLUS
   setStatusBarHeight()
+
+  // iOS 需先同意隐私协议，弹窗挂载在登录页，此处仅阻断后续初始化
+  if (shouldShowIosPrivacy()) {
+    return
+  }
   // #endif
 
+  continueAppInit()
+}
+
+
+/** 应用核心初始化流程 */
+function continueAppInit() {
   // #ifdef APP-PLUS
   initPushService()
   // #endif
 
-  // 检查用户登录状态（全平台）
   checkLogin()
 }
 

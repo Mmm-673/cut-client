@@ -128,17 +128,24 @@
       </text>
     </view>
   </view>
+    <!-- #ifdef APP-PLUS -->
+    <ios-privacy-dialog ref="privacyDialogRef" />
+    <!-- #endif -->
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import {
   useConfigStore,
   useUserStore
 } from '@/store'
-import { onUnload, onHide } from '@dcloudio/uni-app';
+import { onUnload, onHide,onShow } from '@dcloudio/uni-app';
+import { shouldShowIosPrivacy, hasPrivacyRefused } from '@/utils/privacy'
+
 const userStore = useUserStore()
 const globalConfig = useConfigStore().config
+const privacyDialogRef = ref(null)
+
 
 // 当前Tab
 const activeTab = ref('sms')
@@ -167,6 +174,24 @@ const showPassword = ref(false)
 
 // 提交中状态
 const isSubmitting = ref(false)
+
+/** 打开 iOS 隐私协议弹窗 */
+function openPrivacyDialogIfNeeded() {
+  if (!shouldShowIosPrivacy() && !hasPrivacyRefused()) {
+    return
+  }
+  nextTick(() => {
+    privacyDialogRef.value?.open()
+  })
+}
+
+onMounted(() => {
+  openPrivacyDialogIfNeeded()
+})
+
+onShow(() => {
+  openPrivacyDialogIfNeeded()
+})
 
 // 切换Tab
 const switchTab = (tab) => {
