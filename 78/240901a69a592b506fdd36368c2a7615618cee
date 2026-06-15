@@ -1,0 +1,32 @@
+api/billiard/coach.js
+  h_097ee8833a87c1 11,146
+pages/coach/list.vue
+  h_097ee8833a87c1 182,208,359
+app-api-docs(1).md
+  h_097ee8833a87c1 25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "78240901a69a592b506fdd36368c2a7615618cee",
+  "prompts": {
+    "c330a5dad2aaa131": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "71c4fb2c-5c36-4fac-9074-80b1cb6c7a82",
+        "model": "doubao-seed-2.0-code"
+      },
+      "human_author": "carson.ma",
+      "messages": [],
+      "total_additions": 40,
+      "total_deletions": 5,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_097ee8833a87c1": {
+      "author": "carson.ma"
+    }
+  }
+}
