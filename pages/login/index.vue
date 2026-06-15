@@ -97,18 +97,6 @@
         {{ isSubmitting ? '登录中...' : '登录' }}
       </button>
 
-      <!-- 其他登录方式分割线 -->
-      <view class="divider">
-        <text class="divider-text">其他登录方式</text>
-      </view>
-
-      <!-- 微信一键登录 -->
-      <view class="wechat-login" @click="wechatLogin">
-        <view class="wechat-circle">
-          <text class="wechat-icon">💬</text>
-        </view>
-        <text class="wechat-text">微信一键登录</text>
-      </view>
     </view>
 
     <!-- 底部协议 -->
@@ -268,30 +256,6 @@ const handleSubmit = async () => {
 const goToForgotPassword = () => {
   console.log('跳转到重置密码页面')
   uni.navigateTo({ url: '/pages/login/resetPassword' })
-}
-
-// 微信一键登录
-const wechatLogin = () => {
-  if (!agree.value) {
-    uni.showToast({ title: '请先同意用户协议和隐私政策', icon: 'none' })
-    return
-  }
-
-  // #ifdef MP-WEIXIN
-  uni.login({
-    success: (res) => {
-      console.log('微信登录code', res.code)
-      uni.showToast({ title: '微信登录开发中', icon: 'none' })
-    },
-    fail: () => {
-      uni.showToast({ title: '微信登录失败', icon: 'none' })
-    }
-  })
-  // #endif
-
-  // #ifndef MP-WEIXIN
-  uni.showToast({ title: '微信登录暂不可用', icon: 'none' })
-  // #endif
 }
 
 // 跳转用户协议/隐私政策
@@ -510,28 +474,6 @@ onUnload(() => {
     }
   }
 
-  /* 微信登录 */
-  .wechat-login {
-    text-align: center;
-    .wechat-circle {
-      width: 120rpx;
-      height: 120rpx;
-      border-radius: 50%;
-      background: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 16rpx;
-    }
-    .wechat-icon {
-      font-size: 52rpx;
-      color: #07C160;
-    }
-    .wechat-text {
-      font-size: 28rpx;
-      color: #9CA3AF;
-    }
-  }
 }
 
 /* 底部协议 */
