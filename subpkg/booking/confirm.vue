@@ -415,7 +415,7 @@ const confirmTime = () => {
 }
 
 // 服务类型名称
-const serviceTypeName = computed(() => serviceType.value === 1 ? '台球陪练' : '陪游')
+const serviceTypeName = computed(() => serviceType.value === 1 ? '台球陪练' : '达人带路')
 
 const selectedPayChannel = computed(() => payList.value.find(item => item.value === selectedPay.value))
 

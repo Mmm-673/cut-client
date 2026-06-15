@@ -22,7 +22,7 @@ Controller 类：`AppCoachController`
 | `keyword`   | string  | 否   | 关键词，匹配艺名或球厅名称            |
 | `city`      | string  | 否   | 城市筛选（如“杭州市”）             |
 | `level`     | tinyint | 否   | 技术等级：0=初级 1=中级 2=高级      |
-| `tag`       | string  | 否   | 标签筛选（如：新人、免费出行），枚举值待运营确认 |
+| `tag`       | string  | 否   | 标签筛选（如：新人、低碳出行），枚举值待运营确认 |
 | `longitude` | decimal | 否   | 用户当前经度（用于距离排序）           |
 | `latitude`  | decimal | 否   | 用户当前纬度（用于距离排序）           |
 
@@ -256,13 +256,13 @@ Controller 类：`AppOrderController`
 | 字段                | 类型      | 必填  | 说明                                 |
 | ----------------- | ------- | --- | ---------------------------------- |
 | `coachId`         | bigint  | 是   | 助教ID（billiard_coach.id），必须为在线状态    |
-| `serviceType`     | tinyint | 是   | 服务类型：1=台球陪练 2=陪游                   |
+| `serviceType`     | tinyint | 是   | 服务类型：1=台球陪练 2=达人带路                   |
 | `bookingTime`     | long    | 是   | 预约服务开始时间（毫秒时间戳，例如 `1774942453000`） |
-| `serviceDuration` | int     | 是   | 预定时长（分钟），台球陪练 >= 120，陪游 >= 300     |
+| `serviceDuration` | int     | 是   | 预定时长（分钟），台球陪练 >= 120，达人带路 >= 300     |
 | `quantity`        | int     | 是   | 份数或小时数，用于金额计算                      |
-| `venueId`         | bigint  | 否   | 台球陪练可传合作球厅ID；陪游不强制                 |
-| `venueName`       | string  | 否   | 服务地址名称（球厅或陪游约定地点）                  |
-| `venueAddress`    | string  | 否   | 服务地址文本，陪游场景可由前端约定地点回填              |
+| `venueId`         | bigint  | 否   | 台球陪练可传合作球厅ID；达人带路不强制                 |
+| `venueName`       | string  | 否   | 服务地址名称（球厅或达人带路约定地点）                  |
+| `venueAddress`    | string  | 否   | 服务地址文本，达人带路场景可由前端约定地点回填              |
 | `venueLongitude`  | decimal | 否   | 服务地址经度，用于导航与车费测算                   |
 | `venueLatitude`   | decimal | 否   | 服务地址纬度，用于导航与车费测算                   |
 | `couponId`        | bigint  | 否   | 使用的优惠券ID；不使用则不传                    |
@@ -276,7 +276,7 @@ Controller 类：`AppOrderController`
 3. 助教当前无 `ACCEPTED` / `IN_SERVICE` 状态订单（已接单或进行中时拒绝新订单）
 4. 地址校验：
   - `serviceType=台球陪练`：`venueId` 或 `venueName + venueAddress + 经纬度` 至少一套有效
-  - `serviceType=陪游`：允许不传合作球厅，使用约定地址（可为空，若为空则按城市默认车费兜底）
+  - `serviceType=达人带路`：允许不传合作球厅，使用约定地址（可为空，若为空则按城市默认车费兜底）
 5. 若传 `venueId`，从 `billiard_venue` 取名称/地址/经纬度快照
 6. 调用高德路径 API 计算驾车单程距离，往返距离 = 单程 × 2
 7. 读取省市每公里单价（优先级：市 > 省 > 全国默认）
@@ -458,7 +458,7 @@ Controller 类：`AppOrderController`
 | `orderNo`         | string  | 是   | 订单号              |
 | `coachStageName`  | string  | 是   | 助教艺名             |
 | `coachMainPhoto`  | string  | 否   | 助教主图 URL         |
-| `serviceType`     | tinyint | 是   | 服务类型：1=台球陪练 2=陪游 |
+| `serviceType`     | tinyint | 是   | 服务类型：1=台球陪练 2=达人带路 |
 | `bookingTime`     | long    | 是   | 预约服务开始时间（毫秒时间戳）  |
 | `serviceDuration` | int     | 是   | 预定总时长（分钟）        |
 | `status`          | tinyint | 是   | 订单状态             |
@@ -495,7 +495,7 @@ Controller 类：`AppOrderController`
 | `venueAddress`    | string  | 否   | 球厅地址                              |
 | `venueLongitude`  | decimal | 否   | 球厅经度                              |
 | `venueLatitude`   | decimal | 否   | 球厅纬度                              |
-| `serviceType`     | tinyint | 是   | 服务类型：1=台球陪练 2=陪游                  |
+| `serviceType`     | tinyint | 是   | 服务类型：1=台球陪练 2=达人带路                  |
 | `bookingTime`     | long    | 是   | 预约服务开始时间（毫秒时间戳）                   |
 | `serviceDuration` | int     | 是   | 预定总时长（分钟）                         |
 | `status`          | tinyint | 是   | 订单状态                              |

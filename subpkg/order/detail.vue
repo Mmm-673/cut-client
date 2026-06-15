@@ -602,7 +602,7 @@ const payStatusMap = {
 // 获取服务类型名称
 const getServiceTypeName = (type) => {
   if (type === 1) return '台球陪练'
-  if (type === 2) return '陪游'
+  if (type === 2) return '达人带路'
   return '台球陪练'
 }
 

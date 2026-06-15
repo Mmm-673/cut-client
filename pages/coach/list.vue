@@ -179,7 +179,7 @@ const currentLocation = ref({
 })
 const currentCity = ref('')
 
-const tabs = ['全部', '新人', '免费出行', '初级', '中级', '高级']
+const tabs = ['全部', '新人', '低碳出行', '初级', '中级', '高级']
 
 // 等级映射
 const levelMap = {
@@ -205,7 +205,7 @@ const getLevelClass = (level) => {
 // 标签颜色映射
 const tagClassMap = {
   '新人': 'tag-new',
-  '免费出行': 'tag-free-travel',
+  '低碳出行': 'tag-free-travel',
   '斯诺克': 'tag-snooker',
   '中式八球': 'tag-eight-ball',
   '初级': 'tag-junior',
@@ -356,7 +356,7 @@ const fetchCoachList = async (isRefresh = false) => {
     if (currentTab.value === 1) {
       params.tag = ['新人']
     } else if (currentTab.value === 2) {
-      params.tag = ['免费出行']
+      params.tag = ['低碳出行']
     }
 
     // 根据排序类型添加不同的参数

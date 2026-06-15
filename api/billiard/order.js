@@ -21,7 +21,7 @@ import request from '@/utils/request'
  * @returns {string} returns.data.list[].orderNo - 订单号
  * @returns {string} returns.data.list[].coachStageName - 助教艺名
  * @returns {string} [returns.data.list[].coachMainPhoto] - 助教主图 URL
- * @returns {number} returns.data.list[].serviceType - 服务类型：1=台球陪练 2=陪游
+ * @returns {number} returns.data.list[].serviceType - 服务类型：1=台球陪练 2=达人带路
  * @returns {number} returns.data.list[].bookingTime - 预约服务开始时间（毫秒时间戳）
  * @returns {number} returns.data.list[].serviceDuration - 预定总时长（分钟）
  * @returns {number} returns.data.list[].status - 订单状态
@@ -53,7 +53,7 @@ export function getOrderList(params) {
  * @returns {string} [returns.data.venueAddress] - 球厅地址
  * @returns {number} [returns.data.venueLongitude] - 球厅经度
  * @returns {number} [returns.data.venueLatitude] - 球厅纬度
- * @returns {number} returns.data.serviceType - 服务类型：1=台球陪练 2=陪游
+ * @returns {number} returns.data.serviceType - 服务类型：1=台球陪练 2=达人带路
  * @returns {number} returns.data.bookingTime - 预约服务开始时间（毫秒时间戳）
  * @returns {number} returns.data.serviceDuration - 预定总时长（分钟）
  * @returns {number} returns.data.status - 订单状态
@@ -75,14 +75,14 @@ export function getOrderDetail(params) {
  * 创建订单
  * @param {Object} data - 请求参数
  * @param {number} data.coachId - 助教ID（billiard_coach.id），必须为在线状态
- * @param {number} data.serviceType - 服务类型：1=台球陪练 2=陪游
+ * @param {number} data.serviceType - 服务类型：1=台球陪练 2=达人带路
  * @param {number} data.bookingTime - 预约服务开始时间（毫秒时间戳）
- * @param {number} data.serviceDuration - 预定时长（分钟），台球陪练 >= 120，陪游 >= 300
+ * @param {number} data.serviceDuration - 预定时长（分钟），台球陪练 >= 120，达人带路 >= 300
  * @param {number} data.quantity - 份数或小时数，用于金额计算
  * @param {number} [data.serviceItemId] - 选中的服务项目ID，用于确定价格
- * @param {number} [data.venueId] - 台球陪练可传合作球厅ID；陪游不强制
- * @param {string} [data.venueName] - 服务地址名称（球厅或陪游约定地点）
- * @param {string} [data.venueAddress] - 服务地址文本，陪游场景可由前端约定地点回填
+ * @param {number} [data.venueId] - 台球陪练可传合作球厅ID；达人带路不强制
+ * @param {string} [data.venueName] - 服务地址名称（球厅或达人带路约定地点）
+ * @param {string} [data.venueAddress] - 服务地址文本，达人带路场景可由前端约定地点回填
  * @param {number} [data.venueLongitude] - 服务地址经度，用于导航与车费测算
  * @param {number} [data.venueLatitude] - 服务地址纬度，用于导航与车费测算
  * @param {number} [data.couponId] - 使用的优惠券ID；不使用则不传

@@ -345,7 +345,7 @@ const loadCoachData = async () => {
       {
         id: 2,
         type: 2,
-        name: '陪游服务',
+        name: '达人带路',
         desc: '5小时起步，陪同打球+游玩，包含餐饮交通补贴',
         sales: 42,
         unit: '',
@@ -534,25 +534,25 @@ const bookNow = async () => {
     selectedService: selectedService.value
   })
 
-  // 判断服务类型：1=台球陪练(需要选择球厅)，2=陪游(直接创建订单)
+  // 判断服务类型：1=台球陪练(需要选择球厅)，2=达人带路(直接创建订单)
   const isCompanion = selectedService.value.type === 2
 
   if (isCompanion) {
-    // 陪游服务，先直接创建订单
+    // 达人带路服务，先直接创建订单
     try {
       uni.showLoading({ title: '创建订单中...' })
 
       // 计算默认预约时间（1小时后）
       const bookingTime = Date.now() + 3600000
 
-      // 陪游服务时长：默认300分钟（5小时）
+      // 达人带路服务时长：默认300分钟（5小时）
       const serviceDuration = 300
       const quantity = 5
 
       // 创建订单
       const createParams = {
         coachId: coachInfo.id,
-        serviceType: 2, // 陪游
+        serviceType: 2, // 达人带路
         bookingTime: bookingTime,
         serviceDuration: serviceDuration,
         quantity: quantity,
@@ -577,7 +577,7 @@ const bookNow = async () => {
         ...resultData,
         coachInfo: coachInfo,
         selectedService: selectedService.value,
-        serviceType: 2, // 陪游
+        serviceType: 2, // 达人带路
         serviceDuration: serviceDuration,
         quantity: quantity,
         bookingTime: bookingTime,

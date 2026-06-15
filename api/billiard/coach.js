@@ -8,7 +8,7 @@ import request from '@/utils/request'
  * @param {string} [params.keyword] - 关键词，匹配艺名或球厅名称
  * @param {string} [params.city] - 城市筛选（如"杭州市"）
  * @param {number} [params.level] - 技术等级：0=初级 1=中级 2=高级
- * @param {string} [params.tag] - 标签筛选（如：新人、免费出行），枚举值待运营确认
+ * @param {string} [params.tag] - 标签筛选（如：新人、低碳出行），枚举值待运营确认
  * @param {number} [params.longitude] - 用户当前经度（用于距离排序）
  * @param {number} [params.latitude] - 用户当前纬度（用于距离排序）
  * @returns {Promise<Object>} 返回助教列表数据
@@ -143,7 +143,7 @@ export function createReview(data) {
  * @property {number} serviceCount - 累计服务次数
  * @property {number} overallScore - 综合评分
  * @property {number|null} [distance] - 与用户的距离（km），未传经纬度时返回 null
- * @property {string} [tags] - 标签列表（逗号分隔，如：新人、免费出行）
+ * @property {string} [tags] - 标签列表（逗号分隔，如：新人、低碳出行）
  */
 
 /**

@@ -262,7 +262,7 @@ const STATUS_COLOR = {
 // 服务类型映射
 const SERVICE_TYPE_TEXT = {
   1: '台球陪练',
-  2: '陪游'
+  2: '达人带路'
 }
 
 // 格式化时间

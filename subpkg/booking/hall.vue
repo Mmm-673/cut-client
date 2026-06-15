@@ -281,7 +281,7 @@ const minDuration = ref(2)
 
 // 订单信息
 const orderInfo = ref({
-  serviceType: 1, // 1=台球陪练 2=陪游
+  serviceType: 1, // 1=台球陪练 2=达人带路
   duration: 2,
   timeText: '请选择服务时间'
 })
