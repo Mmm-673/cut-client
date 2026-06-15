@@ -1,0 +1,28 @@
+utils/privacy.js
+  918a30f39bb68de7 1-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "fbd8c445ecd697f2d6406146f5a85e28eaf0b58a",
+  "prompts": {
+    "918a30f39bb68de7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2d6ef807-8b56-4a10-b30f-f0ea91dc51e1",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "carson.ma",
+      "messages": [],
+      "total_additions": 1135,
+      "total_deletions": 2,
+      "accepted_lines": 1133,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_097ee8833a87c1": {
+      "author": "carson.ma"
+    }
+  }
+}
