@@ -1,0 +1,32 @@
+App.vue
+  h_097ee8833a87c1 9,15,21-23,31,36-40,43-48
+androidPrivacy.json
+  918a30f39bb68de7 1-2,22
+utils/privacy.js
+  918a30f39bb68de7 1,4-8,11,19,38-40,42,48,50-152,154,157,163,165-167
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "31bf73aeeba0f40f7de1096ab5c19f04845bd491",
+  "prompts": {
+    "918a30f39bb68de7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2d6ef807-8b56-4a10-b30f-f0ea91dc51e1",
+        "model": "doubao-seed-2-0-code"
+      },
+      "human_author": "carson.ma",
+      "messages": [],
+      "total_additions": 177,
+      "total_deletions": 29,
+      "accepted_lines": 24,
+      "overriden_lines": 25
+    }
+  },
+  "humans": {
+    "h_097ee8833a87c1": {
+      "author": "carson.ma"
+    }
+  }
+}
