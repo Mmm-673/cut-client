@@ -318,15 +318,15 @@
             "subPackages" : true
         },
         "usingComponents" : true,
-        "permission": {
-            "scope.userLocation": {
-                "desc": "用于为您推荐附近的球厅、裁判与教练。"
+        "permission" : {
+            "scope.userLocation" : {
+                "desc" : "用于为您推荐附近的球厅、裁判与教练。"
             },
-            "scope.camera": {
-                "desc": "用于扫码、拍摄视频或上传头像照片。"
+            "scope.camera" : {
+                "desc" : "用于扫码、拍摄视频或上传头像照片。"
             },
-            "scope.writePhotosAlbum": {
-                "desc": "用于保存二维码、海报及凭证到相册。"
+            "scope.writePhotosAlbum" : {
+                "desc" : "用于保存二维码、海报及凭证到相册。"
             }
         },
         "requiredPrivateInfos" : [ "getLocation" ]
