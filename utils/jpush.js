@@ -340,9 +340,13 @@ export function bindPushAlias(userId) {
   }
 
   const targetAlias = `1_${userId}`
-  if (callJPushApi('setAlias', { alias: targetAlias, sequence: 1 })) {
-    jpushLog('info', '已发起别名绑定请求', { alias: targetAlias })
-  }
+  // 核心修复：先删除当前设备旧别名，避免6022冲突
+  callJPushApi('deleteAlias', { sequence: Date.now() })
+  setTimeout(() => {
+    if (callJPushApi('setAlias', { alias: targetAlias, sequence: Date.now() })) {
+      jpushLog('info', '已发起别名绑定请求', { alias: targetAlias })
+    }
+  }, 200)
   // #endif
 }
 
@@ -365,13 +369,13 @@ export function syncPushForUser(userId) {
 export function clearPushAlias() {
   // #ifdef APP-PLUS
   pendingSyncUserId = null
-  if (callJPushApi('deleteAlias', { sequence: 2 })) {
-    jpushLog('success', '已请求清除推送别名')
-  }
+  callJPushApi('deleteAlias', { sequence: Date.now() })
+  callJPushApi('clearAllNotifications')
+  clearAllJpushBadges()
   uni.removeStorageSync('device_reg_id')
+  jpushLog('info', '用户登出，推送信息全部清理完成')
   // #endif
 }
-
 export function getDeviceRegId() {
   return uni.getStorageSync('device_reg_id') || ''
 }
@@ -380,7 +384,7 @@ export function getDeviceRegId() {
 export function retryPushSyncIfNeeded() {
   // #ifdef APP-PLUS
   // ====== 兜底：只要回到前台，就重置一次角标 ======
-  callJPushApi('setBadge', 0)
+  clearAllJpushBadges()
   // ============================================
   if (!getAccessToken()) return
   const userId = uni.getStorageSync('auth_user_id') || ''

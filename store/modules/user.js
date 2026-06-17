@@ -24,6 +24,7 @@ import {
 } from '@/api/auth'
 import defAva from '@/static/images/profile.jpg'
 import { syncPushForUser } from '@/utils/jpush'
+import {clearPushAlias} from "../../utils/jpush.js";
 
 export const useUserStore = defineStore('user', () => {
   // 状态
@@ -139,6 +140,7 @@ export const useUserStore = defineStore('user', () => {
     avatar.value = defAva
     mobile.value = ''
     clearAuthInfo()
+    clearPushAlias()
   }
 
   // 重置密码
