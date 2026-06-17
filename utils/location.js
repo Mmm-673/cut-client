@@ -10,6 +10,47 @@ let coordinatesPromise = null
 // 定位超时定时器
 let locationTimeout = null
 
+/**
+ * 显示定位用途说明弹窗（自定义弹窗）
+ */
+export const showLocationPurposeModal = () => {
+  return new Promise((resolve, reject) => {
+    // 检查用户是否已经同意过定位权限用途说明
+    const hasAgreedLocationPurpose = uni.getStorageSync('hasAgreedLocationPurpose')
+    console.log('hasAgreedLocationPurpose:', hasAgreedLocationPurpose)
+    if (hasAgreedLocationPurpose) {
+      resolve()
+      return
+    }
+
+    console.log('开始显示定位权限说明弹窗')
+
+    // 使用 setTimeout 确保 DOM 渲染完成后再显示弹窗
+    setTimeout(() => {
+      uni.showModal({
+        title: '定位权限说明',
+        content: '为了向您推荐附近的台球助教，我们需要获取您的位置信息。该信息仅用于定位和推荐，不会用于其他用途。',
+        confirmText: '同意',
+        cancelText: '取消',
+        success: (res) => {
+          console.log('showModal 回调:', res)
+          if (res.confirm) {
+            // 存储用户同意状态
+            uni.setStorageSync('hasAgreedLocationPurpose', true)
+            resolve()
+          } else {
+            reject(new Error('user_cancelled'))
+          }
+        },
+        fail: (err) => {
+          console.error('showModal 失败:', err)
+          reject(err)
+        }
+      })
+    }, 100)
+  })
+}
+
 const clearLocationTimeout = () => {
   if (locationTimeout) {
     clearTimeout(locationTimeout)
@@ -205,13 +246,20 @@ const fetchCoordinates = ({
  * @param {Object} options
  * @param {Boolean} options.needRegeocode - 是否需要逆地址解析（默认 true）
  * @param {String} options.type - 定位坐标系类型（默认 gcj02，因为已配置高德）
+ * @param {Boolean} options.showPurposeModal - 是否显示用途说明弹窗（默认 true）
  * @returns {Promise}
  */
 export const getLocation = async ({
                                     needRegeocode = true,
                                     type = 'gcj02',
-                                    timeout = 15000
+                                    timeout = 15000,
+                                    showPurposeModal = true
                                   } = {}) => {
+  // 显示定位用途说明弹窗
+  if (showPurposeModal) {
+    await showLocationPurposeModal()
+  }
+
   const location = await fetchCoordinates({ type, timeout })
 
   if (needRegeocode) {

@@ -730,16 +730,47 @@ const openHallNavigate = () => {
   })
 }
 
-// 【新增】联系教练
-const contactCoach = () => {
-  // 优先使用订单数据里的教练手机号
-  const phone = orderInfo.value?.coachPhone || ''
-  console.log(phone,'====phone')
+// 显示电话权限用途说明弹窗
+const showCallPermissionModal = () => {
+  return new Promise((resolve, reject) => {
+    // 检查用户是否已经同意过电话权限用途说明
+    const hasAgreedCallPermission = uni.getStorageSync('hasAgreedCallPermission')
+    console.log('hasAgreedCallPermission:', hasAgreedCallPermission)
+    if (hasAgreedCallPermission) {
+      resolve()
+      return
+    }
 
-  if (!phone) {
-    uni.showToast({ title: '暂无联系电话', icon: 'none' })
-    return
-  }
+    console.log('开始显示电话权限说明弹窗')
+
+    // 使用 setTimeout 确保 DOM 渲染完成后再显示弹窗
+    setTimeout(() => {
+      uni.showModal({
+        title: '电话权限说明',
+        content: '为了向您提供电话服务，我们需要获取您的拨打电话权限。该权限仅用于拨打电话，不会用于其他用途。',
+        confirmText: '同意',
+        cancelText: '取消',
+        success: (res) => {
+          console.log('showModal 回调:', res)
+          if (res.confirm) {
+            // 存储用户同意状态
+            uni.setStorageSync('hasAgreedCallPermission', true)
+            resolve()
+          } else {
+            reject(new Error('user_cancelled'))
+          }
+        },
+        fail: (err) => {
+          console.error('showModal 失败:', err)
+          reject(err)
+        }
+      })
+    }, 100)
+  })
+}
+
+// 实际拨打电话的函数
+const doCallPhone = (phone) => {
   // #ifdef APP-PLUS
   // 只有【打包成 Android / iOS App】时，才会执行这里
   plus.runtime.openURL(`tel:${phone}`);
@@ -749,6 +780,37 @@ const contactCoach = () => {
   // 只有【不是 App】时（微信小程序、H5、快应用）才执行这里
   uni.makePhoneCall({ phoneNumber: phone });
   // #endif
+}
+
+// 【新增】联系教练
+const contactCoach = async () => {
+  try {
+    // 显示电话权限用途说明弹窗
+    await showCallPermissionModal()
+
+    // 优先使用订单数据里的教练手机号
+    const phone = orderInfo.value?.coachPhone || ''
+    console.log(phone,'====phone')
+
+    if (!phone) {
+      uni.showToast({ title: '暂无联系电话', icon: 'none' })
+      return
+    }
+
+    doCallPhone(phone)
+  } catch (err) {
+    console.error('处理拨打电话请求失败:', err)
+    if (err?.message === 'user_cancelled') {
+      // 用户取消了电话权限用途说明，不进行任何操作
+      console.log('用户取消了电话权限用途说明')
+    } else {
+      uni.showToast({
+        title: '拨打电话失败，请重试',
+        icon: 'none',
+        duration: 1500
+      })
+    }
+  }
 }
 
 // 加载助教详情

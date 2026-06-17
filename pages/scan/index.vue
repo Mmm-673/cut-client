@@ -22,9 +22,56 @@ import { ref, onMounted } from 'vue'
 
 const statusBarHeight = ref(0)
 
-const handleScan = () => {
-  // 调用扫码 API
-  uni.scanCode({
+// 显示相机权限用途说明弹窗
+const showCameraPurposeModal = () => {
+  return new Promise((resolve, reject) => {
+    // 强制清除缓存，测试时用
+    // uni.removeStorageSync('hasAgreedCameraPurpose')
+
+    // 检查用户是否已经同意过相机权限用途说明
+    const hasAgreedCameraPurpose = uni.getStorageSync('hasAgreedCameraPurpose')
+    console.log('hasAgreedCameraPurpose:', hasAgreedCameraPurpose)
+    if (hasAgreedCameraPurpose) {
+      resolve()
+      return
+    }
+
+    console.log('开始显示相机权限说明弹窗')
+
+    // 使用 setTimeout 确保 DOM 渲染完成后再显示弹窗
+
+    setTimeout(() => {
+      uni.showModal({
+        title: '相机权限说明',
+        content: '为了能够扫描二维码，我们需要获取您的相机访问权限。该权限仅用于扫码功能，不会用于其他用途。',
+        confirmText: '同意',
+        cancelText: '取消',
+        success: (res) => {
+          console.log('showModal 回调:', res)
+          if (res.confirm) {
+            // 存储用户同意状态
+            uni.setStorageSync('hasAgreedCameraPurpose', true)
+            resolve()
+          } else {
+            reject(new Error('user_cancelled'))
+          }
+        },
+        fail: (err) => {
+          console.error('showModal 失败:', err)
+          reject(err)
+        }
+      })
+    }, 100)
+  })
+}
+
+const handleScan = async () => {
+  try {
+    // 显示相机权限用途说明弹窗
+    await showCameraPurposeModal()
+
+    // 调用扫码 API
+    uni.scanCode({
     success: (res) => {
       console.log('扫码结果:', res)
       let result
@@ -75,6 +122,19 @@ const handleScan = () => {
       }
     }
   })
+  } catch (err) {
+    console.error('处理扫码请求失败:', err)
+    if (err?.message === 'user_cancelled') {
+      // 用户取消了相机权限用途说明，不进行任何操作
+      console.log('用户取消了相机权限用途说明')
+    } else {
+      uni.showToast({
+        title: '扫码失败，请重试',
+        icon: 'none',
+        duration: 1500
+      })
+    }
+  }
 }
 
 onMounted(() => {

@@ -346,7 +346,7 @@ const loadCoachData = async () => {
         id: 2,
         type: 2,
         name: '达人带路',
-        desc: '5小时起步，陪同打球+游玩，包含餐饮交通补贴',
+        desc: '5小时起达人专属向导服务，全程随行规划出行行程',
         sales: 42,
         unit: '',
         hot: false,

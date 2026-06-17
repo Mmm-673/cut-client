@@ -229,7 +229,7 @@ const getLocationWithRetry = async () => {
       return await getLocation({ needRegeocode: true })
     } catch (err) {
       lastError = err
-      if (err?.message === 'permission_denied') {
+      if (err?.message === 'permission_denied' || err?.message === 'user_cancelled') {
         throw err
       }
       if (attempt < LOCATION_RETRY_COUNT) {
@@ -251,6 +251,10 @@ const handleLocationError = (err, onRetry) => {
         onRetry && onRetry()
       }
     })
+    return false
+  } else if (err?.message === 'user_cancelled') {
+    // 用户取消了定位用途说明
+    console.log('用户取消了定位')
     return false
   }
   return false

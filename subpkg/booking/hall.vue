@@ -712,53 +712,105 @@ const isValidPhone = (phone) => {
   return mobileReg.test(phoneWithoutDash) || landlineReg.test(cleanedPhone)
 }
 
-// 拨打电话
-const callPhone = (hall) => {
-  let phones = []
-
-  // 处理 phones 字段，兼容数组和字符串两种格式
-  if (hall.phones) {
-    if (Array.isArray(hall.phones)) {
-      phones = hall.phones
-    } else if (typeof hall.phones === 'string') {
-      phones = [hall.phones]
+// 显示电话权限用途说明弹窗
+const showCallPermissionModal = () => {
+  return new Promise((resolve, reject) => {
+    // 检查用户是否已经同意过电话权限用途说明
+    const hasAgreedCallPermission = uni.getStorageSync('hasAgreedCallPermission')
+    console.log('hasAgreedCallPermission:', hasAgreedCallPermission)
+    if (hasAgreedCallPermission) {
+      resolve()
+      return
     }
-  }
 
-  // 过滤空值和无效电话号码
-  const validPhones = phones.filter(p => isValidPhone(p))
+    console.log('开始显示电话权限说明弹窗')
 
-  if (validPhones.length === 0) {
-    uni.showToast({ title: '暂无有效联系电话', icon: 'none' })
-    return
-  }
+    // 使用 setTimeout 确保 DOM 渲染完成后再显示弹窗
+    setTimeout(() => {
+      uni.showModal({
+        title: '电话权限说明',
+        content: '为了向您提供客服服务，我们需要获取您的拨打电话权限。该权限仅用于拨打客服电话，不会用于其他用途。',
+        confirmText: '同意',
+        cancelText: '取消',
+        success: (res) => {
+          console.log('showModal 回调:', res)
+          if (res.confirm) {
+            // 存储用户同意状态
+            uni.setStorageSync('hasAgreedCallPermission', true)
+            resolve()
+          } else {
+            reject(new Error('user_cancelled'))
+          }
+        },
+        fail: (err) => {
+          console.error('showModal 失败:', err)
+          reject(err)
+        }
+      })
+    }, 100)
+  })
+}
 
-  if (validPhones.length === 1) {
-    // #ifdef APP-PLUS
-    // 只有【打包成 Android / iOS App】时，才会执行这里
-    plus.runtime.openURL(`tel:${validPhones[0]}`);
-    // #endif
+// 实际拨打电话的函数
+const doCallPhone = (validPhones, index = 0) => {
+  // #ifdef APP-PLUS
+  // 只有【打包成 Android / iOS App】时，才会执行这里
+  plus.runtime.openURL(`tel:${validPhones[index]}`);
+  // #endif
 
-    // #ifndef APP-PLUS
-    // 只有【不是 App】时（微信小程序、H5、快应用）才执行这里
-    uni.makePhoneCall({ phoneNumber: validPhones[0] });
-    // #endif
-  } else {
-    // 多个电话，让用户选择
+  // #ifndef APP-PLUS
+  // 只有【不是 App】时（微信小程序、H5、快应用）才执行这里
+  uni.makePhoneCall({ phoneNumber: validPhones[index] });
+  // #endif
+}
+
+// 拨打电话
+const callPhone = async (hall) => {
+  try {
+    // 显示电话权限用途说明弹窗
+    await showCallPermissionModal()
+
+    let phones = []
+
+    // 处理 phones 字段，兼容数组和字符串两种格式
+    if (hall.phones) {
+      if (Array.isArray(hall.phones)) {
+        phones = hall.phones
+      } else if (typeof hall.phones === 'string') {
+        phones = [hall.phones]
+      }
+    }
+
+    // 过滤空值和无效电话号码
+    const validPhones = phones.filter(p => isValidPhone(p))
+
+    if (validPhones.length === 0) {
+      uni.showToast({ title: '暂无有效联系电话', icon: 'none' })
+      return
+    }
+
+    if (validPhones.length === 1) {
+      doCallPhone(validPhones, 0)
+      // 多个电话，让用户选择
     uni.showActionSheet({
       itemList: validPhones,
       success: (res) => {
-        // #ifdef APP-PLUS
-        // 只有【打包成 Android / iOS App】时，才会执行这里
-        plus.runtime.openURL(`tel:${validPhones[res.tapIndex]}`);
-        // #endif
-
-        // #ifndef APP-PLUS
-        // 只有【不是 App】时（微信小程序、H5、快应用）才执行这里
-        uni.makePhoneCall({ phoneNumber: validPhones[res.tapIndex] });
-        // #endif
+        doCallPhone(validPhones, res.tapIndex)
       }
     })
+  }
+  } catch (err) {
+    console.error('处理拨打电话请求失败:', err)
+    if (err?.message === 'user_cancelled') {
+      // 用户取消了电话权限用途说明，不进行任何操作
+      console.log('用户取消了电话权限用途说明')
+    } else {
+      uni.showToast({
+        title: '拨打电话失败，请重试',
+        icon: 'none',
+        duration: 1500
+      })
+    }
   }
 }
 
