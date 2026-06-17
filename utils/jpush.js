@@ -43,6 +43,47 @@ function parseExtras(extras) {
   }
   return extras
 }
+function clearAllJpushBadges() {
+  // #ifdef APP-PLUS
+  jpushLog('info', '开始触发多端角标清空流程...')
+  try {
+    const platform = uni.getSystemInfoSync().platform
+
+    if (platform === 'ios') {
+      // ------ iOS 彻底清除方案 ------
+      // 1. 清除 iOS 手机本地桌面角标显示值（对应文档：setApplicationIconBadgeNumber:0）
+      plus.runtime.setBadgeNumber(0)
+
+      // 2. 清空 JPush 服务器中存储的 badge 值
+      if (typeof jpushModule.resetBadge === 'function') {
+        jpushModule.resetBadge() // 官方推荐的重置接口
+        jpushLog('success', 'iOS 极光服务器角标已重置(resetBadge)')
+      } else if (typeof jpushModule.setBadge === 'function') {
+        jpushModule.setBadge(0)  // 备用兼容接口
+      }
+
+    } else if (platform === 'android') {
+      // ------ Android (华为/荣耀/vivo/小米) 清除方案 ------
+      // 1. 对应文档：华为、vivo 等客户端手动清除接口 JPushInterface.setBadgeNumber(..., 0)
+      // 在 uni-app 极光插件中，该原生方法通常被封装为 setBadgeNumber
+      if (typeof jpushModule.setBadgeNumber === 'function') {
+        jpushModule.setBadgeNumber(0)
+        jpushLog('success', 'Android 厂商通道角标已调接口清空(setBadgeNumber:0)')
+      }
+
+      // 2. 统一兜底：清除本地通知栏所有消息（小米、OPPO等通过清除通知栏消息联动清除角标）
+      if (typeof jpushModule.clearAllNotifications === 'function') {
+        jpushModule.clearAllNotifications()
+      }
+
+      // 3. 使用 H5+ 规范强制刷一次安卓本地桌面角标计数
+      plus.runtime.setBadgeNumber(0)
+    }
+  } catch (e) {
+    jpushLog('error', '执行清除角标逻辑时发生异常', e)
+  }
+  // #endif
+}
 
 function handleNotificationNavigation(extras) {
   const data = parseExtras(extras)
@@ -51,7 +92,7 @@ function handleNotificationNavigation(extras) {
   // #ifdef APP-PLUS
   jpushLog('info', '开始清空应用角标...')
   // 传 0 代表清空角标
-  callJPushApi('setBadge', 0)
+  clearAllJpushBadges()
 
   // 如果是 Android 且配置了厂商通道，部分手机需要同时调用：
   // callJPushApi('setBadgeNumber', 0)
