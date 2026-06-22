@@ -35,9 +35,7 @@
 
         </view>
         <view class="agreement-text">
-          我已阅读并同意
           <text class="link" @click="goToAgree('user')">《用户协议》</text>
-          和
           <text class="link" @click="goToAgree('privacy')">《隐私政策》</text>
         </view>
       </view>

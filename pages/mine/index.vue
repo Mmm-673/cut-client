@@ -206,6 +206,14 @@
            ========================================== -->
       <view class="safe-area-bottom"></view>
     </scroll-view>
+
+    <!-- 图片查看器 -->
+    <ImageViewer
+      :visible="showImageViewer"
+      :images="viewerImages"
+      :current="viewerCurrent"
+      @close="showImageViewer = false"
+    />
   </view>
 </template>
 
@@ -487,13 +495,17 @@ const onRefresh = async () => {
   uni.showToast({ title: '刷新成功', icon: 'success' })
 }
 
+// 图片查看器
+const showImageViewer = ref(false)
+const viewerImages = ref([])
+const viewerCurrent = ref(0)
+
 // 预览当前头像
 const previewAvatar = () => {
   if (!userInfo.value.avatar) return
-  uni.previewImage({
-    urls: [userInfo.value.avatar],
-    current: userInfo.value.avatar
-  })
+  viewerImages.value = [userInfo.value.avatar]
+  viewerCurrent.value = 0
+  showImageViewer.value = true
 }
 
 // 切换订单分类

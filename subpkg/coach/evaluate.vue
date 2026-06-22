@@ -208,31 +208,27 @@ const handleAnonymousChange = (e) => {
   isAnonymous.value = e.detail.value;
 };
 
-// 显示相册/相机权限用途说明弹窗
-const showPhotoPurposeModal = () => {
+// 显示相机权限用途说明弹窗
+const showCameraPurposeModal = () => {
   return new Promise((resolve, reject) => {
-    // 检查用户是否已经同意过相册/相机权限用途说明
-    const hasAgreedPhotoPurpose = uni.getStorageSync('hasAgreedPhotoPurpose')
-    console.log('hasAgreedPhotoPurpose:', hasAgreedPhotoPurpose)
-    if (hasAgreedPhotoPurpose) {
+    const hasAgreedCameraPurpose = uni.getStorageSync('hasAgreedCameraPurpose')
+    if (hasAgreedCameraPurpose) {
       resolve()
       return
     }
 
-    console.log('开始显示相册/相机权限说明弹窗')
+    console.log('开始显示相机权限说明弹窗')
 
-    // 使用 setTimeout 确保 DOM 渲染完成后再显示弹窗
     setTimeout(() => {
       uni.showModal({
-        title: '相册/相机权限说明',
-        content: '为了上传评价图片，我们需要获取您的相册访问权限或相机拍摄权限。该权限仅用于评价图片上传功能，不会用于其他用途。',
+        title: '相机权限说明',
+        content: '为了能够拍摄评价图片，我们需要获取您的相机访问权限。该权限仅用于拍摄功能，不会用于其他用途。',
         confirmText: '同意',
         cancelText: '取消',
         success: (res) => {
           console.log('showModal 回调:', res)
           if (res.confirm) {
-            // 存储用户同意状态
-            uni.setStorageSync('hasAgreedPhotoPurpose', true)
+            uni.setStorageSync('hasAgreedCameraPurpose', true)
             resolve()
           } else {
             reject(new Error('user_cancelled'))
@@ -247,71 +243,130 @@ const showPhotoPurposeModal = () => {
   })
 }
 
+// 显示相册权限用途说明弹窗
+const showAlbumPurposeModal = () => {
+  return new Promise((resolve, reject) => {
+    const hasAgreedAlbumPurpose = uni.getStorageSync('hasAgreedAlbumPurpose')
+    if (hasAgreedAlbumPurpose) {
+      resolve()
+      return
+    }
+
+    console.log('开始显示相册权限说明弹窗')
+
+    setTimeout(() => {
+      uni.showModal({
+        title: '相册权限说明',
+        content: '为了能够从相册选择评价图片，我们需要获取您的相册访问权限。该权限仅用于选择图片功能，不会用于其他用途。',
+        confirmText: '同意',
+        cancelText: '取消',
+        success: (res) => {
+          console.log('showModal 回调:', res)
+          if (res.confirm) {
+            uni.setStorageSync('hasAgreedAlbumPurpose', true)
+            resolve()
+          } else {
+            reject(new Error('user_cancelled'))
+          }
+        },
+        fail: (err) => {
+          console.error('showModal 失败:', err)
+          reject(err)
+        }
+      })
+    }, 100)
+  })
+}
+
+// 选择图片来源
+const showImageSourceModal = () => {
+  return new Promise((resolve, reject) => {
+    uni.showActionSheet({
+      itemList: ['拍摄照片', '从相册选择'],
+      itemColor: '#000000',
+      success: (res) => {
+        resolve(res.tapIndex)
+      },
+      fail: (err) => {
+        reject(new Error('user_cancelled'))
+      }
+    })
+  })
+}
+
 // 上传图片
 const handleUploadImage = async () => {
   try {
-    // 显示相册/相机权限用途说明弹窗
-    await showPhotoPurposeModal()
-
     const remaining = 9 - uploadedImages.value.length;
-  if (remaining <= 0) {
-    uni.showToast({
-      title: '最多上传9张图片',
-      icon: 'none'
-    });
-    return;
-  }
-
-  uni.chooseImage({
-    count: remaining,
-    sizeType: ['compressed'],
-    sourceType: ['album', 'camera'],
-    success: async (res) => {
-      const tempFilePaths = res.tempFilePaths;
-
-      // 校验文件大小
-      for (const filePath of tempFilePaths) {
-        try {
-          const fileInfo = await uni.getFileInfo({ filePath })
-          const size = fileInfo?.size || fileInfo?.[1]?.size || 0
-          if (size > 5 * 1024 * 1024) {
-            uni.showToast({ title: '图片不能超过5MB', icon: 'none' })
-            return
-          }
-        } catch (e) {
-          // getFileInfo 不可用时跳过大小校验
-        }
-      }
-
-      uni.showLoading({ title: '上传中...' });
-
-      try {
-        for (const filePath of tempFilePaths) {
-          const result = await uploadFile(filePath, 'review');
-          if (result.code === 0 && result.data) {
-            uploadedImages.value.push(result.data);
-          }
-        }
-        uni.hideLoading();
-        uni.showToast({
-          title: '上传成功',
-          icon: 'success'
-        });
-      } catch (error) {
-        uni.hideLoading();
-        console.error('上传图片失败:', error);
-        uni.showToast({
-          title: '上传失败',
-          icon: 'none'
-        });
-      }
+    if (remaining <= 0) {
+      uni.showToast({
+        title: '最多上传9张图片',
+        icon: 'none'
+      });
+      return;
     }
-  });
+
+    // 让用户选择图片来源
+    const sourceType = await showImageSourceModal()
+
+    // 根据选择的来源显示对应的权限说明
+    if (sourceType === 0) {
+      // 拍摄照片
+      await showCameraPurposeModal()
+    } else {
+      // 从相册选择
+      await showAlbumPurposeModal()
+    }
+
+    uni.chooseImage({
+      count: remaining,
+      sizeType: ['compressed'],
+      sourceType: sourceType === 0 ? ['camera'] : ['album'],
+      success: async (res) => {
+        const tempFilePaths = res.tempFilePaths;
+
+        // 校验文件大小
+        for (const filePath of tempFilePaths) {
+          try {
+            const fileInfo = await uni.getFileInfo({ filePath })
+            const size = fileInfo?.size || fileInfo?.[1]?.size || 0
+            if (size > 5 * 1024 * 1024) {
+              uni.showToast({ title: '图片不能超过5MB', icon: 'none' })
+              return
+            }
+          } catch (e) {
+            // getFileInfo 不可用时跳过大小校验
+          }
+        }
+
+        uni.showLoading({ title: '上传中...' });
+
+        try {
+          for (const filePath of tempFilePaths) {
+            const result = await uploadFile(filePath, 'review');
+            if (result.code === 0 && result.data) {
+              uploadedImages.value.push(result.data);
+            }
+          }
+          uni.hideLoading();
+          uni.showToast({
+            title: '上传成功',
+            icon: 'success'
+          });
+        } catch (error) {
+          uni.hideLoading();
+          console.error('上传图片失败:', error);
+          uni.showToast({
+            title: '上传失败',
+            icon: 'none'
+          });
+        }
+      }
+    });
   } catch (err) {
     console.error('处理图片上传请求失败:', err)
     if (err?.message === 'user_cancelled') {
-      // 用户取消了相册/相机权限用途说明，不进行任何操作
-      console.log('用户取消了相册/相机权限用途说明')
+      console.log('用户取消了图片选择')
     } else {
       uni.showToast({
         title: '图片上传失败，请重试',

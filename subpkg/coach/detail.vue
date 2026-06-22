@@ -208,6 +208,14 @@
       <view class="book-btn" @click="bookNow">立即预约</view>
     </view>
   </view>
+
+  <!-- 图片查看器 -->
+  <ImageViewer
+    :visible="showImageViewer"
+    :images="viewerImages"
+    :current="viewerCurrent"
+    @close="showImageViewer = false"
+  />
 </template>
 
 <script setup>
@@ -216,6 +224,28 @@ import { onLoad } from "@dcloudio/uni-app"
 import { getCoachDetail, toggleCoachFavorite, getCoachReviews } from '@/api/billiard/coach'
 import { createOrder } from '@/api/billiard/order'
 import { formatPrice } from '@/utils/common'
+
+// 图片查看器
+const showImageViewer = ref(false)
+const viewerImages = ref([])
+const viewerCurrent = ref(0)
+
+const previewImage = (index) => {
+  if (albumList.value.length > 0) {
+    viewerImages.value = albumList.value
+    viewerCurrent.value = index
+    showImageViewer.value = true
+  }
+}
+
+const previewReviewImage = (reviewIndex, imageIndex) => {
+  const review = reviewList.value[reviewIndex]
+  if (review && review.images && review.images.length > 0) {
+    viewerImages.value = review.images
+    viewerCurrent.value = imageIndex
+    showImageViewer.value = true
+  }
+}
 
 // 状态栏和安全区域高度
 const statusBarHeight = ref(0)
@@ -499,26 +529,6 @@ const selectService = (service) => {
   })
 }
 
-// 预览相册图片
-const previewImage = (index) => {
-  if (albumList.value.length > 0) {
-    uni.previewImage({
-      urls: albumList.value,
-      current: index
-    })
-  }
-}
-
-// 预览评价图片
-const previewReviewImage = (reviewIndex, imageIndex) => {
-  const review = reviewList.value[reviewIndex]
-  if (review && review.images && review.images.length > 0) {
-    uni.previewImage({
-      urls: review.images,
-      current: imageIndex
-    })
-  }
-}
 
 
 // 立即预约

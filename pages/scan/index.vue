@@ -39,11 +39,10 @@ const showCameraPurposeModal = () => {
     console.log('开始显示相机权限说明弹窗')
 
     // 使用 setTimeout 确保 DOM 渲染完成后再显示弹窗
-
     setTimeout(() => {
       uni.showModal({
-        title: '相机权限说明',
-        content: '为了能够扫描二维码，我们需要获取您的相机访问权限。该权限仅用于扫码功能，不会用于其他用途。',
+        title: '相机/相册权限说明',
+        content: '为了能够扫描二维码、拍摄头像、上传图片或从相册选择二维码，我们需要获取您的相机和相册访问权限。该权限仅用于相关功能，不会用于其他用途。',
         confirmText: '同意',
         cancelText: '取消',
         success: (res) => {
