@@ -71,51 +71,60 @@
         <!-- 钱包背景渐变 -->
         <view class="wallet-bg"></view>
 
-<!--        &lt;!&ndash; 钱包内容 &ndash;&gt;-->
-<!--        <view class="wallet-content">-->
-<!--          &lt;!&ndash; 左侧：余额信息 &ndash;&gt;-->
-<!--          <view class="wallet-left">-->
-<!--            <view class="wallet-label">-->
-<!--              <uni-icons type="wallet-filled" size="18" color="#00BB88" />-->
-<!--              <text>账户余额</text>-->
-<!--            </view>-->
-<!--            <view class="wallet-balance">-->
-<!--              <text class="currency">¥</text>-->
-<!--              <text class="amount">{{ balanceVisible ? formattedBalance : '******' }}</text>-->
-<!--              <view class="balance-eye-hit" @click.stop.prevent="toggleBalanceVisible">-->
-<!--                <uni-icons-->
-<!--                  class="balance-eye"-->
-<!--                  :type="balanceVisible ? 'eye' : 'eye-slash'"-->
-<!--                  size="20"-->
-<!--                  color="rgba(255, 255, 255, 0.85)"-->
-<!--                />-->
-<!--              </view>-->
-<!--            </view>-->
-<!--            <view class="wallet-stats">-->
-<!--              <view class="stat-item">-->
-<!--                <text class="stat-label">累计充值</text>-->
-<!--                <text class="stat-value">¥{{ wallet.totalRecharge }}</text>-->
-<!--              </view>-->
-<!--              <view class="stat-divider"></view>-->
-<!--              <view class="stat-item">-->
-<!--                <text class="stat-label">累计消费</text>-->
-<!--                <text class="stat-value">¥{{ wallet.totalExpense }}</text>-->
-<!--              </view>-->
-<!--            </view>-->
-<!--          </view>-->
+        <!-- 钱包内容 -->
+        <view class="wallet-content">
+        <!-- 左侧：余额信息 -->
+        <view class="wallet-left">
+          <view class="wallet-label">
+            <uni-icons type="wallet-filled" size="18" color="#00BB88" />
+            <text>账户余额</text>
+          </view>
 
-<!--          &lt;!&ndash; 右侧：快捷操作 &ndash;&gt;-->
-<!--          <view class="wallet-right">-->
-<!--            <view class="quick-btn recharge-btn" @click.stop="toRecharge">-->
-<!--              <uni-icons type="plus" size="20" color="#059669" />-->
-<!--              <text>充值</text>-->
-<!--            </view>-->
-<!--            <view class="quick-btn withdraw-btn" @click.stop="toWithdraw">-->
-<!--              <uni-icons type="minus" size="20" color="#fff" />-->
-<!--              <text>提现</text>-->
-<!--            </view>-->
-<!--          </view>-->
-<!--        </view>-->
+          <view class="wallet-balance">
+            <text class="currency">¥</text>
+            <text class="amount">{{ balanceVisible ? formattedBalance : '******' }}</text>
+
+            <view
+              class="balance-eye-hit"
+              @click.stop.prevent="toggleBalanceVisible"
+            >
+              <uni-icons
+                class="balance-eye"
+                :type="balanceVisible ? 'eye' : 'eye-slash'"
+                size="20"
+                color="rgba(255, 255, 255, 0.85)"
+              />
+            </view>
+          </view>
+
+          <view class="wallet-stats">
+            <view class="stat-item">
+              <text class="stat-label">累计充值</text>
+              <text class="stat-value">¥{{ wallet.totalRecharge }}</text>
+            </view>
+
+            <view class="stat-divider"></view>
+
+            <view class="stat-item">
+              <text class="stat-label">累计消费</text>
+              <text class="stat-value">¥{{ wallet.totalExpense }}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 右侧：快捷操作 -->
+        <!-- <view class="wallet-right">
+          <view class="quick-btn recharge-btn" @click.stop="toRecharge">
+            <uni-icons type="plus" size="20" color="#059669" />
+            <text>充值</text>
+          </view>
+
+          <view class="quick-btn withdraw-btn" @click.stop="toWithdraw">
+            <uni-icons type="minus" size="20" color="#fff" />
+            <text>提现</text>
+          </view>
+        </view> -->
+        </view>
       </view>
 
       <!-- ==========================================

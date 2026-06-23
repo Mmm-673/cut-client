@@ -113,6 +113,7 @@ import { ref, reactive } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { createReview, getCoachDetail } from '@/api/billiard/coach'
 import { uploadFile } from '@/api/billiard/user';
+import { showCameraPurposeModal, showAlbumPurposeModal, requestCameraPermission, requestAlbumPermission, showImageSourceModal } from '@/utils/photo';
 
 // 教练信息
 const coachInfo = reactive({
@@ -208,92 +209,6 @@ const handleAnonymousChange = (e) => {
   isAnonymous.value = e.detail.value;
 };
 
-// 显示相机权限用途说明弹窗
-const showCameraPurposeModal = () => {
-  return new Promise((resolve, reject) => {
-    const hasAgreedCameraPurpose = uni.getStorageSync('hasAgreedCameraPurpose')
-    if (hasAgreedCameraPurpose) {
-      resolve()
-      return
-    }
-
-    console.log('开始显示相机权限说明弹窗')
-
-    setTimeout(() => {
-      uni.showModal({
-        title: '相机权限说明',
-        content: '为了能够拍摄评价图片，我们需要获取您的相机访问权限。该权限仅用于拍摄功能，不会用于其他用途。',
-        confirmText: '同意',
-        cancelText: '取消',
-        success: (res) => {
-          console.log('showModal 回调:', res)
-          if (res.confirm) {
-            uni.setStorageSync('hasAgreedCameraPurpose', true)
-            resolve()
-          } else {
-            reject(new Error('user_cancelled'))
-          }
-        },
-        fail: (err) => {
-          console.error('showModal 失败:', err)
-          reject(err)
-        }
-      })
-    }, 100)
-  })
-}
-
-// 显示相册权限用途说明弹窗
-const showAlbumPurposeModal = () => {
-  return new Promise((resolve, reject) => {
-    const hasAgreedAlbumPurpose = uni.getStorageSync('hasAgreedAlbumPurpose')
-    if (hasAgreedAlbumPurpose) {
-      resolve()
-      return
-    }
-
-    console.log('开始显示相册权限说明弹窗')
-
-    setTimeout(() => {
-      uni.showModal({
-        title: '相册权限说明',
-        content: '为了能够从相册选择评价图片，我们需要获取您的相册访问权限。该权限仅用于选择图片功能，不会用于其他用途。',
-        confirmText: '同意',
-        cancelText: '取消',
-        success: (res) => {
-          console.log('showModal 回调:', res)
-          if (res.confirm) {
-            uni.setStorageSync('hasAgreedAlbumPurpose', true)
-            resolve()
-          } else {
-            reject(new Error('user_cancelled'))
-          }
-        },
-        fail: (err) => {
-          console.error('showModal 失败:', err)
-          reject(err)
-        }
-      })
-    }, 100)
-  })
-}
-
-// 选择图片来源
-const showImageSourceModal = () => {
-  return new Promise((resolve, reject) => {
-    uni.showActionSheet({
-      itemList: ['拍摄照片', '从相册选择'],
-      itemColor: '#000000',
-      success: (res) => {
-        resolve(res.tapIndex)
-      },
-      fail: (err) => {
-        reject(new Error('user_cancelled'))
-      }
-    })
-  })
-}
-
 // 上传图片
 const handleUploadImage = async () => {
   try {
@@ -309,13 +224,15 @@ const handleUploadImage = async () => {
     // 让用户选择图片来源
     const sourceType = await showImageSourceModal()
 
-    // 根据选择的来源显示对应的权限说明
+    // 根据选择的来源显示对应的权限说明和请求系统权限
     if (sourceType === 0) {
       // 拍摄照片
-      await showCameraPurposeModal()
+      await showCameraPurposeModal('为了能够拍摄评价图片，我们需要获取您的相机访问权限。该权限仅用于拍摄功能，不会用于其他用途。')
+      await requestCameraPermission()
     } else {
       // 从相册选择
-      await showAlbumPurposeModal()
+      await showAlbumPurposeModal('为了能够从相册选择评价图片，我们需要获取您的相册访问权限。该权限仅用于选择图片功能，不会用于其他用途。')
+      await requestAlbumPermission()
     }
 
     uni.chooseImage({

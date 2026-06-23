@@ -403,6 +403,7 @@ import { getTimerStatus } from '@/api/billiard/timer'
 import { reportException } from '@/api/billiard/exception'
 import { executePayment, fetchEnabledChannels } from '@/utils/payment'
 import {openMapNavigation} from "../../utils/platform";
+import { showCallPermissionModal, requestCallPermission, doCallPhone } from '@/utils/call';
 
 // 订单ID
 const orderId = ref(null)
@@ -730,63 +731,14 @@ const openHallNavigate = () => {
   })
 }
 
-// 显示电话权限用途说明弹窗
-const showCallPermissionModal = () => {
-  return new Promise((resolve, reject) => {
-    // 检查用户是否已经同意过电话权限用途说明
-    const hasAgreedCallPermission = uni.getStorageSync('hasAgreedCallPermission')
-    console.log('hasAgreedCallPermission:', hasAgreedCallPermission)
-    if (hasAgreedCallPermission) {
-      resolve()
-      return
-    }
-
-    console.log('开始显示电话权限说明弹窗')
-
-    // 使用 setTimeout 确保 DOM 渲染完成后再显示弹窗
-    setTimeout(() => {
-      uni.showModal({
-        title: '电话权限说明',
-        content: '为了向您提供电话服务，我们需要获取您的拨打电话权限。该权限仅用于拨打电话，不会用于其他用途。',
-        confirmText: '同意',
-        cancelText: '取消',
-        success: (res) => {
-          console.log('showModal 回调:', res)
-          if (res.confirm) {
-            // 存储用户同意状态
-            uni.setStorageSync('hasAgreedCallPermission', true)
-            resolve()
-          } else {
-            reject(new Error('user_cancelled'))
-          }
-        },
-        fail: (err) => {
-          console.error('showModal 失败:', err)
-          reject(err)
-        }
-      })
-    }, 100)
-  })
-}
-
-// 实际拨打电话的函数
-const doCallPhone = (phone) => {
-  // #ifdef APP-PLUS
-  // 只有【打包成 Android / iOS App】时，才会执行这里
-  plus.runtime.openURL(`tel:${phone}`);
-  // #endif
-
-  // #ifndef APP-PLUS
-  // 只有【不是 App】时（微信小程序、H5、快应用）才执行这里
-  uni.makePhoneCall({ phoneNumber: phone });
-  // #endif
-}
-
 // 【新增】联系教练
 const contactCoach = async () => {
   try {
     // 显示电话权限用途说明弹窗
     await showCallPermissionModal()
+
+    // 请求系统拨号权限
+    await requestCallPermission()
 
     // 优先使用订单数据里的教练手机号
     const phone = orderInfo.value?.coachPhone || ''

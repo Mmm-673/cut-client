@@ -71,6 +71,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
+import { showCallPermissionModal, requestCallPermission, doCallPhone } from '@/utils/call'
 
 // 刷新状态
 const refreshing = ref(false)
@@ -103,44 +104,6 @@ const serviceInfo = ref({
   hotline: '15900560488'
 })
 
-// 显示电话权限用途说明弹窗
-const showCallPermissionModal = () => {
-  return new Promise((resolve, reject) => {
-    // 检查用户是否已经同意过电话权限用途说明
-    const hasAgreedCallPermission = uni.getStorageSync('hasAgreedCallPermission')
-    console.log('hasAgreedCallPermission:', hasAgreedCallPermission)
-    if (hasAgreedCallPermission) {
-      resolve()
-      return
-    }
-
-    console.log('开始显示电话权限说明弹窗')
-
-    // 使用 setTimeout 确保 DOM 渲染完成后再显示弹窗
-    setTimeout(() => {
-      uni.showModal({
-        title: '电话权限说明',
-        content: '为了向您提供客服服务，我们需要获取您的拨打电话权限。该权限仅用于拨打客服电话，不会用于其他用途。',
-        confirmText: '同意',
-        cancelText: '取消',
-        success: (res) => {
-          console.log('showModal 回调:', res)
-          if (res.confirm) {
-            // 存储用户同意状态
-            uni.setStorageSync('hasAgreedCallPermission', true)
-            resolve()
-          } else {
-            reject(new Error('user_cancelled'))
-          }
-        },
-        fail: (err) => {
-          console.error('showModal 失败:', err)
-          reject(err)
-        }
-      })
-    }, 100)
-  })
-}
 
 // 实际拨打电话的函数
 const doMakeCall = () => {
@@ -148,15 +111,8 @@ const doMakeCall = () => {
       uni.showToast({ title: '暂无有效联系电话', icon: 'none' })
       return
   }
-  // #ifdef APP-PLUS
-  // 只有【打包成 Android / iOS App】时，才会执行这里
-  plus.runtime.openURL(`tel:${serviceInfo.value.hotline}`);
-  // #endif
-
-  // #ifndef APP-PLUS
-  // 只有【不是 App】时（微信小程序、H5、快应用）才执行这里
-  uni.makePhoneCall({ phoneNumber: serviceInfo.value.hotline });
-  // #endif
+  // 使用公共函数拨打电话
+  doCallPhone(serviceInfo.value.hotline)
 }
 
 // 点击拨打按钮
@@ -164,6 +120,9 @@ const makeCall = async () => {
   try {
     // 显示电话权限用途说明弹窗
     await showCallPermissionModal()
+
+    // 请求系统拨号权限
+    await requestCallPermission()
 
     // 执行拨打电话
     doMakeCall()
