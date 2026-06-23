@@ -29,7 +29,7 @@ export const showLocationPurposeModal = () => {
     setTimeout(() => {
       uni.showModal({
         title: '定位权限说明',
-        content: '为了向您推荐附近的台球助教，我们需要获取您的位置信息。该信息仅用于定位和推荐，不会用于其他用途。',
+        content: '为了向您推荐附近的台球教练/球厅，我们需要获取您的位置信息。该信息仅用于定位和推荐，不会用于其他用途。',
         confirmText: '同意',
         cancelText: '取消',
         success: (res) => {
