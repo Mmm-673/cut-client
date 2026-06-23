@@ -1,0 +1,14 @@
+utils/location.js
+  h_097ee8833a87c1 32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "07342fc71d58a448d9a0efa418c46c282b175e3d",
+  "prompts": {},
+  "humans": {
+    "h_097ee8833a87c1": {
+      "author": "carson.ma"
+    }
+  }
+}
