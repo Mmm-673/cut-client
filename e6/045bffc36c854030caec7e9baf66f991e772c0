@@ -1,0 +1,42 @@
+subpkg/mine/info.vue
+  dc0a8b24934e4605 108,248,251-252,255-256
+subpkg/order/detail.vue
+  dc0a8b24934e4605 406,740-742
+pages/mine/index.vue
+  h_097ee8833a87c1 74-86,90-106,108-127
+subpkg/mine/help.vue
+  dc0a8b24934e4605 74,114-115,124-126
+utils/call.js
+  dc0a8b24934e4605 1-122
+subpkg/booking/hall.vue
+  dc0a8b24934e4605 252,716,718-719,728-730,752,754-760
+utils/photo.js
+  dc0a8b24934e4605 1-290
+subpkg/coach/evaluate.vue
+  dc0a8b24934e4605 116,227,230-231,234-235
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "e6045bffc36c854030caec7e9baf66f991e772c0",
+  "prompts": {
+    "dc0a8b24934e4605": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "22b51134-4e36-4618-a0d2-d43b6bb9a7aa",
+        "model": "doubao-seed-2.0-code"
+      },
+      "human_author": "carson.ma",
+      "messages": [],
+      "total_additions": 451,
+      "total_deletions": 374,
+      "accepted_lines": 5680,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_097ee8833a87c1": {
+      "author": "carson.ma"
+    }
+  }
+}
