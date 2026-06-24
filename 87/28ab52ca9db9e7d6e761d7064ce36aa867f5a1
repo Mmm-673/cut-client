@@ -1,0 +1,39 @@
+subpkg/mine/info.vue
+  1b93808f09b96ed9 251,255
+package.json
+  h_097ee8833a87c1 15,24,40-42
+pages/scan/index.vue
+  h_097ee8833a87c1 14-24,26,37-40,43,56,58-64,66-67,69-103,105,107-116,118-133,136-137,139-158,160-166,174-177,228-236,238-246,368-396
+  1b93808f09b96ed9 34,138,159
+utils/photo.js
+  1b93808f09b96ed9 9,23,47,61
+subpkg/coach/evaluate.vue
+  1b93808f09b96ed9 230,234
+manifest.json
+  h_097ee8833a87c1 48-51,59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "8728ab52ca9db9e7d6e761d7064ce36aa867f5a1",
+  "prompts": {
+    "1b93808f09b96ed9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "57ce4724-c62c-41b3-904a-f3f7170e94c7",
+        "model": "doubao-seed-2.0-code"
+      },
+      "human_author": "carson.ma",
+      "messages": [],
+      "total_additions": 55,
+      "total_deletions": 96,
+      "accepted_lines": 1473,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_097ee8833a87c1": {
+      "author": "carson.ma"
+    }
+  }
+}
