@@ -6,7 +6,7 @@
 /**
  * 显示相机权限用途说明弹窗
  */
-export const showCameraPurposeModal = (customContent) => {
+export const showCameraPurposeModal = () => {
   return new Promise((resolve, reject) => {
     const hasAgreedCameraPurpose = uni.getStorageSync('hasAgreedCameraPurpose')
     console.log('hasAgreedCameraPurpose:', hasAgreedCameraPurpose)
@@ -20,7 +20,7 @@ export const showCameraPurposeModal = (customContent) => {
     setTimeout(() => {
       uni.showModal({
         title: '相机权限说明',
-        content: customContent || '为了能够拍摄照片，我们需要获取您的相机访问权限。该权限仅用于拍摄功能，不会用于其他用途。',
+        content: '为了能够使用相机功能（拍摄照片、扫描二维码），我们需要获取您的相机访问权限。该权限仅用于拍摄和扫描功能，不会用于其他用途。',
         confirmText: '同意',
         cancelText: '取消',
         success: (res) => {
@@ -44,7 +44,7 @@ export const showCameraPurposeModal = (customContent) => {
 /**
  * 显示相册权限用途说明弹窗
  */
-export const showAlbumPurposeModal = (customContent) => {
+export const showAlbumPurposeModal = () => {
   return new Promise((resolve, reject) => {
     const hasAgreedAlbumPurpose = uni.getStorageSync('hasAgreedAlbumPurpose')
     console.log('hasAgreedAlbumPurpose:', hasAgreedAlbumPurpose)
@@ -58,7 +58,7 @@ export const showAlbumPurposeModal = (customContent) => {
     setTimeout(() => {
       uni.showModal({
         title: '相册权限说明',
-        content: customContent || '为了能够从相册选择图片，我们需要获取您的相册访问权限。该权限仅用于选择图片功能，不会用于其他用途。',
+        content: '为了能够从相册选择图片（选择头像、选择二维码），我们需要获取您的相册访问权限。该权限仅用于选择图片功能，不会用于其他用途。',
         confirmText: '同意',
         cancelText: '取消',
         success: (res) => {

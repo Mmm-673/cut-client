@@ -45,7 +45,10 @@
                     "<uses-permission android:name=\"android.permission.ACCESS_LOCATION_EXTRA_COMMANDS\"/>",
                     "<uses-permission android:name=\"android.permission.RECEIVE_BOOT_COMPLETED\"/>",
                     "<uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\"/>",
-                    "<uses-permission android:name=\"android.permission.CALL_PHONE\"/>"
+                    "<uses-permission android:name=\"android.permission.CALL_PHONE\"/>",
+                    "<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\"/>",
+                    "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>",
+                    "<uses-permission android:name=\"android.permission.READ_MEDIA_IMAGES\"/>"
                 ],
                 "permissionDescriptions" : {
                     "android.permission.CAMERA" : "需要获取您的相机拍摄权限，以便您在平台中正常使用扫一扫、拍摄视频，或上传图片头像与动态。",
@@ -53,6 +56,7 @@
                     "android.permission.ACCESS_COARSE_LOCATION" : "需要获取您的位置权限，以便为您精准计算并展示附近的球厅信息及优质裁判、教练推荐",
                     "android.permission.READ_EXTERNAL_STORAGE" : "需要获取您的相册读取权限，以便您能从相册中选择图片来上传头像、发布动态或提交认证资料。",
                     "android.permission.WRITE_EXTERNAL_STORAGE" : "需要获取您的相册写入权限，以便您能将平台内的二维码保存至手机相册。",
+                    "android.permission.READ_MEDIA_IMAGES" : "需要获取您的相册图片读取权限（Android 13+），以便您能从相册中选择图片来识别二维码、上传头像或发布动态。",
                     "android.permission.CALL_PHONE" : "需要获取您的拨打电话/通话权限，以便您在处理预约、变更时间或解答疑问时，能直接与客户或平台客服进行电话联系与沟通协调。"
                 }
             },

@@ -11,7 +11,19 @@
       <view class="scan-btn" @click="handleScan">
         <text class="scan-btn-text">点击扫码</text>
       </view>
+      <view class="album-btn" @click="handleAlbumScan">
+        <uni-icons type="image" size="22" color="#00BB88" />
+        <text class="album-btn-text">从相册选择二维码</text>
+      </view>
     </view>
+    <!-- 加载状态 -->
+    <view v-if="loading" class="loading-mask">
+      <view class="loading-box">
+        <uni-icons type="spinner-cycle" size="48" color="#00BB88" />
+        <text class="loading-text">正在识别二维码…</text>
+      </view>
+    </view>
+
     <view class="safe-area-floor"></view>
 
   </view>
@@ -19,51 +31,139 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { showCameraPurposeModal, showAlbumPurposeModal } from '@/utils/photo'
 
 const statusBarHeight = ref(0)
+const loading = ref(false)
+// 处理扫码结果（扫码和相册共用）
+const processQrResult = (rawResult) => {
+  console.log('[processQrResult] 原始内容:', rawResult, '类型:', typeof rawResult)
+  let result
+  try {
+    result = JSON.parse(rawResult)
+  } catch (e) {
+    result = null
+  }
+  if (!result || typeof result !== 'object') {
+    uni.showToast({
+      title: '二维码无效，请重新扫描',
+      icon: 'none'
+    })
+    return
+  }
+  if (result?.coachId) {
+    uni.navigateTo({
+      url: `/subpkg/coach/detail?id=${result.coachId}`
+    })
+  } else {
+    uni.showToast({
+      title: '无法识别的二维码',
+      icon: 'none'
+    })
+  }
+}
 
-// 显示相机权限用途说明弹窗
-const showCameraPurposeModal = () => {
+// ---- 将临时路径转为原生绝对路径（plus.barcode.scan 需要原生路径）----
+const convertToNativePath = (tempPath) => {
   return new Promise((resolve, reject) => {
-    // 强制清除缓存，测试时用
-    // uni.removeStorageSync('hasAgreedCameraPurpose')
-
-    // 检查用户是否已经同意过相机权限用途说明
-    const hasAgreedCameraPurpose = uni.getStorageSync('hasAgreedCameraPurpose')
-    console.log('hasAgreedCameraPurpose:', hasAgreedCameraPurpose)
-    if (hasAgreedCameraPurpose) {
-      resolve()
-      return
-    }
-
-    console.log('开始显示相机权限说明弹窗')
-
-    // 使用 setTimeout 确保 DOM 渲染完成后再显示弹窗
-    setTimeout(() => {
-      uni.showModal({
-        title: '相机/相册权限说明',
-        content: '为了能够扫描二维码、拍摄头像、上传图片或从相册选择二维码，我们需要获取您的相机和相册访问权限。该权限仅用于相关功能，不会用于其他用途。',
-        confirmText: '同意',
-        cancelText: '取消',
-        success: (res) => {
-          console.log('showModal 回调:', res)
-          if (res.confirm) {
-            // 存储用户同意状态
-            uni.setStorageSync('hasAgreedCameraPurpose', true)
-            resolve()
-          } else {
-            reject(new Error('user_cancelled'))
-          }
-        },
-        fail: (err) => {
-          console.error('showModal 失败:', err)
-          reject(err)
-        }
-      })
-    }, 100)
+    // #ifdef APP-PLUS
+    plus.io.resolveLocalFileSystemURL(tempPath, (entry) => {
+      resolve(entry.toLocalURL())
+    }, (err) => {
+      console.error('路径转换失败:', err)
+      reject(err)
+    })
+    // #endif
+    // #ifndef APP-PLUS
+    resolve(tempPath)
+    // #endif
   })
 }
 
+// ---- 相册扫码：plus.barcode.scan 解码 ----
+const decodeImage = async (filePath) => {
+  try {
+    // #ifdef APP-PLUS
+    console.log('[相册扫码] 原始临时路径:', filePath)
+
+    // 尝试多种方式获取可用路径
+    let scanPath = filePath
+    try {
+      scanPath = await new Promise((resolve, reject) => {
+        plus.io.resolveLocalFileSystemURL(filePath, (entry) => {
+          // toURL() 返回平台原生路径
+          resolve(entry.toURL())
+        }, (err) => {
+          console.warn('[相册扫码] resolveLocalFileSystemURL 失败，使用原始路径:', err)
+          resolve(filePath)
+        })
+      })
+    } catch (e) {
+      console.warn('[相册扫码] 路径转换异常，使用原始路径:', e)
+      scanPath = filePath
+    }
+    console.log('[相册扫码] 最终扫描路径:', scanPath)
+
+    const code = await new Promise((resolve, reject) => {
+      plus.barcode.scan(
+          scanPath,
+          (type, result) => {
+            console.log('[相册扫码] 解码成功, type:', type, 'result:', result)
+            resolve(result)
+          },
+          (err) => {
+            console.error('[相册扫码] 解码失败:', JSON.stringify(err), err)
+            reject(err)
+          }
+      )
+    })
+
+    loading.value = false
+    console.log('[相册扫码] 最终解码内容:', code)
+    if (code) {
+      processQrResult(code)
+    } else {
+      uni.showToast({ title: '未识别到二维码，请选择清晰的二维码图片', icon: 'none' })
+    }
+    // #endif
+  } catch (err) {
+    loading.value = false
+    console.error('[相册扫码] 异常:', err?.message || err, JSON.stringify(err))
+    uni.showToast({ title: '未识别到二维码，请选择清晰的二维码图片', icon: 'none' })
+  }
+}
+
+const handleAlbumScan = async () => {
+  try {
+    await showAlbumPurposeModal()
+    loading.value = true
+
+    const res = await new Promise((resolve, reject) => {
+      uni.chooseImage({
+        count: 1,
+        sourceType: ['album'],
+        success: resolve,
+        fail: reject
+      })
+    })
+
+    if (!res.tempFilePaths || res.tempFilePaths.length === 0) {
+      loading.value = false
+      return
+    }
+
+    await decodeImage(res.tempFilePaths[0])
+  } catch (err) {
+    loading.value = false
+    if (err?.message === 'user_cancelled') {
+      console.log('用户取消了相册权限用途说明')
+    } else if (err?.errMsg?.includes('cancel')) {
+      // 用户取消选图，不做处理
+    } else {
+      uni.showToast({ title: '操作失败，请重试', icon: 'none' })
+    }
+  }
+}
 const handleScan = async () => {
   try {
     // 显示相机权限用途说明弹窗
@@ -71,56 +171,34 @@ const handleScan = async () => {
 
     // 调用扫码 API
     uni.scanCode({
-    success: (res) => {
-      console.log('扫码结果:', res)
-      let result
-      try {
-        result = JSON.parse(res.result)
-      } catch (e) {
-        result = null
+      onlyFromCamera: true,
+      success: (res) => {
+        console.log('扫码结果:', res)
+        processQrResult(res.result)
+      },
+      fail: (err) => {
+        console.error('扫码失败:', err)
+        if (err.errMsg && err.errMsg.includes('cancel')) {
+          // 用户取消，返回首页
+          uni.switchTab({
+            url: '/pages/home/index'
+          })
+        } else {
+          uni.showToast({
+            title: '扫码失败，请重试',
+            icon: 'none',
+            duration: 1500,
+            complete: () => {
+              setTimeout(() => {
+                uni.switchTab({
+                  url: '/pages/home/index'
+                })
+              }, 1500)
+            }
+          })
+        }
       }
-      if (!result || typeof result !== 'object') {
-        uni.showToast({
-          title: '二维码无效，请重新扫描',
-          icon: 'none'
-        })
-        return
-      }
-      if (result?.coachId) {
-        // 跳转到助教详情页，不自动返回
-        uni.navigateTo({
-          url: `/subpkg/coach/detail?id=${result?.coachId}`
-        })
-      } else {
-        uni.showToast({
-          title: '无法识别的二维码',
-          icon: 'none'
-        })
-      }
-    },
-    fail: (err) => {
-      console.error('扫码失败:', err)
-      if (err.errMsg && err.errMsg.includes('cancel')) {
-        // 用户取消，返回首页
-        uni.switchTab({
-          url: '/pages/home/index'
-        })
-      } else {
-        uni.showToast({
-          title: '扫码失败，请重试',
-          icon: 'none',
-          duration: 1500,
-          complete: () => {
-            setTimeout(() => {
-              uni.switchTab({
-                url: '/pages/home/index'
-              })
-            }, 1500)
-          }
-        })
-      }
-    }
-  })
+    })
   } catch (err) {
     console.error('处理扫码请求失败:', err)
     if (err?.message === 'user_cancelled') {
@@ -147,7 +225,26 @@ onMounted(() => {
   height: 100vh;
   background-color: #121619;
 }
+.album-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  margin-top: 40rpx;
+  padding: 20rpx 48rpx;
+  border: 2rpx solid rgba(0, 187, 136, 0.4);
+  border-radius: 50rpx;
 
+  .album-btn-text {
+    color: #00BB88;
+    font-size: 28rpx;
+    font-weight: 500;
+  }
+
+  &:active {
+    background: rgba(0, 187, 136, 0.1);
+  }
+}
 .navbar {
   display: flex;
   align-items: center;
@@ -267,5 +364,35 @@ onMounted(() => {
   height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
   background-color: red; /* 👉 这个颜色每页自己改 */
+}
+
+/* 加载状态 */
+.loading-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+
+  .loading-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24rpx;
+    padding: 60rpx;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 24rpx;
+    backdrop-filter: blur(10px);
+
+    .loading-text {
+      color: #fff;
+      font-size: 28rpx;
+    }
+  }
 }
 </style>

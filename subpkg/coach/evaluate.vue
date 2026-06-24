@@ -227,11 +227,11 @@ const handleUploadImage = async () => {
     // 根据选择的来源显示对应的权限说明和请求系统权限
     if (sourceType === 0) {
       // 拍摄照片
-      await showCameraPurposeModal('为了能够拍摄评价图片，我们需要获取您的相机访问权限。该权限仅用于拍摄功能，不会用于其他用途。')
+      await showCameraPurposeModal()
       await requestCameraPermission()
     } else {
       // 从相册选择
-      await showAlbumPurposeModal('为了能够从相册选择评价图片，我们需要获取您的相册访问权限。该权限仅用于选择图片功能，不会用于其他用途。')
+      await showAlbumPurposeModal()
       await requestAlbumPermission()
     }
 

@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Mmm-673/cut-client.git"
+    "url": "git+GitHub - Mmm-673/cut-client"
   },
   "keywords": [],
   "author": "",
@@ -21,7 +21,7 @@
   "bugs": {
     "url": "https://github.com/Mmm-673/cut-client/issues"
   },
-  "homepage": "https://github.com/Mmm-673/cut-client#readme",
+  "homepage": "GitHub - Mmm-673/cut-client",
   "devDependencies": {
     "@vue/compiler-sfc": "^3.5.34",
     "@vue/test-utils": "^2.4.10",
@@ -37,5 +37,8 @@
       "JPUSH_APPKEY": "54ce33979670871f9952e1f5",
       "JPUSH_CHANNEL": "developer-default"
     }
+  },
+  "dependencies": {
+    "jsqr": "^1.4.0"
   }
 }
