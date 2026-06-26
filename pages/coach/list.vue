@@ -179,13 +179,14 @@ const currentLocation = ref({
 })
 const currentCity = ref('')
 
-const tabs = ['全部', '新人', '低碳出行', '初级', '中级', '高级']
+const tabs = ['全部', '新人', '低碳出行', '初级', '中级', '高级', '星级']
 
 // 等级映射
 const levelMap = {
   0: {text: '初级', class: 'junior'},
   1: {text: '中级', class: 'middle'},
-  2: {text: '高级', class: 'senior'}
+  2: {text: '高级', class: 'senior'},
+  3: {text: '星级', class: 'star'}
 }
 
 const getLevelText = (level) => {
@@ -210,7 +211,8 @@ const tagClassMap = {
   '中式八球': 'tag-eight-ball',
   '初级': 'tag-junior',
   '中级': 'tag-intermediate',
-  '高级': 'tag-senior'
+  '高级': 'tag-senior',
+  '星级': 'tag-star'
 }
 
 const getTagClass = (tag) => {
@@ -726,6 +728,11 @@ onShow(() => {
             background: rgba(102, 102, 102, 0.2);
             color: #999;
           }
+
+          &.star {
+            background: rgba(255, 215, 0, 0.2);
+            color: #FFD700;
+          }
         }
 
         .new-tag {
@@ -812,6 +819,12 @@ onShow(() => {
             background: rgba(0, 212, 170, 0.15);
             color: #00d4aa;
             border: 1rpx solid rgba(0, 212, 170, 0.3);
+          }
+
+          &.tag-star {
+            background: rgba(255, 215, 0, 0.15);
+            color: #FFD700;
+            border: 1rpx solid rgba(255, 215, 0, 0.3);
           }
 
           &.tag-default {

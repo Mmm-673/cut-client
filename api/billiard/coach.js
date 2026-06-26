@@ -7,7 +7,7 @@ import request from '@/utils/request'
  * @param {number} [params.pageSize=20] - 每页数量，默认 20
  * @param {string} [params.keyword] - 关键词，匹配艺名或球厅名称
  * @param {string} [params.city] - 城市筛选（如"杭州市"）
- * @param {number} [params.level] - 技术等级：0=初级 1=中级 2=高级
+ * @param {number} [params.level] - 技术等级：0=初级 1=中级 2=高级 3=星级
  * @param {string} [params.tag] - 标签筛选（如：新人、低碳出行），枚举值待运营确认
  * @param {number} [params.longitude] - 用户当前经度（用于距离排序）
  * @param {number} [params.latitude] - 用户当前纬度（用于距离排序）
@@ -35,7 +35,7 @@ export function getCoachList(params) {
  * @returns {number} [returns.data.height] - 身高（cm）
  * @returns {number} [returns.data.weight] - 体重（kg）
  * @returns {string} [returns.data.profession] - 职业
- * @returns {number} returns.data.level - 助教级别：0=初级 1=中级 2=高级
+ * @returns {number} returns.data.level - 助教级别：0=初级 1=中级 2=高级 3=星级
  * @returns {number} returns.data.serviceCount - 累计服务次数
  * @returns {boolean} returns.data.favorite - 是否关注
  * @returns {number} returns.data.overallScore - 综合评分
@@ -139,7 +139,7 @@ export function createReview(data) {
  * @property {number} id - 助教ID
  * @property {string} stageName - 艺名
  * @property {string} [mainPhotoUrl] - 主图 URL
- * @property {number} level - 助教级别：0=初级 1=中级 2=高级
+ * @property {number} level - 助教级别：0=初级 1=中级 2=高级 3=星级
  * @property {number} serviceCount - 累计服务次数
  * @property {number} overallScore - 综合评分
  * @property {number|null} [distance] - 与用户的距离（km），未传经纬度时返回 null

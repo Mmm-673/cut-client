@@ -222,7 +222,8 @@ onMounted(() => {
 const levelMap = {
   0: '初级教练',
   1: '中级教练',
-  2: '高级教练'
+  2: '高级教练',
+  3: '星级教练'
 }
 
 const getLevelText = (level) => {

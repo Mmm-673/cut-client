@@ -18,8 +18,15 @@
     <scroll-view scroll-y class="scroll-container" show-scrollbar="false" :style="{ paddingTop: navBarHeight + 'rpx', height: `calc(100vh)` }">
       <!-- 欢迎语 -->
       <view class="welcome-section">
-        <text class="greeting">你好 👋</text>
-        <text class="welcome-text">今天想预约哪位教练？</text>
+        <view class="welcome-left">
+          <text class="greeting">你好 👋</text>
+          <text class="welcome-text">今天想预约哪位教练？</text>
+        </view>
+        <view class="welcome-right">
+          <view class="scan-btn" @click="toScan">
+            <uni-icons type="scan" size="24" color="#00BB88" />
+          </view>
+        </view>
       </view>
 
       <!-- 轮播图 -->
@@ -273,6 +280,13 @@ const goCoachDetail = (item) => {
   })
 }
 
+// 扫码
+const toScan = () => {
+  uni.navigateTo({
+    url: '/pages/scan/index'
+  })
+}
+
 
 
 const initData = async () => {
@@ -433,20 +447,50 @@ onMounted(() => {
 .welcome-section {
   padding: 0 30rpx 32rpx;
   display: flex;
-  flex-direction: column;
-  gap: 8rpx;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: #121619;
+  z-index: 99;
+  padding-top: 20rpx;
 
-  .greeting {
-    color: #9CA3AF;
-    font-size: 26rpx;
-    font-weight: 500;
+  .welcome-left {
+    display: flex;
+    flex-direction: column;
+    gap: 8rpx;
+
+    .greeting {
+      color: #9CA3AF;
+      font-size: 26rpx;
+      font-weight: 500;
+    }
+
+    .welcome-text {
+      color: #fff;
+      font-size: 36rpx;
+      font-weight: 700;
+      letter-spacing: -1rpx;
+    }
   }
 
-  .welcome-text {
-    color: #fff;
-    font-size: 36rpx;
-    font-weight: 700;
-    letter-spacing: -1rpx;
+  .welcome-right {
+    .scan-btn {
+      width: 60rpx;
+      height: 60rpx;
+      background: rgba(0, 187, 136, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1rpx solid rgba(0, 187, 136, 0.3);
+      transition: all 0.3s ease;
+
+      &:active {
+        background: rgba(0, 187, 136, 0.3);
+        transform: scale(0.95);
+      }
+    }
   }
 }
 

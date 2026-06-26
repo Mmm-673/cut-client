@@ -292,7 +292,8 @@ const showAllReviews = ref(false)
 const levelMap = {
   0: '初级教练',
   1: '中级教练',
-  2: '高级教练'
+  2: '高级教练',
+  3: '星级教练'
 }
 
 const getLevelText = (level) => {
@@ -761,6 +762,11 @@ onMounted(() => {
           &.level-2 {
             background: linear-gradient(135deg, #f5222d 0%, #cf1322 100%);
             color: #ffffff;
+          }
+
+          &.level-3 {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #000000;
           }
         }
       }

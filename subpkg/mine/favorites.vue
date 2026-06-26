@@ -103,7 +103,8 @@ const formatPrice = (price) => {
 const levelMap = {
   0: {text: '初级', class: 'junior'},
   1: {text: '中级', class: 'middle'},
-  2: {text: '高级', class: 'senior'}
+  2: {text: '高级', class: 'senior'},
+  3: {text: '星级', class: 'star'}
 }
 
 const getLevelText = (level) => {
@@ -351,6 +352,11 @@ onMounted(() => {
           &.junior {
             background: rgba(102, 102, 102, 0.2);
             color: #999;
+          }
+
+          &.star {
+            background: rgba(255, 215, 0, 0.2);
+            color: #FFD700;
           }
         }
       }

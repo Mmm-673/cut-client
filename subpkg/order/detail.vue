@@ -540,7 +540,8 @@ const coachInfo = ref({
 const levelMap = {
   0: { text: '初级教练', color: '#9CA3AF' },
   1: { text: '中级教练', color: '#F59E0B' },
-  2: { text: '高级教练', color: '#00BB88' }
+  2: { text: '高级教练', color: '#00BB88' },
+  3: { text: '星级教练', color: '#FFD700' }
 }
 
 /**

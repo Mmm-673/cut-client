@@ -180,20 +180,20 @@ const handleScan = async () => {
         console.error('扫码失败:', err)
         if (err.errMsg && err.errMsg.includes('cancel')) {
           // 用户取消，返回首页
-          uni.switchTab({
-            url: '/pages/home/index'
-          })
+          // uni.switchTab({
+          //   url: '/pages/home/index'
+          // })
         } else {
           uni.showToast({
             title: '扫码失败，请重试',
             icon: 'none',
             duration: 1500,
             complete: () => {
-              setTimeout(() => {
-                uni.switchTab({
-                  url: '/pages/home/index'
-                })
-              }, 1500)
+              // setTimeout(() => {
+              //   uni.switchTab({
+              //     url: '/pages/home/index'
+              //   })
+              // }, 1500)
             }
           })
         }
@@ -363,7 +363,6 @@ onMounted(() => {
 .safe-area-floor {
   height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
-  background-color: red; /* 👉 这个颜色每页自己改 */
 }
 
 /* 加载状态 */
