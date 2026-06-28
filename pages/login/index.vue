@@ -153,8 +153,8 @@ let countdownTimer = null
 const agree = ref(false)
 
 const agreementUrls = {
-  user: 'http://web.qiulem.com/agreement/userAgreement.html',
-  privacy: 'http://web.qiulem.com/agreement/userPrivacy.html'
+  user: 'https://qiulem.com/agreement/userAgreement.html',
+  privacy: 'https://qiulem.com/agreement/userPrivacy.html'
 }
 
 // 显示密码

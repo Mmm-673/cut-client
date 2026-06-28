@@ -89,8 +89,8 @@ const showCancelAccountPopup = ref(false)
 const cancelReason = ref('')
 const isCancelingAccount = ref(false)
 const agreementUrls = {
-  user: 'http://web.qiulem.com/agreement/userAgreement.html',
-  privacy: 'http://web.qiulem.com/agreement/userPrivacy.html'
+  user: 'https://qiulem.com/agreement/userAgreement.html',
+  privacy: 'https://qiulem.com/agreement/userPrivacy.html'
 }
 
 // ---------------------- 交互方法 ----------------------
