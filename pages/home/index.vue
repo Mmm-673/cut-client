@@ -201,14 +201,14 @@ const hasQueriedVenue = ref(false) // 记录是否已查询过球厅列表
 
 const bannerList = ref([
   { id: 1, img: '/static/images/banner/banner01.jpg' },
-  { id: 2, img: '/static/images/banner/banner02.jpg' }
+  // { id: 2, img: '/static/images/banner/banner02.jpg' }
 ])
 
 const serviceList = ref([
   {
     id: 1,
     title: '台球陪练',
-    price: 99,
+    price: 88,
     unit: '小时',
     priceColor: '#00BB88',
     icon: '🎱',
@@ -218,7 +218,7 @@ const serviceList = ref([
   {
     id: 2,
     title: '专业教学',
-    price: 88,
+    price: 98,
     unit: '小时',
     priceColor: '#3B82F6',
     icon: '🎓',
