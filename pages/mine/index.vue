@@ -449,7 +449,7 @@ const loadOrders = async () => {
 // 功能菜单（修正了跳转路径！！对应刚才整合的pages.json）
 const menuList = ref([
   { key: 'collection', title: '我的收藏', icon: 'heart', bgColor: 'rgba(255, 77, 79, 0.2)', color: '#ff4d4f', path: '/subpkg/mine/favorites' },
-  { key: 'help', title: '客服中心', icon: 'headphones', bgColor: 'rgba(107, 114, 128, 0.2)', color: '#6B7280', path: '/subpkg/mine/help' },
+  { key: 'help', title: '客服中心', icon: 'headphones', bgColor: 'rgba(107, 114, 128, 0.2)', color: '#6B7280', path: '/subpkg/mine/help' }
 ])
 
 // ---------------------- 计算属性 ----------------------

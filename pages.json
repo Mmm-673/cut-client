@@ -235,6 +235,22 @@
           "style": {
             "navigationBarTitleText": "浏览文本"
           }
+        },
+        {
+          "path": "service-agreement",
+          "style": {
+            "navigationBarTitleText": "服务协议",
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white"
+          }
+        },
+        {
+          "path": "refund-policy",
+          "style": {
+            "navigationBarTitleText": "退款规则",
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white"
+          }
         }
       ]
     }

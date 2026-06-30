@@ -242,7 +242,7 @@ import { getWallet } from '@/api/billiard/wallet'
 
 // ---------------------- 状态定义 ----------------------
 const isSubmitting = ref(false)
-const userAgree = ref(true)
+const userAgree = ref(false)
 const selectedPay = ref('')
 const showTimePicker = ref(false)
 const createDirect = ref(false)
@@ -496,7 +496,11 @@ const selectPay = (val) => { selectedPay.value = val }
 
 // 查看协议
 const toAgreement = (type) => {
-  uni.showToast({ title: type === 'service' ? '服务协议功能开发中' : '退款规则功能开发中', icon: 'none' })
+  if (type === 'service') {
+    uni.navigateTo({ url: '/subpkg/common/service-agreement' })
+  } else {
+    uni.navigateTo({ url: '/subpkg/common/refund-policy' })
+  }
 }
 
 // 加载钱包余额
@@ -535,6 +539,10 @@ const loadCoachDetail = async (coachId) => {
 
 // 处理操作：创建订单 或 支付
 const handleAction = async () => {
+  if (!userAgree.value) {
+    uni.showToast({ title: '请先阅读并同意服务协议和退款规则', icon: 'none' })
+    return
+  }
   if (!canAction.value) return
 
   if (!isOrderCreated.value) {
