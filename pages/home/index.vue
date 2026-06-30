@@ -207,7 +207,7 @@ const bannerList = ref([
 const serviceList = ref([
   {
     id: 1,
-    title: '台球陪练',
+    title: '基础教学',
     price: 88,
     unit: '小时',
     priceColor: '#00BB88',
