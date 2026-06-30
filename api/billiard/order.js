@@ -19,8 +19,8 @@ import request from '@/utils/request'
  * @returns {Array} returns.data.list - 订单列表
  * @returns {number} returns.data.list[].orderId - 订单ID
  * @returns {string} returns.data.list[].orderNo - 订单号
- * @returns {string} returns.data.list[].coachStageName - 助教艺名
- * @returns {string} [returns.data.list[].coachMainPhoto] - 助教主图 URL
+ * @returns {string} returns.data.list[].coachStageName - 裁教艺名
+ * @returns {string} [returns.data.list[].coachMainPhoto] - 裁教主图 URL
  * @returns {number} returns.data.list[].serviceType - 服务类型：1=台球陪练 2=达人带路
  * @returns {number} returns.data.list[].bookingTime - 预约服务开始时间（毫秒时间戳）
  * @returns {number} returns.data.list[].serviceDuration - 预定总时长（分钟）
@@ -46,9 +46,9 @@ export function getOrderList(params) {
  * @returns {Promise<Object>} 返回订单详情数据
  * @returns {number} returns.data.id - 订单ID
  * @returns {string} returns.data.orderNo - 订单号
- * @returns {number} returns.data.coachId - 助教ID
- * @returns {string} returns.data.coachStageName - 助教艺名
- * @returns {string} [returns.data.coachMainPhoto] - 助教主图 URL
+ * @returns {number} returns.data.coachId - 裁教ID
+ * @returns {string} returns.data.coachStageName - 裁教艺名
+ * @returns {string} [returns.data.coachMainPhoto] - 裁教主图 URL
  * @returns {string} [returns.data.venueName] - 球厅名称
  * @returns {string} [returns.data.venueAddress] - 球厅地址
  * @returns {number} [returns.data.venueLongitude] - 球厅经度
@@ -74,7 +74,7 @@ export function getOrderDetail(params) {
 /**
  * 创建订单
  * @param {Object} data - 请求参数
- * @param {number} data.coachId - 助教ID（billiard_coach.id），必须为在线状态
+ * @param {number} data.coachId - 裁教ID（billiard_coach.id），必须为在线状态
  * @param {number} data.serviceType - 服务类型：1=台球陪练 2=达人带路
  * @param {number} data.bookingTime - 预约服务开始时间（毫秒时间戳）
  * @param {number} data.serviceDuration - 预定时长（分钟），台球陪练 >= 120，达人带路 >= 300

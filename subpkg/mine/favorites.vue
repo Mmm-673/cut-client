@@ -67,7 +67,7 @@
 
         <view v-if="coachList.length === 0 && !loading && !refreshing" class="empty-state">
           <uni-icons type="heart" size="60" color="#666"></uni-icons>
-          <text class="empty-text">暂无收藏的助教</text>
+          <text class="empty-text">暂无收藏的裁教</text>
         </view>
 
         <view class="loading-status">
@@ -297,7 +297,7 @@ onMounted(() => {
   width: 100%;
 }
 
-/* 助教卡片样式 */
+/* 裁教卡片样式 */
 .coach-card {
   display: flex;
   background-color: #2a2a2a;

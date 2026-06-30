@@ -17,7 +17,7 @@
 
     <view class="ds-coach-card__content">
       <view class="ds-coach-card__header">
-        <text class="ds-coach-card__name">{{ coach.name || '助教' }}</text>
+        <text class="ds-coach-card__name">{{ coach.name || '裁教' }}</text>
         <view class="ds-coach-card__rating">
           <text class="ds-coach-card__star">★</text>
           <text>{{ coach.score || '5.0' }}</text>

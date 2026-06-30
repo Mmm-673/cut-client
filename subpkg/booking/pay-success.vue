@@ -8,7 +8,7 @@
 
       <!-- 标题 -->
       <view class="title">支付成功</view>
-      <view class="subtitle">您的预约已提交，等待助教确认</view>
+      <view class="subtitle">您的预约已提交，等待裁教确认</view>
 
       <!-- 订单信息 -->
       <view class="info-card" v-if="orderDetail">
@@ -21,7 +21,7 @@
           <text class="value price">¥{{ formatPrice(orderDetail.payAmount) }}</text>
         </view>
         <view class="info-row" v-if="orderDetail.coachStageName">
-          <text class="label">助教</text>
+          <text class="label">裁教</text>
           <text class="value">{{ orderDetail.coachStageName }}</text>
         </view>
         <view class="info-row" v-if="orderDetail.bookingTime">
@@ -33,7 +33,7 @@
       <!-- 提示 -->
       <view class="tip-wrapper">
         <uni-icons type="info" size="18" color="#FBBF24" />
-        <text class="tip-text">请保持电话畅通，助教将尽快联系您</text>
+        <text class="tip-text">请保持电话畅通，裁教将尽快联系您</text>
       </view>
     </view>
 

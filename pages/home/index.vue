@@ -9,7 +9,7 @@
         </view>
         <view class="nav-title-group">
           <text class="nav-title">初球</text>
-          <text class="nav-subtitle">专业助教预约平台</text>
+          <text class="nav-subtitle">专业裁教预约平台</text>
         </view>
       </view>
     </view>
@@ -89,7 +89,7 @@
         </view>
       </view>
 
-      <!-- 热门助教 -->
+      <!-- 热门裁教 -->
       <view class="section-container">
         <view class="section-header">
           <view class="title-left">
@@ -97,7 +97,7 @@
               <view class="title-dot"></view>
               <view class="title-line"></view>
             </view>
-            <text class="title-text">热门助教</text>
+            <text class="title-text">热门裁教</text>
             <view class="title-badge">TOP</view>
           </view>
           <view class="view-more" @click="viewAllHotCoach">
@@ -243,8 +243,8 @@ const loadHotCoaches = async () => {
       online: Math.random() > 0.3
     })) : []
   } catch (error) {
-    console.error('加载热门助教失败:', error)
-    uni.showToast({ title: '加载热门助教失败', icon: 'none' })
+    console.error('加载热门裁教失败:', error)
+    uni.showToast({ title: '加载热门裁教失败', icon: 'none' })
   }
 }
 
@@ -258,8 +258,8 @@ const loadNewCoaches = async () => {
       avatar: item.avatar || item.mainPhotoUrl || 'https://picsum.photos/300/300',
     })) : []
   } catch (error) {
-    console.error('加载新人助教失败:', error)
-    uni.showToast({ title: '加载新人助教失败', icon: 'none' })
+    console.error('加载新人裁教失败:', error)
+    uni.showToast({ title: '加载新人裁教失败', icon: 'none' })
   }
 }
 
@@ -792,7 +792,7 @@ onMounted(() => {
   }
 }
 
-/* 热门助教 */
+/* 热门裁教 */
 .hot-coach-list {
   display: inline-flex;
 

@@ -28,7 +28,7 @@
 | H7 | 订单详情轮询函数定义位置问题 | subpkg/order/detail.vue | 第1119-1128行 | 调整函数定义顺序或使用函数声明 |
 | H8 | 联系教练使用硬编码手机号 | subpkg/order/detail.vue | 第665-669行 | 从订单数据coachMobile字段获取 |
 | H9 | 钱包选择月份功能未实现 | subpkg/mine/wallet.vue | 第227-229行 | 实现月份选择器并对接API |
-| H10 | 预约页面入口混乱，状态处理不统一 | pages/booking/index.vue | 整个文件 | 统一从首页和助教列表进入的数据处理逻辑 |
+| H10 | 预约页面入口混乱，状态处理不统一 | pages/booking/index.vue | 整个文件 | 统一从首页和裁教列表进入的数据处理逻辑 |
 
 ### 2.2 中优先级问题（12个）
 
@@ -40,9 +40,9 @@
 | M4 | 预约页缺少球厅选择验证 | pages/booking/index.vue | 第177-193行 | 根据服务类型判断是否需要球厅 |
 | M5 | 订单列表滑动删除对所有状态显示 | pages/order/list.vue | 第83-91,306-315行 | 只对已取消订单渲染滑动区域 |
 | M6 | 我的页面多个请求无统一错误处理 | pages/mine/index.vue | 第433-489行 | 每个请求独立处理错误并提示 |
-| M7 | 助教详情收藏无乐观更新 | subpkg/coach/detail.vue | 第409-431行 | 先更新UI再请求API，失败则回滚 |
-| M8 | 助教详情服务类型判断可能误判 | subpkg/coach/detail.vue | 第492-494行 | 使用serviceType字段而非名称判断 |
-| M9 | 助教详情加载失败无重试 | subpkg/coach/detail.vue | 第344-349行 | 显示重试按钮 |
+| M7 | 裁教详情收藏无乐观更新 | subpkg/coach/detail.vue | 第409-431行 | 先更新UI再请求API，失败则回滚 |
+| M8 | 裁教详情服务类型判断可能误判 | subpkg/coach/detail.vue | 第492-494行 | 使用serviceType字段而非名称判断 |
+| M9 | 裁教详情加载失败无重试 | subpkg/coach/detail.vue | 第344-349行 | 显示重试按钮 |
 | M10 | 确认订单重新选择球厅不保存数据 | subpkg/booking/confirm.vue | 第435-447行 | 保存当前表单数据到storage |
 | M11 | 确认订单无支付超时提示 | subpkg/booking/confirm.vue | 第586-613行 | 无expireTime时给默认提示 |
 | M12 | 钱包交易记录bizType映射不完整 | subpkg/mine/wallet.vue | 第180-191行 | 补充完整的类型映射 |

@@ -31,7 +31,7 @@
 
 | 编号 | 问题 | 说明 |
 |------|------|------|
-| BUG-001 | 助教列表页始终无数据 | H5定位问题，暂不处理 |
+| BUG-001 | 裁教列表页始终无数据 | H5定位问题，暂不处理 |
 | BUG-002 | 选择球厅页无数据 | H5定位问题，暂不处理 |
 
 ---
@@ -153,7 +153,7 @@ const handleLogout = () => {
 | BUG-010 | 帮助中心FAQ无法展开 | subpkg/mine/help.vue | 添加展开/收起状态管理 |
 | BUG-011 | 打赏页评分数据不一致 | subpkg/coach/reward.vue | 确保使用相同的数据字段 |
 | BUG-012 | 密码登录空表单无提示 | pages/login/index.vue | 补充验证（已有checkPhone，确保调用） |
-| BUG-013 | 助教详情收藏按钮被遮挡 | subpkg/coach/detail.vue | 调整z-index层级 |
+| BUG-013 | 裁教详情收藏按钮被遮挡 | subpkg/coach/detail.vue | 调整z-index层级 |
 | BUG-014 | "查看全部评价"无响应 | subpkg/coach/detail.vue | 添加跳转逻辑 |
 | BUG-015 | 订单不存在仍渲染空模板 | subpkg/order/detail.vue | 添加错误状态展示 |
 | BUG-016 | 生日选择器范围异常 | subpkg/mine/info.vue | 设置end为当前日期 |

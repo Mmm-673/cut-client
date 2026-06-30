@@ -80,7 +80,7 @@ const refreshing = ref(false)
 const faqList = ref([
   {
     question: '如何预约台球陪练？',
-    answer: '您可以通过首页或预约Tab选择合适的助教，点击立即预约后选择球厅和服务时间，确认支付即可完成预约。',
+    answer: '您可以通过首页或预约Tab选择合适的裁教，点击立即预约后选择球厅和服务时间，确认支付即可完成预约。',
     id: 1,
     expanded: false
   },

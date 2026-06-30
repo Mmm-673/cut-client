@@ -4,7 +4,7 @@
     <!-- 教练信息区 -->
     <view class="coach-info">
       <image class="coach-avatar" :src="coachInfo.avatar || '/static/default-avatar.png'" mode="aspectFill" />
-      <view class="coach-name">{{ coachInfo.name || '助教' }}</view>
+      <view class="coach-name">{{ coachInfo.name || '裁教' }}</view>
       <view class="coach-desc" v-if="coachInfo.serviceType || coachInfo.serviceTime">
         <text v-if="coachInfo.serviceType">{{ coachInfo.serviceType }}</text>
         <text v-if="coachInfo.serviceType && coachInfo.serviceTime"> · </text>

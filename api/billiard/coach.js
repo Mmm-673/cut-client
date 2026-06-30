@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 /**
- * 获取在线助教分页列表
+ * 获取在线裁教分页列表
  * @param {Object} params - 请求参数
  * @param {number} [params.pageNo=1] - 页码，默认 1
  * @param {number} [params.pageSize=20] - 每页数量，默认 20
@@ -11,8 +11,8 @@ import request from '@/utils/request'
  * @param {string} [params.tag] - 标签筛选（如：新人、低碳出行），枚举值待运营确认
  * @param {number} [params.longitude] - 用户当前经度（用于距离排序）
  * @param {number} [params.latitude] - 用户当前纬度（用于距离排序）
- * @returns {Promise<Object>} 返回助教列表数据
- * @returns {Array} returns.data.list - 助教列表
+ * @returns {Promise<Object>} 返回裁教列表数据
+ * @returns {Array} returns.data.list - 裁教列表
  * @returns {number} returns.data.total - 总数
  */
 export function getCoachList(params) {
@@ -24,18 +24,18 @@ export function getCoachList(params) {
 }
 
 /**
- * 获取助教详情
+ * 获取裁教详情
  * @param {Object} params - 请求参数
- * @param {number} params.id - 助教ID (billiard_coach.id)
- * @returns {Promise<Object>} 返回助教详情数据
- * @returns {number} returns.data.id - 助教ID
+ * @param {number} params.id - 裁教ID (billiard_coach.id)
+ * @returns {Promise<Object>} 返回裁教详情数据
+ * @returns {number} returns.data.id - 裁教ID
  * @returns {string} returns.data.stageName - 艺名
  * @returns {number} [returns.data.age] - 年龄
  * @returns {string} [returns.data.constellation] - 星座
  * @returns {number} [returns.data.height] - 身高（cm）
  * @returns {number} [returns.data.weight] - 体重（kg）
  * @returns {string} [returns.data.profession] - 职业
- * @returns {number} returns.data.level - 助教级别：0=初级 1=中级 2=高级 3=星级
+ * @returns {number} returns.data.level - 裁教级别：0=初级 1=中级 2=高级 3=星级
  * @returns {number} returns.data.serviceCount - 累计服务次数
  * @returns {boolean} returns.data.favorite - 是否关注
  * @returns {number} returns.data.overallScore - 综合评分
@@ -55,10 +55,10 @@ export function getCoachDetail(params) {
 }
 
 /**
- * 获取新人助教列表
+ * 获取新人裁教列表
  * @param {Object} params - 请求参数
  * @param {number} [params.limit=10] - 返回数量，默认 10
- * @returns {Promise<Object>} 返回新人助教列表
+ * @returns {Promise<Object>} 返回新人裁教列表
  */
 export function getNewCoachList(params) {
   return request({
@@ -69,10 +69,10 @@ export function getNewCoachList(params) {
 }
 
 /**
- * 获取热门助教列表
+ * 获取热门裁教列表
  * @param {Object} params - 请求参数
  * @param {number} [params.limit=10] - 返回数量，默认 10
- * @returns {Promise<Object>} 返回热门助教列表
+ * @returns {Promise<Object>} 返回热门裁教列表
  */
 export function getHotCoachList(params) {
   return request({
@@ -85,7 +85,7 @@ export function getHotCoachList(params) {
 /**
  * 创建打赏支付单
  * @param {Object} data - 请求参数
- * @param {number} data.coachId - 助教ID（billiard_coach.id）
+ * @param {number} data.coachId - 裁教ID（billiard_coach.id）
  * @param {number} data.amount - 打赏金额（单位：分），必须大于 0
  * @returns {Promise<Object>} 返回创建结果
  * @returns {number} returns.data.payOrderId - pay_order.id（前端用于拉起支付）
@@ -134,12 +134,12 @@ export function createReview(data) {
 
 
 /**
- * 助教列表单条数据结构（用于参考）
+ * 裁教列表单条数据结构（用于参考）
  * @typedef {Object} CoachItem
- * @property {number} id - 助教ID
+ * @property {number} id - 裁教ID
  * @property {string} stageName - 艺名
  * @property {string} [mainPhotoUrl] - 主图 URL
- * @property {number} level - 助教级别：0=初级 1=中级 2=高级 3=星级
+ * @property {number} level - 裁教级别：0=初级 1=中级 2=高级 3=星级
  * @property {number} serviceCount - 累计服务次数
  * @property {number} overallScore - 综合评分
  * @property {number|null} [distance] - 与用户的距离（km），未传经纬度时返回 null
@@ -147,9 +147,9 @@ export function createReview(data) {
  */
 
 /**
- * 收藏/取消收藏助教
+ * 收藏/取消收藏裁教
  * @param {Object} data - 请求参数
- * @param {number} data.coachId - 助教ID
+ * @param {number} data.coachId - 裁教ID
  * @returns {Promise<Object>} 返回当前收藏状态
  * @returns {boolean} returns.data - true=已收藏，false=未收藏
  */
@@ -162,11 +162,11 @@ export function toggleCoachFavorite(data) {
 }
 
 /**
- * 获取用户收藏助教分页列表
+ * 获取用户收藏裁教分页列表
  * @param {Object} params - 请求参数
  * @param {number} [params.pageNo=1] - 页码，默认 1
  * @param {number} [params.pageSize=10] - 每页数量，默认 10
- * @returns {Promise<Object>} 返回收藏助教列表
+ * @returns {Promise<Object>} 返回收藏裁教列表
  */
 export function getFavoriteCoachPage(params) {
   return request({
@@ -177,9 +177,9 @@ export function getFavoriteCoachPage(params) {
 }
 
 /**
- * 获取助教历史评价分页列表
+ * 获取裁教历史评价分页列表
  * @param {Object} params - 请求参数
- * @param {number} params.coachId - 助教ID
+ * @param {number} params.coachId - 裁教ID
  * @param {number} [params.pageNo=1] - 页码，默认 1
  * @param {number} [params.pageSize=10] - 每页数量，默认 10，最大 20
  * @returns {Promise<Object>} 返回评价列表

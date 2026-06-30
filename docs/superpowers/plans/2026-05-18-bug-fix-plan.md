@@ -30,7 +30,7 @@
 
 ## 阶段1：核心阻塞修复（高优先级，10个问题）
 
-### 任务1.1：修复助教列表 - 定位权限拒绝状态混乱（H1）
+### 任务1.1：修复裁教列表 - 定位权限拒绝状态混乱（H1）
 
 **Files:**
 - Modify: `pages/coach/list.vue:359-382`
@@ -59,7 +59,7 @@ catch (err) {
 
 - [ ] **Step 3: 测试**
 
-1. 进入助教列表页
+1. 进入裁教列表页
 2. 选择"距离最近"
 3. 拒绝定位权限
 4. 验证：显示提示，列表恢复原排序
@@ -73,7 +73,7 @@ git commit -m "fix: 修复距离排序拒绝定位权限后状态混乱"
 
 ---
 
-### 任务1.2：修复助教列表 - 上拉加载失败状态不重置（H2）
+### 任务1.2：修复裁教列表 - 上拉加载失败状态不重置（H2）
 
 **Files:**
 - Modify: `pages/coach/list.vue:398-403`
@@ -152,7 +152,7 @@ Read the `onLoad` function to understand how parameters are handled from differe
 onLoad((options) => {
   // 统一处理两种入口：
   // 1. 从首页进入：可能只有 venueId
-  // 2. 从助教列表进入：有 coachId
+  // 2. 从裁教列表进入：有 coachId
   
   // 重置所有选择状态
   selectedCoach.value = null
@@ -174,7 +174,7 @@ onLoad((options) => {
 - [ ] **Step 3: 测试两种入口**
 
 1. 从首页进入预约页
-2. 从助教列表进入预约页
+2. 从裁教列表进入预约页
 3. 验证两种方式都能正常工作
 
 - [ ] **Step 4: Commit**
@@ -533,7 +533,7 @@ const goConfirm = () => {
   const needVenue = selectedService.value?.type !== 2 // 假设type=2不需要球厅
   
   if (!selectedCoach.value) {
-    uni.showToast({ title: '请选择助教', icon: 'none' })
+    uni.showToast({ title: '请选择裁教', icon: 'none' })
     return
   }
   if (!selectedService.value) {
@@ -599,7 +599,7 @@ Commit: `fix: 我的页面每个请求独立错误处理`
 
 ---
 
-### 任务2.6：助教详情 - 收藏乐观更新（M7）
+### 任务2.6：裁教详情 - 收藏乐观更新（M7）
 
 **Files:**
 - Modify: `subpkg/coach/detail.vue:409-431`
@@ -624,11 +624,11 @@ const toggleFavorite = async () => {
 }
 ```
 
-Commit: `fix: 助教详情收藏使用乐观更新`
+Commit: `fix: 裁教详情收藏使用乐观更新`
 
 ---
 
-### 任务2.7：助教详情 - 服务类型判断优化（M8）
+### 任务2.7：裁教详情 - 服务类型判断优化（M8）
 
 **Files:**
 - Modify: `subpkg/coach/detail.vue:492-494`
@@ -640,11 +640,11 @@ const isOnsiteService = (service) => {
 }
 ```
 
-Commit: `fix: 助教详情使用serviceType字段判断服务类型`
+Commit: `fix: 裁教详情使用serviceType字段判断服务类型`
 
 ---
 
-### 任务2.8：助教详情 - 加载失败显示重试（M9）
+### 任务2.8：裁教详情 - 加载失败显示重试（M9）
 
 **Files:**
 - Modify: `subpkg/coach/detail.vue:344-349`
@@ -663,7 +663,7 @@ const retryLoad = () => {
 }
 ```
 
-Commit: `fix: 助教详情加载失败显示重试按钮`
+Commit: `fix: 裁教详情加载失败显示重试按钮`
 
 ---
 

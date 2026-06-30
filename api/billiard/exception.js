@@ -4,7 +4,7 @@ import request from '@/utils/request'
  * 用户报告异常
  * @param {Object} data - 请求参数
  * @param {number} data.orderId - billiard_order.id，必须归属当前登录用户
- * @param {number} data.exceptionType - 异常类型：1=用户投诉 2=助教超时 3=系统异常 4=其他
+ * @param {number} data.exceptionType - 异常类型：1=用户投诉 2=裁教超时 3=系统异常 4=其他
  * @param {string} data.reason - 异常说明，最长500字符
  * @param {Array<string>} [data.evidenceUrls] - 证据URL数组
  *

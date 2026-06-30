@@ -525,7 +525,7 @@ const orderInfo = ref({
   serviceTime: ''
 })
 
-// 助教详情信息
+// 裁教详情信息
 const coachInfo = ref({
   id: null,
   stageName: '',
@@ -536,7 +536,7 @@ const coachInfo = ref({
   tags: []
 })
 
-// 助教等级映射
+// 裁教等级映射
 const levelMap = {
   0: { text: '初级教练', color: '#9CA3AF' },
   1: { text: '中级教练', color: '#F59E0B' },
@@ -766,7 +766,7 @@ const contactCoach = async () => {
   }
 }
 
-// 加载助教详情
+// 加载裁教详情
 const loadCoachDetail = async (coachId) => {
   if (!coachId) return
   try {
@@ -782,7 +782,7 @@ const loadCoachDetail = async (coachId) => {
       tags: data.tags ? data.tags.split(',').filter(tag => tag.trim()) : []
     })
   } catch (error) {
-    console.error('加载助教详情失败:', error)
+    console.error('加载裁教详情失败:', error)
   }
 }
 
@@ -848,7 +848,7 @@ const loadOrderDetail = async (silent = false) => {
       createTime: formatCreateTime(data.createTime)
     })
 
-    // 加载助教详情
+    // 加载裁教详情
     if (data.coachId) {
       loadCoachDetail(data.coachId)
     }

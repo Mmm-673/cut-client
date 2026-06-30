@@ -357,8 +357,8 @@ const loadCoachData = async () => {
       distance: formatDistance(data.distance),
       price: data.hourlyPrice || data.price || 0,
       tags: data.tags || [],
-      intro: data.introduction || data.intro || '这位助教很神秘，什么都没写~',
-      introduction: data.introduction || data.intro || '这位助教很神秘，什么都没写~'
+      intro: data.introduction || data.intro || '这位裁教很神秘，什么都没写~',
+      introduction: data.introduction || data.intro || '这位裁教很神秘，什么都没写~'
     })
 
 

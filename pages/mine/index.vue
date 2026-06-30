@@ -313,7 +313,7 @@ const transformOrder = (item) => {
   return {
     id: item.orderId,
     coachAvatar: item.coachMainPhoto || '/static/default-avatar.png',
-    coachName: item.coachStageName || '助教',
+    coachName: item.coachStageName || '裁教',
     coachLevel: '教练', // 后端暂时没返回等级
     serviceName: SERVICE_TYPE_TEXT[item.serviceType] || '台球陪练',
     duration: durationHours,

@@ -5,9 +5,9 @@
       <text class="header-title">快速预约</text>
     </view>
 
-    <!-- 选择助教 -->
+    <!-- 选择裁教 -->
     <view class="section">
-      <view class="section-title">选择助教</view>
+      <view class="section-title">选择裁教</view>
       <view class="coach-selector" @click="selectCoach">
         <image v-if="selectedCoach" class="coach-avatar" :src="selectedCoach.avatar" mode="aspectFill"></image>
         <view v-else class="coach-avatar empty">
@@ -15,7 +15,7 @@
         </view>
         <view class="coach-info">
           <text v-if="selectedCoach" class="coach-name">{{ selectedCoach.name }}</text>
-          <text v-else class="coach-placeholder">请选择助教</text>
+          <text v-else class="coach-placeholder">请选择裁教</text>
           <text v-if="selectedCoach" class="coach-price">¥{{ selectedCoach.price }}/小时</text>
         </view>
         <uni-icons type="right" size="20" color="#9CA3AF" />
@@ -178,7 +178,7 @@ const selectHall = () => {
 // 去确认页
 const goToConfirm = () => {
   if (!selectedCoach.value) {
-    uni.showToast({ title: '请先选择助教', icon: 'none' })
+    uni.showToast({ title: '请先选择裁教', icon: 'none' })
     return
   }
   if (!selectedService.value) {
@@ -209,7 +209,7 @@ onLoad((options) => {
   selectedDate.value = 0
   selectedTime.value = ''
 
-  // 从storage读取之前可能保存的助教信息
+  // 从storage读取之前可能保存的裁教信息
   const savedCoach = uni.getStorageSync('selectedCoach')
   if (savedCoach) {
     selectedCoach.value = savedCoach

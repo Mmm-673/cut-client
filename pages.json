@@ -24,7 +24,7 @@
     {
       "path": "pages/coach/list",
       "style": {
-        "navigationBarTitleText": "助教列表",
+        "navigationBarTitleText": "裁教列表",
         "navigationBarBackgroundColor": "#121619",
         "navigationBarTextStyle": "white"
       }
@@ -67,7 +67,7 @@
         {
           "path": "detail",
           "style": {
-            "navigationBarTitleText": "助教详情",
+            "navigationBarTitleText": "裁教详情",
             "navigationBarBackgroundColor": "#121619",
             "navigationBarTextStyle": "white"
           }

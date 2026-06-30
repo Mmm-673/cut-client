@@ -1,16 +1,16 @@
 # 用户 App 端接口文档
 
-> 本文档涵盖台球陪练平台用户 App 端（`/app-api/billiard/**`）的核心接口定义，包含助教、订单、支付、计时、钱包、异常订单等模块。
+> 本文档涵盖台球陪练平台用户 App 端（`/app-api/billiard/**`）的核心接口定义，包含裁教、订单、支付、计时、钱包、异常订单等模块。
 
-## 1. 助教模块
+## 1. 裁教模块
 
 Controller 类：`AppCoachController`
 建议包路径：`cn.iocoder.yudao.module.billiard.controller.app.coach.AppCoachController`
 注解路由：`@RequestMapping("/billiard/coach")`
 
-### 1.1 GET /app-api/billiard/coach/list — 在线助教分页列表
+### 1.1 GET /app-api/billiard/coach/list — 在线裁教分页列表
 
-**功能**：返回当前 work_status=1（在线）的助教列表，支持关键词搜索（搜索助教艺名或球厅名称）、标签筛选、距离排序。
+**功能**：返回当前 work_status=1（在线）的裁教列表，支持关键词搜索（搜索裁教艺名或球厅名称）、标签筛选、距离排序。
 
 **请求参数：**
 
@@ -27,21 +27,21 @@ Controller 类：`AppCoachController`
 | `latitude`  | decimal | 否   | 用户当前纬度（用于距离排序）           |
 
 
-**响应字段（单条助教卡片）：**
+**响应字段（单条裁教卡片）：**
 
 
 | 字段             | 类型      | 必填  | 说明                       |
 | -------------- | ------- | --- | ------------------------ |
-| `id`           | bigint  | 是   | 助教ID                     |
+| `id`           | bigint  | 是   | 裁教ID                     |
 | `stageName`    | string  | 是   | 艺名                       |
 | `mainPhotoUrl` | string  | 否   | 主图 URL                   |
-| `level`        | tinyint | 是   | 助教级别：0=初级 1=中级 2=高级      |
+| `level`        | tinyint | 是   | 裁教级别：0=初级 1=中级 2=高级      |
 | `serviceCount` | int     | 是   | 累计服务次数                   |
 | `overallScore` | decimal | 是   | 综合评分                     |
 | `distance`     | decimal | 否   | 与用户的距离（km），未传经纬度时返回 null |
 | `tags`         | string  | 否   | 标签列表（逗号分隔，如：新人、免费出行）     |
 | `gender`       | tinyint | 否   | 性别（1=男 2=女 0=未知）         |
-| `favorite`     | boolean | 是   | 当前用户是否已收藏该助教           |
+| `favorite`     | boolean | 是   | 当前用户是否已收藏该裁教           |
 
 
 **排序逻辑（ORDER BY 语义）：**
@@ -63,7 +63,7 @@ ST_Distance_Sphere(
 ) / 1000  AS distance_km
 ```
 
-> 当前 `billiard_coach` 表暂未设计经纬度字段（助教无固定驻点），距离计算基于助教的 `contact_address` 解析出的坐标，或直接由前端标注位置后传参。**具体方案待确认（见第 7 节问题 1）**。
+> 当前 `billiard_coach` 表暂未设计经纬度字段（裁教无固定驻点），距离计算基于裁教的 `contact_address` 解析出的坐标，或直接由前端标注位置后传参。**具体方案待确认（见第 7 节问题 1）**。
 
 **固定过滤条件（强制）：**
 
@@ -75,9 +75,9 @@ WHERE bc.work_status = 1
 
 ---
 
-### 1.2 GET /app-api/billiard/coach/new-list — 新人助教列表
+### 1.2 GET /app-api/billiard/coach/new-list — 新人裁教列表
 
-**功能**：返回新人助教列表，按照助教注册时间（`create_time`）倒序排列。
+**功能**：返回新人裁教列表，按照裁教注册时间（`create_time`）倒序排列。
 
 **请求参数：**
 
@@ -87,16 +87,16 @@ WHERE bc.work_status = 1
 | `limit` | int | 否   | 返回数量，默认 10 |
 
 
-**响应字段（单条助教卡片）：**
+**响应字段（单条裁教卡片）：**
 
 
 | 字段             | 类型      | 必填  | 说明               |
 | -------------- | ------- | --- | ---------------- |
-| `id`           | bigint  | 是   | 助教ID             |
+| `id`           | bigint  | 是   | 裁教ID             |
 | `stageName`    | string  | 是   | 艺名               |
 | `mainPhotoUrl` | string  | 否   | 主图 URL           |
 | `gender`       | tinyint | 否   | 性别（1=男 2=女 0=未知） |
-| `favorite`     | boolean | 是   | 当前用户是否已收藏该助教   |
+| `favorite`     | boolean | 是   | 当前用户是否已收藏该裁教   |
 
 
 **排序逻辑：**
@@ -111,9 +111,9 @@ WHERE bc.status = 1
 
 ---
 
-### 1.3 GET /app-api/billiard/coach/hot-list — 热门助教列表
+### 1.3 GET /app-api/billiard/coach/hot-list — 热门裁教列表
 
-**功能**：返回热门助教列表，按照助教接单数量（`service_count`）倒序排列。
+**功能**：返回热门裁教列表，按照裁教接单数量（`service_count`）倒序排列。
 
 **请求参数：**
 
@@ -123,16 +123,16 @@ WHERE bc.status = 1
 | `limit` | int | 否   | 返回数量，默认 10 |
 
 
-**响应字段（单条助教卡片）：**
+**响应字段（单条裁教卡片）：**
 
 
 | 字段             | 类型      | 必填  | 说明               |
 | -------------- | ------- | --- | ---------------- |
-| `id`           | bigint  | 是   | 助教ID             |
+| `id`           | bigint  | 是   | 裁教ID             |
 | `stageName`    | string  | 是   | 艺名               |
 | `mainPhotoUrl` | string  | 否   | 主图 URL           |
 | `gender`       | tinyint | 否   | 性别（1=男 2=女 0=未知） |
-| `favorite`     | boolean | 是   | 当前用户是否已收藏该助教   |
+| `favorite`     | boolean | 是   | 当前用户是否已收藏该裁教   |
 | `serviceCount` | int     | 是   | 累计服务次数           |
 | `overallScore` | decimal | 是   | 综合评分             |
 
@@ -149,16 +149,16 @@ WHERE bc.status = 1
 
 ---
 
-### 1.4 GET /app-api/billiard/coach/get?id={id} — 助教详情
+### 1.4 GET /app-api/billiard/coach/get?id={id} — 裁教详情
 
-**功能**：返回指定助教的完整个人信息，用于助教主页展示。
+**功能**：返回指定裁教的完整个人信息，用于裁教主页展示。
 
 **请求参数：**
 
 
 | 参数名  | 类型     | 必填  | 说明                       |
 | ---- | ------ | --- | ------------------------ |
-| `id` | bigint | 是   | 助教ID (billiard_coach.id) |
+| `id` | bigint | 是   | 裁教ID (billiard_coach.id) |
 
 
 **q响应字段：**
@@ -166,14 +166,14 @@ WHERE bc.status = 1
 
 | 字段                  | 类型      | 必填  | 说明                  |
 | ------------------- | ------- | --- | ------------------- |
-| `id`                | bigint  | 是   | 助教ID                |
+| `id`                | bigint  | 是   | 裁教ID                |
 | `stageName`         | string  | 是   | 艺名                  |
 | `age`               | int     | 否   | 年龄                  |
 | `constellation`     | string  | 否   | 星座                  |
 | `height`            | int     | 否   | 身高（cm）              |
 | `weight`            | decimal | 否   | 体重（kg）              |
 | `profession`        | string  | 否   | 职业                  |
-| `level`             | tinyint | 是   | 助教级别：0=初级 1=中级 2=高级 |
+| `level`             | tinyint | 是   | 裁教级别：0=初级 1=中级 2=高级 |
 | `serviceCount`      | int     | 是   | 累计服务次数              |
 | `overallScore`      | decimal | 是   | 综合评分                |
 | `introduction`      | string  | 否   | 简介                  |
@@ -182,7 +182,7 @@ WHERE bc.status = 1
 | `photos[].photoUrl` | string  | 是   | 照片URL               |
 | `photos[].sort`     | int     | 是   | 排序值                 |
 | `photos[].isMain`   | boolean | 是   | 是否主图                |
-| `favorite`          | boolean | 是   | 当前用户是否已收藏该助教       |
+| `favorite`          | boolean | 是   | 当前用户是否已收藏该裁教       |
 | `workStatus`        | tinyint | 是   | 在线状态：0=下线 1=在线       |
 | `serviceStatus`     | tinyint | 是   | 接单状态：0=空闲 1=服务中（包含已接单/进行中） |
 | `currentOrderExpectedEndTime` | long | 否 | 当前执行订单预计结束时间（毫秒时间戳）；`serviceStatus=1` 时返回，已接单未开始按 `bookingTime + serviceDuration` 计算，进行中优先按 `startTime + serviceDuration` 计算 |
@@ -192,15 +192,15 @@ WHERE bc.status = 1
 
 ---
 
-### 1.5 POST /app-api/billiard/coach/favorite — 收藏/取消收藏助教
+### 1.5 POST /app-api/billiard/coach/favorite — 收藏/取消收藏裁教
 
-**功能**：用户收藏或取消收藏指定的助教。若当前未收藏则新增收藏，若已收藏则取消收藏。
+**功能**：用户收藏或取消收藏指定的裁教。若当前未收藏则新增收藏，若已收藏则取消收藏。
 
 **请求体：**
 
 | 参数名 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `coachId` | bigint | 是 | 助教ID |
+| `coachId` | bigint | 是 | 裁教ID |
 
 **响应：**
 
@@ -210,9 +210,9 @@ WHERE bc.status = 1
 
 ---
 
-### 1.6 GET /app-api/billiard/coach/favorite-page — 用户收藏助教分页列表
+### 1.6 GET /app-api/billiard/coach/favorite-page — 用户收藏裁教分页列表
 
-**功能**：分页查询当前用户收藏的助教列表，按照收藏时间倒序排列。
+**功能**：分页查询当前用户收藏的裁教列表，按照收藏时间倒序排列。
 
 **请求参数：**
 
@@ -221,15 +221,15 @@ WHERE bc.status = 1
 | `pageNo` | int | 否 | 页码，默认 1 |
 | `pageSize` | int | 否 | 每页数量，默认 10 |
 
-**响应字段（单条助教卡片）：**
+**响应字段（单条裁教卡片）：**
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `id` | bigint | 是 | 助教ID |
+| `id` | bigint | 是 | 裁教ID |
 | `stageName` | string | 是 | 艺名 |
 | `mainPhotoUrl` | string | 否 | 主图 URL |
 | `gender` | tinyint | 否 | 性别（1=男 2=女 0=未知） |
-| `level` | tinyint | 是 | 助教级别：0=初级 1=中级 2=高级 |
+| `level` | tinyint | 是 | 裁教级别：0=初级 1=中级 2=高级 |
 | `workStatus` | tinyint | 是 | 工作状态：0=下线 1=在线 |
 | `serviceStatus` | tinyint | 是 | 服务状态：0=空闲 1=服务中 |
 | `overallScore` | decimal | 是 | 综合评分 |
@@ -255,7 +255,7 @@ Controller 类：`AppOrderController`
 
 | 字段                | 类型      | 必填  | 说明                                 |
 | ----------------- | ------- | --- | ---------------------------------- |
-| `coachId`         | bigint  | 是   | 助教ID（billiard_coach.id），必须为在线状态    |
+| `coachId`         | bigint  | 是   | 裁教ID（billiard_coach.id），必须为在线状态    |
 | `serviceType`     | tinyint | 是   | 服务类型：1=台球陪练 2=达人带路                   |
 | `bookingTime`     | long    | 是   | 预约服务开始时间（毫秒时间戳，例如 `1774942453000`） |
 | `serviceDuration` | int     | 是   | 预定时长（分钟），台球陪练 >= 120，达人带路 >= 300     |
@@ -271,9 +271,9 @@ Controller 类：`AppOrderController`
 
 **业务校验（Service 层按序执行）：**
 
-1. 助教存在且 `work_status=1`（在线）
-2. 校验请求的 `serviceType` 是否包含在该助教的 `service_items` 中（不支持的服务项目拦截）
-3. 助教当前无 `ACCEPTED` / `IN_SERVICE` 状态订单（已接单或进行中时拒绝新订单）
+1. 裁教存在且 `work_status=1`（在线）
+2. 校验请求的 `serviceType` 是否包含在该裁教的 `service_items` 中（不支持的服务项目拦截）
+3. 裁教当前无 `ACCEPTED` / `IN_SERVICE` 状态订单（已接单或进行中时拒绝新订单）
 4. 地址校验：
   - `serviceType=台球陪练`：`venueId` 或 `venueName + venueAddress + 经纬度` 至少一套有效
   - `serviceType=达人带路`：允许不传合作球厅，使用约定地址（可为空，若为空则按城市默认车费兜底）
@@ -283,7 +283,7 @@ Controller 类：`AppOrderController`
 8. 计算费用：
   - `service_amount = unit_price × quantity`
   - `travel_amount = round(travel_round_distance_km × travel_unit_price)`
-  - 若助教车费开关关闭：`travel_discount_amount = travel_amount`
+  - 若裁教车费开关关闭：`travel_discount_amount = travel_amount`
   - `original_amount = service_amount + travel_amount`
   - `pay_amount = original_amount - travel_discount_amount`
 9. 校验 `pay_amount > 0`
@@ -361,7 +361,7 @@ Controller 类：`AppOrderController`
 | PENDING_PAYMENT | —                                                           | 无需退款（未付款）                                                                                                                                        | 1           |
 | PENDING_ACCEPT  | —                                                           | 所有费用全额退还，`merchantRefundId=CANCEL_PENDING_{id}`                                                                                                  | 1           |
 | ACCEPTED        | `departure_confirm_time IS NULL`                            | 所有费用全额退还，`merchantRefundId=CANCEL_ACCEPTED_{id}`                                                                                                 | 1           |
-| ACCEPTED        | `departure_confirm_time IS NOT NULL AND start_time IS NULL` | 强制扣除往返车费作为退单费（即使助教车费开关关闭也要强制扣除）：`deduct=min(travel_amount, pay_amount)`，退款金额=`pay_amount-deduct`，记录 `forced_travel_deduct_amount/penalty_amount` | 1           |
+| ACCEPTED        | `departure_confirm_time IS NOT NULL AND start_time IS NULL` | 强制扣除往返车费作为退单费（即使裁教车费开关关闭也要强制扣除）：`deduct=min(travel_amount, pay_amount)`，退款金额=`pay_amount-deduct`，记录 `forced_travel_deduct_amount/penalty_amount` | 1           |
 | IN_SERVICE      | —                                                           | 不可取消（商户已到达服务地址并正常开始服务工作后无法取消），返回业务异常                                                                                                             | —           |
 
 
@@ -397,7 +397,7 @@ Controller 类：`AppOrderController`
   - 更新 `billiard_order.service_duration` += `addMinutes`
   - 更新 `billiard_order.extra_pay_amount` += 加钟金额
   - 更新 `billiard_order.total_amount` = `pay_amount` + `extra_pay_amount`
-  - 助教端剩余时长自动响应（通过 WebSocket 或轮询）
+  - 裁教端剩余时长自动响应（通过 WebSocket 或轮询）
 
 **响应体：**`addTimePayOrderId`（pay_order.id，前端用于拉起支付）
 
@@ -456,8 +456,8 @@ Controller 类：`AppOrderController`
 | ----------------- | ------- | --- | ---------------- |
 | `orderId`         | bigint  | 是   | 订单ID             |
 | `orderNo`         | string  | 是   | 订单号              |
-| `coachStageName`  | string  | 是   | 助教艺名             |
-| `coachMainPhoto`  | string  | 否   | 助教主图 URL         |
+| `coachStageName`  | string  | 是   | 裁教艺名             |
+| `coachMainPhoto`  | string  | 否   | 裁教主图 URL         |
 | `serviceType`     | tinyint | 是   | 服务类型：1=台球陪练 2=达人带路 |
 | `bookingTime`     | long    | 是   | 预约服务开始时间（毫秒时间戳）  |
 | `serviceDuration` | int     | 是   | 预定总时长（分钟）        |
@@ -487,9 +487,9 @@ Controller 类：`AppOrderController`
 | ----------------- | ------- | --- | --------------------------------- |
 | `id`              | bigint  | 是   | 订单ID                              |
 | `orderNo`         | string  | 是   | 订单号                               |
-| `coachId`         | bigint  | 是   | 助教ID                              |
-| `coachStageName`  | string  | 是   | 助教艺名                              |
-| `coachMainPhoto`  | string  | 否   | 助教主图 URL                          |
+| `coachId`         | bigint  | 是   | 裁教ID                              |
+| `coachStageName`  | string  | 是   | 裁教艺名                              |
+| `coachMainPhoto`  | string  | 否   | 裁教主图 URL                          |
 | `venueName`       | string  | 否   | 球厅名称                              |
 | `venuePhotoUrl`   | string  | 否   | 球厅照片 URL，取球厅封面图一张                  |
 | `venueAddress`    | string  | 否   | 球厅地址                              |
@@ -510,14 +510,14 @@ Controller 类：`AppOrderController`
 
 ### 2.7 POST /app-api/billiard/reward/create — 一键打赏
 
-**功能**：用户随时对助教发起打赏，生成打赏支付单。
+**功能**：用户随时对裁教发起打赏，生成打赏支付单。
 
 **请求体（AppRewardCreateReqVO）：**
 
 
 | 字段        | 类型     | 必填  | 说明                      |
 | --------- | ------ | --- | ----------------------- |
-| `coachId` | bigint | 是   | 助教ID（billiard_coach.id） |
+| `coachId` | bigint | 是   | 裁教ID（billiard_coach.id） |
 | `amount`  | int    | 是   | 打赏金额（单位：分），必须大于 0       |
 
 
@@ -559,15 +559,15 @@ Controller 类：`AppOrderController`
 
 ---
 
-### 2.9 GET /app-api/billiard/review/coach-page — 助教主页评价列表
+### 2.9 GET /app-api/billiard/review/coach-page — 裁教主页评价列表
 
-**功能**：用户端查看指定助教的公开评价列表，助教端历史评价接口返回内容参考本接口。
+**功能**：用户端查看指定裁教的公开评价列表，裁教端历史评价接口返回内容参考本接口。
 
 **请求参数（AppCoachReviewPageReqVO）：**
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `coachId` | bigint | 是 | 助教ID（billiard_coach.id） |
+| `coachId` | bigint | 是 | 裁教ID（billiard_coach.id） |
 | `pageNo` | int | 否 | 页码，默认 1 |
 | `pageSize` | int | 否 | 每页数量，默认 10，最大 20 |
 
@@ -830,7 +830,7 @@ tenant-id: 122
     "channelId": 11,
     "channelCode": "wx_lite",
     "merchantOrderId": "ORDER_9527",
-    "subject": "助教服务订单",
+    "subject": "裁教服务订单",
     "body": "订单号：B202604200001",
     "notifyUrl": "https://api.example.com/pay/notify/order",
     "price": 19900,
@@ -1360,7 +1360,7 @@ Controller 类：`AppExceptionOrderController`
 | 字段              | 类型      | 必填  | 说明                                      |
 | --------------- | ------- | --- | --------------------------------------- |
 | `orderId`       | bigint  | 是   | billiard_order.id，必须归属当前登录用户            |
-| `exceptionType` | tinyint | 是   | 异常类型：1=用户投诉 2=助教超时 3=系统异常 4=其他          |
+| `exceptionType` | tinyint | 是   | 异常类型：1=用户投诉 2=裁教超时 3=系统异常 4=其他          |
 | `reason`        | string  | 是   | 异常说明，最长 500 字符                          |
 | `evidenceUrls`  | string  | 否   | 证据 URL 数组字符串，例如 `["https://img/1.png"]` |
 

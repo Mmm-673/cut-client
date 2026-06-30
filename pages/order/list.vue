@@ -101,7 +101,7 @@
                 </view>
               </view>
 
-              <!-- 助教信息 -->
+              <!-- 裁教信息 -->
               <view class="coach-section">
                 <image class="coach-avatar" :src="order.coachAvatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
                 <view class="coach-info">
@@ -499,9 +499,9 @@ const cancelOrder = async (order) => {
   })
 }
 
-// 联系助教
+// 联系裁教
 const contactCoach = (order) => {
-  uni.showToast({ title: '联系助教功能开发中', icon: 'none' })
+  uni.showToast({ title: '联系裁教功能开发中', icon: 'none' })
 }
 
 // 去评价
@@ -708,7 +708,7 @@ onShow(() => {
   }
 }
 
-/* 助教信息 */
+/* 裁教信息 */
 .coach-section {
   display: flex;
   align-items: center;

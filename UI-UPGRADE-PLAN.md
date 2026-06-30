@@ -104,7 +104,7 @@ cut-client/
 8. `components/ds-button/ds-button.vue` - 按钮组件
 9. `components/ds-card/ds-card.vue` - 卡片组件
 10. `components/ds-app-navbar/ds-app-navbar.vue` - 导航栏
-11. `components/ds-coach-card/ds-coach-card.vue` - 助教卡片
+11. `components/ds-coach-card/ds-coach-card.vue` - 裁教卡片
 12. `components/ds-skeleton/ds-skeleton.vue` - 骨架屏
 
 ### ✅ 页面

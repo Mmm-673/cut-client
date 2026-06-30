@@ -13,14 +13,14 @@
         <view class="intro-card">
           <uni-icons type="info" size="24" color="#00BB88" />
           <text class="intro-text">
-            以下退款与取消规则适用于初球平台的所有预约订单。请您在下单前仔细阅读，订单的取消扣费将严格依据助教的实时履约状态判定。
+            以下退款与取消规则适用于初球平台的所有预约订单。请您在下单前仔细阅读，订单的取消扣费将严格依据裁教的实时履约状态判定。
           </text>
         </view>
 
         <view class="section">
           <view class="section-title">1. 退款原则</view>
           <text class="section-text">
-            1.1 本规则所指“退款”仅针对用户在App内预付的助教课时服务费用，不包含任何线下球馆的场地费。
+            1.1 本规则所指“退款”仅针对用户在App内预付的裁教课时服务费用，不包含任何线下球馆的场地费。
           </text>
           <text class="section-text">
             1.2 退款将按照原支付路径退回，具体到账时间取决于第三方支付渠道（微信/支付宝）及银行的处理速度。
@@ -41,10 +41,10 @@
               <view class="rule-icon" style="background: rgba(0, 187, 136, 0.2)">
                 <uni-icons type="checkmarkempty" size="20" color="#00BB88" />
               </view>
-              <text class="rule-title">1. 助教未确认出发前取消</text>
+              <text class="rule-title">1. 裁教未确认出发前取消</text>
             </view>
             <view class="rule-content">
-              <text class="rule-text">用户下单后，在助教【未确认出发】前，用户可自主无责取消订单，系统将全额退还用户预付的所有费用。</text>
+              <text class="rule-text">用户下单后，在裁教【未确认出发】前，用户可自主无责取消订单，系统将全额退还用户预付的所有费用。</text>
             </view>
           </view>
 
@@ -53,10 +53,10 @@
               <view class="rule-icon" style="background: rgba(251, 191, 36, 0.2)">
                 <uni-icons type="clock" size="20" color="#FBBF24" />
               </view>
-              <text class="rule-title">2. 助教已确认出发后取消</text>
+              <text class="rule-title">2. 裁教已确认出发后取消</text>
             </view>
             <view class="rule-content">
-              <text class="rule-text">因助教【已确认出发】后已实际产生出行时间与交通成本，若用户此时取消订单，需按系统设定标准承担相应的往返车费作为退单违约金。该笔费用将全额用于补偿助教的出行损失。</text>
+              <text class="rule-text">因裁教【已确认出发】后已实际产生出行时间与交通成本，若用户此时取消订单，需按系统设定标准承担相应的往返车费作为退单违约金。该笔费用将全额用于补偿裁教的出行损失。</text>
             </view>
           </view>
 
@@ -68,7 +68,7 @@
               <text class="rule-title">3. 服务正常开始后取消</text>
             </view>
             <view class="rule-content">
-              <text class="rule-text">助教已到达约定的服务地址，且【服务工作已正常开始】后，当前订单进入锁定履约阶段，用户将无法中途取消订单，预付服务费用不予退还。</text>
+              <text class="rule-text">裁教已到达约定的服务地址，且【服务工作已正常开始】后，当前订单进入锁定履约阶段，用户将无法中途取消订单，预付服务费用不予退还。</text>
             </view>
           </view>
         </view>
@@ -76,13 +76,13 @@
         <view class="section">
           <view class="section-title">3. 特殊情况与场地费免责声明</view>
           <text class="section-text">
-            3.1 【助教爽约】如因助教单方面迟到、旷工或因助教自身原因临时取消订单导致服务无法提供的，平台核实后将全额退还用户预付费。
+            3.1 【裁教爽约】如因裁教单方面迟到、旷工或因裁教自身原因临时取消订单导致服务无法提供的，平台核实后将全额退还用户预付费。
           </text>
           <text class="section-text">
             3.2 如因不可抗力（如自然灾害、政府突发政策管控等）导致线下无法履约的，用户可申请全额退款。
           </text>
           <text class="section-text" style="color: #FBBF24; font-weight: bold;">
-            3.3 【场地费独立声明】教学/陪练所需的台球厅场地由用户自行选定并预约。不论因何种原因（包括用户自主取消、助教爽约或不可抗力）导致订单退款或取消，本平台仅负责处理平台内的服务费与车费。用户因提前预订台球厅产生的台费、包厢费、异地违约金或无法退还的场地损失，均由用户与台球厅商家自行协商解决，本平台不承担任何连带赔偿责任。
+            3.3 【场地费独立声明】教学/陪练所需的台球厅场地由用户自行选定并预约。不论因何种原因（包括用户自主取消、裁教爽约或不可抗力）导致订单退款或取消，本平台仅负责处理平台内的服务费与车费。用户因提前预订台球厅产生的台费、包厢费、异地违约金或无法退还的场地损失，均由用户与台球厅商家自行协商解决，本平台不承担任何连带赔偿责任。
           </text>
         </view>
 
@@ -102,7 +102,7 @@
         <view class="section">
           <view class="section-title">5. 争议解决</view>
           <text class="section-text">
-            5.1 若用户与助教在线下就“是否到达指定地点”、“是否实际开始服务”或“服务质量”等发生争议，建议优先保留现场音视频、微信沟通截图等证据。
+            5.1 若用户与裁教在线下就“是否到达指定地点”、“是否实际开始服务”或“服务质量”等发生争议，建议优先保留现场音视频、微信沟通截图等证据。
           </text>
           <text class="section-text">
             5.2 用户可点击下方客服电话或在线客服进行申诉，平台将依据系统后台日志（如定位数据、状态变更时间戳等）及双方提供的有效证据公平公正地处理最终争议。

@@ -312,7 +312,7 @@
 
 ---
 
-### Task 2.4: 助教详情页修复
+### Task 2.4: 裁教详情页修复
 
 **Files:**
 - Modify: `subpkg/coach/detail.vue`

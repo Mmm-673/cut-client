@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **初球** - 基于 UniApp + Vue 3 的台球预约应用，支持 APP、小程序、H5 多端运行。基于 RuoYi-App 框架改造。
 
-- 对接台球爱好者与专业助教/裁判教练
+- 对接台球爱好者与专业裁教/裁判教练
 - 支持在线预约台球陪练与教学服务
-- 助教线上接单获取收益
+- 裁教线上接单获取收益
 - 平台统一管理账号、订单、财务结算及客服售后
 
 ## 技术栈
@@ -42,7 +42,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ├── api/                 # API 接口层
 │   ├── auth.js          # 认证相关 API
 │   └── billiard/        # 台球业务模块 API
-│       ├── coach.js     # 助教相关
+│       ├── coach.js     # 裁教相关
 │       ├── venue.js     # 球馆相关
 │       ├── order.js     # 订单相关
 │       ├── pay.js       # 支付相关
@@ -50,11 +50,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ├── pages/               # 主包页面
 │   ├── login/           # 登录注册
 │   ├── home/            # 首页
-│   ├── coach/list       # 助教列表（预约 Tab）
+│   ├── coach/list       # 裁教列表（预约 Tab）
 │   ├── order/list       # 订单列表
 │   └── mine/            # 我的
 ├── subpkg/              # 分包页面
-│   ├── coach/           # 助教详情、打赏、评价
+│   ├── coach/           # 裁教详情、打赏、评价
 │   ├── booking/         # 球厅选择、预约确认、支付成功
 │   ├── order/           # 订单详情
 │   ├── mine/            # 个人信息、收藏、设置、钱包、充值等
@@ -151,7 +151,7 @@ isAndroid()     // Android
 
 ### api/billiard/ - 业务接口
 
-- `coach.js` - 助教列表、详情等
+- `coach.js` - 裁教列表、详情等
 - `venue.js` - 球馆列表、详情等
 - `order.js` - 订单创建、列表、详情等
 - `pay.js` - 支付渠道、提交支付等
@@ -181,7 +181,7 @@ Actions:
 | 索引 | 页面 | 路径 |
 |------|------|------|
 | 0 | 首页 | `/pages/home/index` |
-| 1 | 预约（助教列表） | `/pages/coach/list` |
+| 1 | 预约（裁教列表） | `/pages/coach/list` |
 | 2 | 订单 | `/pages/order/list` |
 | 3 | 我的 | `/pages/mine/index` |
 
@@ -189,8 +189,8 @@ Actions:
 
 - 登录: `/pages/login/index`
 - 重置密码: `/pages/login/resetPassword`
-- 助教详情: `/subpkg/coach/detail`
-- 打赏助教: `/subpkg/coach/reward`
+- 裁教详情: `/subpkg/coach/detail`
+- 打赏裁教: `/subpkg/coach/reward`
 - 评价: `/subpkg/coach/evaluate`
 - 选择球厅: `/subpkg/booking/hall`
 - 确认订单: `/subpkg/booking/confirm`

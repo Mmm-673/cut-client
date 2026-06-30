@@ -6,7 +6,7 @@
           <uni-icons type="search" size="18" color="#999"></uni-icons>
           <input
               class="search-input"
-              placeholder="搜索助教姓名或特长"
+              placeholder="搜索裁教姓名或特长"
               placeholder-class="search-placeholder"
               v-model="searchKeyword"
               @confirm="handleSearch"
@@ -135,7 +135,7 @@
 
         <view v-if="coachList.length === 0 && !loading && !refreshing" class="empty-state">
           <uni-icons type="info" size="60" color="#666"></uni-icons>
-          <text class="empty-text">暂无助教数据</text>
+          <text class="empty-text">暂无裁教数据</text>
         </view>
 
         <view class="loading-status">
@@ -327,7 +327,7 @@ const getCurrentLocation = async () => {
   await refreshPageData()
 }
 
-// 请求助教列表数据
+// 请求裁教列表数据
 const fetchCoachList = async (isRefresh = false) => {
   if (loading.value) return
 
@@ -401,7 +401,7 @@ const fetchCoachList = async (isRefresh = false) => {
       })
     }
   } catch (error) {
-    console.error('加载助教列表失败:', error)
+    console.error('加载裁教列表失败:', error)
     loadMoreStatus.value = 'noMore'
     uni.showToast({ title: '加载失败', icon: 'none' })
   } finally {
@@ -488,7 +488,7 @@ const goToReward = (id) => {
 
 // 预约
 const handleBook = (coach) => {
-  // 保存选中的助教信息
+  // 保存选中的裁教信息
   uni.setStorageSync('selectedCoach', coach)
   uni.navigateTo({url: '/subpkg/booking/hall'})
 }
@@ -672,7 +672,7 @@ onShow(() => {
   background-color: #121619;
 }
 
-/* 助教卡片样式优化 */
+/* 裁教卡片样式优化 */
 .coach-card {
   display: flex;
   background-color: #1E252B;
