@@ -59,7 +59,8 @@
                     "android.permission.READ_MEDIA_IMAGES" : "需要获取您的相册图片读取权限（Android 13+），以便您能从相册中选择图片来识别二维码、上传头像或发布动态。",
                     "android.permission.CALL_PHONE" : "需要获取您的拨打电话/通话权限，以便您在处理预约、变更时间或解答疑问时，能直接与客户或平台客服进行电话联系与沟通协调。"
                 },
-                "targetSdkVersion" : 30
+                "minSdkVersion" : 28,
+                "targetSdkVersion" : 35
             },
             "ios" : {
                 "bundleID" : "com.aksjzt.qiuleme.user",
