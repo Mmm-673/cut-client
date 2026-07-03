@@ -91,3 +91,10 @@ export function cancelAccount(data) {
     data
   })
 }
+export function bindWX(data) {
+  return request({
+    url: '/app-api/billiard/auth/wechat-bind',
+    method: 'post',
+    data
+  })
+}

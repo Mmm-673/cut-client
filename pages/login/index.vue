@@ -129,6 +129,7 @@ import {
 } from '@/store'
 import { onUnload, onHide,onShow } from '@dcloudio/uni-app';
 import { shouldShowIosPrivacy, hasPrivacyRefused } from '@/utils/privacy'
+import { bindWX } from '@/api/billiard/user'
 
 const userStore = useUserStore()
 const globalConfig = useConfigStore().config
@@ -249,19 +250,21 @@ const handleSubmit = async () => {
   try {
     isSubmitting.value = true
     uni.showLoading({ title: '登录中...' })
-
+    let res = {}
     if (activeTab.value === 'sms') {
-      await userStore.smsLogin({
+      res = await userStore.smsLogin({
         mobile: form.value.mobile,
         code: form.value.code
       })
     } else {
-      await userStore.passwordLogin({
+      res = await userStore.passwordLogin({
         mobile: form.value.mobile,
         password: form.value.password
       })
     }
-
+    if (!res.openid) {
+      await getWxCode()
+    }
     uni.hideLoading()
     uni.showToast({ title: '登录成功', icon: 'success' })
 
@@ -274,6 +277,37 @@ const handleSubmit = async () => {
     console.error('登录失败:', error)
   } finally {
     isSubmitting.value = false
+  }
+}
+const getWxCode = async () => {
+  try {
+    const loginRes = await new Promise((resolve, reject) => {
+      uni.login({
+        provider: 'weixin',
+        onlyAuthorize: true,
+        success: resolve,
+        fail: reject
+      })
+    })
+    console.log('🚀 ~ getWxCode ~ code:', loginRes.code)
+    uni.showLoading({ title: '绑定中...', mask: true })
+    let platform = 'miniapp'
+    // #ifdef APP-PLUS
+    platform = 'app'
+    // #endif
+    const res = await bindWX({
+      code: loginRes.code,
+      platform,
+      state: 'test'
+    })
+    uni.hideLoading()
+    uni.showToast({ title: '绑定成功', icon: 'success' })
+    return res
+  } catch (error) {
+    uni.hideLoading()
+    console.error('绑定微信失败:', error)
+    uni.showToast({ title: error?.message || '绑定失败', icon: 'none' })
+    throw error
   }
 }
 

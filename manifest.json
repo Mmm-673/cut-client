@@ -20,7 +20,8 @@
             "Push" : {},
             "Barcode" : {},
             "Payment" : {},
-            "Maps" : {}
+            "Maps" : {},
+            "OAuth" : {}
         },
         "distribute" : {
             "android" : {
@@ -74,7 +75,8 @@
                     "LSApplicationQueriesSchemes" : [ "iosamap", "tel" ]
                 },
                 "entitlements" : {
-                    "com.apple.security.application-groups" : []
+                    "com.apple.security.application-groups" : [],
+                    "com.apple.developer.associated-domains" : [ "applinks:qiulem.com" ]
                 },
                 "pushRegisterMode" : "manual",
                 "privacyRegisterMode" : "manual"
@@ -100,6 +102,17 @@
                 "payment" : {
                     "alipay" : {
                         "__platform__" : [ "ios", "android" ]
+                    },
+                    "weixin" : {
+                        "__platform__" : [ "ios", "android" ],
+                        "appid" : "wx8d83a67e0e2c2ad1",
+                        "UniversalLinks" : "https://qiulem.com/app/"
+                    }
+                },
+                "oauth" : {
+                    "weixin" : {
+                        "appid" : "wx8d83a67e0e2c2ad1",
+                        "UniversalLinks" : "https://qiulem.com/app/"
                     }
                 }
             },

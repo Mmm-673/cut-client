@@ -5,7 +5,7 @@
 
 import { isMPWeixin, isApp } from '@/utils/platform'
 import { submitPayOrder, getEnableChannelCodeList, getPayOrder } from '@/api/billiard/pay'
-
+import { bindWX } from '@/api/billiard/user'
 // 支付请求状态管理，用于防止重复提交
 const payRequestStates = new Map()
 
@@ -206,7 +206,7 @@ function wechatMiniProgramPay(payParams) {
       provider: 'wxpay',
       timeStamp: payParams.timeStamp,
       nonceStr: payParams.nonceStr,
-      package: payParams.package,
+      package: payParams.packageValue,
       signType: payParams.signType || 'MD5',
       paySign: payParams.paySign,
       success: (res) => {
@@ -243,9 +243,9 @@ function wechatAppPay(payParams) {
       provider: 'wxpay',
       orderInfo: {
         appid: payParams.appid,
-        partnerid: payParams.partnerid,
-        prepayid: payParams.prepayid,
-        package: payParams.package,
+        partnerid: payParams.partnerId,
+        prepayid: payParams.prepayId,
+        package: payParams.packageValue,
         noncestr: payParams.noncestr,
         timestamp: payParams.timestamp,
         sign: payParams.sign
@@ -322,7 +322,37 @@ function walletPay(payParams) {
 function isPaySuccessStatus(status) {
   return Number(status) === 10
 }
-
+const getWxCode = async () => {
+  try {
+    const loginRes = await new Promise((resolve, reject) => {
+      uni.login({
+        provider: 'weixin',
+        onlyAuthorize: true,
+        success: resolve,
+        fail: reject
+      })
+    })
+    console.log('🚀 ~ getWxCode ~ code:', loginRes.code)
+    uni.showLoading({ title: '绑定中...', mask: true })
+    let platform = 'miniapp'
+    // #ifdef APP-PLUS
+    platform = 'app'
+    // #endif
+    const res = await bindWX({
+      code: loginRes.code,
+      platform,
+      state: 'test'
+    })
+    uni.hideLoading()
+    uni.showToast({ title: '绑定成功', icon: 'success' })
+    return res
+  } catch (error) {
+    uni.hideLoading()
+    console.error('绑定微信失败:', error)
+    uni.showToast({ title: error?.message || '绑定失败', icon: 'none' })
+    throw error
+  }
+}
 async function confirmPayOrderPaid(payOrderId) {
   const res = await getPayOrder({ id: payOrderId, sync: true })
   const data = res.data || {}
@@ -355,13 +385,16 @@ export async function executePayment(options) {
 
   console.log('executePayment 调用参数:', options)
 
+  // 提前定义 channelCode，确保在 catch 块中可用
+  let channelCode = selectedChannelCode || getChannelCode(payValue)
+
   try {
     if (payOrderId === null || payOrderId === undefined || payOrderId === '') {
       throw new Error('支付订单信息缺失')
     }
 
     // 1. 获取支付渠道编码
-    const channelCode = selectedChannelCode || getChannelCode(payValue)
+    // channelCode = selectedChannelCode || getChannelCode(payValue)
 
     console.log('支付渠道编码:', channelCode)
     if (!channelCode) {
@@ -373,7 +406,7 @@ export async function executePayment(options) {
     const now = Date.now()
 
     // 如果是 pending 状态且未超时（5分钟内），阻止重复提交
-    if (currentState && currentState.status === PAY_REQUEST_STATUS.PENDING && (now - currentState.timestamp < 5 * 60 * 1000)) {
+    if (currentState && currentState.status === PAY_REQUEST_STATUS.PENDING && (now - currentState.timestamp < 2 * 1000)) {
       throw new Error('支付请求处理中，请稍后再试')
     }
 
@@ -430,6 +463,7 @@ export async function executePayment(options) {
     } catch (e) {
       payParams = displayContent
     }
+    console.log("🚀 ~ executePayment ~ payParams:", payParams)
 
     // 5. 根据支付方式和平台执行支付
     if (isMPWeixin() && payValue === 'wechat') {
@@ -451,6 +485,10 @@ export async function executePayment(options) {
 
     return payResult
   } catch (error) {
+    console.log("🚀 ~ error ~ error:", error)
+    if (error === '请先绑定微信后再发起微信支付') {
+      return getWxCode()
+    }
     console.error('支付出错:', error)
 
     // 更新支付请求状态

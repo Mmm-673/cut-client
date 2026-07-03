@@ -24,13 +24,17 @@ export function sendSmsCode(data) {
  * @param {string} data.code - 验证码
  */
 export function smsLogin(data) {
+  let platform = 'miniapp'
+  // #ifdef APP-PLUS
+  platform = 'app'
+  // #endif
   return request({
     url: '/app-api/member/auth/sms-login',
     headers: {
       isToken: false
     },
     method: 'post',
-    data: data
+    data: { platform, ...data}
   })
 }
 
@@ -41,13 +45,17 @@ export function smsLogin(data) {
  * @param {string} data.password - 密码
  */
 export function passwordLogin(data) {
+    let platform = 'miniapp'
+  // #ifdef APP-PLUS
+  platform = 'app'
+  // #endif
   return request({
     url: '/app-api/member/auth/login',
     headers: {
       isToken: false
     },
     method: 'post',
-    data: data
+    data: { platform, ...data}
   })
 }
 
