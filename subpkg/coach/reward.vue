@@ -21,7 +21,7 @@
       </view>
 
       <!-- 提示文字 -->
-      <view class="tip-text">感谢教练的优质服务，打赏表示鼓励吧~</view>
+      <view class="tip-text">感谢教练的优质服务，加鸡腿已表示鼓励吧~</view>
 
       <!-- 金额选择 -->
       <view class="amount-section">
@@ -33,7 +33,7 @@
               :class="{ active: selectedAmount === item.value && !isCustomAmount }"
               @click="selectAmount(item.value)"
               >
-            <text class="amount-value">¥{{ item.value }}</text>
+            <text class="amount-value">{{ item.value }}</text>
             <text class="amount-label">{{ item.label }}</text>
           </view>
           <view
@@ -55,7 +55,7 @@
               class="custom-input"
               type="digit"
               v-model="customAmount"
-              placeholder="请输入打赏金额"
+              placeholder="请输入鸡腿数量"
               @input="onCustomAmountInput"
               />
         </view>
@@ -82,11 +82,11 @@
     <!-- 底部打赏按钮 -->
     <view class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
       <view class="total-amount">
-        <text class="total-label">打赏金额：</text>
-        <text class="total-value">¥{{ currentAmount }}</text>
+        <text class="total-label">鸡腿数量：</text>
+        <text class="total-value">{{ currentAmount }}</text>
       </view>
       <button class="reward-btn" :class="{ disabled: !currentAmount }" @click="submitReward">
-        立即打赏
+        确认
       </button>
     </view>
 

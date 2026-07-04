@@ -113,17 +113,17 @@
         </view>
 
         <!-- 右侧：快捷操作 -->
-        <view class="wallet-right">
-          <view class="quick-btn recharge-btn" @click.stop="toRecharge">
-            <uni-icons type="plus" size="20" color="#059669" />
-            <text>充值</text>
-          </view>
+<!--        <view class="wallet-right">-->
+<!--          <view class="quick-btn recharge-btn" @click.stop="toRecharge">-->
+<!--            <uni-icons type="plus" size="20" color="#059669" />-->
+<!--            <text>充值</text>-->
+<!--          </view>-->
 
-          <view class="quick-btn withdraw-btn" @click.stop="toWithdraw">
-            <uni-icons type="minus" size="20" color="#fff" />
-            <text>提现</text>
-          </view>
-        </view>
+<!--          <view class="quick-btn withdraw-btn" @click.stop="toWithdraw">-->
+<!--            <uni-icons type="minus" size="20" color="#fff" />-->
+<!--            <text>提现</text>-->
+<!--          </view>-->
+<!--        </view>-->
         </view>
       </view>
 

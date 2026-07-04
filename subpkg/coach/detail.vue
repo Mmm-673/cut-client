@@ -41,7 +41,7 @@
           </view>
           <view class="reward-btn" @click="goToReward">
             <uni-icons type="gift" size="16" color="#ffc107"></uni-icons>
-            <text>打赏</text>
+            <text>教学心意</text>
           </view>
         </view>
       </view>

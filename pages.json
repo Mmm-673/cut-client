@@ -75,7 +75,7 @@
         {
           "path": "reward",
           "style": {
-            "navigationBarTitleText": "打赏教练",
+            "navigationBarTitleText": "教学心意",
             "navigationBarBackgroundColor": "#121619",
             "navigationBarTextStyle": "white"
           }
