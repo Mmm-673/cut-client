@@ -11,22 +11,22 @@
 
       <text class="balance-num">{{ showBalance ? formatBalance(wallet.balance) : '****' }}</text>
 
-      <view class="action-btns">
-        <button class="action-btn recharge" @click="toRecharge">充值</button>
-        <button class="action-btn withdraw" @click="toWithdraw">提现</button>
-      </view>
+<!--      <view class="action-btns">-->
+<!--        <button class="action-btn recharge" @click="toRecharge">充值</button>-->
+<!--        <button class="action-btn withdraw" @click="toWithdraw">提现</button>-->
+<!--      </view>-->
 
-      <view class="record-entries">
-        <view class="record-entry" @click="toRechargeRecord">
-          <uni-icons type="list" size="20" color="#fff" />
-          <text class="entry-text">充值记录</text>
-        </view>
-        <view class="entry-divider"></view>
-        <view class="record-entry" @click="toWithdrawRecord">
-          <uni-icons type="list" size="20" color="#fff" />
-          <text class="entry-text">提现记录</text>
-        </view>
-      </view>
+<!--      <view class="record-entries">-->
+<!--        <view class="record-entry" @click="toRechargeRecord">-->
+<!--          <uni-icons type="list" size="20" color="#fff" />-->
+<!--          <text class="entry-text">充值记录</text>-->
+<!--        </view>-->
+<!--        <view class="entry-divider"></view>-->
+<!--        <view class="record-entry" @click="toWithdrawRecord">-->
+<!--          <uni-icons type="list" size="20" color="#fff" />-->
+<!--          <text class="entry-text">提现记录</text>-->
+<!--        </view>-->
+<!--      </view>-->
     </view>
 
     <!-- 收支统计 -->
@@ -353,7 +353,7 @@ onShow(() => {
 }
 
 .record-scroll {
-  height: 400rpx; /* 设置合适的高度 */
+  height: 630rpx; /* 调整高度以填充更多空间 */
   width: 100%;
 }
 
