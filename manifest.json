@@ -71,7 +71,7 @@
                     "NSPhotoLibraryUsageDescription" : "需要获取您的相册读取权限，以便您能从相册中选择图片来上传头像、发布动态或提交认证资料。",
                     "NSPhotoLibraryAddUsageDescription" : "需要获取您的相册写入权限，以便您能将平台内的二维码、球厅海报或订单凭证保存至手机相册。",
                     "NSLocationWhenInUseUsageDescription" : "需要获取您的位置权限，以便为您精准计算并展示附近的球厅信息及优质裁判、教练推荐",
-                    "LSApplicationQueriesSchemes" : [ "iosamap", "tel" ]
+                    "LSApplicationQueriesSchemes" : [ "iosamap", "tel", "weixin", "weixinULAPI", "wechat" ]
                 },
                 "entitlements" : {
                     "com.apple.security.application-groups" : [],
@@ -104,12 +104,6 @@
                     },
                     "weixin" : {
                         "__platform__" : [ "ios", "android" ],
-                        "appid" : "wx8d83a67e0e2c2ad1",
-                        "UniversalLinks" : "https://qiulem.com/app/"
-                    }
-                },
-                "oauth" : {
-                    "weixin" : {
                         "appid" : "wx8d83a67e0e2c2ad1",
                         "UniversalLinks" : "https://qiulem.com/app/"
                     }
