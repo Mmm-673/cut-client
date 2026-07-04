@@ -417,7 +417,7 @@ const goBack = () => {
 }
 
 const toRecordDetail = (recordId) => {
-  uni.showToast({ title: '详情功能开发中', icon: 'none' })
+  // uni.showToast({ title: '详情功能开发中', icon: 'none' })
 }
 
 // 滚动监听

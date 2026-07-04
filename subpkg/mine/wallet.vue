@@ -303,9 +303,9 @@ const toWithdraw = () => {
 const toAllRecord = () => {
   uni.navigateTo({ url: '/subpkg/mine/wallet-list' })
 }
-
+//
 const toRecordDetail = (recordId) => {
-  uni.showToast({ title: '详情功能开发中', icon: 'none' })
+  // uni.showToast({ title: '详情功能开发中', icon: 'none' })
 }
 
 const toRechargeRecord = () => {

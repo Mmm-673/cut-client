@@ -85,9 +85,16 @@
 
     <!-- 提示信息 -->
     <view class="tip-card">
-      <view class="tip-title">提现说明</view>
-      <view class="tip-item">1. 提现申请提交后，预计1-3个工作日到账</view>
-      <view class="tip-item">2. 如有问题请联系客服</view>
+      <view class="tip-title">提现规则</view>
+      <view class="tip-item">1. 可提现额度：钱包中的可提现余额均可申请提现</view>
+      <view class="tip-item">2. 提现限额：单笔最低提现1元，无最高限额</view>
+      <view class="tip-item">3. 提现次数：每日最多可申请3次提现</view>
+      <view class="tip-item">4. 提现时间：全天24小时可提交申请，工作日处理</view>
+      <view class="tip-item">5. 到账时间：申请提交后，预计1-3个工作日到账</view>
+      <view class="tip-item">6. 到账方式：提现金额将直接转入您填写的账户</view>
+      <view class="tip-item">7. 注意事项：请确保填写的账户信息准确无误，如因信息错误导致提现失败或资金损失，需自行承担责任</view>
+      <view class="tip-item">8. 客服支持：如有问题请联系平台客服处理</view>
+      <view class="tip-item">9. 失败处理：若提现失败，资金将原路退回您的可提现余额，请注意查看</view>
     </view>
 
     <!-- 底部安全区域 -->
