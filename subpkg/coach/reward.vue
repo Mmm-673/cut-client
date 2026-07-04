@@ -117,8 +117,9 @@
               @click="selectPay(item.value)"
             >
               <view class="pay-method-left">
-                <view class="pay-method-icon" :style="{ background: item.bgColor }">
-                  <uni-icons :type="item.icon" size="20" color="#fff" />
+                <view class="pay-method-icon" :style="{ background: item.icon && item.icon.startsWith('/') ? 'transparent' : item.bgColor }">
+                  <image v-if="item.icon && item.icon.startsWith('/')" :src="item.icon" class="pay-method-icon-img" mode="aspectFit" />
+                  <uni-icons v-else :type="item.icon" size="20" color="#fff" />
                 </view>
                 <text class="pay-method-name">{{ item.label }}</text>
               </view>
@@ -320,6 +321,7 @@ const onReachBottom = () => {
 const loadPayChannels = async () => {
   try {
     const channels = await fetchEnabledChannels(10)
+    console.log('打赏页面获取到的支付渠道:', channels)
     payList.value = channels
     if (channels.length > 0) {
       selectedPay.value = channels[0].value
@@ -328,6 +330,9 @@ const loadPayChannels = async () => {
     console.error('加载支付渠道失败:', error)
   }
 }
+
+// 获取当前选中的支付渠道
+const selectedPayChannel = computed(() => payList.value.find(item => item.value === selectedPay.value))
 
 // 选择支付方式
 const selectPay = (val) => {
@@ -347,11 +352,20 @@ const confirmPay = async () => {
     return
   }
 
+  const payChannel = selectedPayChannel.value
+  if (!payChannel) {
+    uni.showToast({ title: '请选择支付方式', icon: 'none' })
+    return
+  }
+
+  console.log('打赏支付 - 选中的支付渠道:', payChannel)
+
   isPaying.value = true
   try {
     await executePayment({
       payOrderId: payOrderId.value,
       payValue: selectedPay.value,
+      channelCode: payChannel.channelCode,
       orderId: payOrderId.value,
       onSuccess: () => {
         uni.showToast({ title: '打赏成功', icon: 'success' })
@@ -762,6 +776,11 @@ onBackPress(() => {
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+
+        .pay-method-icon-img {
+          width: 56rpx;
+          height: 56rpx;
+        }
       }
 
       .pay-method-name {

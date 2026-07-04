@@ -76,8 +76,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { getAvailablePayChannels, executePayment } from '@/utils/payment'
+import { ref, computed, onMounted } from 'vue'
+import { fetchEnabledChannels, executePayment } from '@/utils/payment'
 import { createWalletRecharge } from '@/api/billiard/pay'
 
 // 固定金额选项
@@ -93,7 +93,28 @@ const isSubmitting = ref(false)
 
 // 支付方式
 const selectedPay = ref('wechat')
-const payChannels = computed(() => getAvailablePayChannels().filter(c => c.value !== 'wallet'))
+const payChannels = ref([])
+
+// 获取当前选中的支付渠道
+const selectedPayChannel = computed(() => payChannels.value.find(item => item.value === selectedPay.value))
+
+// 加载支付渠道
+const loadPayChannels = async () => {
+  try {
+    const channels = await fetchEnabledChannels(10)
+    console.log('充值页面获取到的支付渠道:', channels)
+    payChannels.value = channels.filter(c => c.value !== 'wallet')
+    if (payChannels.value.length > 0) {
+      selectedPay.value = payChannels.value[0].value
+    }
+  } catch (error) {
+    console.error('加载支付渠道失败:', error)
+  }
+}
+
+onMounted(() => {
+  loadPayChannels()
+})
 
 // 最终金额
 const finalAmount = computed(() => {
@@ -183,10 +204,19 @@ const handleRecharge = async () => {
 
     uni.hideLoading()
 
+    const payChannel = selectedPayChannel.value
+    if (!payChannel) {
+      uni.showToast({ title: '请选择支付方式', icon: 'none' })
+      return
+    }
+
+    console.log('充值支付 - 选中的支付渠道:', payChannel)
+
     // 执行支付
     await executePayment({
       payOrderId: payOrderId,
       payValue: selectedPay.value,
+      channelCode: payChannel.channelCode,
       orderId: orderRes.data?.id,
       onSuccess: () => {
         uni.showToast({ title: '充值成功', icon: 'success' })

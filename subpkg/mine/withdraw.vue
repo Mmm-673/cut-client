@@ -31,19 +31,19 @@
     <view class="section-card">
       <view class="section-title">到账方式</view>
       <view class="channel-list">
-        <view
-            class="channel-item"
-            :class="{active: accountType === 1}"
-            @click="selectChannel(1)"
-        >
-          <view class="channel-icon">
-            <image src="/static/images/pay/wechat.png" class="channel-icon-img" mode="aspectFit" />
-          </view>
-          <text class="channel-name">提现到微信</text>
-          <view class="channel-radio">
-            <view class="radio-dot" v-if="accountType === 1"></view>
-          </view>
-        </view>
+<!--        <view-->
+<!--            class="channel-item"-->
+<!--            :class="{active: accountType === 1}"-->
+<!--            @click="selectChannel(1)"-->
+<!--        >-->
+<!--          <view class="channel-icon">-->
+<!--            <image src="/static/images/pay/wechat.png" class="channel-icon-img" mode="aspectFit" />-->
+<!--          </view>-->
+<!--          <text class="channel-name">提现到微信</text>-->
+<!--          <view class="channel-radio">-->
+<!--            <view class="radio-dot" v-if="accountType === 1"></view>-->
+<!--          </view>-->
+<!--        </view>-->
         <view
             class="channel-item"
             :class="{active: accountType === 2}"
@@ -115,7 +115,7 @@ const availableWithdrawBalance = ref('0.00')
 const withdrawAmount = ref('')
 
 // 到账方式：1-微信，2-支付宝
-const accountType = ref(1)
+const accountType = ref(2)
 
 // 账户信息
 const accountNo = ref('')

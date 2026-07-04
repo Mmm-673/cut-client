@@ -262,9 +262,11 @@ const handleSubmit = async () => {
         password: form.value.password
       })
     }
+    // #ifdef MP-WEIXIN
     if (!res.openid) {
       await getWxCode()
     }
+    // #endif
     uni.hideLoading()
     uni.showToast({ title: '登录成功', icon: 'success' })
 
@@ -279,6 +281,7 @@ const handleSubmit = async () => {
     isSubmitting.value = false
   }
 }
+// #ifdef MP-WEIXIN
 const getWxCode = async () => {
   try {
     const loginRes = await new Promise((resolve, reject) => {
@@ -310,6 +313,7 @@ const getWxCode = async () => {
     throw error
   }
 }
+// #endif
 
 // 跳转到忘记密码
 const goToForgotPassword = () => {

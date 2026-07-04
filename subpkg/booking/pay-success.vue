@@ -83,7 +83,7 @@ const loadOrderDetail = async () => {
 
 // 跳转到订单列表
 const goToOrderList = () => {
-  uni.switchTab({ url: '/pages/order/list' })
+  uni.navigateTo({ url: '/pages/order/list' })
 }
 
 // 返回首页

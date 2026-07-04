@@ -1,18 +1,18 @@
 <template>
   <view class="home-wrapper">
     <!-- 导航栏 -->
-    <view class="navbar" :style="{ paddingTop: statusBarHeight + 'rpx', height: navBarHeight + 'rpx' }">
-      <view class="nav-left">
-        <view class="logo-circle">
-          <image class="logo-img" :src="globalConfig.appInfo.logo" mode="aspectFit"></image>
-          <view class="logo-glow"></view>
-        </view>
-        <view class="nav-title-group">
-          <text class="nav-title">初球</text>
-          <text class="nav-subtitle">专业裁教预约平台</text>
-        </view>
-      </view>
-    </view>
+<!--    <view class="navbar" :style="{ paddingTop: statusBarHeight + 'rpx', height: navBarHeight + 'rpx' }">-->
+<!--      <view class="nav-left">-->
+<!--        <view class="logo-circle">-->
+<!--          <image class="logo-img" :src="globalConfig.appInfo.logo" mode="aspectFit"></image>-->
+<!--          <view class="logo-glow"></view>-->
+<!--        </view>-->
+<!--        <view class="nav-title-group">-->
+<!--          <text class="nav-title">初球</text>-->
+<!--          <text class="nav-subtitle">专业裁教预约平台</text>-->
+<!--        </view>-->
+<!--      </view>-->
+<!--    </view>-->
 
     <!-- 滚动区域 -->
     <scroll-view scroll-y class="scroll-container" show-scrollbar="false" :style="{ paddingTop: navBarHeight + 'rpx', height: `calc(100vh)` }">
@@ -187,7 +187,7 @@
 import { ref, onMounted } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getNewCoachList, getHotCoachList } from '@/api/billiard/coach'
-import { isIOS } from '@/utils/platform'
+import { isIOS, isMPWeixin } from '@/utils/platform'
 import {
   useConfigStore
 } from '@/store'
@@ -309,7 +309,12 @@ onMounted(() => {
   // 导航栏内容高度（根据平台调整）
   const navContentHeight = isIOS() ? 88 : 80 // iOS通常需要更高的导航栏
   statusBarHeight.value = isIOS() ? 110 : systemInfo.statusBarHeight + 15 || 0
-  navBarHeight.value = statusBarHeight.value + navContentHeight + 8
+  let baseNavBarHeight = navContentHeight + 8
+  // 小程序需要额外增加一些高度
+  if (isMPWeixin()) {
+    baseNavBarHeight += 60
+  }
+  navBarHeight.value = baseNavBarHeight
 })
 </script>
 

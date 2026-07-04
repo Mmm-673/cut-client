@@ -113,7 +113,7 @@
         </view>
 
         <!-- 右侧：快捷操作 -->
-        <!-- <view class="wallet-right">
+        <view class="wallet-right">
           <view class="quick-btn recharge-btn" @click.stop="toRecharge">
             <uni-icons type="plus" size="20" color="#059669" />
             <text>充值</text>
@@ -123,7 +123,7 @@
             <uni-icons type="minus" size="20" color="#fff" />
             <text>提现</text>
           </view>
-        </view> -->
+        </view>
         </view>
       </view>
 
@@ -369,7 +369,7 @@ const wallet = ref({
   totalExpense: 0,
   totalRecharge: 0
 })
-const balanceVisible = ref(true)
+const balanceVisible = ref(false)
 
 const formatAmount = (amount) => {
   const value = Number(amount) || 0
@@ -552,7 +552,7 @@ const toCoupon = () => {
 }
 
 const toAllOrder = () => {
-  uni.switchTab({ url: '/pages/order/list' })
+  uni.navigateTo({ url: '/pages/order/list' })
 }
 
 const toOrderDetail = (orderId) => {

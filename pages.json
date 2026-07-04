@@ -292,12 +292,6 @@
         "text": "预约"
       },
       {
-        "pagePath": "pages/order/list",
-        "iconPath": "static/images/tabbar/order.png",
-        "selectedIconPath": "static/images/tabbar/order_.png",
-        "text": "订单"
-      },
-      {
         "pagePath": "pages/mine/index",
         "iconPath": "static/images/tabbar/mine.png",
         "selectedIconPath": "static/images/tabbar/mine_.png",

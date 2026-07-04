@@ -140,6 +140,8 @@ export function getPayChannelsByEnabled(enabledCodes) {
   }
 
   const currentPlatform = getCurrentPlatform()
+  console.log('getPayChannelsByEnabled - 当前平台:', currentPlatform)
+  console.log('getPayChannelsByEnabled - 后端返回的渠道编码:', enabledCodes)
 
   // 渠道编码映射
   const codeToChannel = {
@@ -151,15 +153,22 @@ export function getPayChannelsByEnabled(enabledCodes) {
   }
 
   const result = []
+  const addedValues = new Set()
 
   // 遍历后端返回的渠道
   enabledCodes.forEach(code => {
     const channel = codeToChannel[code]
     if (channel && channel.platforms && channel.platforms.includes(currentPlatform)) {
-      result.push(channel)
+      // 避免重复添加相同 value 的渠道
+      if (!addedValues.has(channel.value)) {
+        console.log('getPayChannelsByEnabled - 添加支付渠道:', channel)
+        result.push(channel)
+        addedValues.add(channel.value)
+      }
     }
   })
 
+  console.log('getPayChannelsByEnabled - 最终返回的支付渠道:', result)
   return result
 }
 
@@ -322,6 +331,7 @@ function walletPay(payParams) {
 function isPaySuccessStatus(status) {
   return Number(status) === 10
 }
+// #ifdef MP-WEIXIN
 const getWxCode = async () => {
   try {
     const loginRes = await new Promise((resolve, reject) => {
@@ -353,6 +363,7 @@ const getWxCode = async () => {
     throw error
   }
 }
+// #endif
 async function confirmPayOrderPaid(payOrderId) {
   const res = await getPayOrder({ id: payOrderId, sync: true })
   const data = res.data || {}
@@ -486,9 +497,11 @@ export async function executePayment(options) {
     return payResult
   } catch (error) {
     console.log("🚀 ~ error ~ error:", error)
+    // #ifdef MP-WEIXIN
     if (error === '请先绑定微信后再发起微信支付') {
       return getWxCode()
     }
+    // #endif
     console.error('支付出错:', error)
 
     // 更新支付请求状态

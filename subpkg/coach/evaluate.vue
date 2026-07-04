@@ -348,7 +348,7 @@ const handleSubmit = async () => {
     uni.$emit('orderEvaluated')
 
     setTimeout(() => {
-      uni.switchTab({ url: '/pages/order/list' });
+      uni.navigateTo({ url: '/pages/order/list' });
     }, 1500);
   } catch (error) {
     uni.hideLoading();

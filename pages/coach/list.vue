@@ -179,8 +179,7 @@ const currentLocation = ref({
 })
 const currentCity = ref('')
 
-// const tabs = ['全部', '新人', '低碳出行', '初级', '中级', '高级', '星级']
-const tabs = ['全部', '新人', '低碳出行', '初级', '中级'] // 上线需要放开
+const tabs = ['全部', '新人', '低碳出行', '初级', '中级', '高级', '星级']
 
 // 等级映射
 const levelMap = {

@@ -20,8 +20,7 @@
             "Push" : {},
             "Barcode" : {},
             "Payment" : {},
-            "Maps" : {},
-            "OAuth" : {}
+            "Maps" : {}
         },
         "distribute" : {
             "android" : {
