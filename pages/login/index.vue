@@ -262,11 +262,6 @@ const handleSubmit = async () => {
         password: form.value.password
       })
     }
-    // #ifdef MP-WEIXIN
-    if (!res.openid) {
-      await getWxCode()
-    }
-    // #endif
     uni.hideLoading()
     uni.showToast({ title: '登录成功', icon: 'success' })
 
@@ -281,39 +276,6 @@ const handleSubmit = async () => {
     isSubmitting.value = false
   }
 }
-// #ifdef MP-WEIXIN
-const getWxCode = async () => {
-  try {
-    const loginRes = await new Promise((resolve, reject) => {
-      uni.login({
-        provider: 'weixin',
-        onlyAuthorize: true,
-        success: resolve,
-        fail: reject
-      })
-    })
-    console.log('🚀 ~ getWxCode ~ code:', loginRes.code)
-    uni.showLoading({ title: '绑定中...', mask: true })
-    let platform = 'miniapp'
-    // #ifdef APP-PLUS
-    platform = 'app'
-    // #endif
-    const res = await bindWX({
-      code: loginRes.code,
-      platform,
-      state: 'test'
-    })
-    uni.hideLoading()
-    uni.showToast({ title: '绑定成功', icon: 'success' })
-    return res
-  } catch (error) {
-    uni.hideLoading()
-    console.error('绑定微信失败:', error)
-    uni.showToast({ title: error?.message || '绑定失败', icon: 'none' })
-    throw error
-  }
-}
-// #endif
 
 // 跳转到忘记密码
 const goToForgotPassword = () => {

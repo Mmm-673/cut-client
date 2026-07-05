@@ -499,7 +499,22 @@ export async function executePayment(options) {
     console.log("🚀 ~ error ~ error:", error)
     // #ifdef MP-WEIXIN
     if (error === '请先绑定微信后再发起微信支付') {
-      return getWxCode()
+      return new Promise((resolve, reject) => {
+        uni.showModal({
+          title: '提示',
+          content: '需要绑定微信后才能继续支付，是否立即绑定？',
+          success: (modalRes) => {
+            if (modalRes.confirm) {
+              getWxCode().then(resolve).catch(reject)
+            } else {
+              reject(error)
+            }
+          },
+          fail: () => {
+            reject(error)
+          }
+        })
+      })
     }
     // #endif
     console.error('支付出错:', error)
