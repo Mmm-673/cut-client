@@ -57,7 +57,7 @@
               <view class="action-buttons">
                 <button class="reward-btn" @click.stop="goToReward(coach.id)">
                   <uni-icons type="gift" size="14" color="#FF9500"></uni-icons>
-                  <text>打赏</text>
+                  <text>🍗</text>
                 </button>
                 <button class="book-btn" @click.stop="handleBook(coach)">预约</button>
               </view>

@@ -170,11 +170,23 @@ export function deleteOrder(data) {
   })
 }
 
+/**
+ * 获取是否显示打赏按钮
+ * @returns {Promise<boolean>} 返回 true/false
+ */
+export function getCountdownEnabled() {
+  return request({
+    url: '/coach-api/billiard/order/countdown-enabled',
+    method: 'get'
+  })
+}
+
 export default {
   getOrderList,
   getOrderDetail,
   createOrder,
   cancelOrder,
   addTimeOrder,
-  deleteOrder
+  deleteOrder,
+  getCountdownEnabled
 }

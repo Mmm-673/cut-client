@@ -123,9 +123,9 @@
                 <text class="price-unit">/小时</text>
               </view>
               <view class="action-buttons">
-                <button class="reward-btn" @click.stop="goToReward(coach.id)">
+                <button class="reward-btn" v-if="showRewardBtn" @click.stop="goToReward(coach.id)">
                   <uni-icons type="gift" size="14" color="#FF9500"></uni-icons>
-                  <text>打赏</text>
+                  <text>心意</text>
                 </button>
                 <button class="book-btn" @click.stop="handleBook(coach)">预约</button>
               </view>
@@ -153,6 +153,7 @@
 import {ref, onMounted} from 'vue'
 import {onShow} from  "@dcloudio/uni-app"
 import {getCoachList} from '@/api/billiard/coach'
+import {getCountdownEnabled} from '@/api/billiard/order'
 import {debounce, formatPrice, showLoading, hideLoading} from '@/utils/common'
 import {getLocation, extractCity, formatDistance, showPermissionModal} from '@/utils/location'
 
@@ -163,6 +164,7 @@ const currentSort = ref(0)
 const refreshing = ref(false)
 const loading = ref(false)
 const loadMoreStatus = ref('more') // more: loading前, loading: 加载中, noMore: 没有更多数据
+const showRewardBtn = ref(false)
 
 const pageNo = ref(1)
 const pageSize = ref(20)
@@ -478,7 +480,18 @@ const goToDetail = (id) => {
   })
 }
 
-// 跳转打赏
+// 加载是否显示心意按钮
+const loadCountdownEnabled = async () => {
+  try {
+    const res = await getCountdownEnabled()
+    showRewardBtn.value = res.data === true
+  } catch (error) {
+    console.error('加载心意按钮状态失败:', error)
+    showRewardBtn.value = false
+  }
+}
+
+// 跳转心意
 const goToReward = (id) => {
   uni.navigateTo({
     url: '/subpkg/coach/reward?coachId=' + id
@@ -509,6 +522,8 @@ onMounted(() => {
     })
   }, 100)
 
+  // 加载是否显示心意按钮
+  loadCountdownEnabled()
 })
 
 onShow(() => {

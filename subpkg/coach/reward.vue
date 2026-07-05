@@ -1,15 +1,7 @@
 
 <template>
   <view class="reward-page">
-    <scroll-view
-        class="scroll-content"
-        scroll-y
-        @scrolltolower="onReachBottom"
-        @refresherrefresh="onRefresh"
-        :refresher-enabled="true"
-        :refresher-triggered="isRefreshing"
-        :style="{ height: scrollHeight + 'px' }"
-    >
+    <view class="scroll-content">
       <!-- 教练信息 -->
       <view class="coach-info">
         <image class="coach-avatar" :src="coachInfo.avatar" mode="aspectFill" />
@@ -77,7 +69,7 @@
 
       <!-- 底部占位 -->
       <view class="bottom-placeholder"></view>
-    </scroll-view>
+    </view>
 
     <!-- 底部打赏按钮 -->
     <view class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
@@ -104,8 +96,8 @@
         <!-- 金额 -->
         <view class="pay-popup-content">
           <view class="pay-amount-row">
-            <text class="pay-label">打赏金额</text>
-            <text class="pay-amount">¥{{ currentAmount }}</text>
+            <text class="pay-label">心意</text>
+            <text class="pay-amount">{{ currentAmount }}</text>
           </view>
           <!-- 支付方式列表 -->
           <view class="pay-method-list">
@@ -136,15 +128,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { onNavigationBarButtonTap, onBackPress } from '@dcloudio/uni-app'
+import { onNavigationBarButtonTap } from '@dcloudio/uni-app'
 import { getCoachDetail, createRewardOrder } from '@/api/billiard/coach'
 import { executePayment, fetchEnabledChannels } from '@/utils/payment'
 
 // 状态管理
 const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
-const scrollHeight = ref(0)
-const isRefreshing = ref(false)
 const isCustomAmount = ref(false)
 const selectedAmount = ref(10)
 const customAmount = ref('')
@@ -193,17 +183,6 @@ onMounted(() => {
   const systemInfo = uni.getSystemInfoSync()
   statusBarHeight.value = systemInfo.statusBarHeight || 0
   safeAreaBottom.value = systemInfo.safeAreaInsets?.bottom || 0
-
-  // 计算滚动区域高度
-  setTimeout(() => {
-    const query = uni.createSelectorQuery()
-    query.select('.bottom-bar').boundingClientRect()
-    query.exec((res) => {
-      const bottomBarHeight = res[0]?.height || 0
-      // 减去系统导航栏、底部栏、安全区域
-      scrollHeight.value = systemInfo.windowHeight - bottomBarHeight - (systemInfo.safeAreaInsets?.bottom || 0)
-    })
-  }, 100)
 
   // 加载支付渠道
   loadPayChannels()
@@ -298,25 +277,6 @@ const onCustomAmountInput = (e) => {
   customAmount.value = value
 }
 
-// 返回
-const goBack = () => {
-  uni.navigateBack()
-}
-
-// 下拉刷新
-const onRefresh = () => {
-  isRefreshing.value = true
-  // 模拟刷新数据
-  setTimeout(() => {
-    isRefreshing.value = false
-  }, 1000)
-}
-
-// 上拉加载
-const onReachBottom = () => {
-  // 预留上拉加载接口
-}
-
 // 加载支付渠道
 const loadPayChannels = async () => {
   try {
@@ -392,7 +352,7 @@ const confirmPay = async () => {
 const submitReward = async () => {
   if (!currentAmount.value) {
     uni.showToast({
-      title: '请选择打赏金额',
+      title: '请选择',
       icon: 'none'
     })
     return
@@ -400,7 +360,7 @@ const submitReward = async () => {
 
   if (currentAmount.value <= 0) {
     uni.showToast({
-      title: '打赏金额必须大于0',
+      title: '鸡腿须大于0',
       icon: 'none'
     })
     return
@@ -446,22 +406,27 @@ const submitReward = async () => {
   }
 }
 
-// 监听返回按钮
-onBackPress(() => {
-  goBack()
-})
 </script>
 
 <style lang="scss" scoped>
 .reward-page {
   min-height: 100vh;
   background-color: #1a1a1a;
+  padding-bottom: 120rpx;
 }
 
 /* 滚动内容 */
 .scroll-content {
-  /* 高度通过内联样式动态设置 */
   padding: 24rpx 24rpx;
+}
+
+/* 底部栏 */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
 }
 
 /* 教练信息 */
@@ -626,7 +591,6 @@ onBackPress(() => {
 
 /* 底部栏 */
 .bottom-bar {
-  //background-color: #1a1a1a;
   padding: 12rpx 24rpx;
   display: flex;
   align-items: center;
@@ -634,6 +598,7 @@ onBackPress(() => {
   background-color: #1E252B;
   padding-bottom: calc(16rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+
   .total-amount {
     flex: 1;
 

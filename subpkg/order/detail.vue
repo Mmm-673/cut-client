@@ -194,9 +194,9 @@
 
     <!-- 待评价 -->
     <view class="bottom-bar" v-if="orderInfo.status === 50">
-      <button class="action-btn reward" @click="goToReward">
+      <button class="action-btn reward" v-if="showRewardBtn" @click="goToReward">
         <uni-icons type="gift" size="18" color="#FF9500" />
-        打赏教练
+        心意表示
       </button>
       <button class="action-btn review" @click="goToReview">去评价</button>
     </view>
@@ -397,7 +397,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { onLoad, onShow } from  "@dcloudio/uni-app"
-import { getOrderDetail, cancelOrder, addTimeOrder, deleteOrder } from '@/api/billiard/order'
+import { getOrderDetail, cancelOrder, addTimeOrder, deleteOrder, getCountdownEnabled } from '@/api/billiard/order'
 import { getCoachDetail } from '@/api/billiard/coach'
 import { getTimerStatus } from '@/api/billiard/timer'
 import { reportException } from '@/api/billiard/exception'
@@ -411,6 +411,8 @@ const orderId = ref(null)
 const loading = ref(false)
 // 订单不存在状态
 const orderNotExist = ref(false)
+// 是否显示按钮
+const showRewardBtn = ref(false)
 // 缓存的球厅图片（避免轮询时随机变化）
 let cachedVenuePhotoUrl = null
 // 请求锁，防止重复请求
@@ -786,6 +788,17 @@ const loadCoachDetail = async (coachId) => {
   }
 }
 
+// 加载是否显示按钮
+const loadCountdownEnabled = async () => {
+  try {
+    const res = await getCountdownEnabled()
+    showRewardBtn.value = res.data === true
+  } catch (error) {
+    console.error('加载按钮状态失败:', error)
+    showRewardBtn.value = false
+  }
+}
+
 // 加载订单详情
 const loadOrderDetail = async (silent = false) => {
   if (!orderId.value) return
@@ -1144,7 +1157,7 @@ const confirmAddTime = async () => {
   }
 }
 
-// 打赏教练
+// 教练
 const goToReward = () => {
   uni.navigateTo({
     url: `/subpkg/coach/reward?coachId=${orderInfo.value.coachId}`
@@ -1356,6 +1369,9 @@ onMounted(() => {
 
   // 加载支付渠道
   loadPayChannels()
+
+  // 加载是否显示按钮
+  loadCountdownEnabled()
 
   // 加载数据并启动轮询（只在初始化时执行一次）
   if (orderId.value) {

@@ -39,7 +39,7 @@
               <view class="tag" v-for="(tag, index) in coachInfo.tags" :key="index">{{ tag }}</view>
             </view>
           </view>
-          <view class="reward-btn" @click="goToReward">
+          <view class="reward-btn" v-if="showRewardBtn" @click="goToReward">
             <uni-icons type="gift" size="16" color="#ffc107"></uni-icons>
             <text>教学心意</text>
           </view>
@@ -222,7 +222,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { onLoad } from "@dcloudio/uni-app"
 import { getCoachDetail, toggleCoachFavorite, getCoachReviews } from '@/api/billiard/coach'
-import { createOrder } from '@/api/billiard/order'
+import { createOrder, getCountdownEnabled } from '@/api/billiard/order'
 import { formatPrice } from '@/utils/common'
 
 // 图片查看器
@@ -256,6 +256,8 @@ const loading = ref(false)
 // 下拉刷新状态
 const refreshing = ref(false)
 const isFavorite = ref(false)
+// 是否显示按钮
+const showRewardBtn = ref(false)
 
 // 教练信息
 const coachInfo = reactive({
@@ -511,7 +513,7 @@ const handleToggleFavorite = async () => {
   }
 }
 
-// 跳转到打赏页面
+// 跳转到页面
 const goToReward = () => {
   uni.navigateTo({
     url: '/subpkg/coach/reward?coachId=' + coachInfo.id
@@ -618,6 +620,17 @@ const bookNow = async () => {
   }
 }
 
+// 加载是否显示按钮
+const loadCountdownEnabled = async () => {
+  try {
+    const res = await getCountdownEnabled()
+    showRewardBtn.value = res.data === true
+  } catch (error) {
+    console.error('加载按钮状态失败:', error)
+    showRewardBtn.value = false
+  }
+}
+
 // 获取页面参数
 onLoad((options) => {
   if (options.id) {
@@ -635,6 +648,8 @@ onMounted(() => {
   if (coachId.value) {
     loadCoachData()
   }
+  // 加载是否显示按钮
+  loadCountdownEnabled()
 })
 </script>
 
