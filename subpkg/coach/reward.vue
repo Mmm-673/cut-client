@@ -1,5 +1,14 @@
 
 <template>
+  <!-- #ifdef MP-WEIXIN -->
+  <view class="reward-page">
+    <view class="not-available">
+      <uni-icons type="info" size="80" color="#9CA3AF"></uni-icons>
+      <text class="not-available-text">微信小程序暂不支持此功能</text>
+    </view>
+  </view>
+  <!-- #endif -->
+  <!-- #ifndef MP-WEIXIN -->
   <view class="reward-page">
     <view class="scroll-content">
       <!-- 教练信息 -->
@@ -124,8 +133,10 @@
       </view>
     </view>
   </view>
+  <!-- #endif -->
 </template>
 
+<!-- #ifndef MP-WEIXIN -->
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { onNavigationBarButtonTap } from '@dcloudio/uni-app'
@@ -407,8 +418,31 @@ const submitReward = async () => {
 }
 
 </script>
+<!-- #endif -->
 
 <style lang="scss" scoped>
+/* #ifdef MP-WEIXIN */
+.reward-page {
+  min-height: 100vh;
+  background-color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.not-available {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30rpx;
+  padding: 60rpx 40rpx;
+}
+.not-available-text {
+  color: #9CA3AF;
+  font-size: 30rpx;
+}
+/* #endif */
+
+/* #ifndef MP-WEIXIN */
 .reward-page {
   min-height: 100vh;
   background-color: #1a1a1a;
@@ -779,4 +813,5 @@ const submitReward = async () => {
     }
   }
 }
+/* #endif */
 </style>

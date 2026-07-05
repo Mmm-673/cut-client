@@ -10,23 +10,6 @@
       </view>
 
       <text class="balance-num">{{ showBalance ? formatBalance(wallet.balance) : '****' }}</text>
-
-<!--      <view class="action-btns">-->
-<!--        <button class="action-btn recharge" @click="toRecharge">充值</button>-->
-<!--        <button class="action-btn withdraw" @click="toWithdraw">提现</button>-->
-<!--      </view>-->
-
-<!--      <view class="record-entries">-->
-<!--        <view class="record-entry" @click="toRechargeRecord">-->
-<!--          <uni-icons type="list" size="20" color="#fff" />-->
-<!--          <text class="entry-text">充值记录</text>-->
-<!--        </view>-->
-<!--        <view class="entry-divider"></view>-->
-<!--        <view class="record-entry" @click="toWithdrawRecord">-->
-<!--          <uni-icons type="list" size="20" color="#fff" />-->
-<!--          <text class="entry-text">提现记录</text>-->
-<!--        </view>-->
-<!--      </view>-->
     </view>
 
     <!-- 收支统计 -->
@@ -292,28 +275,12 @@ const goBack = () => {
   uni.navigateBack()
 }
 
-const toRecharge = () => {
-  uni.navigateTo({ url: '/subpkg/mine/recharge' })
-}
-
-const toWithdraw = () => {
-  uni.navigateTo({ url: '/subpkg/mine/withdraw' })
-}
-
 const toAllRecord = () => {
   uni.navigateTo({ url: '/subpkg/mine/wallet-list' })
 }
-//
+
 const toRecordDetail = (recordId) => {
   // uni.showToast({ title: '详情功能开发中', icon: 'none' })
-}
-
-const toRechargeRecord = () => {
-  uni.navigateTo({ url: '/subpkg/mine/recharge-record' })
-}
-
-const toWithdrawRecord = () => {
-  uni.navigateTo({ url: '/subpkg/mine/withdraw-record' })
 }
 
 // 页面显示刷新数据

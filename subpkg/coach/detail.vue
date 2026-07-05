@@ -39,10 +39,12 @@
               <view class="tag" v-for="(tag, index) in coachInfo.tags" :key="index">{{ tag }}</view>
             </view>
           </view>
+          <!-- #ifndef MP-WEIXIN -->
           <view class="reward-btn" v-if="showRewardBtn" @click="goToReward">
             <uni-icons type="gift" size="16" color="#ffc107"></uni-icons>
             <text>教学心意</text>
           </view>
+          <!-- #endif -->
         </view>
       </view>
 
@@ -515,9 +517,17 @@ const handleToggleFavorite = async () => {
 
 // 跳转到页面
 const goToReward = () => {
+  // #ifdef MP-WEIXIN
+  uni.showToast({
+    title: '微信小程序暂不支持此功能',
+    icon: 'none'
+  })
+  // #endif
+  // #ifndef MP-WEIXIN
   uni.navigateTo({
     url: '/subpkg/coach/reward?coachId=' + coachInfo.id
   })
+  // #endif
 }
 
 // 选中的服务

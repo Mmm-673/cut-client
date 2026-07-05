@@ -72,6 +72,7 @@
             "navigationBarTextStyle": "white"
           }
         },
+        // #ifndef MP-WEIXIN
         {
           "path": "reward",
           "style": {
@@ -81,6 +82,7 @@
             "enablePullDownRefresh": false
           }
         },
+        // #endif
         {
           "path": "evaluate",
           "style": {
@@ -178,46 +180,6 @@
           "path": "wallet-list",
           "style": {
             "navigationBarTitleText": "交易记录"
-          }
-        },
-        {
-          "path": "recharge",
-          "style": {
-            "navigationBarTitleText": "充值",
-            "navigationBarBackgroundColor": "#121619",
-            "navigationBarTextStyle": "white"
-          }
-        },
-        {
-          "path": "recharge-success",
-          "style": {
-            "navigationBarTitleText": "充值成功",
-            "navigationBarBackgroundColor": "#121619",
-            "navigationBarTextStyle": "white"
-          }
-        },
-        {
-          "path": "withdraw",
-          "style": {
-            "navigationBarTitleText": "提现",
-            "navigationBarBackgroundColor": "#121619",
-            "navigationBarTextStyle": "white"
-          }
-        },
-        {
-          "path": "recharge-record",
-          "style": {
-            "navigationBarTitleText": "充值记录",
-            "navigationBarBackgroundColor": "#121619",
-            "navigationBarTextStyle": "white"
-          }
-        },
-        {
-          "path": "withdraw-record",
-          "style": {
-            "navigationBarTitleText": "提现记录",
-            "navigationBarBackgroundColor": "#121619",
-            "navigationBarTextStyle": "white"
           }
         }
       ]

@@ -123,10 +123,12 @@
                 <text class="price-unit">/小时</text>
               </view>
               <view class="action-buttons">
-                <button class="reward-btn" v-if="showRewardBtn" @click.stop="goToReward(coach.id)">
-                  <uni-icons type="gift" size="14" color="#FF9500"></uni-icons>
-                  <text>心意</text>
-                </button>
+                <!-- #ifndef MP-WEIXIN -->
+                  <button class="reward-btn" v-if="showRewardBtn" @click.stop="goToReward(coach.id)">
+                    <uni-icons type="gift" size="14" color="#FF9500"></uni-icons>
+                    <text>心意</text>
+                  </button>
+                <!-- #endif -->
                 <button class="book-btn" @click.stop="handleBook(coach)">预约</button>
               </view>
             </view>

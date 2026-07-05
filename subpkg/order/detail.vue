@@ -194,10 +194,12 @@
 
     <!-- 待评价 -->
     <view class="bottom-bar" v-if="orderInfo.status === 50">
+      <!-- #ifndef MP-WEIXIN -->
       <button class="action-btn reward" v-if="showRewardBtn" @click="goToReward">
         <uni-icons type="gift" size="18" color="#FF9500" />
         心意表示
       </button>
+      <!-- #endif -->
       <button class="action-btn review" @click="goToReview">去评价</button>
     </view>
 
@@ -1159,9 +1161,17 @@ const confirmAddTime = async () => {
 
 // 教练
 const goToReward = () => {
+  // #ifdef MP-WEIXIN
+  uni.showToast({
+    title: '微信小程序暂不支持此功能',
+    icon: 'none'
+  })
+  // #endif
+  // #ifndef MP-WEIXIN
   uni.navigateTo({
     url: `/subpkg/coach/reward?coachId=${orderInfo.value.coachId}`
   })
+  // #endif
 }
 
 // 去评价

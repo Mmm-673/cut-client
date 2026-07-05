@@ -83,7 +83,6 @@
           <view class="wallet-balance">
             <text class="currency">¥</text>
             <text class="amount">{{ balanceVisible ? formattedBalance : '******' }}</text>
-
             <view
               class="balance-eye-hit"
               @click.stop.prevent="toggleBalanceVisible"
@@ -98,13 +97,6 @@
           </view>
 
           <view class="wallet-stats">
-            <view class="stat-item">
-              <text class="stat-label">累计充值</text>
-              <text class="stat-value">¥{{ wallet.totalRecharge }}</text>
-            </view>
-
-            <view class="stat-divider"></view>
-
             <view class="stat-item">
               <text class="stat-label">累计消费</text>
               <text class="stat-value">¥{{ wallet.totalExpense }}</text>
