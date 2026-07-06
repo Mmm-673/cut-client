@@ -118,12 +118,19 @@ const doMakeCall = () => {
 // 点击拨打按钮
 const makeCall = async () => {
   try {
-    // 显示电话权限用途说明弹窗
-    await showCallPermissionModal()
+    // iOS 不显示自定义弹窗，直接拨打电话
+    // #ifdef APP-PLUS
+    const systemInfo = uni.getSystemInfoSync()
+    if (systemInfo.platform !== 'ios') {
+      // 显示电话权限用途说明弹窗
+      await showCallPermissionModal()
 
-    // 请求系统拨号权限
-    await requestCallPermission()
+      // 请求系统拨号权限
+      await requestCallPermission()
+    }
+    // #endif
 
+    
     // 执行拨打电话
     doMakeCall()
   } catch (err) {

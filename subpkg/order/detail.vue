@@ -739,11 +739,16 @@ const openHallNavigate = () => {
 // 【新增】联系教练
 const contactCoach = async () => {
   try {
-    // 显示电话权限用途说明弹窗
-    await showCallPermissionModal()
+    // #ifdef APP-PLUS
+    const systemInfo = uni.getSystemInfoSync()
+    if (systemInfo.platform !== 'ios') {
+      // 显示电话权限用途说明弹窗
+      await showCallPermissionModal()
+      // 请求系统拨号权限
+      await requestCallPermission()
+    }
+    // #endif
 
-    // 请求系统拨号权限
-    await requestCallPermission()
 
     // 优先使用订单数据里的教练手机号
     const phone = orderInfo.value?.coachPhone || ''

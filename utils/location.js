@@ -255,10 +255,18 @@ export const getLocation = async ({
                                     timeout = 15000,
                                     showPurposeModal = true
                                   } = {}) => {
-  // 显示定位用途说明弹窗
+  // 显示定位用途说明弹窗（iOS 不显示自定义弹窗，直接使用系统定位权限请求）
+  // #ifndef APP-PLUS
   if (showPurposeModal) {
     await showLocationPurposeModal()
   }
+  // #endif
+  // #ifdef APP-PLUS
+  const systemInfo = uni.getSystemInfoSync()
+  if (showPurposeModal && systemInfo.platform !== 'ios') {
+    await showLocationPurposeModal()
+  }
+  // #endif
 
   const location = await fetchCoordinates({ type, timeout })
 

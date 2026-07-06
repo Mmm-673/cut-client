@@ -105,7 +105,7 @@ import { ref, computed, onMounted } from 'vue'
 import { onShow } from "@dcloudio/uni-app"
 import { getUserInfo, updateUser, sendUpdateMobileSms, updateMobile, uploadFile } from '@/api/billiard/user'
 import { getAreaTree } from '@/api/billiard/area'
-import { showCameraPurposeModal, showAlbumPurposeModal, requestCameraPermission, requestAlbumPermission, showImageSourceModal } from '@/utils/photo'
+import { showCameraPurposeModal, showAlbumPurposeModal, requestCameraPermission, requestAlbumPermission, showImageSourceModal, showCameraPermissionModal, showAlbumPermissionModal } from '@/utils/photo'
 
 // 性别选项
 const genderOptions = [
@@ -286,6 +286,17 @@ const uploadAvatarAction = async () => {
         uni.showToast({ title: '上传失败', icon: 'none' })
       } finally {
         uni.hideLoading()
+      }
+    },
+    fail: (err) => {
+      console.error('chooseImage fail:', err)
+      // 判断是否是权限拒绝
+      if (err && err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize') || err.errMsg.includes('denied') || err.errMsg.includes('fail'))) {
+        if (sourceType === 0) {
+          showCameraPermissionModal()
+        } else {
+          showAlbumPermissionModal()
+        }
       }
     }
   })

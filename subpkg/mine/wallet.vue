@@ -1,17 +1,5 @@
 <template>
   <view class="wallet-page-wrapper">
-    <!-- 余额卡片 -->
-    <view class="balance-card">
-      <view class="balance-header">
-        <text class="balance-label">账户余额 (元)</text>
-        <view class="eye-btn" @click="toggleBalance">
-          <uni-icons :type="showBalance ? 'eye' : 'eye-slash'" size="20" color="#fff" />
-        </view>
-      </view>
-
-      <text class="balance-num">{{ showBalance ? formatBalance(wallet.balance) : '****' }}</text>
-    </view>
-
     <!-- 收支统计 -->
     <view class="stat-card">
       <view class="stat-header">
@@ -45,9 +33,6 @@
       <scroll-view
           scroll-y
           class="record-scroll"
-          refresher-enabled
-          :refresher-triggered="refreshing"
-          @refresherrefresh="onRefresh"
       >
         <view class="record-list">
           <view class="record-item" v-for="record in recordList" :key="record.id" @click="toRecordDetail(record.id)">
@@ -71,25 +56,14 @@
 
 <script setup>
 import { ref } from 'vue'
-import { onShow } from  "@dcloudio/uni-app"
-import { getWallet, getWalletTransactions, getWalletTransactionSummary } from '@/api/billiard/wallet'
+import { onShow, onPullDownRefresh } from  "@dcloudio/uni-app"
+import { getWalletTransactions, getWalletTransactionSummary } from '@/api/billiard/wallet'
 
-// 刷新状态
-const refreshing = ref(false)
-// 是否显示余额
-const showBalance = ref(true)
 // 当前月份
 const currentMonth = ref('本月')
 
 // 当前选中的月份数据
 const selectedMonthData = ref({ year: new Date().getFullYear(), month: new Date().getMonth() + 1 })
-
-// 钱包数据
-const wallet = ref({
-  balance: 0,
-  totalExpense: 0,
-  totalRecharge: 0
-})
 
 // 收支统计数据
 const statData = ref({
@@ -119,23 +93,6 @@ const getCurrentMonthRange = () => {
   const endDate = `${year}-${String(month).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} 23:59:59`
   return [startDate, endDate]
 }
-
-// 加载钱包余额
-const loadWallet = async () => {
-  try {
-    const res = await getWallet()
-    if (res.data) {
-      wallet.value = {
-        balance: (res.data.balance || 0) / 100,
-        totalExpense: (res.data.totalExpense || 0) / 100,
-        totalRecharge: (res.data.totalRecharge || 0) / 100
-      }
-    }
-  } catch (error) {
-    console.error('加载钱包失败:', error)
-  }
-}
-
 
 // 加载交易记录
 const loadTransactions = async () => {
@@ -180,30 +137,22 @@ const loadTransactions = async () => {
 // 加载所有数据
 const loadAllData = async () => {
   await Promise.all([
-    loadWallet(),
     loadStatData(),
     loadTransactions()
   ])
 }
 
-// 格式化余额
-const formatBalance = (num) => {
-  return num.toFixed(2)
-}
-
-// 切换余额显示
-const toggleBalance = () => {
-  showBalance.value = !showBalance.value
-}
-
 // 下拉刷新
-const onRefresh = () => {
-  refreshing.value = true
-  loadAllData().then(() => {
-    refreshing.value = false
-    uni.showToast({ title: '刷新成功', icon: 'success' })
-  })
+const onRefresh = async () => {
+  await loadAllData()
+  uni.stopPullDownRefresh()
+  uni.showToast({ title: '刷新成功', icon: 'success' })
 }
+
+// 页面下拉刷新生命周期
+onPullDownRefresh(() => {
+  onRefresh()
+})
 
 // 获取指定月份的时间范围
 const getMonthRange = (year, month) => {
@@ -320,86 +269,8 @@ onShow(() => {
 }
 
 .record-scroll {
-  height: 630rpx; /* 调整高度以填充更多空间 */
+  flex: 1;
   width: 100%;
-}
-
-/* 余额卡片 */
-.balance-card {
-  margin: 30rpx;
-  background: linear-gradient(135deg, #00BB88 0%, #008866 100%);
-  border-radius: 32rpx;
-  padding: 40rpx 30rpx;
-  .balance-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20rpx;
-    .balance-label {
-      color: rgba(255,255,255,0.9);
-      font-size: 28rpx;
-    }
-    .eye-btn {
-      width: 60rpx;
-      height: 60rpx;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-  }
-  .balance-num {
-    color: #fff;
-    font-size: 80rpx;
-    font-weight: bold;
-    display: block;
-    margin-bottom: 40rpx;
-  }
-  .action-btns {
-    display: flex;
-    gap: 20rpx;
-    .action-btn {
-      flex: 1;
-      height: 80rpx;
-      line-height: 80rpx;
-      background: rgba(255,255,255,0.2);
-      color: #fff;
-      border-radius: 40rpx;
-      font-size: 30rpx;
-      font-weight: 600;
-      border: none;
-      &::after {
-        border: none;
-      }
-    }
-  }
-
-  .record-entries {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 30rpx;
-    padding-top: 30rpx;
-    border-top: 1rpx solid rgba(255,255,255,0.15);
-  }
-
-  .record-entry {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8rpx;
-  }
-
-  .entry-text {
-    color: #fff;
-    font-size: 26rpx;
-  }
-
-  .entry-divider {
-    width: 2rpx;
-    height: 40rpx;
-    background: rgba(255,255,255,0.15);
-  }
 }
 
 /* 通用卡片 */
@@ -412,6 +283,7 @@ onShow(() => {
 
 /* 收支统计 */
 .stat-card {
+  margin-top: 30rpx;
   .stat-header {
     display: flex;
     justify-content: space-between;

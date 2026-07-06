@@ -2,8 +2,8 @@
     "name" : "初球",
     "appid" : "__UNI__B081810",
     "description" : "搭建台球爱好者与专业裁教、裁判教练的对接平台，支持用户在线预约台球陪练与教学服务，裁教线上接单获取收益；平台统一管理账号、订单、财务结算及客服售后，提供便捷规范的台球陪练预约服务。",
-    "versionName" : "1.2.0",
-    "versionCode" : 1,
+    "versionName" : "1.2.5",
+    "versionCode" : 6,
     "transformPx" : false,
     "app-plus" : {
         "usingComponents" : true,
@@ -66,11 +66,11 @@
                 "bundleID" : "com.aksjzt.qiuleme.user",
                 "bundleIdentifier" : "com.aksjzt.qiuleme.user",
                 "dSYMs" : false,
-                "plist" : {
-                    "NSCameraUsageDescription" : "需要获取您的相机拍摄权限，以便您在平台中正常使用扫一扫、拍摄视频，或上传图片头像。",
-                    "NSPhotoLibraryUsageDescription" : "需要获取您的相册读取权限，以便您能从相册中选择图片来上传头像、发布动态或提交认证资料。",
-                    "NSPhotoLibraryAddUsageDescription" : "需要获取您的相册写入权限，以便您能将平台内的二维码、球厅海报或订单凭证保存至手机相册。",
-                    "NSLocationWhenInUseUsageDescription" : "需要获取您的位置权限，以便为您精准计算并展示附近的球厅信息及优质裁判、教练推荐",
+                "infoPlist" : {
+                    "NSCameraUsageDescription" : "拍摄照片、视频或者扫一扫功能因需要获取图像视频数据，需要访问相机权限，用于捕捉画面与录制视频。",
+                    "NSPhotoLibraryUsageDescription" : "图片或者视频、保存、扫一扫功能因需要处理图像和视频文件，需访问相册权限，用于文件的读写与操作。",
+                    "NSPhotoLibraryAddUsageDescription" : "图片或者视频、保存凭证功能因需要存储图像文件，需访问相册存储权限，用于保存二维码、球厅海报与订单凭证至本地相册。",
+                    "NSLocationWhenInUseUsageDescription" : "裁教展示需要根据用户的地理位置提供服务，需要访问位置信息权限，用于获取用户的地理位数据，以便用户提供前述功能。",
                     "LSApplicationQueriesSchemes" : [ "iosamap", "tel", "weixin", "weixinULAPI", "wechat" ]
                 },
                 "entitlements" : {
@@ -78,7 +78,14 @@
                     "com.apple.developer.associated-domains" : [ "applinks:qiulem.com" ]
                 },
                 "pushRegisterMode" : "manual",
-                "privacyRegisterMode" : "manual"
+                "privacyRegisterMode" : "manual",
+                "privacyDescription" : {
+                    "NSCameraUsageDescription" : "拍摄照片、视频或者扫一扫功能因需要获取图像视频数据，需要访问相机权限，用于捕捉画面与录制视频。",
+                    "NSPhotoLibraryUsageDescription" : "图片或者视频、保存、扫一扫功能因需要处理图像和视频文件，需访问相册权限，用于文件的读写与操作。",
+                    "NSPhotoLibraryAddUsageDescription" : "图片或者视频、保存凭证功能因需要存储图像文件，需访问相册存储权限，用于保存二维码、球厅海报与订单凭证至本地相册。",
+                    "NSLocationAlwaysAndWhenInUseUsageDescription" : "裁教、球厅展示需要根据用户的地理位置提供服务，需要访问位置信息权限，用于获取用户的地理位数据，以便用户提供前述功能。",
+                    "NSLocationWhenInUseUsageDescription" : "裁教、球厅展示需要根据用户的地理位置提供服务，需要访问位置信息权限，用于获取用户的地理位数据，以便用户提供前述功能。"
+                }
             },
             "sdkConfigs" : {
                 "geolocation" : {

@@ -8,6 +8,16 @@
  */
 export const showCameraPurposeModal = () => {
   return new Promise((resolve, reject) => {
+
+   // iOS 环境下不显示自定义弹窗，直接使用系统 info.plist 弹窗
+    // #ifdef APP-PLUS
+    const systemInfo = uni.getSystemInfoSync()
+    if (systemInfo.platform === 'ios') {
+      resolve()
+      return
+    }
+    // #endif
+
     const hasAgreedCameraPurpose = uni.getStorageSync('hasAgreedCameraPurpose')
     console.log('hasAgreedCameraPurpose:', hasAgreedCameraPurpose)
     if (hasAgreedCameraPurpose) {
@@ -46,6 +56,15 @@ export const showCameraPurposeModal = () => {
  */
 export const showAlbumPurposeModal = () => {
   return new Promise((resolve, reject) => {
+    // #ifdef APP-PLUS
+    // iOS 环境下不显示自定义弹窗，直接使用系统 info.plist 弹窗
+    const systemInfo = uni.getSystemInfoSync()
+    if (systemInfo.platform === 'ios') {
+      resolve()
+      return
+    }
+    // #endif
+
     const hasAgreedAlbumPurpose = uni.getStorageSync('hasAgreedAlbumPurpose')
     console.log('hasAgreedAlbumPurpose:', hasAgreedAlbumPurpose)
     if (hasAgreedAlbumPurpose) {
@@ -174,7 +193,7 @@ export const showCameraPermissionModal = (options = {}) => {
   uni.showModal({
     title,
     content,
-    confirmText: '去开启',
+    confirmText: '前往系统设置',
     success: (res) => {
       if (res.confirm) {
         openAppSetting()
@@ -214,18 +233,19 @@ export const showAlbumPermissionModal = (options = {}) => {
   })
   // #endif
 
-  // #ifdef APP-PLUS
-  uni.showModal({
-    title,
-    content,
-    confirmText: '去开启',
-    success: (res) => {
-      if (res.confirm) {
-        openAppSetting()
-        onSuccess && onSuccess()
-      }
-    }
-  })
+
+  // // #ifdef APP-PLUS
+  // uni.showModal({
+  //   title,
+  //   content,
+  //   confirmText: '去开启',
+  //   success: (res) => {
+  //     if (res.confirm) {
+  //       openAppSetting()
+  //       onSuccess && onSuccess()
+  //     }
+  //   }
+  // })
   // #endif
 
   // #ifdef H5
@@ -234,8 +254,8 @@ export const showAlbumPermissionModal = (options = {}) => {
 }
 
 /**
- * 打开应用设置页面
- */
+* 打开应用设置页面
+*/
 const openAppSetting = () => {
   // #ifdef APP-PLUS
   const systemInfo = uni.getSystemInfoSync()

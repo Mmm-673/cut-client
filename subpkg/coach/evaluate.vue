@@ -113,7 +113,7 @@ import { ref, reactive } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { createReview, getCoachDetail } from '@/api/billiard/coach'
 import { uploadFile } from '@/api/billiard/user';
-import { showCameraPurposeModal, showAlbumPurposeModal, requestCameraPermission, requestAlbumPermission, showImageSourceModal } from '@/utils/photo';
+import { showCameraPurposeModal, showAlbumPurposeModal, requestCameraPermission, requestAlbumPermission, showImageSourceModal, showCameraPermissionModal, showAlbumPermissionModal } from '@/utils/photo';
 
 // 教练信息
 const coachInfo = reactive({
@@ -277,6 +277,17 @@ const handleUploadImage = async () => {
             title: '上传失败',
             icon: 'none'
           });
+        }
+      },
+      fail: (err) => {
+        console.error('chooseImage fail:', err,err.errMsg)
+        // 判断是否是权限拒绝
+        if (err && err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize') || err.errMsg.includes('denied') || err.errMsg.includes('fail'))) {
+          if (sourceType === 0) {
+            showCameraPermissionModal()
+          } else {
+            showAlbumPermissionModal()
+          }
         }
       }
     });

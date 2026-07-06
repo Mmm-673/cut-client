@@ -11,16 +11,9 @@
 <!--    </view>-->
 
     <!-- ==========================================
-         2. 统一的滚动容器（撑满剩余+适配下安全区）
+         2. 页面内容容器（普通布局自然滚动）
          ========================================== -->
-    <scroll-view
-        scroll-y
-        class="my-scroll"
-        refresher-enabled
-        :refresher-triggered="refreshing"
-        @refresherrefresh="onRefresh"
-        :lower-threshold="50"
-    >
+    <view class="page-content">
       <!-- ==========================================
            3. 顶部个人信息卡片（统一渐变+安全间距）
            ========================================== -->
@@ -38,7 +31,6 @@
           <view class="user-info">
             <view class="user-name-row">
               <text class="user-name">{{ userInfo.nickname }}</text>
-              <text class="user-level" :class="userInfo.levelClass">{{ userInfo.level }}</text>
             </view>
             <view class="user-phone">{{ userInfo.phone }}</view>
             <text class="edit-btn" @click="toEditInfo">编辑资料</text>
@@ -64,60 +56,6 @@
         </view>
       </view>
 
-      <!-- ==========================================
-           4. 钱包卡片（新布局）
-           ========================================== -->
-      <view class="wallet-card" @click="toWallet">
-        <!-- 钱包背景渐变 -->
-        <view class="wallet-bg"></view>
-
-        <!-- 钱包内容 -->
-        <view class="wallet-content">
-        <!-- 左侧：余额信息 -->
-        <view class="wallet-left">
-          <view class="wallet-label">
-            <uni-icons type="wallet-filled" size="18" color="#00BB88" />
-            <text>账户余额</text>
-          </view>
-
-          <view class="wallet-balance">
-            <text class="currency">¥</text>
-            <text class="amount">{{ balanceVisible ? formattedBalance : '******' }}</text>
-            <view
-              class="balance-eye-hit"
-              @click.stop.prevent="toggleBalanceVisible"
-            >
-              <uni-icons
-                class="balance-eye"
-                :type="balanceVisible ? 'eye' : 'eye-slash'"
-                size="20"
-                color="rgba(255, 255, 255, 0.85)"
-              />
-            </view>
-          </view>
-
-          <view class="wallet-stats">
-            <view class="stat-item">
-              <text class="stat-label">累计消费</text>
-              <text class="stat-value">¥{{ wallet.totalExpense }}</text>
-            </view>
-          </view>
-        </view>
-
-        <!-- 右侧：快捷操作 -->
-<!--        <view class="wallet-right">-->
-<!--          <view class="quick-btn recharge-btn" @click.stop="toRecharge">-->
-<!--            <uni-icons type="plus" size="20" color="#059669" />-->
-<!--            <text>充值</text>-->
-<!--          </view>-->
-
-<!--          <view class="quick-btn withdraw-btn" @click.stop="toWithdraw">-->
-<!--            <uni-icons type="minus" size="20" color="#fff" />-->
-<!--            <text>提现</text>-->
-<!--          </view>-->
-<!--        </view>-->
-        </view>
-      </view>
 
       <!-- ==========================================
            5. 我的订单模块（独立的func-card！！之前嵌套错了）
@@ -203,10 +141,10 @@
       </view>
 
       <!-- ==========================================
-           7. 底部安全区域（单独放滚动容器最后）
+           7. 底部安全区域
            ========================================== -->
       <view class="safe-area-bottom"></view>
-    </scroll-view>
+    </view>
 
     <!-- 图片查看器 -->
     <ImageViewer
@@ -220,9 +158,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { onShow } from  "@dcloudio/uni-app"
+import { onShow, onPullDownRefresh } from  "@dcloudio/uni-app"
 import { getUserInfo } from '@/api/billiard/user'
-import { getWallet } from '@/api/billiard/wallet'
 import { getOrderList } from '@/api/billiard/order'
 import { useUserStore } from '@/store/modules/user'
 
@@ -355,40 +292,6 @@ const calculateStats = () => {
   stats.value.avgScore = 0 // 暂时没有评分数据
 }
 
-// 钱包信息
-const wallet = ref({
-  balance: 0,
-  totalExpense: 0,
-  totalRecharge: 0
-})
-const balanceVisible = ref(false)
-
-const formatAmount = (amount) => {
-  const value = Number(amount) || 0
-  return value.toLocaleString('zh-CN', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })
-}
-
-const formattedBalance = computed(() => formatAmount(wallet.value.balance))
-
-// 加载钱包数据
-const loadWallet = async () => {
-  try {
-    const res = await getWallet()
-    if (res.data) {
-      wallet.value = {
-        balance: (res.data.balance || 0) / 100, // 分转元
-        totalExpense: (res.data.totalExpense || 0) / 100,
-        totalRecharge: (res.data.totalRecharge || 0) / 100
-      }
-    }
-  } catch (error) {
-    console.error('加载钱包失败:', error)
-  }
-}
-
 // 优惠券信息
 const coupon = ref({
   availableCount: 3
@@ -440,6 +343,7 @@ const loadOrders = async () => {
 
 // 功能菜单（修正了跳转路径！！对应刚才整合的pages.json）
 const menuList = ref([
+  { key: 'wallet', title: '收支统计', icon: 'wallet-filled', bgColor: 'rgba(0, 187, 136, 0.2)', color: '#00BB88', path: '/subpkg/mine/wallet' },
   { key: 'collection', title: '我的收藏', icon: 'heart', bgColor: 'rgba(255, 77, 79, 0.2)', color: '#ff4d4f', path: '/subpkg/mine/favorites' },
   { key: 'help', title: '客服中心', icon: 'headphones', bgColor: 'rgba(107, 114, 128, 0.2)', color: '#6B7280', path: '/subpkg/mine/help' }
 ])
@@ -483,18 +387,21 @@ const loadUserInfo = async () => {
 }
 
 // ---------------------- 交互方法 ----------------------
-// 下拉刷新
+// 下拉刷新（页面级）
 const onRefresh = async () => {
-  refreshing.value = true
   // 重新加载数据
   await Promise.all([
     loadUserInfo(),
-    loadWallet(),
     loadOrders()
   ])
-  refreshing.value = false
+  uni.stopPullDownRefresh()
   uni.showToast({ title: '刷新成功', icon: 'success' })
 }
+
+// 页面下拉刷新生命周期
+onPullDownRefresh(() => {
+  onRefresh()
+})
 
 // 图片查看器
 const showImageViewer = ref(false)
@@ -527,18 +434,6 @@ const toWallet = () => {
   uni.navigateTo({ url: '/subpkg/mine/wallet' })
 }
 
-const toRecharge = () => {
-  uni.navigateTo({ url: '/subpkg/mine/recharge' })
-}
-
-const toWithdraw = () => {
-  uni.navigateTo({ url: '/subpkg/mine/withdraw' })
-}
-
-const toggleBalanceVisible = () => {
-  balanceVisible.value = !balanceVisible.value
-}
-
 const toCoupon = () => {
   uni.showToast({ title: '功能开发中', icon: 'none' })
 }
@@ -567,7 +462,6 @@ const toMenuPage = (item) => {
 onMounted(() => {
   // 页面加载拉取用户数据
   loadUserInfo()
-  loadWallet()
   loadOrders()
 })
 
@@ -575,20 +469,17 @@ onMounted(() => {
 onShow(() => {
   // 每次进入页面刷新用户数据
   loadUserInfo()
-  loadWallet()
   loadOrders()
 })
 </script>
 
 <style lang="scss" scoped>
 /* ==========================================
-   全局容器与布局（严格安全区+撑满）
+   全局容器与布局（普通布局自然滚动）
    ========================================== */
 .my-page-wrapper {
   min-height: 100vh;
   background: #121619;
-  display: flex;
-  flex-direction: column;
   padding-top: 130rpx;
 }
 
@@ -621,12 +512,10 @@ onShow(() => {
 }
 
 /* ==========================================
-   统一的滚动容器（严格撑满剩余）
+   页面内容容器
    ========================================== */
-.my-scroll {
-  flex: 1;
+.page-content {
   width: 100%;
-
 }
 
 /* ==========================================
@@ -776,226 +665,7 @@ onShow(() => {
 }
 
 /* ==========================================
-   4. 钱包卡片（新布局）
-   ========================================== */
-.wallet-card {
-  position: relative;
-  margin: 0 30rpx 30rpx;
-  border-radius: 32rpx;
-  overflow: hidden;
-  cursor: pointer;
-  box-shadow: 0 12rpx 32rpx rgba(0, 187, 136, 0.15);
-  transform: translateY(0);
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-
-  &:active {
-    transform: translateY(4rpx) scale(0.98);
-    box-shadow: 0 4rpx 16rpx rgba(0, 187, 136, 0.2);
-  }
-}
-
-.wallet-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
-  opacity: 0.95;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: -60%;
-    right: -40%;
-    width: 400rpx;
-    height: 400rpx;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
-    animation: pulse 8s ease-in-out infinite;
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -50%;
-    left: -30%;
-    width: 320rpx;
-    height: 320rpx;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(0, 0, 0, 0.15) 0%, transparent 70%);
-    animation: pulse 10s ease-in-out infinite reverse;
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 0.6;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.8;
-  }
-}
-
-.wallet-content {
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 40rpx 36rpx;
-}
-
-.wallet-left {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
-
-.wallet-label {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 26rpx;
-  font-weight: 500;
-
-  text {
-    color: rgba(255, 255, 255, 0.9);
-  }
-}
-
-.wallet-balance {
-  display: flex;
-  align-items: baseline;
-  gap: 8rpx;
-
-  .currency {
-    color: #fff;
-    font-size: 32rpx;
-    font-weight: 600;
-  }
-
-  .amount {
-    color: #fff;
-    font-size: 56rpx;
-    font-weight: 700;
-    letter-spacing: 2rpx;
-    text-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.2);
-  }
-
-  .balance-eye-hit {
-    width: 64rpx;
-    height: 64rpx;
-    margin-left: 8rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    align-self: center;
-  }
-
-  .balance-eye {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-}
-
-.wallet-stats {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  margin-top: 8rpx;
-
-  .stat-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4rpx;
-
-    .stat-label {
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 22rpx;
-    }
-
-    .stat-value {
-      color: #fff;
-      font-size: 26rpx;
-      font-weight: 600;
-    }
-  }
-
-  .stat-divider {
-    width: 2rpx;
-    height: 32rpx;
-    background: rgba(255, 255, 255, 0.2);
-  }
-}
-
-.wallet-right {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
-
-.quick-btn {
-  width: 120rpx;
-  height: 64rpx;
-  border-radius: 32rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6rpx;
-  font-size: 26rpx;
-  font-weight: 600;
-  color: #fff;
-  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  position: relative;
-  overflow: hidden;
-
-  text {
-    color: #fff;
-  }
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
-  }
-
-  &:active {
-    transform: scale(0.92);
-
-    &::before {
-      left: 100%;
-    }
-  }
-}
-
-.recharge-btn {
-  background: #fff;
-  color: #059669;
-  font-weight: 700;
-
-  text {
-    color: #059669;
-  }
-}
-
-.withdraw-btn {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10rpx);
-  border: 1rpx solid rgba(255, 255, 255, 0.3);
-}
-
-/* ==========================================
-   5. 我的订单模块
+   4. 我的订单模块
    ========================================== */
 .order-tabs {
   display: flex;

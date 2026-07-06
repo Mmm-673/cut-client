@@ -111,11 +111,22 @@ export function doCallPhone(phone) {
  * @param {string} content 权限说明弹窗内容，可选
  */
 export async function makeCall(phone, content) {
-  // 显示电话权限用途说明弹窗
-  await showCallPermissionModal(content)
+  // iOS 不显示自定义弹窗，直接拨打电话
+  // #ifdef APP-PLUS
+  const systemInfo = uni.getSystemInfoSync()
+  if (systemInfo.platform !== 'ios') {
+    // 显示电话权限用途说明弹窗
+    await showCallPermissionModal(content)
+    // 请求系统拨号权限
+    await requestCallPermission()
+  }
+  // #endif
 
-  // 请求系统拨号权限
+  // #ifndef APP-PLUS
+  // 非 App 平台显示电话权限用途说明弹窗
+  await showCallPermissionModal(content)
   await requestCallPermission()
+  // #endif
 
   // 执行拨打电话
   doCallPhone(phone)

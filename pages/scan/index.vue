@@ -31,7 +31,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { showCameraPurposeModal, showAlbumPurposeModal } from '@/utils/photo'
+import { showCameraPurposeModal, showAlbumPurposeModal, showCameraPermissionModal, showAlbumPermissionModal } from '@/utils/photo'
 
 const statusBarHeight = ref(0)
 const loading = ref(false)
@@ -143,7 +143,14 @@ const handleAlbumScan = async () => {
         count: 1,
         sourceType: ['album'],
         success: resolve,
-        fail: reject
+        fail: (err) => {
+          console.error('chooseImage fail:', err)
+          // 判断是否是权限拒绝
+          if (err && err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize') || err.errMsg.includes('denied') || err.errMsg.includes('fail'))) {
+            showAlbumPermissionModal()
+          }
+          reject(err)
+        }
       })
     })
 
@@ -183,6 +190,9 @@ const handleScan = async () => {
           // uni.switchTab({
           //   url: '/pages/home/index'
           // })
+        } else if (err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize') || err.errMsg.includes('denied') || err.errMsg.includes('fail'))) {
+          // 权限拒绝，显示引导弹窗
+          showCameraPermissionModal()
         } else {
           uni.showToast({
             title: '扫码失败，请重试',

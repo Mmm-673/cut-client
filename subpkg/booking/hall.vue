@@ -722,11 +722,16 @@ const doCallPhone = (validPhones, index = 0) => {
 // 拨打电话
 const callPhone = async (hall) => {
   try {
-    // 显示电话权限用途说明弹窗
-    await showCallPermissionModal()
-
-    // 请求系统拨号权限
-    await requestCallPermission()
+    // iOS 不显示自定义弹窗，直接拨打电话
+    // #ifdef APP-PLUS
+    const systemInfo = uni.getSystemInfoSync()
+    if (systemInfo.platform !== 'ios') {
+      // 显示电话权限用途说明弹窗
+      await showCallPermissionModal()
+      // 请求系统拨号权限
+      await requestCallPermission()
+    }
+    // #endif
 
     let phones = []
 
@@ -1019,10 +1024,10 @@ onShow(() => {
 
 /* 定位信息 */
 .location-box {
-  margin: 0 30rpx 24rpx;
   display: flex;
   align-items: center;
   gap: 12rpx;
+  margin: 24rpx 30rpx;
   .location-text {
     color: #fff;
     font-size: 26rpx;

@@ -645,10 +645,10 @@ onShow(() => {
 
 /* 定位信息 */
 .location-box {
-  margin: 0 30rpx 24rpx;
   display: flex;
   align-items: center;
   gap: 12rpx;
+  margin: 24rpx 30rpx 0rpx;
   .location-text {
     color: #fff;
     font-size: 26rpx;

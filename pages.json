@@ -48,7 +48,9 @@
     {
       "path": "pages/mine/index",
       "style": {
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true,
+        "backgroundColor": "#121619"
       }
     },
     {
@@ -173,7 +175,9 @@
         {
           "path": "wallet",
           "style": {
-            "navigationBarTitleText": "我的钱包"
+            "navigationBarTitleText": "收支统计",
+            "enablePullDownRefresh": true,
+            "backgroundColor": "#121619"
           }
         },
         {
