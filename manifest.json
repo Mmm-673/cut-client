@@ -2,8 +2,8 @@
     "name" : "初球",
     "appid" : "__UNI__B081810",
     "description" : "搭建台球爱好者与专业裁教、裁判教练的对接平台，支持用户在线预约台球陪练与教学服务，裁教线上接单获取收益；平台统一管理账号、订单、财务结算及客服售后，提供便捷规范的台球陪练预约服务。",
-    "versionName" : "1.2.5",
-    "versionCode" : 6,
+    "versionName" : "1.2.6",
+    "versionCode" : 7,
     "transformPx" : false,
     "app-plus" : {
         "usingComponents" : true,
@@ -85,7 +85,8 @@
                     "NSPhotoLibraryAddUsageDescription" : "图片或者视频、保存凭证功能因需要存储图像文件，需访问相册存储权限，用于保存二维码、球厅海报与订单凭证至本地相册。",
                     "NSLocationAlwaysAndWhenInUseUsageDescription" : "裁教、球厅展示需要根据用户的地理位置提供服务，需要访问位置信息权限，用于获取用户的地理位数据，以便用户提供前述功能。",
                     "NSLocationWhenInUseUsageDescription" : "裁教、球厅展示需要根据用户的地理位置提供服务，需要访问位置信息权限，用于获取用户的地理位数据，以便用户提供前述功能。"
-                }
+                },
+                "idfa" : false
             },
             "sdkConfigs" : {
                 "geolocation" : {
