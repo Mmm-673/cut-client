@@ -60,7 +60,7 @@
       </view>
 
       <!-- 服务项目 -->
-      <view class="section">
+      <view class="section" v-if="isUserLoggedIn">
         <view class="section-title">
           <uni-icons type="list" size="18" color="#00c896"></uni-icons>
           <text>服务项目</text>
@@ -89,6 +89,18 @@
         </view>
       </view>
 
+      <!-- 未登录时显示服务项目提示 -->
+      <view class="section" v-else>
+        <view class="section-title">
+          <uni-icons type="list" size="18" color="#00c896"></uni-icons>
+          <text>服务项目</text>
+        </view>
+        <view class="login-tip-box" @click="showLoginDialog">
+          <uni-icons type="locked" size="40" color="#666"></uni-icons>
+          <text class="login-tip-text">登录后查看服务项目</text>
+        </view>
+      </view>
+
       <!-- 个人相册 -->
       <view class="section" v-if="albumList.length > 0">
         <view class="section-title">
@@ -110,7 +122,7 @@
       </view>
 
       <!-- 用户评价 -->
-      <view class="section" v-if="reviewList.length > 0">
+      <view class="section" v-if="isUserLoggedIn && reviewList.length > 0">
         <view class="section-title">
           <uni-icons type="star" size="18" color="#00c896"></uni-icons>
           <text>用户评价 ({{ reviewList.length }})</text>
@@ -195,6 +207,18 @@
         </view>
       </view>
 
+      <!-- 未登录时显示评价提示 -->
+      <view class="section" v-else-if="!isUserLoggedIn">
+        <view class="section-title">
+          <uni-icons type="star" size="18" color="#00c896"></uni-icons>
+          <text>用户评价</text>
+        </view>
+        <view class="login-tip-box" @click="showLoginDialog">
+          <uni-icons type="locked" size="40" color="#666"></uni-icons>
+          <text class="login-tip-text">登录后查看用户评价</text>
+        </view>
+      </view>
+
       <!-- 底部安全区域留白 -->
       <view class="safe-area-bottom"></view>
     </view>
@@ -221,11 +245,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { onLoad } from "@dcloudio/uni-app"
+import { ref, reactive, onMounted, computed } from 'vue'
+import { onLoad, onShow } from "@dcloudio/uni-app"
 import { getCoachDetail, toggleCoachFavorite, getCoachReviews } from '@/api/billiard/coach'
 import { createOrder, getCountdownEnabled } from '@/api/billiard/order'
 import { formatPrice } from '@/utils/common'
+import { isLoggedIn } from '@/utils/token'
 
 // 图片查看器
 const showImageViewer = ref(false)
@@ -260,6 +285,8 @@ const refreshing = ref(false)
 const isFavorite = ref(false)
 // 是否显示按钮
 const showRewardBtn = ref(false)
+// 登录状态
+const isUserLoggedIn = ref(isLoggedIn())
 
 // 教练信息
 const coachInfo = reactive({
@@ -544,8 +571,32 @@ const selectService = (service) => {
 
 
 
+// 显示登录弹窗
+const showLoginDialog = () => {
+  uni.showModal({
+    title: '温馨提示',
+    content: '登录后可以查看更多精彩内容，是否登录？',
+    confirmText: '去登录',
+    cancelText: '稍后',
+    success: (res) => {
+      if (res.confirm) {
+        uni.navigateTo({
+          url: '/pages/login/index'
+        })
+      }
+    }
+  })
+}
+
 // 立即预约
 const bookNow = async () => {
+  // 检查登录状态
+  isUserLoggedIn.value = isLoggedIn()
+  if (!isUserLoggedIn.value) {
+    showLoginDialog()
+    return
+  }
+
   if (!selectedService.value) {
     uni.showToast({ title: '请先选择服务项目', icon: 'none' })
     return
@@ -646,6 +697,11 @@ onLoad((options) => {
   if (options.id) {
     coachId.value = parseInt(options.id)
   }
+})
+
+onShow(() => {
+  // 页面显示时更新登录状态
+  isUserLoggedIn.value = isLoggedIn()
 })
 
 onMounted(() => {
@@ -881,6 +937,21 @@ onMounted(() => {
       font-size: 28rpx;
       color: #cccccc;
       line-height: 1.8;
+    }
+  }
+
+  .login-tip-box {
+    background-color: #2a2a2a;
+    border-radius: 32rpx;
+    padding: 80rpx 32rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24rpx;
+
+    .login-tip-text {
+      font-size: 28rpx;
+      color: #999999;
     }
   }
 }

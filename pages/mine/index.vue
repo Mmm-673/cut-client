@@ -1,19 +1,9 @@
 <template>
   <view class="my-page-wrapper">
     <!-- ==========================================
-         1. 统一的自定义顶部导航栏（适配上安全区）
-         ========================================== -->
-<!--    <view class="nav-bar">-->
-<!--      &lt;!&ndash; 占位对称用（右侧没有按钮） &ndash;&gt;-->
-<!--      <view class="nav-placeholder"></view>-->
-<!--      <text class="nav-title">我的</text>-->
-<!--      <view class="nav-placeholder"></view>-->
-<!--    </view>-->
-
-    <!-- ==========================================
          2. 页面内容容器（普通布局自然滚动）
          ========================================== -->
-    <view class="page-content">
+    <view class="page-content" v-if="isUserLoggedIn">
       <!-- ==========================================
            3. 顶部个人信息卡片（统一渐变+安全间距）
            ========================================== -->
@@ -36,7 +26,6 @@
             <text class="edit-btn" @click="toEditInfo">编辑资料</text>
           </view>
 
-<!--          &lt;!&ndash; 设置按钮 &ndash;&gt;-->
           <view class="setting-btn" @click="toSetting">
             <uni-icons type="gear" size="22" color="#fff" />
           </view>
@@ -58,7 +47,7 @@
 
 
       <!-- ==========================================
-           5. 我的订单模块（独立的func-card！！之前嵌套错了）
+           5. 我的订单模块
            ========================================== -->
       <view class="func-card">
         <view class="card-header">
@@ -77,7 +66,7 @@
               v-for="tab in orderTabs"
               :key="tab.value"
               @click="switchOrderTab(tab.value)"
-          >
+              >
             <view class="tab-icon" :style="{color: tab.color}">
               <uni-icons :type="tab.icon" size="24" :color="tab.color" />
               <text class="badge" v-if="tab.hasBadge"></text>
@@ -86,14 +75,14 @@
           </view>
         </view>
 
-        <!-- 订单列表（独立在order-tabs外面！！） -->
+        <!-- 订单列表 -->
         <view class="order-list">
           <view
               class="order-card"
               v-for="order in showOrders"
               :key="order.id"
               @click="toOrderDetail(order.id)"
-          >
+              >
             <view class="order-left">
               <image class="coach-avatar" :src="order.coachAvatar" mode="aspectFill"></image>
               <view class="order-info">
@@ -123,7 +112,7 @@
       </view>
 
       <!-- ==========================================
-           6. 功能菜单列表（独立的func-card！！之前嵌套错了）
+           6. 功能菜单列表
            ========================================== -->
       <view class="func-card menu-card">
         <view
@@ -131,7 +120,7 @@
             v-for="item in menuList"
             :key="item.key"
             @click="toMenuPage(item)"
-        >
+            >
           <view class="menu-icon" :style="{background: item.bgColor}">
             <uni-icons :type="item.icon" size="22" :color="item.color" />
           </view>
@@ -143,6 +132,21 @@
       <!-- ==========================================
            7. 底部安全区域
            ========================================== -->
+      <view class="safe-area-bottom"></view>
+    </view>
+
+    <!-- ==========================================
+         未登录时显示的提示页面
+         ========================================== -->
+    <view class="login-prompt-wrapper" v-else>
+      <view class="prompt-content">
+        <view class="prompt-icon">
+          <uni-icons type="person" size="120" color="#00BB88" />
+        </view>
+        <text class="prompt-title">登录后查看更多内容</text>
+        <text class="prompt-desc">登录后可查看订单、管理个人信息</text>
+        <button class="login-btn" @click="toLogin">立即登录</button>
+      </view>
       <view class="safe-area-bottom"></view>
     </view>
 
@@ -162,6 +166,7 @@ import { onShow, onPullDownRefresh } from  "@dcloudio/uni-app"
 import { getUserInfo } from '@/api/billiard/user'
 import { getOrderList } from '@/api/billiard/order'
 import { useUserStore } from '@/store/modules/user'
+import { isLoggedIn } from '@/utils/token'
 
 // 后端状态映射：10=待付款,20=待接单,30=已接单,40=进行中,50=待评价,60=已完成,70=已取消
 const STATUS_MAP = {
@@ -243,7 +248,7 @@ const transformOrder = (item) => {
     id: item.orderId,
     coachAvatar: item.coachMainPhoto || '/static/default-avatar.png',
     coachName: item.coachStageName || '裁教',
-    coachLevel: '教练', // 后端暂时没返回等级
+    coachLevel: '教练',
     serviceName: SERVICE_TYPE_TEXT[item.serviceType] || '台球陪练',
     duration: durationHours,
     time: timeStr,
@@ -258,10 +263,12 @@ const transformOrder = (item) => {
 const userStore = useUserStore()
 
 // ---------------------- 状态定义 ----------------------
+// 登录状态
+const isUserLoggedIn = ref(isLoggedIn())
 // 刷新状态
 const refreshing = ref(false)
 // 当前订单分类
-const currentOrderTab = ref(0) // 默认选中待付款，和设计图一致
+const currentOrderTab = ref(0)
 
 // 用户信息
 const userInfo = ref({
@@ -286,16 +293,11 @@ const calculateStats = () => {
   Object.values(orderList.value).forEach(list => {
     total += list.length
   })
-  finished = (orderList.value[3] || []).length // 已完成订单数
+  finished = (orderList.value[3] || []).length
   stats.value.totalOrder = total
   stats.value.finishOrder = finished
-  stats.value.avgScore = 0 // 暂时没有评分数据
+  stats.value.avgScore = 0
 }
-
-// 优惠券信息
-const coupon = ref({
-  availableCount: 3
-})
 
 // 订单分类
 const orderTabs = ref([
@@ -308,23 +310,22 @@ const orderTabs = ref([
 
 // 订单列表数据
 const orderList = ref({
-  0: [], // 待付款
-  1: [], // 进行中
-  2: [], // 待评价
-  3: [], // 已完成
-  4: [] // 已取消
+  0: [],
+  1: [],
+  2: [],
+  3: [],
+  4: []
 })
 
 // 加载订单列表
 const loadOrders = async () => {
   try {
-    // 并行加载所有状态的订单
     const promises = Object.keys(TAB_TO_STATUSES).map(async (tab) => {
       const statuses = TAB_TO_STATUSES[tab]
       const list = []
       for (const status of statuses) {
         try {
-          const res = await getOrderList({ status, pageNo: 1, pageSize: 100 }) // 多取点用于统计
+          const res = await getOrderList({ status, pageNo: 1, pageSize: 100 })
           const data = res.data || {}
           const items = data.list || data.records || data.rows || []
           list.push(...items)
@@ -335,13 +336,13 @@ const loadOrders = async () => {
       orderList.value[tab] = list.map(transformOrder)
     })
     await Promise.all(promises)
-    calculateStats() // 加载完成后计算统计
+    calculateStats()
   } catch (error) {
     console.error('加载订单列表失败:', error)
   }
 }
 
-// 功能菜单（修正了跳转路径！！对应刚才整合的pages.json）
+// 功能菜单
 const menuList = ref([
   { key: 'wallet', title: '收支统计', icon: 'wallet-filled', bgColor: 'rgba(0, 187, 136, 0.2)', color: '#00BB88', path: '/subpkg/mine/wallet' },
   { key: 'collection', title: '我的收藏', icon: 'heart', bgColor: 'rgba(255, 77, 79, 0.2)', color: '#ff4d4f', path: '/subpkg/mine/favorites' },
@@ -349,35 +350,29 @@ const menuList = ref([
 ])
 
 // ---------------------- 计算属性 ----------------------
-// 当前展示的订单（只展示前3条）
 const showOrders = computed(() => {
   const list = orderList.value[currentOrderTab.value] || []
   return list.slice(0, 3)
 })
 
 // ---------------------- 数据加载 ----------------------
-// 加载用户信息
 const loadUserInfo = async () => {
   try {
     const res = await getUserInfo()
     const data = res.data || {}
 
-    // 处理头像
     if (data.avatar) {
       userInfo.value.avatar = data.avatar
     } else {
       userInfo.value.avatar = '/static/default-avatar.png'
     }
 
-    // 处理昵称
     userInfo.value.nickname = data.nickname || '用户'
 
-    // 处理手机号（脱敏显示）
     if (data.mobile) {
       userInfo.value.phone = data.mobile.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
     }
 
-    // 处理等级（暂时默认普通会员，后续可根据业务扩展）
     userInfo.value.level = '普通会员'
     userInfo.value.levelClass = 'level-normal'
 
@@ -387,28 +382,25 @@ const loadUserInfo = async () => {
 }
 
 // ---------------------- 交互方法 ----------------------
-// 下拉刷新（页面级）
 const onRefresh = async () => {
-  // 重新加载数据
-  await Promise.all([
-    loadUserInfo(),
-    loadOrders()
-  ])
+  if (isUserLoggedIn.value) {
+    await Promise.all([
+      loadUserInfo(),
+      loadOrders()
+    ])
+  }
   uni.stopPullDownRefresh()
   uni.showToast({ title: '刷新成功', icon: 'success' })
 }
 
-// 页面下拉刷新生命周期
 onPullDownRefresh(() => {
   onRefresh()
 })
 
-// 图片查看器
 const showImageViewer = ref(false)
 const viewerImages = ref([])
 const viewerCurrent = ref(0)
 
-// 预览当前头像
 const previewAvatar = () => {
   if (!userInfo.value.avatar) return
   viewerImages.value = [userInfo.value.avatar]
@@ -416,12 +408,10 @@ const previewAvatar = () => {
   showImageViewer.value = true
 }
 
-// 切换订单分类
 const switchOrderTab = (val) => {
   currentOrderTab.value = val
 }
 
-// 路由跳转方法（全部修正为新pages.json的路径！！）
 const toEditInfo = () => {
   uni.navigateTo({ url: '/subpkg/mine/info' })
 }
@@ -458,69 +448,38 @@ const toMenuPage = (item) => {
   }
 }
 
+const toLogin = () => {
+  uni.navigateTo({ url: '/pages/login/index' })
+}
+
 // ---------------------- 生命周期 ----------------------
 onMounted(() => {
-  // 页面加载拉取用户数据
-  loadUserInfo()
-  loadOrders()
+  if (isUserLoggedIn.value) {
+    loadUserInfo()
+    loadOrders()
+  }
 })
 
-// 页面显示刷新数据
 onShow(() => {
-  // 每次进入页面刷新用户数据
-  loadUserInfo()
-  loadOrders()
+  isUserLoggedIn.value = isLoggedIn()
+  if (isUserLoggedIn.value) {
+    loadUserInfo()
+    loadOrders()
+  }
 })
 </script>
 
 <style lang="scss" scoped>
-/* ==========================================
-   全局容器与布局（普通布局自然滚动）
-   ========================================== */
 .my-page-wrapper {
   min-height: 100vh;
   background: #121619;
   padding-top: 130rpx;
 }
 
-/* ==========================================
-   统一的自定义顶部导航栏（严格上安全区）
-   ========================================== */
-.nav-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20rpx 30rpx;
-  padding-top: calc(20rpx + constant(safe-area-inset-top));
-  padding-top: calc(20rpx + env(safe-area-inset-top));
-  background: transparent; /* 我的页面导航透明 */
-  position: sticky;
-  top: 0;
-  z-index: 999;
-  .nav-placeholder {
-    width: 60rpx;
-    height: 60rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .nav-title {
-    color: #fff;
-    font-size: 36rpx;
-    font-weight: 600;
-  }
-}
-
-/* ==========================================
-   页面内容容器
-   ========================================== */
 .page-content {
   width: 100%;
 }
 
-/* ==========================================
-   统一的通用卡片样式
-   ========================================== */
 .func-card {
   margin: 0 30rpx 30rpx;
   background: linear-gradient(145deg, #1E252B 0%, #1a2024 100%);
@@ -560,11 +519,8 @@ onShow(() => {
   }
 }
 
-/* ==========================================
-   3. 顶部个人信息卡片
-   ========================================== */
 .user-card {
-  margin: 20rpx 30rpx 30rpx; /* 比通用卡片多20rpx的顶部间距 */
+  margin: 20rpx 30rpx 30rpx;
   background: linear-gradient(135deg, rgba(0, 187, 136, 0.2) 0%, #1E252B 100%);
   border-radius: 40rpx;
   padding: 40rpx 30rpx;
@@ -596,21 +552,6 @@ onShow(() => {
           font-size: 40rpx;
           font-weight: 700;
         }
-        .user-level {
-          display: inline-block;
-          padding: 4rpx 16rpx;
-          border-radius: 8rpx;
-          font-size: 22rpx;
-          font-weight: 500;
-          &.level-normal {
-            background: rgba(251, 191, 36, 0.2);
-            color: #FBBF24;
-          }
-          &.level-vip {
-            background: rgba(236, 72, 153, 0.2);
-            color: #EC4899;
-          }
-        }
       }
       .user-phone {
         color: #9CA3AF;
@@ -632,7 +573,6 @@ onShow(() => {
       justify-content: center;
       flex-shrink: 0;
       align-self: flex-start;
-      flex-shrink: 0;
     }
   }
 
@@ -664,9 +604,6 @@ onShow(() => {
   }
 }
 
-/* ==========================================
-   4. 我的订单模块
-   ========================================== */
 .order-tabs {
   display: flex;
   justify-content: space-between;
@@ -720,7 +657,7 @@ onShow(() => {
       align-items: center;
       gap: 16rpx;
       flex: 1;
-      min-width: 0; /* 防止flex子元素溢出 */
+      min-width: 0;
       .coach-avatar {
         width: 80rpx;
         height: 80rpx;
@@ -729,7 +666,7 @@ onShow(() => {
       }
       .order-info {
         flex: 1;
-        min-width: 0; /* 防止flex子元素溢出 */
+        min-width: 0;
         .order-title {
           color: #fff;
           font-size: 30rpx;
@@ -790,11 +727,8 @@ onShow(() => {
   }
 }
 
-/* ==========================================
-   6. 功能菜单列表
-   ========================================== */
 .menu-card {
-  padding: 0 !important; /* 去掉通用卡片的左右padding */
+  padding: 0 !important;
   .menu-item {
     display: flex;
     align-items: center;
@@ -822,13 +756,76 @@ onShow(() => {
   }
 }
 
-/* ==========================================
-   7. 底部安全区域
-   ========================================== */
 .safe-area-bottom {
   height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
   width: 100%;
-  margin-top: 10rpx; /* 多留一点底部间距更美观 */
+  margin-top: 10rpx;
+}
+
+/* ==========================================
+   未登录提示页面样式
+   ========================================== */
+.login-prompt-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding-top: 0;
+  margin-top: -130rpx;
+}
+
+.prompt-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 60rpx;
+  flex: 1;
+  justify-content: center;
+}
+
+.prompt-icon {
+  width: 200rpx;
+  height: 200rpx;
+  background: rgba(0, 187, 136, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 40rpx;
+}
+
+.prompt-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 16rpx;
+}
+
+.prompt-desc {
+  font-size: 28rpx;
+  color: #9CA3AF;
+  margin-bottom: 60rpx;
+}
+
+.login-btn {
+  width: 300rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: linear-gradient(135deg, #00BB88 0%, #00a87a 100%);
+  border-radius: 44rpx;
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 600;
+  padding: 0;
+  border: none;
+  box-shadow: 0 8rpx 24rpx rgba(0, 187, 136, 0.3);
+  &::after {
+    border: none;
+  }
+  &:active {
+    opacity: 0.8;
+  }
 }
 </style>

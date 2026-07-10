@@ -1,34 +1,20 @@
-import { useUserStore } from '@/store/modules/user'
 import { isLoggedIn } from '@/utils/token'
 
-const whiteList = [
-  '/pages/login/index',
-  '/pages/login/resetPassword',
-  '/subpkg/common/webview',
-  '/subpkg/common/textview'
-]
-
-// 拦截路由跳转
+// 拦截路由跳转 - 仅处理已登录用户访问登录页的情况
 const list = ['navigateTo', 'redirectTo', 'reLaunch', 'switchTab']
 list.forEach(item => {
   uni.addInterceptor(item, {
     invoke(e) {
-      const userStore = useUserStore()
       const url = e.url.split('?')[0]
 
-      if (isLoggedIn()) {
-        if (url === '/pages/login/index') {
-          uni.switchTab({ url: '/pages/index/index' })
-          return false
-        }
-        return true
-      } else {
-        if (whiteList.includes(url)) {
-          return true
-        }
-        uni.redirectTo({ url: '/pages/login/index' })
+      // 已登录用户访问登录页时跳转到首页
+      if (isLoggedIn() && url === '/pages/login/index') {
+        uni.switchTab({ url: '/pages/home/index' })
         return false
       }
+
+      // 其他情况都允许访问
+      return true
     },
     fail(err) {
       console.log(err)

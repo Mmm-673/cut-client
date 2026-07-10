@@ -1,4 +1,5 @@
 import { regeocode } from '@/api/billiard/amap'
+import { isLoggedIn } from '@/utils/token'
 
 /**
  * 统一的定位工具模块
@@ -270,7 +271,7 @@ export const getLocation = async ({
 
   const location = await fetchCoordinates({ type, timeout })
 
-  if (needRegeocode) {
+  if (needRegeocode && isLoggedIn()) {
     try {
       const geoRes = await regeocode(location)
       return {

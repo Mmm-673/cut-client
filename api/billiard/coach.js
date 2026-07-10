@@ -19,7 +19,8 @@ export function getCoachList(params) {
   return request({
     url: '/app-api/billiard/coach/list',
     method: 'get',
-    params
+    params,
+    headers: { isToken: false }
   })
 }
 
@@ -50,7 +51,8 @@ export function getCoachDetail(params) {
   return request({
     url: '/app-api/billiard/coach/get',
     method: 'get',
-    params
+    params,
+    headers: { isToken: false }
   })
 }
 
@@ -64,7 +66,8 @@ export function getNewCoachList(params) {
   return request({
     url: '/app-api/billiard/coach/new-list',
     method: 'get',
-    params
+    params,
+    headers: { isToken: false }
   })
 }
 
@@ -78,7 +81,8 @@ export function getHotCoachList(params) {
   return request({
     url: '/app-api/billiard/coach/hot-list',
     method: 'get',
-    params
+    params,
+    headers: { isToken: false }
   })
 }
 
@@ -188,6 +192,7 @@ export function getCoachReviews(params) {
   return request({
     url: '/app-api/billiard/review/coach-page',
     method: 'get',
-    params
+    params,
+    headers: { isToken: false }
   })
 }

@@ -21,7 +21,7 @@ export function regeocode(params) {
   return request({
     url: '/app-api/billiard/amap/regeocode',
     method: 'get',
-    params
+    params,
   })
 }
 

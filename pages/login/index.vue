@@ -97,6 +97,14 @@
         {{ isSubmitting ? '登录中...' : '登录' }}
       </button>
 
+      <!-- 分割线 -->
+      <view class="divider">
+        <text class="divider-text">或</text>
+      </view>
+
+      <!-- 游客模式按钮 -->
+      <button class="btn-guest" @click="handleGuestMode">游客模式</button>
+
     </view>
 
     <!-- 底部协议 -->
@@ -289,6 +297,11 @@ const goToAgree = (type) => {
   uni.navigateTo({
     url: `/subpkg/common/webview?url=${encodeURIComponent(agreementUrls[type])}&title=${encodeURIComponent(title)}`
   })
+}
+
+// 游客模式
+const handleGuestMode = () => {
+  uni.switchTab({ url: '/pages/home/index' })
 }
 
 // 页面卸载清除计时器
@@ -496,6 +509,26 @@ onUnload(() => {
       color: #9CA3AF;
       padding: 0 16rpx;
       background: #1E252B;
+    }
+  }
+
+  /* 游客模式按钮 */
+  .btn-guest {
+    width: 100%;
+    height: 96rpx;
+    line-height: 96rpx;
+    background: transparent;
+    color: #00BB88;
+    border: 2rpx solid #00BB88;
+    border-radius: 48rpx;
+    font-size: 32rpx;
+    font-weight: 600;
+    margin-bottom: 24rpx;
+    &::after {
+      border: none;
+    }
+    &:active {
+      background: rgba(0, 187, 136, 0.1);
     }
   }
 

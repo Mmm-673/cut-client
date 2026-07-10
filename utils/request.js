@@ -170,7 +170,10 @@ const request = async config => {
 
       if (code === 401) {
         clearAuthInfo();
-        uni.reLaunch({ url: '/pages/login/index' });
+        // 只有需要token的接口才跳转登录页
+        if (!isToken) {
+          uni.reLaunch({ url: '/pages/login/index' });
+        }
         return reject(msg || '会话已过期');
       }
 

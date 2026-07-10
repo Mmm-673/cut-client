@@ -72,18 +72,13 @@ function checkLogin() {
   const token = getAccessToken()
   const expiresTime = uni.getStorageSync('auth_expires_time')
 
+  // 如果没有登录信息，直接返回，不跳转登录页
   if (!token || !expiresTime) {
-    setTimeout(() => {
-      proxy.$tab.reLaunch('/pages/login/index')
-    }, 100)
     return
   }
 
   const expireDate = new Date(expiresTime)
   if (new Date() >= expireDate) {
-    setTimeout(() => {
-      proxy.$tab.reLaunch('/pages/login/index')
-    }, 100)
     return
   }
 
@@ -115,12 +110,6 @@ function checkLogin() {
         proxy.$tab.switchTab('/pages/home/index')
       }, 100)
     }
-    // 如果在其他页面，保持当前页面状态
-  } else {
-    // 如果页面路由栈为空（应用被杀掉后台重新打开），跳转到首页
-    setTimeout(() => {
-      proxy.$tab.switchTab('/pages/home/index')
-    }, 100)
   }
 }
 </script>

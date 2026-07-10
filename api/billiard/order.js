@@ -177,7 +177,8 @@ export function deleteOrder(data) {
 export function getCountdownEnabled() {
   return request({
     url: '/coach-api/billiard/order/countdown-enabled',
-    method: 'get'
+    method: 'get',
+    headers: { isToken: false }
   })
 }
 

@@ -52,7 +52,7 @@
     </view>
 
     <!-- 定位信息 -->
-    <view class="location-box">
+    <view class="location-box" v-if="isUserLoggedIn">
       <uni-icons type="location" size="18" color="#00BB88" />
       <text class="location-text">
         <text v-if="locating">定位中...</text>
@@ -94,7 +94,7 @@
                 </view>
                 <view v-if="coach.tags && coach.tags.includes('新人')" class="new-tag">新人</view>
               </view>
-              <text class="distance">{{ formatDistance(coach.distance) }}</text>
+              <text class="distance" v-if="isUserLoggedIn">{{ formatDistance(coach.distance) }}</text>
             </view>
 
             <view class="rating-row">
@@ -158,6 +158,7 @@ import {getCoachList} from '@/api/billiard/coach'
 import {getCountdownEnabled} from '@/api/billiard/order'
 import {debounce, formatPrice, showLoading, hideLoading} from '@/utils/common'
 import {getLocation, extractCity, formatDistance, showPermissionModal} from '@/utils/location'
+import {isLoggedIn} from '@/utils/token'
 
 const statusBarHeight = ref(0)
 const scrollHeight = ref(0)
@@ -182,6 +183,7 @@ const currentLocation = ref({
   latitude: null
 })
 const currentCity = ref('')
+const isUserLoggedIn = ref(isLoggedIn())
 
 const tabs = ['全部', '新人', '低碳出行', '初级', '中级', '高级', '星级']
 
@@ -301,7 +303,7 @@ const refreshPageData = async () => {
     locating.value = true
     showLoading('定位中...')
     try {
-      if (currentSort.value === 0 && !hasCoordinates()) {
+      if (currentSort.value === 0) {
         const { longitude, latitude, regeocodeData } = await getLocationWithRetry()
         currentLocation.value = { longitude, latitude }
         currentCity.value = extractCity(regeocodeData)
@@ -370,8 +372,8 @@ const fetchCoachList = async (isRefresh = false) => {
     }
 
     // 根据排序类型添加不同的参数
-    if (currentSort.value === 0) {
-      // 距离最近：添加经纬度
+    if (currentSort.value === 0 && isLoggedIn()) {
+      // 距离最近：添加经纬度（仅登录用户可用）
       params.longitude = currentLocation.value.longitude
       params.latitude = currentLocation.value.latitude
     }
@@ -502,6 +504,20 @@ const goToReward = (id) => {
 
 // 预约
 const handleBook = (coach) => {
+  if (!isLoggedIn()) {
+    uni.showModal({
+      title: '温馨提示',
+      content: '您当前未登录，登录后才可以预约教练服务',
+      confirmText: '去登录',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          uni.navigateTo({ url: '/pages/login/index' })
+        }
+      }
+    })
+    return
+  }
   // 保存选中的裁教信息
   uni.setStorageSync('selectedCoach', coach)
   uni.navigateTo({url: '/subpkg/booking/hall'})
@@ -529,6 +545,9 @@ onMounted(() => {
 })
 
 onShow(() => {
+  // 更新登录状态，确保响应式生效
+  isUserLoggedIn.value = isLoggedIn()
+
   if (locationDenied.value || !coachList.value.length || !hasCoordinates()) {
     refreshPageData()
   }
