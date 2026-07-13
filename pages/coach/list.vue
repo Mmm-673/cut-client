@@ -99,7 +99,7 @@
 
             <view class="rating-row">
               <uni-icons type="star-filled" size="14" color="#FFD700"></uni-icons>
-              <text class="rating">{{ coach.overallScore }}</text>
+              <text class="rating">评分: {{ coach.overallScore }}</text>
               <text class="review-count">({{ coach.serviceCount || coach.reviewCount || 0 }}单)</text>
               <view class="coach-tags">
                 <view
@@ -110,10 +110,6 @@
                 >{{ tag }}
                 </view>
               </view>
-            </view>
-
-            <view class="desc-row">
-              <text class="coach-desc">{{ coach.introduction || coach.desc || '暂无简介' }}</text>
             </view>
 
             <view class="bottom-row">
