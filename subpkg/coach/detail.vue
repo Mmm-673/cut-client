@@ -236,7 +236,8 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { onLoad, onShow } from "@dcloudio/uni-app"
 import { getCoachDetail, toggleCoachFavorite, getCoachReviews } from '@/api/billiard/coach'
-import { createOrder, getCountdownEnabled } from '@/api/billiard/order'
+import { createOrder } from '@/api/billiard/order'
+import { getRewardSwitch } from '@/api/billiard/order'
 import { formatPrice } from '@/utils/common'
 import { isLoggedIn } from '@/utils/token'
 
@@ -672,7 +673,7 @@ const bookNow = async () => {
 // 加载是否显示按钮
 const loadCountdownEnabled = async () => {
   try {
-    const res = await getCountdownEnabled()
+    const res = await getRewardSwitch()
     showRewardBtn.value = res.data === true
   } catch (error) {
     console.error('加载按钮状态失败:', error)

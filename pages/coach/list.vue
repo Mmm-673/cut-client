@@ -155,7 +155,7 @@
 import {ref, onMounted} from 'vue'
 import {onShow} from  "@dcloudio/uni-app"
 import {getCoachList} from '@/api/billiard/coach'
-import {getCountdownEnabled} from '@/api/billiard/order'
+import {getRewardSwitch} from '@/api/billiard/user'
 import {debounce, formatPrice, showLoading, hideLoading} from '@/utils/common'
 import {getLocation, extractCity, formatDistance, showPermissionModal} from '@/utils/location'
 import {isLoggedIn} from '@/utils/token'
@@ -516,7 +516,7 @@ const goToDetail = (id) => {
 // 加载是否显示心意按钮
 const loadCountdownEnabled = async () => {
   try {
-    const res = await getCountdownEnabled()
+    const res = await getRewardSwitch()
     showRewardBtn.value = res.data === true
   } catch (error) {
     console.error('加载心意按钮状态失败:', error)

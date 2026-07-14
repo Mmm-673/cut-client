@@ -399,8 +399,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { onLoad, onShow } from  "@dcloudio/uni-app"
-import { getOrderDetail, cancelOrder, addTimeOrder, deleteOrder, getCountdownEnabled } from '@/api/billiard/order'
+import { getOrderDetail, cancelOrder, addTimeOrder, deleteOrder } from '@/api/billiard/order'
 import { getCoachDetail } from '@/api/billiard/coach'
+import { getRewardSwitch } from '@/api/billiard/user'
 import { getTimerStatus } from '@/api/billiard/timer'
 import { reportException } from '@/api/billiard/exception'
 import { executePayment, fetchEnabledChannels } from '@/utils/payment'
@@ -798,7 +799,7 @@ const loadCoachDetail = async (coachId) => {
 // 加载是否显示按钮
 const loadCountdownEnabled = async () => {
   try {
-    const res = await getCountdownEnabled()
+    const res = await getRewardSwitch()
     showRewardBtn.value = res.data === true
   } catch (error) {
     console.error('加载按钮状态失败:', error)

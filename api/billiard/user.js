@@ -98,3 +98,12 @@ export function bindWX(data) {
     data
   })
 }
+
+// 是否开启打赏
+export function getRewardSwitch() {
+  return request({
+    url: '/app-api/billiard/user/reward-switch',
+    method: 'get'
+  })
+}
+
