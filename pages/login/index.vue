@@ -5,7 +5,7 @@
       <view class="logo-circle">
         <image class="logo-img" :src="globalConfig.appInfo.logo" mode="aspectFit"></image>
       </view>
-      <text class="app-desc">专业台球陪练平台</text>
+      <text class="app-desc">专业球类一对一教学平台</text>
     </view>
     <!-- Tab切换 -->
     <view class="tab-section">
@@ -124,24 +124,32 @@
       </text>
     </view>
   </view>
-    <!-- #ifdef APP-PLUS -->
-    <ios-privacy-dialog ref="privacyDialogRef" />
-    <!-- #endif -->
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted } from 'vue'
 import {
   useConfigStore,
   useUserStore
 } from '@/store'
-import { onUnload, onHide,onShow } from '@dcloudio/uni-app';
-import { shouldShowIosPrivacy, hasPrivacyRefused } from '@/utils/privacy'
+import { onUnload, onHide, onShow } from '@dcloudio/uni-app';
+import { isLoggedIn } from '@/utils/token'
 import { bindWX } from '@/api/billiard/user'
 
 const userStore = useUserStore()
 const globalConfig = useConfigStore().config
-const privacyDialogRef = ref(null)
+
+/** 检查是否已登录，已登录则跳转到首页 */
+function checkLoginAndRedirect() {
+  console.log('[LoginPage] 检查登录状态...')
+  if (isLoggedIn()) {
+    console.log('[LoginPage] 已登录，跳转到首页')
+    uni.switchTab({ url: '/pages/home/index' })
+    return true
+  }
+  console.log('[LoginPage] 未登录，留在登录页')
+  return false
+}
 
 
 // 当前Tab
@@ -172,22 +180,14 @@ const showPassword = ref(false)
 // 提交中状态
 const isSubmitting = ref(false)
 
-/** 打开 iOS 隐私协议弹窗 */
-function openPrivacyDialogIfNeeded() {
-  if (!shouldShowIosPrivacy() && !hasPrivacyRefused()) {
-    return
-  }
-  nextTick(() => {
-    privacyDialogRef.value?.open()
-  })
-}
-
 onMounted(() => {
-  openPrivacyDialogIfNeeded()
+  // 先检查登录状态
+  checkLoginAndRedirect()
 })
 
 onShow(() => {
-  openPrivacyDialogIfNeeded()
+  // 每次显示都检查登录状态
+  checkLoginAndRedirect()
 })
 
 // 切换Tab

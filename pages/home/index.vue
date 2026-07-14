@@ -180,22 +180,30 @@
 
       <view class="safe-bottom"></view>
     </scroll-view>
+    <!-- #ifdef APP-PLUS -->
+    <ios-privacy-dialog ref="privacyDialogRef" @agree="handlePrivacyAgreed" />
+    <!-- #endif -->
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import {ref, onMounted, nextTick} from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getNewCoachList, getHotCoachList } from '@/api/billiard/coach'
+import { shouldShowIosPrivacy, hasPrivacyRefused } from '@/utils/privacy'
 import { isIOS, isMPWeixin } from '@/utils/platform'
+import { isLoggedIn } from '@/utils/token'
 import {
   useConfigStore
 } from '@/store'
+import IosPrivacyDialog from '@/components/ios-privacy-dialog/ios-privacy-dialog.vue'
+
 const globalConfig = useConfigStore().config
 
 const statusBarHeight = ref(0)
 const navBarHeight = ref(0)
 const loading = ref(false)
+
 const locationDenied = ref(false) // 记录是否已拒绝定位权限
 const hasQueriedVenue = ref(false) // 记录是否已查询过球厅列表
 
@@ -203,6 +211,28 @@ const bannerList = ref([
   { id: 1, img: '/static/images/banner/banner01.jpg' },
   // { id: 2, img: '/static/images/banner/banner02.jpg' }
 ])
+const privacyDialogRef = ref(null)
+
+
+/** 打开 iOS 隐私协议弹窗 */
+function openPrivacyDialogIfNeeded() {
+  console.log('openPrivacyDialogIfNeeded', shouldShowIosPrivacy(), hasPrivacyRefused())
+  if (!shouldShowIosPrivacy() && !hasPrivacyRefused()) {
+    return
+  }
+  // 延迟一点时间，避开 iOS 首次安装的网络权限授权弹窗
+  setTimeout(() => {
+    nextTick(() => {
+      privacyDialogRef.value?.open()
+    })
+  }, 300)
+}
+
+/** 隐私协议同意后的回调 */
+function handlePrivacyAgreed() {
+  console.log('隐私协议已同意，重新加载数据')
+  initData()
+}
 
 const serviceList = ref([
   {
@@ -248,6 +278,8 @@ const loadHotCoaches = async () => {
   }
 }
 
+
+
 const loadNewCoaches = async () => {
   try {
     const res = await getNewCoachList({ limit: 10 })
@@ -287,8 +319,6 @@ const toScan = () => {
   })
 }
 
-
-
 const initData = async () => {
   loading.value = true
   await Promise.all([
@@ -302,7 +332,6 @@ onLoad(() => {
   initData()
 })
 
-
 onMounted(() => {
   const systemInfo = uni.getSystemInfoSync()
 
@@ -315,6 +344,19 @@ onMounted(() => {
     baseNavBarHeight += 60
   }
   navBarHeight.value = baseNavBarHeight
+
+  // 检查登录状态并显示隐私弹窗（不阻塞数据加载）
+  console.log(isLoggedIn(), '====isLoggedIn')
+  if (!isLoggedIn()) {
+    console.log(isLoggedIn(), '===============')
+    openPrivacyDialogIfNeeded()
+  }
+})
+
+onShow(() => {
+  if (!isLoggedIn()) {
+    openPrivacyDialogIfNeeded()
+  }
 })
 </script>
 

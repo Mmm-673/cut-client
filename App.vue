@@ -1,6 +1,6 @@
 <script setup>
 import config from './config'
-import { getAccessToken } from '@/utils/token'
+import { getAccessToken, getRefreshToken, getExpiresTime, setAuthInfo, clearAuthInfo } from '@/utils/token'
 import { useConfigStore } from '@/store'
 import { useUserStore } from '@/store/modules/user'
 import { getCurrentInstance } from "vue"
@@ -68,49 +68,117 @@ function setStatusBarHeight() {
   }
 }
 
-function checkLogin() {
-  const token = getAccessToken()
-  const expiresTime = uni.getStorageSync('auth_expires_time')
-
-  // 如果没有登录信息，直接返回，不跳转登录页
-  if (!token || !expiresTime) {
-    return
+/**
+ * 使用 refreshToken 刷新 accessToken
+ */
+async function refreshTokenOnStartup() {
+  const refreshToken = getRefreshToken()
+  console.log('[App] refreshToken:', refreshToken ? '存在' : '不存在')
+  if (!refreshToken) {
+    return false
   }
 
-  const expireDate = new Date(expiresTime)
-  if (new Date() >= expireDate) {
-    return
-  }
+  return new Promise((resolve) => {
+    uni.request({
+      method: 'POST',
+      timeout: 10000,
+      url: config.baseUrl + '/app-api/member/auth/refresh-token',
+      data: { refreshToken },
+      header: {
+        'Content-Type': 'application/json',
+        'tenant-id': '122'
+      },
+      dataType: 'json',
+      success: (response) => {
+        const res = response.data
+        console.log('[App] 刷新 token 响应:', res)
+        if (res.code === 0 && res.data) {
+          // 刷新成功，更新本地存储
+          setAuthInfo(res.data)
+          resolve(true)
+        } else {
+          // 刷新失败，清除登录信息
+          clearAuthInfo()
+          resolve(false)
+        }
+      },
+      fail: (err) => {
+        console.log('[App] 刷新 token 失败:', err)
+        // 网络错误等，不清除登录信息，让用户继续使用（后续请求会处理）
+        resolve(false)
+      }
+    })
+  })
+}
 
+/**
+ * 恢复用户状态到 Store
+ */
+function restoreUserState() {
+  console.log('[App] 恢复用户状态...')
   const userStore = useUserStore()
-  userStore.accessToken = token
-  userStore.refreshToken = uni.getStorageSync('auth_refresh_token') || ''
-  userStore.expiresTime = expireDate
+  userStore.accessToken = getAccessToken()
+  userStore.refreshToken = getRefreshToken()
+  userStore.expiresTime = getExpiresTime()
   userStore.userId = uni.getStorageSync('auth_user_id') || ''
   userStore.nickname = uni.getStorageSync('auth_nickname') || ''
   userStore.avatar = uni.getStorageSync('auth_avatar') || ''
   userStore.mobile = uni.getStorageSync('auth_mobile') || ''
 
-  // 🔥 静态登录成功后，自动触发极光别名绑定
+  console.log('[App] 用户信息:', {
+    userId: userStore.userId,
+    nickname: userStore.nickname,
+    mobile: userStore.mobile
+  })
+
+  // 🔥 恢复登录后，自动触发极光别名绑定
   // #ifdef APP-PLUS
   const userId = userStore.userId
   if (userId) {
     syncPushForUser(userId)
   }
   // #endif
+}
 
-  // Token 有效时，处理页面跳转逻辑
-  // 检查当前页面路由，避免停留在登录页面
-  const pages = getCurrentPages()
-  if (pages.length > 0) {
-    const currentPage = pages[pages.length - 1].route
-    // 如果当前在登录页面，跳转到首页
-    if (currentPage === 'pages/login/index') {
-      setTimeout(() => {
-        proxy.$tab.switchTab('/pages/home/index')
-      }, 100)
-    }
+/**
+ * 检查登录状态
+ */
+async function checkLogin() {
+  console.log('[App] checkLogin 开始...')
+
+  const token = getAccessToken()
+  const expiresTime = getExpiresTime()
+
+  console.log('[App] 登录信息:', {
+    hasToken: !!token,
+    expiresTime: expiresTime,
+    now: new Date(),
+    isValid: expiresTime ? new Date() < expiresTime : false
+  })
+
+  // 如果没有登录信息，直接返回
+  if (!token || !expiresTime) {
+    console.log('[App] 没有登录信息')
+    return false
   }
+
+  const now = new Date()
+
+  // Token 已过期，尝试刷新
+  if (now >= expiresTime) {
+    console.log('[App] Token 已过期，尝试刷新...')
+    const refreshSuccess = await refreshTokenOnStartup()
+    if (!refreshSuccess) {
+      console.log('[App] 刷新失败')
+      return false
+    }
+    console.log('[App] 刷新成功')
+  }
+
+  // 恢复用户状态
+  restoreUserState()
+
+  return true
 }
 </script>
 

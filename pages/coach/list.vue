@@ -52,7 +52,7 @@
     </view>
 
     <!-- 定位信息 -->
-    <view class="location-box" v-if="isUserLoggedIn">
+    <view class="location-box">
       <uni-icons type="location" size="18" color="#00BB88" />
       <text class="location-text">
         <text v-if="locating">定位中...</text>
@@ -94,7 +94,7 @@
                 </view>
                 <view v-if="coach.tags && coach.tags.includes('新人')" class="new-tag">新人</view>
               </view>
-              <text class="distance" v-if="isUserLoggedIn">{{ formatDistance(coach.distance) }}</text>
+              <text class="distance" >{{ formatDistance(coach.distance) }}</text>
             </view>
 
             <view class="rating-row">
@@ -110,6 +110,10 @@
                 >{{ tag }}
                 </view>
               </view>
+            </view>
+
+            <view class="desc-row">
+              <text class="coach-desc">星座：{{ coach.constellation || '白羊座' }}</text>
             </view>
 
             <view class="bottom-row">
@@ -179,7 +183,6 @@ const currentLocation = ref({
   latitude: null
 })
 const currentCity = ref('')
-const isUserLoggedIn = ref(isLoggedIn())
 
 const tabs = ['全部', '新人', '低碳出行', '初级', '中级', '高级', '星级']
 
@@ -217,8 +220,37 @@ const tagClassMap = {
   '星级': 'tag-star'
 }
 
+// 预定义的随机颜色样式
+const randomTagColors = [
+  'tag-random-1',
+  'tag-random-2',
+  'tag-random-3',
+  'tag-random-4',
+  'tag-random-5',
+  'tag-random-6',
+  'tag-random-7',
+  'tag-random-8'
+]
+
+// 基于标签内容生成哈希值，确保相同标签总是得到相同颜色
+const hashTag = (tag) => {
+  let hash = 0
+  for (let i = 0; i < tag.length; i++) {
+    const char = tag.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+  return Math.abs(hash)
+}
+
 const getTagClass = (tag) => {
-  return tagClassMap[tag] || 'tag-default'
+  if (tagClassMap[tag]) {
+    return tagClassMap[tag]
+  }
+  // 对于随机标签，基于内容分配固定颜色
+  const hash = hashTag(tag)
+  const colorIndex = hash % randomTagColors.length
+  return randomTagColors[colorIndex]
 }
 
 const LOCATION_RETRY_COUNT = 2
@@ -368,7 +400,7 @@ const fetchCoachList = async (isRefresh = false) => {
     }
 
     // 根据排序类型添加不同的参数
-    if (currentSort.value === 0 && isLoggedIn()) {
+    if (currentSort.value === 0) {
       // 距离最近：添加经纬度（仅登录用户可用）
       params.longitude = currentLocation.value.longitude
       params.latitude = currentLocation.value.latitude
@@ -376,6 +408,7 @@ const fetchCoachList = async (isRefresh = false) => {
 
     console.log("🚀 ~ loadData ~ params:", params)
     const res = await getCoachList(params)
+    console.log(res,'===res')
     const data = res.data || {}
     // 兼容不同的返回结构：list / records / rows
     const list = data.list || data.records || data.rows || []
@@ -541,9 +574,6 @@ onMounted(() => {
 })
 
 onShow(() => {
-  // 更新登录状态，确保响应式生效
-  isUserLoggedIn.value = isLoggedIn()
-
   if (locationDenied.value || !coachList.value.length || !hasCoordinates()) {
     refreshPageData()
   }
@@ -863,6 +893,55 @@ onShow(() => {
             background: rgba(102, 102, 102, 0.15);
             color: #999;
             border: 1rpx solid rgba(102, 102, 102, 0.3);
+          }
+
+          /* 随机标签颜色 */
+          &.tag-random-1 {
+            background: rgba(255, 59, 48, 0.15);
+            color: #FF3B30;
+            border: 1rpx solid rgba(255, 59, 48, 0.3);
+          }
+
+          &.tag-random-2 {
+            background: rgba(255, 149, 0, 0.15);
+            color: #FF9500;
+            border: 1rpx solid rgba(255, 149, 0, 0.3);
+          }
+
+          &.tag-random-3 {
+            background: rgba(255, 204, 0, 0.15);
+            color: #FFCC00;
+            border: 1rpx solid rgba(255, 204, 0, 0.3);
+          }
+
+          &.tag-random-4 {
+            background: rgba(52, 199, 89, 0.15);
+            color: #34C759;
+            border: 1rpx solid rgba(52, 199, 89, 0.3);
+          }
+
+          &.tag-random-5 {
+            background: rgba(0, 212, 170, 0.15);
+            color: #00d4aa;
+            border: 1rpx solid rgba(0, 212, 170, 0.3);
+          }
+
+          &.tag-random-6 {
+            background: rgba(0, 122, 255, 0.15);
+            color: #007AFF;
+            border: 1rpx solid rgba(0, 122, 255, 0.3);
+          }
+
+          &.tag-random-7 {
+            background: rgba(88, 86, 214, 0.15);
+            color: #5856D6;
+            border: 1rpx solid rgba(88, 86, 214, 0.3);
+          }
+
+          &.tag-random-8 {
+            background: rgba(175, 82, 222, 0.15);
+            color: #AF52DE;
+            border: 1rpx solid rgba(175, 82, 222, 0.3);
           }
         }
       }

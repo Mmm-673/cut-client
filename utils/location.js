@@ -271,9 +271,10 @@ export const getLocation = async ({
 
   const location = await fetchCoordinates({ type, timeout })
 
-  if (needRegeocode && isLoggedIn()) {
+  if (needRegeocode) {
     try {
       const geoRes = await regeocode(location)
+      console.log(geoRes,'======handlePrivacyAgreed')
       return {
         ...location,
         regeocodeData: geoRes.data

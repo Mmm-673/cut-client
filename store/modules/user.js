@@ -79,6 +79,7 @@ export const useUserStore = defineStore('user', () => {
             userId: data.userId,
             mobile: loginData.mobile
           })
+          bindPushAfterLogin(data.userId)
           resolve(data)
         }).catch(error => {
           reject(error)
@@ -99,7 +100,7 @@ export const useUserStore = defineStore('user', () => {
           userId: data.userId,
           mobile: loginData.mobile
         })
-        bindPushAfterLogin()
+        bindPushAfterLogin(data.userId)
         resolve(data)
       }).catch(error => {
         reject(error)

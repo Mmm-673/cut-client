@@ -10,6 +10,7 @@ const USER_ID_KEY = 'auth_user_id'
 const NICKNAME_KEY = 'auth_nickname'
 const AVATAR_KEY = 'auth_avatar'
 const MOBILE_KEY = 'auth_mobile'
+const LOGIN_TIME_KEY = 'auth_login_time'
 
 /**
  * 获取 accessToken
@@ -85,9 +86,6 @@ export function setExpiresTime(expiresTime) {
   }
 }
 
-// 记录登录时间，刚登录1分钟内不刷新token
-let loginTime = null
-
 /**
  * 检查 accessToken 是否需要刷新（5分钟内过期）
  */
@@ -96,6 +94,7 @@ export function shouldRefreshToken() {
   if (!expiresTime) return true
 
   const now = new Date()
+  const loginTime = getLoginTime()
 
   // 刚登录1分钟内，强制不刷新
   if (loginTime && (now.getTime() - loginTime.getTime() < 60 * 1000)) {
@@ -123,8 +122,8 @@ export function isLoggedIn() {
  * 设置完整的登录信息
  */
 export function setAuthInfo(data) {
-  // 记录登录时间，用于防止刚登录就刷新token
-  loginTime = new Date()
+  // 记录登录时间，用于防止刚登录就刷新token（持久化到本地）
+  setLoginTime(new Date())
 
   setAccessToken(data.accessToken || '')
   setRefreshToken(data.refreshToken || '')
@@ -157,6 +156,7 @@ export function clearAuthInfo() {
     uni.removeStorageSync(NICKNAME_KEY)
     uni.removeStorageSync(AVATAR_KEY)
     uni.removeStorageSync(MOBILE_KEY)
+    uni.removeStorageSync(LOGIN_TIME_KEY)
     return true
   } catch (e) {
     console.warn('清除认证信息失败:', e)
@@ -247,6 +247,30 @@ export function getMobile() {
 export function setMobile(mobile) {
   try {
     return uni.setStorageSync(MOBILE_KEY, mobile)
+  } catch (e) {
+    return false
+  }
+}
+
+/**
+ * 获取登录时间
+ */
+export function getLoginTime() {
+  try {
+    const timeStr = uni.getStorageSync(LOGIN_TIME_KEY)
+    return timeStr ? new Date(timeStr) : null
+  } catch (e) {
+    return null
+  }
+}
+
+/**
+ * 设置登录时间
+ */
+export function setLoginTime(time) {
+  try {
+    const timeStr = time instanceof Date ? time.toISOString() : time
+    return uni.setStorageSync(LOGIN_TIME_KEY, timeStr)
   } catch (e) {
     return false
   }

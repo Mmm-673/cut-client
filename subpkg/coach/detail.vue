@@ -60,7 +60,7 @@
       </view>
 
       <!-- 服务项目 -->
-      <view class="section" v-if="isUserLoggedIn">
+      <view class="section" >
         <view class="section-title">
           <uni-icons type="list" size="18" color="#00c896"></uni-icons>
           <text>服务项目</text>
@@ -86,18 +86,6 @@
               </view>
             </view>
           </view>
-        </view>
-      </view>
-
-      <!-- 未登录时显示服务项目提示 -->
-      <view class="section" v-else>
-        <view class="section-title">
-          <uni-icons type="list" size="18" color="#00c896"></uni-icons>
-          <text>服务项目</text>
-        </view>
-        <view class="login-tip-box" @click="showLoginDialog">
-          <uni-icons type="locked" size="40" color="#666"></uni-icons>
-          <text class="login-tip-text">登录后查看服务项目</text>
         </view>
       </view>
 
