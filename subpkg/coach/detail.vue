@@ -36,7 +36,7 @@
               </view>
             </view>
             <view class="tags-row">
-              <view class="tag" v-for="(tag, index) in coachInfo.tags" :key="index">{{ tag }}</view>
+              <view class="tag" v-for="(tag, index) in coachInfo.tags.filter(t => t !== '活跃' && t !== '沉稳')" :key="index">{{ tag }}</view>
             </view>
           </view>
           <!-- #ifndef MP-WEIXIN -->
@@ -237,7 +237,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { onLoad, onShow } from "@dcloudio/uni-app"
 import { getCoachDetail, toggleCoachFavorite, getCoachReviews } from '@/api/billiard/coach'
 import { createOrder } from '@/api/billiard/order'
-import { getRewardSwitch } from '@/api/billiard/order'
+import { getRewardSwitch } from '@/api/billiard/user'
 import { formatPrice } from '@/utils/common'
 import { isLoggedIn } from '@/utils/token'
 
@@ -533,6 +533,12 @@ const handleToggleFavorite = async () => {
 
 // 跳转到页面
 const goToReward = () => {
+  isUserLoggedIn.value = isLoggedIn()
+  if (!isUserLoggedIn.value) {
+    showLoginDialog()
+    return
+  }
+
   // #ifdef MP-WEIXIN
   uni.showToast({
     title: '微信小程序暂不支持此功能',
@@ -569,6 +575,13 @@ const showLoginDialog = () => {
     cancelText: '稍后',
     success: (res) => {
       if (res.confirm) {
+        const pages = getCurrentPages()
+        const currentPage = pages[pages.length - 1]
+        uni.setStorageSync('loginRedirectPage', currentPage.route)
+        // 如果是详情页，还需要保存id参数
+        if (currentPage.options && currentPage.options.id) {
+          uni.setStorageSync('loginRedirectParams', currentPage.options)
+        }
         uni.navigateTo({
           url: '/pages/login/index'
         })

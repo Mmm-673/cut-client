@@ -273,9 +273,34 @@ const handleSubmit = async () => {
     uni.hideLoading()
     uni.showToast({ title: '登录成功', icon: 'success' })
 
-    // 登录成功跳首页
+    // 登录成功后跳转
     setTimeout(() => {
-      uni.switchTab({ url: '/pages/home/index' })
+      const redirectPage = uni.getStorageSync('loginRedirectPage')
+      const redirectParams = uni.getStorageSync('loginRedirectParams')
+
+      // 清除存储
+      uni.removeStorageSync('loginRedirectPage')
+      uni.removeStorageSync('loginRedirectParams')
+
+      if (redirectPage) {
+        console.log('返回到原页面:', redirectPage, redirectParams)
+        // 判断是否是tabbar页面
+        const tabBarPages = ['pages/home/index', 'pages/coach/list', 'pages/order/list', 'pages/mine/index']
+        if (tabBarPages.includes(redirectPage)) {
+          uni.switchTab({ url: '/' + redirectPage })
+        } else {
+          // 带参数跳转
+          let url = '/' + redirectPage
+          if (redirectParams) {
+            const params = Object.keys(redirectParams).map(key => `${key}=${encodeURIComponent(redirectParams[key])}`).join('&')
+            url += '?' + params
+          }
+          uni.navigateBack({ delta: 1, fail: () => uni.navigateTo({ url }) })
+        }
+      } else {
+        // 没有跳转目标，跳首页
+        uni.switchTab({ url: '/pages/home/index' })
+      }
     }, 1000)
   } catch (error) {
     uni.hideLoading()

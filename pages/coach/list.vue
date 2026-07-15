@@ -103,7 +103,7 @@
               <text class="review-count">({{ coach.serviceCount || coach.reviewCount || 0 }}单)</text>
               <view class="coach-tags">
                 <view
-                    v-for="(tag, tagIndex) in (coach.tags || []).filter(t => t !== '新人')"
+                    v-for="(tag, tagIndex) in (coach.tags || []).filter(t => t !== '新人' && t !== '活跃' && t !== '沉稳')"
                     :key="tagIndex"
                     class="coach-tag"
                     :class="getTagClass(tag)"
@@ -153,7 +153,7 @@
 
 <script setup>
 import {ref, onMounted} from 'vue'
-import {onShow} from  "@dcloudio/uni-app"
+import {onLoad, onShow} from  "@dcloudio/uni-app"
 import {getCoachList} from '@/api/billiard/coach'
 import {getRewardSwitch} from '@/api/billiard/user'
 import {debounce, formatPrice, showLoading, hideLoading} from '@/utils/common'
@@ -184,7 +184,7 @@ const currentLocation = ref({
 })
 const currentCity = ref('')
 
-const tabs = ['全部', '新人', '低碳出行', '初级', '中级', '高级', '星级']
+const tabs = ['全部', '新人', '低碳出行', '活跃','沉稳','初级', '中级', '高级', '星级',]
 
 // 等级映射
 const levelMap = {
@@ -387,16 +387,20 @@ const fetchCoachList = async (isRefresh = false) => {
       params.keyword = searchKeyword.value
     }
 
-    // 添加等级筛选
-    if (currentTab.value >= 3) {
-      params.level = currentTab.value - 3
-    }
-
     // 添加标签筛选
     if (currentTab.value === 1) {
       params.tag = ['新人']
     } else if (currentTab.value === 2) {
       params.tag = ['低碳出行']
+    } else if (currentTab.value === 3) {
+      params.tag = ['活跃']
+    } else if (currentTab.value === 4) {
+      params.tag = ['沉稳']
+    }
+
+    // 添加等级筛选 (从索引5开始才是等级)
+    if (currentTab.value >= 5) {
+      params.level = currentTab.value - 5
     }
 
     // 根据排序类型添加不同的参数
@@ -517,6 +521,7 @@ const goToDetail = (id) => {
 const loadCountdownEnabled = async () => {
   try {
     const res = await getRewardSwitch()
+    console.log(res.data ,'===res.data ')
     showRewardBtn.value = res.data === true
   } catch (error) {
     console.error('加载心意按钮状态失败:', error)
@@ -526,6 +531,22 @@ const loadCountdownEnabled = async () => {
 
 // 跳转心意
 const goToReward = (id) => {
+
+  if (!isLoggedIn()) {
+    uni.showModal({
+      title: '温馨提示',
+      content: '登录后可以查看更多精彩内容，是否登录？',
+      confirmText: '去登录',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          uni.setStorageSync('loginRedirectPage', getCurrentPages()[getCurrentPages().length - 1].route)
+          uni.navigateTo({ url: '/pages/login/index' })
+        }
+      }
+    })
+    return
+  }
   uni.navigateTo({
     url: '/subpkg/coach/reward?coachId=' + id
   })
@@ -536,11 +557,12 @@ const handleBook = (coach) => {
   if (!isLoggedIn()) {
     uni.showModal({
       title: '温馨提示',
-      content: '您当前未登录，登录后才可以预约教练服务',
+      content: '登录后可以查看更多精彩内容，是否登录？',
       confirmText: '去登录',
       cancelText: '取消',
       success: (res) => {
         if (res.confirm) {
+          uni.setStorageSync('loginRedirectPage', getCurrentPages()[getCurrentPages().length - 1].route)
           uni.navigateTo({ url: '/pages/login/index' })
         }
       }
@@ -574,7 +596,48 @@ onMounted(() => {
 })
 
 onShow(() => {
-  if (locationDenied.value || !coachList.value.length || !hasCoordinates()) {
+  // 每次显示都检查是否有默认tab参数
+  let needRefresh = false
+  try {
+    const defaultTab = uni.getStorageSync('coachListDefaultTab')
+    const tabTimestamp = uni.getStorageSync('coachListTabTimestamp')
+    const now = Date.now()
+
+    console.log('onShow 检查默认tab:', defaultTab, '时间戳:', tabTimestamp)
+
+    // 检查是否是3秒内从首页跳转过来的
+    const isRecentFromHome = tabTimestamp && (now - tabTimestamp < 3000)
+
+    if (defaultTab && isRecentFromHome) {
+      const tabIndex = tabs.indexOf(defaultTab)
+      console.log('tab索引:', tabIndex)
+      if (tabIndex !== -1 && currentTab.value !== tabIndex) {
+        currentTab.value = tabIndex
+        needRefresh = true
+        console.log('已设置tab为:', defaultTab)
+      }
+      // 清除参数
+      uni.removeStorageSync('coachListDefaultTab')
+      uni.removeStorageSync('coachListTabTimestamp')
+    } else {
+      // 不是从首页跳转过来的，重置为全部
+      if (currentTab.value !== 0) {
+        console.log('重置为全部')
+        currentTab.value = 0
+        needRefresh = true
+      }
+      // 确保清除旧参数
+      uni.removeStorageSync('coachListDefaultTab')
+      uni.removeStorageSync('coachListTabTimestamp')
+    }
+  } catch (e) {
+    console.error('处理默认tab失败:', e)
+  }
+
+  // 如果需要刷新数据
+  if (needRefresh) {
+    loadData(true)
+  } else if (locationDenied.value || !coachList.value.length || !hasCoordinates()) {
     refreshPageData()
   }
 })

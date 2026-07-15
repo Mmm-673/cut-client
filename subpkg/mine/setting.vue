@@ -168,8 +168,8 @@ const handleLogout = () => {
         await userStore.logout()
         uni.showToast({ title: '已退出登录', icon: 'success' })
         setTimeout(() => {
-          uni.reLaunch({
-            url: '/pages/login/index'
+          uni.switchTab({
+            url: '/pages/home/index'
           })
         }, 1500)
       }
@@ -196,9 +196,11 @@ const handleCancelAccount = async () => {
     })
     uni.showToast({ title: '账号已注销', icon: 'success' })
     await userStore.logout()
-    uni.reLaunch({
-      url: '/pages/login/index'
-    })
+    setTimeout(() => {
+      uni.switchTab({
+        url: '/pages/home/index'
+      })
+    }, 1500)
   } finally {
     isCancelingAccount.value = false
   }

@@ -75,11 +75,7 @@
               </view>
               <view class="service-body">
                 <text class="s-title">{{item.title}}</text>
-                <view class="s-price">
-                  <text class="s-unit">¥</text>
-                  <text class="s-num" :style="{color: item.priceColor}">{{item.price}}</text>
-                  <text class="s-unit">/{{item.unit}}</text>
-                </view>
+                <text class="s-desc">{{item.desc}}</text>
               </view>
               <view class="service-arrow">
                 <uni-icons type="right" size="16" color="rgba(255,255,255,0.5)" />
@@ -237,21 +233,19 @@ function handlePrivacyAgreed() {
 const serviceList = ref([
   {
     id: 1,
-    title: '基础教学',
-    price: 88,
-    unit: '小时',
+    title: '沉稳耐心',
+    desc: '细致教学，稳扎稳打',
     priceColor: '#00BB88',
-    icon: '🎱',
+    icon: '🧘',
     iconBg: 'rgba(0, 187, 136, 0.2)',
     bgGradient: 'linear-gradient(135deg, rgba(0, 187, 136, 0.15) 0%, rgba(0, 187, 136, 0.05) 100%)'
   },
   {
     id: 2,
-    title: '专业教学',
-    price: 98,
-    unit: '小时',
+    title: '活跃热情',
+    desc: '活力满满，快速提升',
     priceColor: '#3B82F6',
-    icon: '🎓',
+    icon: '⚡',
     iconBg: 'rgba(59, 130, 246, 0.2)',
     bgGradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%)'
   }
@@ -302,7 +296,25 @@ const goCoachList = () => {
 }
 
 const handleBannerClick = () => goCoachList()
-const handleServiceClick = () => goCoachList()
+const handleServiceClick = (item) => {
+  // 根据服务类型设置默认筛选标签
+  if (item.title === '沉稳耐心') {
+    uni.setStorageSync('coachListDefaultTab', '沉稳')
+    uni.setStorageSync('coachListTabTimestamp', Date.now())
+    console.log('设置默认tab: 沉稳')
+  } else if (item.title === '活跃热情') {
+    uni.setStorageSync('coachListDefaultTab', '活跃')
+    uni.setStorageSync('coachListTabTimestamp', Date.now())
+    console.log('设置默认tab: 活跃')
+  } else {
+    uni.removeStorageSync('coachListDefaultTab')
+    uni.removeStorageSync('coachListTabTimestamp')
+  }
+  // 延迟一点跳转，确保storage已保存
+  setTimeout(() => {
+    goCoachList()
+  }, 50)
+}
 const viewAllHotCoach = () => goCoachList()
 const viewAllNewCoach = () => goCoachList()
 
@@ -695,21 +707,9 @@ onShow(() => {
         font-weight: 600;
       }
 
-      .s-price {
-        display: flex;
-        align-items: baseline;
-
-        .s-unit {
-          font-size: 24rpx;
-          color: #6B7280;
-        }
-
-        .s-num {
-          font-size: 40rpx;
-          font-weight: 800;
-          margin: 0 4rpx;
-          letter-spacing: -1rpx;
-        }
+      .s-desc {
+        color: #9CA3AF;
+        font-size: 24rpx;
       }
     }
 
