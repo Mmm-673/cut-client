@@ -2,8 +2,8 @@
     "name" : "初球",
     "appid" : "__UNI__B081810",
     "description" : "搭建台球爱好者与专业裁教、裁判教练的对接平台，支持用户在线预约台球陪练与教学服务，裁教线上接单获取收益；平台统一管理账号、订单、财务结算及客服售后，提供便捷规范的台球陪练预约服务。",
-    "versionName" : "1.2.9",
-    "versionCode" : 9,
+    "versionName" : "1.2.11",
+    "versionCode" : 1,
     "transformPx" : false,
     "app-plus" : {
         "usingComponents" : true,

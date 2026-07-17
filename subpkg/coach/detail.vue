@@ -69,7 +69,7 @@
           <text>服务项目</text>
         </view>
         <view class="service-list">
-          <view class="service-item" :class="{selected: selectedService?.id === service.id}" v-for="(service, index) in services" :key="index">
+          <view class="service-item" :class="{selected: selectedService?.id === service.id, disabled: service.type === 2 && !showRewardBtn}" v-for="(service, index) in services" :key="index">
             <view class="service-left">
               <view class="service-name-row">
                 <text class="service-name">{{ service.name }}</text>
@@ -301,8 +301,18 @@ const coachInfo = reactive({
   serviceStatus: 0
 })
 
-// 服务项目
-const services = ref([])
+// 原始服务项目（不过滤）
+const rawServices = ref([])
+// 服务项目（根据打赏开关过滤）
+const services = computed(() => {
+  return rawServices.value.filter(service => {
+    // 如果是达人带路服务且打赏未开启，则过滤掉
+    if (service.type === 2 && !showRewardBtn.value) {
+      return false
+    }
+    return true
+  })
+})
 
 // 相册列表
 const albumList = ref([])
@@ -410,7 +420,7 @@ const loadCoachData = async () => {
       }
     ]
 
-    services.value = data.serviceItemList
+    rawServices.value = data.serviceItemList
         .map(item => {
           const localConfig = defaultServices.find(
               service => service.type === item.serviceType
