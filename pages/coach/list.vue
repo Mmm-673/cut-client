@@ -94,7 +94,11 @@
                 </view>
                 <view v-if="coach.tags && coach.tags.includes('新人')" class="new-tag">新人</view>
               </view>
-              <text class="distance" >{{ formatDistance(coach.distance) }}</text>
+              <view class="right-info">
+                <view class="service-status-dot" :class="coach.serviceStatus === 0 ? 'status-idle' : 'status-busy'"></view>
+                <text class="service-status-text">{{ coach.serviceStatus === 0 ? '空闲' : '服务中' }}</text>
+                <text class="distance" >{{ formatDistance(coach.distance) }}</text>
+              </view>
             </view>
 
             <view class="rating-row">
@@ -129,7 +133,13 @@
                     <text>心意</text>
                   </button>
                 <!-- #endif -->
-                <button class="book-btn" @click.stop="handleBook(coach)">预约</button>
+                <button
+                  class="book-btn"
+                  :class="{ disabled: coach.serviceStatus === 1 }"
+                  :disabled="coach.serviceStatus === 1"
+                  @click.stop="handleBook(coach)">
+                  {{ coach.serviceStatus === 1 ? '服务中' : '预约' }}
+                </button>
               </view>
             </view>
           </view>
@@ -554,6 +564,13 @@ const goToReward = (id) => {
 
 // 预约
 const handleBook = (coach) => {
+  if (coach.serviceStatus === 1) {
+    uni.showToast({
+      title: '该裁教正在服务中',
+      icon: 'none'
+    })
+    return
+  }
   if (!isLoggedIn()) {
     uni.showModal({
       title: '温馨提示',
@@ -867,6 +884,50 @@ onShow(() => {
           padding: 2rpx 8rpx;
           border-radius: 4rpx;
         }
+
+        .service-status-tag {
+          font-size: 18rpx;
+          padding: 2rpx 8rpx;
+          border-radius: 4rpx;
+
+          &.status-idle {
+            background: rgba(0, 212, 170, 0.2);
+            color: #00d4aa;
+          }
+
+          &.status-busy {
+            background: rgba(255, 59, 48, 0.2);
+            color: #FF3B30;
+          }
+        }
+      }
+
+      .right-info {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8rpx;
+      }
+
+      .service-status-dot {
+        width: 12rpx;
+        height: 12rpx;
+        border-radius: 50%;
+      }
+
+      .service-status-dot.status-idle {
+        background-color: #00d4aa;
+        box-shadow: 0 0 8rpx rgba(0, 212, 170, 0.6);
+      }
+
+      .service-status-dot.status-busy {
+        background-color: #f5a623;
+        box-shadow: 0 0 8rpx rgba(245, 166, 35, 0.6);
+      }
+
+      .service-status-text {
+        font-size: 20rpx;
+        color: #999;
       }
 
       .distance {
@@ -1068,6 +1129,11 @@ onShow(() => {
         .book-btn {
           background: #00d4aa;
           color: #fff;
+
+          &.disabled {
+            background: #444;
+            color: #888;
+          }
         }
       }
     }

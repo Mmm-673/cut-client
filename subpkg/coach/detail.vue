@@ -22,6 +22,9 @@
               <view class="tag level" :class="'level-' + coachInfo.level">
                 {{ getLevelText(coachInfo.level) }}
               </view>
+              <view class="tag service-status" :class="coachInfo.serviceStatus === 0 ? 'status-idle' : 'status-busy'">
+                {{ coachInfo.serviceStatus === 0 ? '空闲' : '服务中' }}
+              </view>
             </view>
             <view class="stats-row">
               <view class="stat-item">
@@ -294,7 +297,8 @@ const coachInfo = reactive({
   price: 0,
   tags: [],
   intro: '',
-  introduction: ''
+  introduction: '',
+  serviceStatus: 0
 })
 
 // 服务项目
@@ -378,7 +382,8 @@ const loadCoachData = async () => {
       price: data.hourlyPrice || data.price || 0,
       tags: data.tags || [],
       intro: data.introduction || data.intro || '这位裁教很神秘，什么都没写~',
-      introduction: data.introduction || data.intro || '这位裁教很神秘，什么都没写~'
+      introduction: data.introduction || data.intro || '这位裁教很神秘，什么都没写~',
+      serviceStatus: data.serviceStatus ?? 0
     })
 
 
@@ -850,6 +855,20 @@ onMounted(() => {
           &.level-3 {
             background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
             color: #000000;
+          }
+        }
+
+        .tag.service-status {
+          border: none;
+
+          &.status-idle {
+            background: rgba(0, 212, 170, 0.2);
+            color: #00d4aa;
+          }
+
+          &.status-busy {
+            background: rgba(255, 59, 48, 0.2);
+            color: #FF3B30;
           }
         }
       }

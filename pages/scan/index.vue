@@ -35,25 +35,52 @@ import { showCameraPurposeModal, showAlbumPurposeModal, showCameraPermissionModa
 
 const statusBarHeight = ref(0)
 const loading = ref(false)
+// 从 URL 中提取参数
+const getQueryParam = (url, param) => {
+  const queryString = url.split('?')[1]
+  if (!queryString) return null
+
+  const pairs = queryString.split('&')
+  for (let i = 0; i < pairs.length; i++) {
+    const pair = pairs[i].split('=')
+    if (pair[0] === param) {
+      return decodeURIComponent(pair[1] || '')
+    }
+  }
+  return null
+}
+
 // 处理扫码结果（扫码和相册共用）
 const processQrResult = (rawResult) => {
   console.log('[processQrResult] 原始内容:', rawResult, '类型:', typeof rawResult)
-  let result
+
+  let coachId = null
+
+  // 方式1：尝试解析 JSON 格式
   try {
-    result = JSON.parse(rawResult)
+    const result = JSON.parse(rawResult)
+    if (result && typeof result === 'object' && result.coachId) {
+      coachId = result.coachId
+    }
   } catch (e) {
-    result = null
+    // JSON 解析失败，继续尝试其他方式
   }
-  if (!result || typeof result !== 'object') {
-    uni.showToast({
-      title: '二维码无效，请重新扫描',
-      icon: 'none'
-    })
-    return
+
+  // 方式2：如果没有从 JSON 中获取到，尝试解析 URL 格式
+  if (!coachId && typeof rawResult === 'string') {
+    // 检查是否是指定的 URL 格式
+    if (rawResult.includes('coach-link.html') || rawResult.includes('coachId=')) {
+      coachId = getQueryParam(rawResult, 'coachId')
+    }
+    // 兼容新格式：https://qiulem.com/scan?id=27&name=小帅
+    else if (rawResult.includes('/scan?id=') || rawResult.includes('qiulem.com')) {
+      coachId = getQueryParam(rawResult, 'id')
+    }
   }
-  if (result?.coachId) {
+
+  if (coachId) {
     uni.navigateTo({
-      url: `/subpkg/coach/detail?id=${result.coachId}`
+      url: `/subpkg/coach/detail?id=${coachId}`
     })
   } else {
     uni.showToast({
