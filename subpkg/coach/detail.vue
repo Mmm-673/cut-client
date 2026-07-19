@@ -391,7 +391,7 @@ const loadCoachData = async () => {
       {
         id: 1,
         type: 1,
-        name: '台球陪练',
+        name: '台球教学',
         desc: '2小时起步，包含基础动作指导、技术纠错、实战演练',
         sales: 86,
         unit: '',
@@ -417,11 +417,15 @@ const loadCoachData = async () => {
           )
           // 找不到配置直接丢弃
           if (!localConfig) return null
+          // #ifdef MP-WEIXIN
+          // 微信小程序环境下不展示达人带路服务(type=2)
+          if (localConfig.type === 2) return null
+          // #endif
           return {
             ...localConfig,
             ...item,
             type: item.serviceType,
-            name: item.serviceName,
+            name: localConfig.name, // 优先使用本地配置的名称
             price: item.hourlyPrice * localConfig.hourTime
           }
         })

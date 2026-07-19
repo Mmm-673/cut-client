@@ -97,31 +97,31 @@
         {{ isSubmitting ? '登录中...' : '登录' }}
       </button>
 
-      <!-- 分割线 -->
-      <view class="divider">
-        <text class="divider-text">或</text>
-      </view>
-
-      <!-- 游客模式按钮 -->
-      <button class="btn-guest" @click="handleGuestMode">游客模式</button>
-
     </view>
 
-    <!-- 底部协议 -->
-    <view class="agreement">
-      <view
-        class="checkbox"
-        :class="{ 'checkbox-checked': agree }"
-        @click="agree = !agree"
-      >
-        <uni-icons v-if="agree" type="check" size="16" color="#fff" />
+    <!-- 底部区域 -->
+    <view class="bottom-section">
+      <!-- 游客模式链接 -->
+      <view class="guest-link-wrapper">
+        <text class="guest-link" @click="handleGuestMode">游客模式</text>
       </view>
-      <text class="agreement-text">
-        我已阅读并同意
-        <text class="link" @click="goToAgree('user')">《用户协议》</text>
-        和
-        <text class="link" @click="goToAgree('privacy')">《隐私政策》</text>
-      </text>
+
+      <!-- 底部协议 -->
+      <view class="agreement">
+        <view
+          class="checkbox"
+          :class="{ 'checkbox-checked': agree }"
+          @click="agree = !agree"
+        >
+          <uni-icons v-if="agree" type="check" size="16" color="#fff" />
+        </view>
+        <text class="agreement-text">
+          我已阅读并同意
+          <text class="link" @click="goToAgree('user')">《用户协议》</text>
+          和
+          <text class="link" @click="goToAgree('privacy')">《隐私政策》</text>
+        </text>
+      </view>
     </view>
   </view>
 </template>
@@ -513,57 +513,31 @@ onUnload(() => {
       opacity: 0.6;
     }
   }
+}
 
-  /* 分割线 */
-  .divider {
-    position: relative;
-    text-align: center;
-    margin-bottom: 40rpx;
-    &::before, &::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      width: 40%;
-      height: 1rpx;
-      background: #2A3138;
-    }
-    &::before { left: 0; }
-    &::after { right: 0; }
-    .divider-text {
-      font-size: 28rpx;
-      color: #9CA3AF;
-      padding: 0 16rpx;
-      background: #1E252B;
-    }
-  }
+/* 底部区域 */
+.bottom-section {
+  margin-top: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32rpx;
+  padding-bottom: env(safe-area-inset-bottom);
+}
 
-  /* 游客模式按钮 */
-  .btn-guest {
-    width: 100%;
-    height: 96rpx;
-    line-height: 96rpx;
-    background: transparent;
+/* 游客模式链接 */
+.guest-link-wrapper {
+  text-align: center;
+  .guest-link {
+    font-size: 28rpx;
     color: #00BB88;
-    border: 2rpx solid #00BB88;
-    border-radius: 48rpx;
-    font-size: 32rpx;
-    font-weight: 600;
-    margin-bottom: 24rpx;
-    &::after {
-      border: none;
-    }
-    &:active {
-      background: rgba(0, 187, 136, 0.1);
-    }
+    padding: 16rpx 32rpx;
   }
-
 }
 
 /* 底部协议 */
 .agreement {
-  position: absolute;
-  bottom: calc(40rpx + env(safe-area-inset-bottom));
-  left: 48rpx;
   display: flex;
   align-items: center;
   gap: 12rpx;
