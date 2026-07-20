@@ -20,7 +20,7 @@
       <view class="welcome-section">
         <view class="welcome-left">
           <text class="greeting">你好 👋</text>
-          <text class="welcome-text">今天想预约哪位教练？</text>
+          <text class="welcome-text">{{ welcomeText }}</text>
         </view>
         <view class="welcome-right">
           <view class="scan-btn" @click="toScan">
@@ -55,8 +55,20 @@
         </swiper>
       </view>
 
+      <!-- 审核模式：球厅预约 -->
+      <review-venue v-if="showVenueSection" />
+
+      <!-- 开关加载中的中性骨架（避免泄露教练内容） -->
+      <view class="home-skeleton" v-if="!reviewLoaded">
+        <view class="skeleton-card" v-for="i in 3" :key="i">
+          <view class="skeleton-line title"></view>
+          <view class="skeleton-line"></view>
+          <view class="skeleton-line short"></view>
+        </view>
+      </view>
+
       <!-- 服务入口 -->
-      <view class="service-section">
+      <view class="service-section" v-if="showCoachSections">
         <view class="section-title-wrap">
           <text class="section-title">热门服务</text>
           <text class="section-desc">为您精选优质服务</text>
@@ -86,7 +98,7 @@
       </view>
 
       <!-- 热门裁教 -->
-      <view class="section-container">
+      <view class="section-container" v-if="showCoachSections">
         <view class="section-header">
           <view class="title-left">
             <view class="title-decoration">
@@ -134,7 +146,7 @@
       </view>
 
       <!-- 新人推荐 -->
-      <view class="section-container last-section">
+      <view class="section-container last-section" v-if="showCoachSections">
         <view class="section-header">
           <view class="title-left">
             <view class="title-decoration">
@@ -183,7 +195,7 @@
 </template>
 
 <script setup>
-import {ref, onMounted, nextTick} from 'vue'
+import {ref, computed, onMounted, nextTick} from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getNewCoachList, getHotCoachList } from '@/api/billiard/coach'
 import { shouldShowIosPrivacy, hasPrivacyRefused } from '@/utils/privacy'
@@ -194,7 +206,18 @@ import {
 } from '@/store'
 import IosPrivacyDialog from '@/components/ios-privacy-dialog/ios-privacy-dialog.vue'
 
-const globalConfig = useConfigStore().config
+const configStore = useConfigStore()
+const globalConfig = configStore.config
+
+// 审核模式状态（响应式，开关变化时各区块自动切换）
+const reviewMode = computed(() => configStore.reviewMode)
+const reviewLoaded = computed(() => configStore.reviewLoaded)
+const showCoachSections = computed(() => reviewLoaded.value && !reviewMode.value)
+const showVenueSection = computed(() => reviewLoaded.value && reviewMode.value)
+const welcomeText = computed(() => {
+  if (!reviewLoaded.value) return '欢迎使用'
+  return reviewMode.value ? '今天想去哪家球厅？' : '今天想预约哪位教练？'
+})
 
 const statusBarHeight = ref(0)
 const navBarHeight = ref(0)
@@ -332,6 +355,16 @@ const toScan = () => {
 }
 
 const initData = async () => {
+  // 开关未就绪时先等待，避免审核模式下误加载教练数据
+  if (!reviewLoaded.value) {
+    try {
+      await configStore.initReviewMode()
+    } catch (e) {
+      // initReviewMode 内部已兜底
+    }
+  }
+  // 审核模式不请求教练接口
+  if (reviewMode.value) return
   loading.value = true
   await Promise.all([
     loadHotCoaches(),
@@ -366,8 +399,14 @@ onMounted(() => {
 })
 
 onShow(() => {
+  // 同步 tabBar 文案（setTabBarItem 仅 tab 页可调，启动时可能被跳过）
+  configStore.syncTabBarLabel()
   if (!isLoggedIn()) {
     openPrivacyDialogIfNeeded()
+  }
+  // 开关在页面存活期间变为正常模式且教练数据为空时，补加载数据
+  if (reviewLoaded.value && !reviewMode.value && !hotCoachList.value.length && !loading.value) {
+    initData()
   }
 })
 </script>
@@ -1115,6 +1154,45 @@ onShow(() => {
 @keyframes shine {
   0% { transform: translateX(-100%) rotate(45deg); }
   100% { transform: translateX(100%) rotate(45deg); }
+}
+
+/* 开关加载中的中性骨架 */
+.home-skeleton {
+  padding: 0 30rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+
+  .skeleton-card {
+    background: linear-gradient(145deg, #1E252B, #1a2024);
+    border: 1rpx solid rgba(255, 255, 255, 0.05);
+    border-radius: 24rpx;
+    padding: 28rpx;
+    display: flex;
+    flex-direction: column;
+    gap: 16rpx;
+    animation: skeletonPulse 1.4s ease-in-out infinite;
+
+    .skeleton-line {
+      height: 24rpx;
+      border-radius: 12rpx;
+      background: rgba(255, 255, 255, 0.06);
+
+      &.title {
+        width: 50%;
+        height: 30rpx;
+      }
+
+      &.short {
+        width: 70%;
+      }
+    }
+  }
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }
 
 .safe-bottom {

@@ -121,3 +121,28 @@ export function formatPrice(cents, keepDecimal = true) {
   }
   return yuan.toString()
 }
+
+/**
+ * 从微信扫码参数中解析教练ID
+ * 兼容：小程序码 scene（coachId=12 / id=12 / 纯数字 12）、普通链接二维码 q（完整 URL）
+ * @param {string} raw 原始参数值（可能带有 URL 编码）
+ * @returns {string|null} 教练ID，解析不到返回 null
+ */
+export function extractCoachId(raw) {
+  if (!raw) return null
+  let str = String(raw)
+  // 最多解码三轮，兼容二次编码的场景值（如 scene%3Did%253D9）
+  for (let i = 0; i < 3; i++) {
+    const match = str.match(/(?:coachId|id)=(\d+)/)
+    if (match) return match[1]
+    const trimmed = str.trim()
+    if (/^\d+$/.test(trimmed)) return trimmed
+    if (!str.includes('%')) break
+    try {
+      str = decodeURIComponent(str)
+    } catch (e) {
+      break
+    }
+  }
+  return null
+}

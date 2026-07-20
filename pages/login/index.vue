@@ -5,7 +5,7 @@
       <view class="logo-circle">
         <image class="logo-img" :src="globalConfig.appInfo.logo" mode="aspectFit"></image>
       </view>
-      <text class="app-desc">专业球类一对一教学平台</text>
+      <text class="app-desc">{{ sloganText }}</text>
     </view>
     <!-- Tab切换 -->
     <view class="tab-section">
@@ -97,6 +97,9 @@
         {{ isSubmitting ? '登录中...' : '登录' }}
       </button>
 
+      <!-- 返回首页 -->
+      <button class="btn-back-home" @click="goBackHome">返回首页</button>
+
     </view>
 
     <!-- 底部区域 -->
@@ -127,7 +130,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import {
   useConfigStore,
   useUserStore
@@ -135,9 +138,15 @@ import {
 import { onUnload, onHide, onShow } from '@dcloudio/uni-app';
 import { isLoggedIn } from '@/utils/token'
 import { bindWX } from '@/api/billiard/user'
+import { syncReviewAccount } from '@/utils/review'
 
 const userStore = useUserStore()
-const globalConfig = useConfigStore().config
+const configStore = useConfigStore()
+const globalConfig = configStore.config
+
+// 审核模式下展示球厅预约平台文案（后端开关 OR 白名单账号生效）
+const reviewMode = computed(() => configStore.finalReviewMode)
+const sloganText = computed(() => reviewMode.value ? '台球厅在线预约平台' : '专业球类一对一教学平台')
 
 /** 检查是否已登录，已登录则跳转到首页 */
 function checkLoginAndRedirect() {
@@ -273,6 +282,9 @@ const handleSubmit = async () => {
     uni.hideLoading()
     uni.showToast({ title: '登录成功', icon: 'success' })
 
+    // 同步审核白名单账号状态（验证码/密码两条路径共用，跳转前执行）
+    syncReviewAccount(form.value.mobile)
+
     // 登录成功后跳转
     setTimeout(() => {
       const redirectPage = uni.getStorageSync('loginRedirectPage')
@@ -326,6 +338,11 @@ const goToAgree = (type) => {
 
 // 游客模式
 const handleGuestMode = () => {
+  uni.switchTab({ url: '/pages/home/index' })
+}
+
+// 返回首页
+const goBackHome = () => {
   uni.switchTab({ url: '/pages/home/index' })
 }
 
@@ -511,6 +528,24 @@ onUnload(() => {
     &::after { border: none; }
     &[disabled] {
       opacity: 0.6;
+    }
+  }
+
+  /* 返回首页（幽灵按钮） */
+  .btn-back-home {
+    width: 100%;
+    height: 96rpx;
+    line-height: 96rpx;
+    background: transparent;
+    color: #00BB88;
+    border-radius: 48rpx;
+    font-size: 32rpx;
+    font-weight: 600;
+    margin: -24rpx 0 48rpx;
+    border: 2rpx solid rgba(0, 187, 136, 0.6);
+    &::after { border: none; }
+    &:active {
+      background: rgba(0, 187, 136, 0.1);
     }
   }
 }

@@ -114,6 +114,7 @@ import { onLoad } from '@dcloudio/uni-app';
 import { createReview, getCoachDetail } from '@/api/billiard/coach'
 import { uploadFile } from '@/api/billiard/user';
 import { showCameraPurposeModal, showAlbumPurposeModal, requestCameraPermission, requestAlbumPermission, showImageSourceModal, showCameraPermissionModal, showAlbumPermissionModal } from '@/utils/photo';
+import { guardReviewEntry } from '@/utils/review'
 
 // 教练信息
 const coachInfo = reactive({
@@ -170,6 +171,8 @@ const loadCoachDetail = async (id) => {
 
 // 页面生命周期
 onLoad((options) => {
+  // 审核模式入口守卫
+  if (guardReviewEntry()) return
   console.log('evaluate onLoad options:', options);
   // 从上一页传递的参数获取订单ID和教练ID
   if (options.orderId) {

@@ -82,6 +82,7 @@
 <script setup>
 import {ref, onMounted} from 'vue'
 import {getFavoriteCoachPage} from '@/api/billiard/coach'
+import {guardReviewEntry} from '@/utils/review'
 
 const statusBarHeight = ref(0)
 const refreshing = ref(false)
@@ -221,6 +222,8 @@ const handleBook = (coach) => {
 }
 
 onMounted(() => {
+  // 审核模式入口守卫
+  if (guardReviewEntry()) return
   const systemInfo = uni.getSystemInfoSync()
   statusBarHeight.value = systemInfo.statusBarHeight || 0
   loadData(true)

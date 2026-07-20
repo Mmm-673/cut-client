@@ -190,6 +190,7 @@
 import { ref, onMounted } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getOrderList, cancelOrder as cancelOrderApi, deleteOrder } from '@/api/billiard/order'
+import { guardReviewEntry, isReviewMode } from '@/utils/review'
 
 // 当前Tab
 const activeTab = ref(null)
@@ -548,6 +549,8 @@ onMounted(() => {
 })
 
 onLoad(() => {
+  // 审核模式入口守卫
+  if (guardReviewEntry()) return
   // 加载数据
   loadData(true)
 
@@ -558,6 +561,8 @@ onLoad(() => {
 })
 
 onShow(() => {
+  // 审核模式下不加载订单数据（onLoad 守卫会拦截并返回首页）
+  if (isReviewMode()) return
   // 每次页面显示时刷新数据
   loadData(true)
 })

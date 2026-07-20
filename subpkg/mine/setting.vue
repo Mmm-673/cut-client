@@ -78,6 +78,7 @@ import { ref, computed, onMounted } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
 import { useUserStore } from '@/store'
 import { cancelAccount } from '@/api/billiard/user'
+import { clearReviewAccount } from '@/utils/review'
 
 // ---------------------- 状态定义 ----------------------
 const userStore = useUserStore()
@@ -166,6 +167,8 @@ const handleLogout = () => {
     success: async (res) => {
       if (res.confirm) {
         await userStore.logout()
+        // 清除审核白名单账号状态，恢复开关控制
+        clearReviewAccount()
         uni.showToast({ title: '已退出登录', icon: 'success' })
         setTimeout(() => {
           uni.switchTab({
@@ -196,6 +199,8 @@ const handleCancelAccount = async () => {
     })
     uni.showToast({ title: '账号已注销', icon: 'success' })
     await userStore.logout()
+    // 清除审核白名单账号状态，恢复开关控制
+    clearReviewAccount()
     setTimeout(() => {
       uni.switchTab({
         url: '/pages/home/index'

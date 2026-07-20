@@ -142,6 +142,7 @@ import { ref, computed, onMounted } from 'vue'
 import { onNavigationBarButtonTap } from '@dcloudio/uni-app'
 import { getCoachDetail, createRewardOrder } from '@/api/billiard/coach'
 import { executePayment, fetchEnabledChannels } from '@/utils/payment'
+import { guardReviewEntry } from '@/utils/review'
 
 // 状态管理
 const statusBarHeight = ref(0)
@@ -190,6 +191,8 @@ const currentAmount = computed(() => {
 
 // 页面生命周期
 onMounted(() => {
+  // 审核模式入口守卫
+  if (guardReviewEntry()) return
   // 获取系统信息
   const systemInfo = uni.getSystemInfoSync()
   statusBarHeight.value = systemInfo.statusBarHeight || 0

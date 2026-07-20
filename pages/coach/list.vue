@@ -1,5 +1,22 @@
 <template>
   <view class="coach-list-page">
+    <!-- 审核模式：球厅预约 -->
+    <scroll-view v-if="reviewLoaded && reviewMode" scroll-y class="review-scroll" show-scrollbar="false">
+      <review-venue />
+      <view class="safe-area-bottom"></view>
+    </scroll-view>
+
+    <!-- 开关加载中：中性骨架，避免闪现教练内容 -->
+    <view v-else-if="!reviewLoaded" class="review-loading">
+      <view class="skeleton-card" v-for="i in 4" :key="i">
+        <view class="skeleton-line title"></view>
+        <view class="skeleton-line"></view>
+        <view class="skeleton-line short"></view>
+      </view>
+    </view>
+
+    <!-- 正常模式：教练列表 -->
+    <template v-else>
     <view class="header-section">
       <view class="search-bar">
         <view class="search-input-wrapper">
@@ -156,19 +173,26 @@
       </view>
       <view class="safe-area-bottom"></view>
     </scroll-view>
+    </template>
 
 
   </view>
 </template>
 
 <script setup>
-import {ref, onMounted} from 'vue'
+import {ref, onMounted, computed, watch} from 'vue'
 import {onLoad, onShow} from  "@dcloudio/uni-app"
 import {getCoachList} from '@/api/billiard/coach'
 import {getRewardSwitch} from '@/api/billiard/user'
 import {debounce, formatPrice, showLoading, hideLoading} from '@/utils/common'
 import {getLocation, extractCity, formatDistance, showPermissionModal} from '@/utils/location'
 import {isLoggedIn} from '@/utils/token'
+import {useConfigStore} from '@/store'
+
+const configStore = useConfigStore()
+// 审核模式状态（响应式）
+const reviewMode = computed(() => configStore.reviewMode)
+const reviewLoaded = computed(() => configStore.reviewLoaded)
 
 const statusBarHeight = ref(0)
 const scrollHeight = ref(0)
@@ -333,6 +357,16 @@ const ensureLocation = async () => {
 
 // 页面初始化：定位完成后拉取列表，全程保持定位中状态
 const refreshPageData = async () => {
+  // 审核模式开关未就绪时先等待；开启时展示球厅，不请求定位/教练数据
+  if (!reviewLoaded.value) {
+    try {
+      await configStore.initReviewMode()
+    } catch (e) {
+      // initReviewMode 内部已兜底
+    }
+  }
+  if (reviewMode.value) return
+
   if (pageInitPromise) {
     return pageInitPromise
   }
@@ -372,6 +406,8 @@ const getCurrentLocation = async () => {
 
 // 请求裁教列表数据
 const fetchCoachList = async (isRefresh = false) => {
+  // 审核模式下不请求教练接口
+  if (reviewMode.value) return
   if (loading.value) return
 
   loading.value = true
@@ -529,6 +565,8 @@ const goToDetail = (id) => {
 
 // 加载是否显示心意按钮
 const loadCountdownEnabled = async () => {
+  // 审核模式下不请求心意开关
+  if (reviewMode.value) return
   try {
     const res = await getRewardSwitch()
     console.log(res.data ,'===res.data ')
@@ -612,7 +650,28 @@ onMounted(() => {
   loadCountdownEnabled()
 })
 
+// 根据审核模式更新导航标题
+const applyNavTitle = () => {
+  try {
+    uni.setNavigationBarTitle({
+      title: reviewMode.value ? '球厅预约' : '裁教列表'
+    })
+  } catch (e) {
+    console.warn('设置导航标题失败:', e)
+  }
+}
+
+// 开关就绪/变化时同步导航标题
+watch([reviewLoaded, reviewMode], () => {
+  applyNavTitle()
+})
+
 onShow(() => {
+  applyNavTitle()
+  // 同步 tabBar 文案（setTabBarItem 仅 tab 页可调，启动时可能被跳过）
+  configStore.syncTabBarLabel()
+  // 审核模式下展示球厅预约，跳过教练列表逻辑
+  if (reviewMode.value) return
   // 每次显示都检查是否有默认tab参数
   let needRefresh = false
   try {
@@ -1142,5 +1201,54 @@ onShow(() => {
 
 .loading-status {
   padding: 20rpx 0;
+}
+
+/* 审核模式：球厅滚动区 */
+.review-scroll {
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+  padding-top: 24rpx;
+}
+
+/* 开关加载中的中性骨架 */
+.review-loading {
+  flex: 1;
+  min-height: 0;
+  padding: 24rpx 30rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+
+  .skeleton-card {
+    background: #1E252B;
+    border: 1rpx solid rgba(255, 255, 255, 0.05);
+    border-radius: 20rpx;
+    padding: 28rpx;
+    display: flex;
+    flex-direction: column;
+    gap: 16rpx;
+    animation: skeletonPulse 1.4s ease-in-out infinite;
+
+    .skeleton-line {
+      height: 24rpx;
+      border-radius: 12rpx;
+      background: rgba(255, 255, 255, 0.06);
+
+      &.title {
+        width: 50%;
+        height: 30rpx;
+      }
+
+      &.short {
+        width: 70%;
+      }
+    }
+  }
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }
 </style>

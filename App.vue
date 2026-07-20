@@ -7,6 +7,8 @@ import { getCurrentInstance } from "vue"
 import { onLaunch, onShow} from '@dcloudio/uni-app'
 import { initPushService, syncPushForUser, retryPushSyncIfNeeded } from '@/utils/jpush'
 import { shouldShowIosPrivacy, setPrivacyAgreedCallback } from '@/utils/privacy'
+import { isReviewMode } from '@/utils/review'
+import { extractCoachId } from '@/utils/common'
 
 
 const { proxy } = getCurrentInstance()
@@ -26,6 +28,8 @@ onShow((options) => {
   retryPushSyncIfNeeded()
   // #endif
   checkLogin()
+  // 刷新审核模式开关（不阻塞启动）
+  useConfigStore().initReviewMode()
   // 处理小程序显示参数（包括Scheme拉起）
   handleLaunchOptions(options)
 })
@@ -45,6 +49,10 @@ const getQueryParam = (url, param) => {
   return null
 }
 
+// 防重复跳转记录（扫码进入时 onLaunch/onShow 会相继触发）
+let lastCoachNavId = null
+let lastCoachNavTime = 0
+
 // 处理启动参数（Scheme拉起）
 const handleLaunchOptions = (options) => {
   console.log('[App] 启动参数:', options)
@@ -60,18 +68,17 @@ const handleLaunchOptions = (options) => {
   } else if (options.query && options.query.id) {
     coachId = options.query.id
   }
-  // 方式2：从 scene 中解析（场景值，用于扫码等场景）
-  else if (options.scene) {
-    // 解析 scene 参数（微信小程序 scene 参数需要 decode）
-    const scene = decodeURIComponent(options.scene)
-    console.log('[App] Scene 参数:', scene)
-    // 尝试从 scene 中提取 coachId，格式可能是 coachId=123 或 id=123
-    const match = scene.match(/(?:coachId|id)=(\d+)/)
-    if (match) {
-      coachId = match[1]
-    }
+  // 方式2：扫小程序码进入，业务参数在 query.scene 中（如 coachId=12 / id=12 / 纯数字）
+  else if (options.query && options.query.scene) {
+    console.log('[App] query.scene 参数:', options.query.scene)
+    coachId = extractCoachId(options.query.scene)
   }
-  // 方式3：从 path 中解析
+  // 方式3：扫普通链接二维码进入，完整 URL 在 query.q 中
+  else if (options.query && options.query.q) {
+    console.log('[App] query.q 参数:', options.query.q)
+    coachId = extractCoachId(options.query.q)
+  }
+  // 方式4：从 path 中解析
   else if (options.path && options.path.includes('coachId=')) {
     coachId = getQueryParam(options.path, 'coachId') || getQueryParam(options.path, 'id')
   }
@@ -81,6 +88,35 @@ const handleLaunchOptions = (options) => {
     console.log('[App] 检测到 coachId，跳转到详情页:', coachId)
     // 延迟跳转，等待页面初始化完成
     setTimeout(() => {
+      // 审核模式下不跳转教练详情
+      if (isReviewMode()) {
+        console.log('[App] 审核模式开启，跳过教练详情跳转')
+        return
+      }
+      // 防重复：onLaunch/onShow 会相继触发，3 秒内同一教练只跳一次
+      const now = Date.now()
+      if (lastCoachNavId === String(coachId) && now - lastCoachNavTime < 3000) {
+        console.log('[App] 短时间内重复触发，跳过跳转:', coachId)
+        return
+      }
+      // 当前已在该教练的详情页时不再跳转（微信扫码直接落在详情页的场景，页面已自行解析参数）
+      try {
+        const pages = getCurrentPages()
+        const top = pages.length ? pages[pages.length - 1] : null
+        if (top && top.route === 'subpkg/coach/detail') {
+          const fullPath = (top.$page && top.$page.fullPath) || ''
+          const topOpts = top.options || {}
+          const topId = extractCoachId(topOpts.id || topOpts.coachId || fullPath || topOpts.scene || topOpts.q)
+          if (topId && String(topId) === String(coachId)) {
+            console.log('[App] 当前已在该教练详情页，跳过重复跳转:', coachId)
+            return
+          }
+        }
+      } catch (e) {
+        // 页面栈读取失败不阻塞跳转
+      }
+      lastCoachNavId = String(coachId)
+      lastCoachNavTime = now
       uni.navigateTo({
         url: `/subpkg/coach/detail?id=${coachId}`
       })
@@ -112,6 +148,9 @@ function continueAppInit() {
   // #ifdef APP-PLUS
   initPushService()
   // #endif
+
+  // 拉取审核模式开关（不阻塞主流程）
+  useConfigStore().initReviewMode()
 
   checkLogin()
 }
