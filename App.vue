@@ -7,6 +7,7 @@ import { getCurrentInstance } from "vue"
 import { onLaunch, onShow} from '@dcloudio/uni-app'
 import { initPushService, syncPushForUser, retryPushSyncIfNeeded } from '@/utils/jpush'
 import { shouldShowIosPrivacy, setPrivacyAgreedCallback } from '@/utils/privacy'
+import { isReviewMode } from '@/utils/review'
 
 
 const { proxy } = getCurrentInstance()
@@ -26,6 +27,8 @@ onShow((options) => {
   retryPushSyncIfNeeded()
   // #endif
   checkLogin()
+  // 刷新审核模式开关（不阻塞启动）
+  useConfigStore().initReviewMode()
   // 处理小程序显示参数（包括Scheme拉起）
   handleLaunchOptions(options)
 })
@@ -81,6 +84,11 @@ const handleLaunchOptions = (options) => {
     console.log('[App] 检测到 coachId，跳转到详情页:', coachId)
     // 延迟跳转，等待页面初始化完成
     setTimeout(() => {
+      // 审核模式下不跳转教练详情
+      if (isReviewMode()) {
+        console.log('[App] 审核模式开启，跳过教练详情跳转')
+        return
+      }
       uni.navigateTo({
         url: `/subpkg/coach/detail?id=${coachId}`
       })
@@ -112,6 +120,9 @@ function continueAppInit() {
   // #ifdef APP-PLUS
   initPushService()
   // #endif
+
+  // 拉取审核模式开关（不阻塞主流程）
+  useConfigStore().initReviewMode()
 
   checkLogin()
 }

@@ -11,6 +11,8 @@ const NICKNAME_KEY = 'auth_nickname'
 const AVATAR_KEY = 'auth_avatar'
 const MOBILE_KEY = 'auth_mobile'
 const LOGIN_TIME_KEY = 'auth_login_time'
+// 审核白名单账号标记（与 utils/review.js 保持一致，此处仅做 storage 清理，不引入 store 避免循环依赖）
+const REVIEW_ACCOUNT_PHONE_KEY = 'review_account_phone'
 
 /**
  * 获取 accessToken
@@ -157,6 +159,7 @@ export function clearAuthInfo() {
     uni.removeStorageSync(AVATAR_KEY)
     uni.removeStorageSync(MOBILE_KEY)
     uni.removeStorageSync(LOGIN_TIME_KEY)
+    uni.removeStorageSync(REVIEW_ACCOUNT_PHONE_KEY)
     return true
   } catch (e) {
     console.warn('清除认证信息失败:', e)

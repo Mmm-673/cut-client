@@ -239,6 +239,7 @@ import { createOrder } from '@/api/billiard/order'
 import { getCoachDetail } from '@/api/billiard/coach'
 import { onLoad } from '@dcloudio/uni-app'
 import { getWallet } from '@/api/billiard/wallet'
+import { guardReviewEntry } from '@/utils/review'
 
 // ---------------------- 状态定义 ----------------------
 const isSubmitting = ref(false)
@@ -695,6 +696,8 @@ const startCountdown = () => {
 
 // ---------------------- 生命周期 ----------------------
 onLoad((options) => {
+  // 审核模式入口守卫
+  if (guardReviewEntry()) return
   // 不再需要 createDirect 参数，订单已在 detail 页创建
   initTimePickerData()
 })

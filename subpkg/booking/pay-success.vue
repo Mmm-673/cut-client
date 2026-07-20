@@ -49,6 +49,7 @@
 import { ref, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { getOrderDetail } from '@/api/billiard/order'
+import { guardReviewEntry } from '@/utils/review'
 
 const orderId = ref(null)
 const orderDetail = ref(null)
@@ -92,6 +93,8 @@ const goToHome = () => {
 }
 
 onLoad((options) => {
+  // 审核模式入口守卫
+  if (guardReviewEntry()) return
   if (options.orderId) {
     orderId.value = Number(options.orderId)
   } else {

@@ -108,6 +108,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
+import { guardReviewEntry } from '@/utils/review'
 
 // 选中的教练
 const selectedCoach = ref(null)
@@ -201,6 +202,8 @@ const goToConfirm = () => {
 }
 
 onLoad((options) => {
+  // 审核模式入口守卫
+  if (guardReviewEntry()) return
   // 统一处理两种入口
   // 重置所有选择状态
   selectedCoach.value = null

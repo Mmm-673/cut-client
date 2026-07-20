@@ -243,6 +243,7 @@ import { createOrder } from '@/api/billiard/order'
 import { getRewardSwitch } from '@/api/billiard/user'
 import { formatPrice } from '@/utils/common'
 import { isLoggedIn } from '@/utils/token'
+import { guardReviewEntry, isReviewMode } from '@/utils/review'
 
 // 图片查看器
 const showImageViewer = ref(false)
@@ -417,10 +418,6 @@ const loadCoachData = async () => {
           )
           // 找不到配置直接丢弃
           if (!localConfig) return null
-          // #ifdef MP-WEIXIN
-          // 微信小程序环境下不展示达人带路服务(type=2)
-          if (localConfig.type === 2) return null
-          // #endif
           return {
             ...localConfig,
             ...item,
@@ -705,6 +702,8 @@ const loadCountdownEnabled = async () => {
 
 // 获取页面参数
 onLoad((options) => {
+  // 审核模式入口守卫
+  if (guardReviewEntry()) return
   if (options.id) {
     coachId.value = parseInt(options.id)
   }
@@ -716,6 +715,8 @@ onShow(() => {
 })
 
 onMounted(() => {
+  // 审核模式下已被 onLoad 守卫拦截，不再加载数据
+  if (isReviewMode()) return
   // 获取系统信息
   const systemInfo = uni.getSystemInfoSync()
   statusBarHeight.value = systemInfo.statusBarHeight || 0

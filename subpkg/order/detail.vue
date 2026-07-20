@@ -407,6 +407,7 @@ import { reportException } from '@/api/billiard/exception'
 import { executePayment, fetchEnabledChannels } from '@/utils/payment'
 import {openMapNavigation} from "../../utils/platform";
 import { showCallPermissionModal, requestCallPermission, doCallPhone } from '@/utils/call';
+import { guardReviewEntry } from '@/utils/review'
 
 // 订单ID
 const orderId = ref(null)
@@ -1365,6 +1366,8 @@ const handleReport = async () => {
 }
 
 onLoad((options) => {
+  // 审核模式入口守卫
+  if (guardReviewEntry()) return
   if (options.id) {
     orderId.value = parseInt(options.id)
   }

@@ -31,8 +31,8 @@
           </view>
         </view>
 
-        <!-- 统计数据 -->
-        <view class="user-stats">
+        <!-- 统计数据（审核模式下隐藏） -->
+        <view class="user-stats" v-if="showOrderSections">
           <view class="stats-item" @click="toAllOrder">
             <text class="stats-num">{{ stats.totalOrder }}</text>
             <text class="stats-label">总订单</text>
@@ -47,9 +47,9 @@
 
 
       <!-- ==========================================
-           5. 我的订单模块
+           5. 我的订单模块（审核模式下隐藏）
            ========================================== -->
-      <view class="func-card">
+      <view class="func-card" v-if="showOrderSections">
         <view class="card-header">
           <text class="card-title">我的订单</text>
           <text class="view-more" @click="toAllOrder">
@@ -117,7 +117,7 @@
       <view class="func-card menu-card">
         <view
             class="menu-item"
-            v-for="item in menuList"
+            v-for="item in visibleMenuList"
             :key="item.key"
             @click="toMenuPage(item)"
             >
@@ -166,6 +166,7 @@ import { onShow, onPullDownRefresh } from  "@dcloudio/uni-app"
 import { getUserInfo } from '@/api/billiard/user'
 import { getOrderList } from '@/api/billiard/order'
 import { useUserStore } from '@/store/modules/user'
+import { useConfigStore } from '@/store'
 import { isLoggedIn } from '@/utils/token'
 
 // 后端状态映射：10=待付款,20=待接单,30=已接单,40=进行中,50=待评价,60=已完成,70=已取消
@@ -261,6 +262,13 @@ const transformOrder = (item) => {
 }
 
 const userStore = useUserStore()
+const configStore = useConfigStore()
+
+// 审核模式状态（响应式）
+const reviewMode = computed(() => configStore.reviewMode)
+const reviewLoaded = computed(() => configStore.reviewLoaded)
+// 审核模式下隐藏订单统计与订单卡片（开关未就绪时也不展示陪玩内容）
+const showOrderSections = computed(() => reviewLoaded.value && !reviewMode.value)
 
 // ---------------------- 状态定义 ----------------------
 // 登录状态
@@ -319,6 +327,8 @@ const orderList = ref({
 
 // 加载订单列表
 const loadOrders = async () => {
+  // 审核模式下不请求陪玩订单
+  if (reviewMode.value) return
   try {
     const promises = Object.keys(TAB_TO_STATUSES).map(async (tab) => {
       const statuses = TAB_TO_STATUSES[tab]
@@ -348,6 +358,12 @@ const menuList = ref([
   { key: 'collection', title: '我的收藏', icon: 'heart', bgColor: 'rgba(255, 77, 79, 0.2)', color: '#ff4d4f', path: '/subpkg/mine/favorites' },
   { key: 'help', title: '客服中心', icon: 'headphones', bgColor: 'rgba(107, 114, 128, 0.2)', color: '#6B7280', path: '/subpkg/mine/help' }
 ])
+
+// 审核模式下隐藏陪玩相关入口（收支统计/我的收藏）
+const visibleMenuList = computed(() => {
+  if (!reviewMode.value) return menuList.value
+  return menuList.value.filter(item => !['wallet', 'collection'].includes(item.key))
+})
 
 // ---------------------- 计算属性 ----------------------
 const showOrders = computed(() => {
