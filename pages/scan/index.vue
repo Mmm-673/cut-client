@@ -107,7 +107,7 @@ const convertToNativePath = (tempPath) => {
   })
 }
 
-// ---- 相册扫码：plus.barcode.scan 解码 ----
+// ---- 相册扫码：解码二维码 ----
 const decodeImage = async (filePath) => {
   try {
     // #ifdef APP-PLUS
@@ -129,6 +129,7 @@ const decodeImage = async (filePath) => {
       console.warn('[相册扫码] 路径转换异常，使用原始路径:', e)
       scanPath = filePath
     }
+
     console.log('[相册扫码] 最终扫描路径:', scanPath)
 
     const code = await new Promise((resolve, reject) => {
@@ -153,6 +154,16 @@ const decodeImage = async (filePath) => {
       uni.showToast({ title: '未识别到二维码，请选择清晰的二维码图片', icon: 'none' })
     }
     // #endif
+
+    // #ifdef H5
+    // H5 平台：提示暂不支持
+    loading.value = false
+    console.log('[相册扫码-H5] 路径:', filePath)
+    uni.showToast({
+      title: 'H5 相册扫码功能开发中，请使用直接扫码',
+      icon: 'none'
+    })
+    // #endif
   } catch (err) {
     loading.value = false
     console.error('[相册扫码] 异常:', err?.message || err, JSON.stringify(err))
@@ -163,8 +174,28 @@ const decodeImage = async (filePath) => {
 const handleAlbumScan = async () => {
   try {
     await showAlbumPurposeModal()
-    loading.value = true
 
+    // #ifdef MP-WEIXIN
+    // 微信小程序：直接使用 scanCode 的相册功能，避免二次选择
+    loading.value = false
+    uni.scanCode({
+      scanType: ['qrCode'],
+      success: (res) => {
+        console.log('[相册扫码-小程序] 成功:', res.result)
+        processQrResult(res.result)
+      },
+      fail: (err) => {
+        console.error('[相册扫码-小程序] 失败:', err)
+        // 如果用户取消，不显示错误提示
+        if (!err.errMsg?.includes('cancel')) {
+          uni.showToast({ title: '未识别到二维码，请选择清晰的二维码图片', icon: 'none' })
+        }
+      }
+    })
+    // #endif
+
+    // #ifndef MP-WEIXIN
+    loading.value = true
     const res = await new Promise((resolve, reject) => {
       uni.chooseImage({
         count: 1,
@@ -187,6 +218,7 @@ const handleAlbumScan = async () => {
     }
 
     await decodeImage(res.tempFilePaths[0])
+    // #endif
   } catch (err) {
     loading.value = false
     if (err?.message === 'user_cancelled') {
