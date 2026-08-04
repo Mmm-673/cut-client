@@ -1,5 +1,5 @@
 <template>
-  <view class="favorites-page">
+  <view class="favorites-page" :class="themeClass">
     <scroll-view
         class="list-scroll"
         scroll-y="true"
@@ -80,9 +80,14 @@
 </template>
 
 <script setup>
-import {ref, onMounted} from 'vue'
+import {ref, onMounted, computed} from 'vue'
+import { useThemeStore } from '@/store'
 import {getFavoriteCoachPage} from '@/api/billiard/coach'
 import {guardReviewEntry} from '@/utils/review'
+
+// 主题相关
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 const statusBarHeight = ref(0)
 const refreshing = ref(false)
@@ -234,7 +239,7 @@ onMounted(() => {
 .favorites-page {
   width: 100%;
   height: 100vh;
-  background-color: #1a1a1a;
+  background-color: var(--bg-page);
   display: flex;
   flex-direction: column;
 }
@@ -246,7 +251,7 @@ onMounted(() => {
   justify-content: space-between;
   height: 88rpx;
   padding: 0 32rpx;
-  background-color: #1E252B;
+  background-color: var(--bg-card);
   flex-shrink: 0;
 
   .nav-back {
@@ -260,7 +265,7 @@ onMounted(() => {
   .nav-title {
     font-size: 34rpx;
     font-weight: 600;
-    color: #fff;
+    color: var(--text-primary);
   }
 
   .nav-placeholder {
@@ -289,7 +294,7 @@ onMounted(() => {
   .empty-text {
     margin-top: 20rpx;
     font-size: 28rpx;
-    color: #666;
+    color: var(--text-tertiary);
   }
 }
 
@@ -303,7 +308,7 @@ onMounted(() => {
 /* 裁教卡片样式 */
 .coach-card {
   display: flex;
-  background-color: #2a2a2a;
+  background-color: var(--bg-card);
   border-radius: 24rpx;
   padding: 24rpx;
   margin-bottom: 24rpx;
@@ -333,7 +338,7 @@ onMounted(() => {
 
         .coach-name {
           font-size: 32rpx;
-          color: #fff;
+          color: var(--text-primary);
           font-weight: bold;
         }
 
@@ -354,7 +359,7 @@ onMounted(() => {
 
           &.junior {
             background: rgba(102, 102, 102, 0.2);
-            color: #999;
+            color: var(--text-secondary);
           }
 
           &.star {
@@ -366,7 +371,7 @@ onMounted(() => {
 
       .favorite-time {
         font-size: 22rpx;
-        color: #666;
+        color: var(--text-tertiary);
       }
     }
 
@@ -398,7 +403,7 @@ onMounted(() => {
 
           &.offline {
             background: rgba(102, 102, 102, 0.2);
-            color: #999;
+            color: var(--text-secondary);
           }
 
           &.free {
@@ -416,7 +421,7 @@ onMounted(() => {
 
     .desc-row .coach-desc {
       font-size: 24rpx;
-      color: #999;
+      color: var(--text-secondary);
       line-height: 1.4;
       display: -webkit-box;
       -webkit-line-clamp: 1;
@@ -443,7 +448,7 @@ onMounted(() => {
         }
 
         .price-unit {
-          color: #777;
+          color: var(--text-tertiary);
           font-size: 22rpx;
         }
       }
@@ -462,7 +467,7 @@ onMounted(() => {
         }
 
         .reward-btn {
-          background: #3a3a3a;
+          background: var(--bg-secondary);
           color: #FF9500;
           display: flex;
           align-items: center;
@@ -471,7 +476,7 @@ onMounted(() => {
 
         .book-btn {
           background: #00d4aa;
-          color: #fff;
+          color: var(--text-primary);
         }
       }
     }

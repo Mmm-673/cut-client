@@ -255,7 +255,7 @@
       {
         "pagePath": "pages/coach/list",
         "iconPath": "static/images/tabbar/ball.png",
-        "selectedIconPath": "static/images/tabbar/ball.png",
+        "selectedIconPath": "static/images/tabbar/ball_.png",
         "text": "预约"
       },
       {

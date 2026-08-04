@@ -1,5 +1,5 @@
 <template>
-  <view class="booking-wrapper">
+  <view class="booking-wrapper" :class="themeClass">
     <!-- 顶部标题 -->
     <view class="page-header">
       <text class="header-title">快速预约</text>
@@ -109,6 +109,10 @@
 import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { guardReviewEntry } from '@/utils/review'
+import { useThemeStore } from '@/store'
+
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // 选中的教练
 const selectedCoach = ref(null)
@@ -226,7 +230,7 @@ onLoad((options) => {
 <style lang="scss" scoped>
 .booking-wrapper {
   min-height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
   padding-bottom: 140rpx;
 }
 
@@ -234,7 +238,7 @@ onLoad((options) => {
 .page-header {
   padding: 40rpx 30rpx 20rpx;
   .header-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 40rpx;
     font-weight: bold;
   }
@@ -244,7 +248,7 @@ onLoad((options) => {
 .section {
   padding: 30rpx;
   .section-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 30rpx;
     font-weight: 600;
     margin-bottom: 20rpx;
@@ -255,7 +259,7 @@ onLoad((options) => {
 .coach-selector {
   display: flex;
   align-items: center;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 20rpx;
   padding: 24rpx;
   .coach-avatar {
@@ -264,7 +268,7 @@ onLoad((options) => {
     border-radius: 16rpx;
     margin-right: 20rpx;
     &.empty {
-      background: #2A3138;
+      background: var(--bg-secondary);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -273,13 +277,13 @@ onLoad((options) => {
   .coach-info {
     flex: 1;
     .coach-name, .coach-placeholder {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 28rpx;
       display: block;
       margin-bottom: 8rpx;
     }
     .coach-placeholder {
-      color: #666;
+      color: var(--text-tertiary);
     }
     .coach-price {
       color: #00BB88;
@@ -294,7 +298,7 @@ onLoad((options) => {
   grid-template-columns: repeat(3, 1fr);
   gap: 16rpx;
   .service-card {
-    background: #1E252B;
+    background: var(--bg-card);
     border-radius: 16rpx;
     padding: 24rpx 16rpx;
     text-align: center;
@@ -309,7 +313,7 @@ onLoad((options) => {
       margin-bottom: 12rpx;
     }
     .service-name {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 26rpx;
       display: block;
       margin-bottom: 8rpx;
@@ -332,7 +336,7 @@ onLoad((options) => {
     flex-shrink: 0;
     width: 100rpx;
     padding: 20rpx 0;
-    background: #1E252B;
+    background: var(--bg-card);
     border-radius: 16rpx;
     text-align: center;
     border: 2rpx solid transparent;
@@ -341,13 +345,13 @@ onLoad((options) => {
       background: rgba(0, 187, 136, 0.1);
     }
     .date-week {
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 22rpx;
       display: block;
       margin-bottom: 8rpx;
     }
     .date-day {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 28rpx;
       font-weight: bold;
     }
@@ -361,10 +365,10 @@ onLoad((options) => {
   gap: 12rpx;
   .time-item {
     padding: 20rpx 0;
-    background: #1E252B;
+    background: var(--bg-card);
     border-radius: 12rpx;
     text-align: center;
-    color: #fff;
+    color: var(--text-primary);
     font-size: 26rpx;
     border: 2rpx solid transparent;
     &.active {
@@ -382,22 +386,22 @@ onLoad((options) => {
 .hall-selector {
   display: flex;
   align-items: center;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 20rpx;
   padding: 24rpx;
   .hall-info {
     flex: 1;
     .hall-name, .hall-placeholder {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 28rpx;
       display: block;
       margin-bottom: 8rpx;
     }
     .hall-placeholder {
-      color: #666;
+      color: var(--text-tertiary);
     }
     .hall-address {
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 24rpx;
     }
   }
@@ -407,14 +411,14 @@ onLoad((options) => {
 .remark-input {
   width: 100%;
   min-height: 160rpx;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 20rpx;
   padding: 24rpx;
   box-sizing: border-box;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 28rpx;
   .placeholder {
-    color: #666;
+    color: var(--text-tertiary);
   }
 }
 
@@ -424,7 +428,7 @@ onLoad((options) => {
   bottom: 0;
   left: 0;
   right: 0;
-  background: #1E252B;
+  background: var(--bg-card);
   padding: 12rpx 24rpx;
   padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
   display: flex;
@@ -435,7 +439,7 @@ onLoad((options) => {
     align-items: baseline;
     gap: 6rpx;
     .price-label {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 24rpx;
     }
     .price-unit {
@@ -453,7 +457,7 @@ onLoad((options) => {
     height: 72rpx;
     line-height: 72rpx;
     background: #00BB88;
-    color: #fff;
+    color: var(--text-primary);
     border-radius: 36rpx;
     font-size: 28rpx;
     font-weight: bold;

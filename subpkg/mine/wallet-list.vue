@@ -1,5 +1,5 @@
 <template>
-  <view class="record-all-wrapper">
+  <view class="record-all-wrapper" :class="themeClass">
     <scroll-view
         scroll-y
         class="record-scroll"
@@ -111,7 +111,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { onShow } from "@dcloudio/uni-app"
+import { useThemeStore } from '@/store'
 import { getWalletTransactions, getWalletTransactionSummary } from '@/api/billiard/wallet'
+
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 onMounted(() => {
   initMonthPicker()
@@ -441,7 +445,7 @@ onShow(() => {
 <style lang="scss" scoped>
 .record-all-wrapper {
   height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
   display: flex;
   flex-direction: column;
   overflow: hidden; /* 防止容器本身滚动 */
@@ -463,7 +467,7 @@ onShow(() => {
     justify-content: center;
   }
   .nav-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 36rpx;
     font-weight: 600;
   }
@@ -490,8 +494,8 @@ onShow(() => {
     gap: 16rpx;
     .tab-item {
       padding: 16rpx 32rpx;
-      background: rgba(30, 37, 43, 1);
-      color: #9CA3AF;
+      background: var(--bg-card);
+      color: var(--text-secondary);
       font-size: 28rpx;
       font-weight: 500;
       border-radius: 40rpx;
@@ -499,7 +503,7 @@ onShow(() => {
       transition: all 0.2s ease;
       &.active {
         background: #00BB88;
-        color: #fff;
+        color: var(--text-primary);
         font-weight: 600;
       }
     }
@@ -509,7 +513,7 @@ onShow(() => {
 /* 通用统计卡片 */
 .stat-card {
   margin: 0 30rpx 30rpx;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 30rpx;
   .stat-header {
@@ -518,12 +522,12 @@ onShow(() => {
     align-items: center;
     margin-bottom: 30rpx;
     .stat-title {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 32rpx;
       font-weight: 600;
     }
     .stat-month {
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 26rpx;
     }
   }
@@ -535,7 +539,7 @@ onShow(() => {
       text-align: center;
       .stat-label {
         display: block;
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 28rpx;
         margin-bottom: 12rpx;
       }
@@ -554,7 +558,7 @@ onShow(() => {
     .stat-divider {
       width: 2rpx;
       height: 80rpx;
-      background: rgba(255,255,255,0.1);
+      background: var(--border-color);
     }
   }
 }
@@ -565,13 +569,13 @@ onShow(() => {
   .record-group {
     margin-bottom: 30rpx;
     .group-date {
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 26rpx;
       margin-bottom: 16rpx;
       padding-left: 8rpx;
     }
     .group-card {
-      background: #1E252B;
+      background: var(--bg-card);
       border-radius: 24rpx;
       padding: 0 30rpx;
       .record-item {
@@ -579,7 +583,7 @@ onShow(() => {
         align-items: center;
         gap: 20rpx;
         padding: 30rpx 0;
-        border-bottom: 1rpx solid rgba(255,255,255,0.05);
+        border-bottom: 1rpx solid var(--border-color);
         &:last-child {
           border-bottom: none;
         }
@@ -596,14 +600,14 @@ onShow(() => {
           flex: 1;
           .record-title {
             display: block;
-            color: #fff;
+            color: var(--text-primary);
             font-size: 30rpx;
             font-weight: 500;
             margin-bottom: 8rpx;
           }
           .record-subtitle {
             display: block;
-            color: #9CA3AF;
+            color: var(--text-secondary);
             font-size: 26rpx;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -623,7 +627,7 @@ onShow(() => {
 /* 加载提示 */
 .load-tip {
   text-align: center;
-  color: #6B7280;
+  color: var(--text-tertiary);
   font-size: 26rpx;
   padding: 40rpx 0;
   &.loading {

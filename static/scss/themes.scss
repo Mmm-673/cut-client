@@ -1,0 +1,143 @@
+// ==========================================
+// 主题变量定义
+// ==========================================
+
+// 统一使用 CSS 变量，所有平台一致
+// 注意：所有主题都通过类名明确应用，避免默认值导致的闪烁
+
+// 深色主题
+.theme-dark,
+page.theme-dark {
+  // 背景色
+  --bg-page: #121619;
+  --bg-card: #1E252B;
+  --bg-secondary: #2a3338;
+  --bg-light: #ffffff;
+
+  // 品牌色
+  --brand-primary: #00BB88;
+  --brand-hover: #00A979;
+  --brand-press: #00996D;
+  --brand-light-bg: rgba(0,187,136,0.2);
+  --brand-gradient: linear-gradient(135deg, #00BB88 0%, #059669 100%);
+
+  // 文字色
+  --text-primary: #ffffff;
+  --text-secondary: #9CA3AF;
+  --text-tertiary: #6B7280;
+  --text-placeholder: #C7CDD4;
+
+  // 边框/分割线
+  --border-color: rgba(255,255,255,0.05);
+  --divider-color: rgba(255,255,255,0.08);
+
+  // 阴影
+  --card-shadow: 0 16px 40px rgba(0,0,0,0.3);
+
+  // 状态色
+  --online-dot: #00BB88;
+  --online-bg: rgba(0,0,0,0.6);
+  --star-color: #FFB800;
+  --star-text: #FFB800;
+
+  // 按钮
+  --btn-primary-bg: #00BB88;
+  --btn-primary-text: #ffffff;
+  --btn-secondary-bg: rgba(0,187,136,0.2);
+  --btn-secondary-text: #00BB88;
+
+  // 导航栏
+  --nav-bg: #121619;
+  --nav-text: #ffffff;
+}
+
+// 浅色主题（高优先级，确保能覆盖深色）
+.theme-light,
+page.theme-light {
+  // 背景色
+  --bg-page: #F5F7FA !important;
+  --bg-card: #FFFFFF !important;
+  --bg-secondary: #F8FAFC !important;
+  --bg-light: #ffffff !important;
+
+  // 品牌色
+  --brand-primary: #00BB88 !important;
+  --brand-hover: #00A979 !important;
+  --brand-press: #00996D !important;
+  --brand-light-bg: rgba(0,187,136,0.2) !important;
+  --brand-gradient: linear-gradient(135deg, #00BB88 0%, #059669 100%) !important;
+
+  // 文字色
+  --text-primary: #1F2937 !important;
+  --text-secondary: #6B7280 !important;
+  --text-tertiary: #9CA3AF !important;
+  --text-placeholder: #9CA3AF !important;
+
+  // 边框/分割线
+  --border-color: #E5E7EB !important;
+  --divider-color: #EEF2F6 !important;
+
+  // 阴影
+  --card-shadow: 0 8px 30px rgba(15,23,42,0.08) !important;
+
+  // 状态色
+  --online-dot: #22C55E !important;
+  --online-bg: #ECFDF3 !important;
+  --star-color: #FFB800 !important;
+  --star-text: #B7791F !important;
+
+  // 按钮
+  --btn-primary-bg: #00BB88 !important;
+  --btn-primary-text: #ffffff !important;
+  --btn-secondary-bg: rgba(0,187,136,0.1) !important;
+  --btn-secondary-text: #00BB88 !important;
+
+  // 导航栏
+  --nav-bg: #FFFFFF !important;
+  --nav-text: #1F2937 !important;
+}
+
+// 默认样式（兜底，仅在没有主题类时使用）
+page {
+  // 背景色
+  --bg-page: #121619;
+  --bg-card: #1E252B;
+  --bg-secondary: #2a3338;
+  --bg-light: #ffffff;
+
+  // 品牌色
+  --brand-primary: #00BB88;
+  --brand-hover: #00A979;
+  --brand-press: #00996D;
+  --brand-light-bg: rgba(0,187,136,0.2);
+  --brand-gradient: linear-gradient(135deg, #00BB88 0%, #059669 100%);
+
+  // 文字色
+  --text-primary: #ffffff;
+  --text-secondary: #9CA3AF;
+  --text-tertiary: #6B7280;
+  --text-placeholder: #C7CDD4;
+
+  // 边框/分割线
+  --border-color: rgba(255,255,255,0.05);
+  --divider-color: rgba(255,255,255,0.08);
+
+  // 阴影
+  --card-shadow: 0 16px 40px rgba(0,0,0,0.3);
+
+  // 状态色
+  --online-dot: #00BB88;
+  --online-bg: rgba(0,0,0,0.6);
+  --star-color: #FFB800;
+  --star-text: #FFB800;
+
+  // 按钮
+  --btn-primary-bg: #00BB88;
+  --btn-primary-text: #ffffff;
+  --btn-secondary-bg: rgba(0,187,136,0.2);
+  --btn-secondary-text: #00BB88;
+
+  // 导航栏
+  --nav-bg: #121619;
+  --nav-text: #ffffff;
+}

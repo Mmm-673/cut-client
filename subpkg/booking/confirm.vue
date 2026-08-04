@@ -1,5 +1,5 @@
 <template>
-  <view class="confirm-order-wrapper">
+  <view class="confirm-order-wrapper" :class="themeClass">
     <!-- 顶部导航 -->
 <!--    <view class="nav-header">-->
 <!--      <view class="nav-left" @click="goBack">-->
@@ -234,12 +234,17 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useThemeStore } from '@/store'
 import { fetchEnabledChannels, executePayment } from '@/utils/payment'
 import { createOrder } from '@/api/billiard/order'
 import { getCoachDetail } from '@/api/billiard/coach'
 import { onLoad } from '@dcloudio/uni-app'
 import { getWallet } from '@/api/billiard/wallet'
 import { guardReviewEntry } from '@/utils/review'
+
+// 主题相关
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // ---------------------- 状态定义 ----------------------
 const isSubmitting = ref(false)
@@ -748,7 +753,7 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 .confirm-order-wrapper {
   min-height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -762,7 +767,7 @@ onUnmounted(() => {
   padding: 20rpx 30rpx;
   padding-top: calc(20rpx + constant(safe-area-inset-top));
   padding-top: calc(20rpx + env(safe-area-inset-top));
-  background: #121619;
+  background: var(--bg-page);
   .nav-left, .nav-right {
     width: 60rpx;
     height: 60rpx;
@@ -771,7 +776,7 @@ onUnmounted(() => {
     justify-content: center;
   }
   .nav-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 34rpx;
     font-weight: 600;
   }
@@ -789,7 +794,7 @@ onUnmounted(() => {
 /* 教练信息 */
 .coach-card {
   margin: 30rpx;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 30rpx;
   display: flex;
@@ -811,7 +816,7 @@ onUnmounted(() => {
       margin-bottom: 8rpx;
       flex-wrap: wrap;
       .coach-name {
-        color: #fff;
+        color: var(--text-primary);
         font-size: 32rpx;
         font-weight: 700;
       }
@@ -824,7 +829,7 @@ onUnmounted(() => {
       }
     }
     .coach-desc {
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 24rpx;
       margin-bottom: 10rpx;
       display: block;
@@ -838,14 +843,14 @@ onUnmounted(() => {
       gap: 8rpx;
       flex-wrap: wrap;
       .meta-item {
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 24rpx;
         display: flex;
         align-items: center;
         gap: 4rpx;
       }
       .meta-divider {
-        color: #2a3338;
+        color: var(--bg-secondary);
       }
     }
   }
@@ -863,11 +868,11 @@ onUnmounted(() => {
 /* 通用卡片 */
 .info-card {
   margin: 0 30rpx 30rpx;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 30rpx;
   .card-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 32rpx;
     font-weight: 700;
     margin-bottom: 24rpx;
@@ -880,13 +885,13 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 20rpx 0;
-  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  border-bottom: 1rpx solid var(--border-color);
   &:last-child {
     border-bottom: none;
     padding-bottom: 0;
   }
   .label {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 28rpx;
   }
   .value-wrap {
@@ -894,12 +899,12 @@ onUnmounted(() => {
     align-items: center;
     gap: 12rpx;
     .value {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 28rpx;
     }
   }
   .value {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 28rpx;
   }
 }
@@ -913,13 +918,13 @@ onUnmounted(() => {
       flex: 1;
       text-align: right;
       .venue-name {
-        color: #fff;
+        color: var(--text-primary);
         font-size: 28rpx;
         display: block;
         margin-bottom: 6rpx;
       }
       .venue-address {
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 24rpx;
         display: block;
         line-height: 1.4;
@@ -935,11 +940,11 @@ onUnmounted(() => {
   align-items: center;
   margin-bottom: 20rpx;
   .fee-label {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 28rpx;
   }
   .fee-value {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 28rpx;
   }
 }
@@ -948,9 +953,9 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding-top: 20rpx;
-  border-top: 1rpx solid rgba(255,255,255,0.05);
+  border-top: 1rpx solid var(--border-color);
   .total-label {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 30rpx;
     font-weight: 600;
   }
@@ -987,7 +992,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 24rpx 0;
-  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  border-bottom: 1rpx solid var(--border-color);
   &:last-child {
     border-bottom: none;
     padding-bottom: 0;
@@ -1010,19 +1015,19 @@ onUnmounted(() => {
       }
     }
     .pay-name {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 30rpx;
       font-weight: 500;
     }
     .pay-balance {
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 24rpx;
     }
   }
   .pay-radio {
     width: 40rpx;
     height: 40rpx;
-    border: 3rpx solid #2a3338;
+    border: 3rpx solid var(--bg-secondary);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1053,7 +1058,7 @@ onUnmounted(() => {
     .checkbox-box {
       width: 32rpx;
       height: 32rpx;
-      border: 2rpx solid #9CA3AF;
+      border: 2rpx solid var(--text-secondary);
       border-radius: 6rpx;
       margin-right: 8rpx;
       display: flex;
@@ -1066,7 +1071,7 @@ onUnmounted(() => {
       }
     }
     .agreement-text {
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 24rpx;
     }
     .agreement-link {
@@ -1076,7 +1081,7 @@ onUnmounted(() => {
   }
   .agreement-tip {
     display: block;
-    color: #6B7280;
+    color: var(--text-tertiary);
     font-size: 24rpx;
     padding-left: 48rpx;
   }
@@ -1089,8 +1094,8 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   z-index: 100;
-  background: #1E252B;
-  border-top: 1rpx solid rgba(255,255,255,0.05);
+  background: var(--bg-card);
+  border-top: 1rpx solid var(--border-color);
   padding: 12rpx 24rpx;
   padding-bottom: calc(12rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
@@ -1101,7 +1106,7 @@ onUnmounted(() => {
   .total-info {
     flex: 1;
     .total-label {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 24rpx;
     }
     .total-price {
@@ -1112,7 +1117,7 @@ onUnmounted(() => {
   }
   .pay-btn {
     background: #00BB88;
-    color: #fff;
+    color: var(--text-primary);
     border-radius: 36rpx;
     padding: 14rpx 44rpx;
     font-size: 28rpx;
@@ -1151,7 +1156,7 @@ onUnmounted(() => {
 }
 
 .time-picker-wrapper {
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 32rpx 32rpx 0 0;
   animation: slideUp 0.3s ease;
 }
@@ -1166,13 +1171,13 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 30rpx;
-  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  border-bottom: 1rpx solid var(--border-color);
   .cancel-btn {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 30rpx;
   }
   .picker-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 32rpx;
     font-weight: 600;
   }
@@ -1186,14 +1191,14 @@ onUnmounted(() => {
 .picker-view {
   width: 100%;
   height: 500rpx;
-  background-color: #2a3338;
+  background-color: var(--bg-secondary);
 }
 
 .picker-item {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #FFFFFF !important;
+  color: var(--text-primary) !important;
   font-size: 32rpx;
   height: 80rpx;
   line-height: 80rpx;

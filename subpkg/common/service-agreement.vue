@@ -1,5 +1,5 @@
 <template>
-  <view class="agreement-wrapper">
+  <view class="agreement-wrapper" :class="themeClass">
     <scroll-view scroll-y class="agreement-scroll">
       <!-- 标题 -->
       <view class="page-header">
@@ -141,7 +141,11 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
+import { useThemeStore } from '@/store'
+
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 onMounted(() => {
   uni.setNavigationBarTitle({ title: '服务协议' })
@@ -151,7 +155,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .agreement-wrapper {
   min-height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
   display: flex;
   flex-direction: column;
 }
@@ -164,13 +168,13 @@ onMounted(() => {
 .page-header {
   padding: 40rpx 30rpx 30rpx;
   text-align: center;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1rpx solid var(--border-color);
   margin-bottom: 30rpx;
 }
 
 .page-title {
   display: block;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 36rpx;
   font-weight: 700;
   margin-bottom: 16rpx;
@@ -178,7 +182,7 @@ onMounted(() => {
 
 .page-date {
   display: block;
-  color: #6B7280;
+  color: var(--text-tertiary);
   font-size: 24rpx;
 }
 
@@ -201,7 +205,7 @@ onMounted(() => {
 
 .section-text {
   display: block;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-size: 26rpx;
   line-height: 1.8;
   margin-bottom: 16rpx;

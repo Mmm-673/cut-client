@@ -1,5 +1,5 @@
 <template>
-  <view class="reset-wrapper">
+  <view class="reset-wrapper" :class="themeClass">
     <!-- 返回按钮 -->
     <view class="back-btn" @click="goBack">
       <uni-icons type="back" size="24" color="#fff" />
@@ -96,10 +96,13 @@
 </template>
 
 <script setup>
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, computed } from 'vue'
 import { useUserStore } from '@/store/modules/user'
+import { useThemeStore } from '@/store'
 
 const userStore = useUserStore()
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // 表单数据
 const form = ref({
@@ -233,7 +236,7 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 .reset-wrapper {
   min-height: 100vh;
-  background: #1E252B;
+  background: var(--bg-card);
   padding: 0 48rpx;
   box-sizing: border-box;
   display: flex;
@@ -259,13 +262,13 @@ onUnmounted(() => {
     display: block;
     font-size: 64rpx;
     font-weight: bold;
-    color: #fff;
+    color: var(--text-primary);
     margin-bottom: 16rpx;
   }
   .subtitle {
     display: block;
     font-size: 28rpx;
-    color: #9CA3AF;
+    color: var(--text-secondary);
   }
 }
 
@@ -274,7 +277,7 @@ onUnmounted(() => {
   .input-group {
     width: 100%;
     height: 96rpx;
-    background: #2A3138;
+    background: var(--bg-secondary);
     border-radius: 48rpx;
     display: flex;
     align-items: center;
@@ -288,11 +291,11 @@ onUnmounted(() => {
     .input {
       flex: 1;
       font-size: 32rpx;
-      color: #fff;
+      color: var(--text-primary);
       line-height: 1;
     }
     .placeholder {
-      color: #9CA3AF;
+      color: var(--text-secondary);
     }
     .password-eye {
       margin-left: 16rpx;
@@ -314,7 +317,7 @@ onUnmounted(() => {
     height: 96rpx;
     line-height: 96rpx;
     background: #00BB88;
-    color: #fff;
+    color: var(--text-primary);
     border-radius: 48rpx;
     font-size: 28rpx;
     white-space: nowrap;
@@ -329,7 +332,7 @@ onUnmounted(() => {
   /* 密码提示 */
   .pwd-tip {
     font-size: 26rpx;
-    color: #9CA3AF;
+    color: var(--text-secondary);
     margin: -10rpx 0 40rpx 20rpx;
   }
 
@@ -339,7 +342,7 @@ onUnmounted(() => {
     height: 96rpx;
     line-height: 96rpx;
     background: #00BB88;
-    color: #fff;
+    color: var(--text-primary);
     border-radius: 48rpx;
     font-size: 36rpx;
     font-weight: bold;
@@ -377,7 +380,7 @@ onUnmounted(() => {
   }
   .agreement-text {
     font-size: 26rpx;
-    color: #9CA3AF;
+    color: var(--text-secondary);
     line-height: 1.4;
   }
   .link {

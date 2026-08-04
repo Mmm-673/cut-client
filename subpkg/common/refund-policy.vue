@@ -1,5 +1,5 @@
 <template>
-  <view class="policy-wrapper">
+  <view class="policy-wrapper" :class="themeClass">
     <scroll-view scroll-y class="policy-scroll">
       <!-- 标题 -->
       <view class="page-header">
@@ -132,7 +132,11 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
+import { useThemeStore } from '@/store'
+
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 onMounted(() => {
   uni.setNavigationBarTitle({ title: '退款与取消规则' })
@@ -143,7 +147,7 @@ onMounted(() => {
 /* 样式保持不变 */
 .policy-wrapper {
   min-height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
   display: flex;
   flex-direction: column;
 }
@@ -156,13 +160,13 @@ onMounted(() => {
 .page-header {
   padding: 40rpx 30rpx 30rpx;
   text-align: center;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1rpx solid var(--border-color);
   margin-bottom: 30rpx;
 }
 
 .page-title {
   display: block;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 36rpx;
   font-weight: 700;
   margin-bottom: 16rpx;
@@ -170,7 +174,7 @@ onMounted(() => {
 
 .page-date {
   display: block;
-  color: #6B7280;
+  color: var(--text-tertiary);
   font-size: 24rpx;
 }
 
@@ -191,7 +195,7 @@ onMounted(() => {
 
 .intro-text {
   flex: 1;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-size: 26rpx;
   line-height: 1.6;
 }
@@ -211,7 +215,7 @@ onMounted(() => {
 
 .section-text {
   display: block;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-size: 26rpx;
   line-height: 1.8;
   margin-bottom: 16rpx;
@@ -219,11 +223,11 @@ onMounted(() => {
 }
 
 .rule-box {
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 20rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.05);
+  border: 1rpx solid var(--border-color);
 }
 
 .rule-header {
@@ -245,7 +249,7 @@ onMounted(() => {
 
 .rule-title {
   flex: 1;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 28rpx;
   font-weight: 600;
 }
@@ -255,12 +259,12 @@ onMounted(() => {
 }
 
 .rule-text {
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-size: 26rpx;
 }
 
 .contact-card {
-  background: linear-gradient(135deg, rgba(0, 187, 136, 0.1) 0%, #1E252B 100%);
+  background: linear-gradient(135deg, rgba(0, 187, 136, 0.1) 0%, var(--bg-card) 100%);
   border-radius: 24rpx;
   padding: 30rpx;
   margin-top: 40rpx;
@@ -268,7 +272,7 @@ onMounted(() => {
 }
 
 .contact-title {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 30rpx;
   font-weight: 600;
   margin-bottom: 20rpx;
@@ -289,7 +293,7 @@ onMounted(() => {
 }
 
 .contact-text {
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-size: 26rpx;
 }
 

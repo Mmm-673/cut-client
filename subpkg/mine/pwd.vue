@@ -1,5 +1,5 @@
 <template>
-  <view class="set-pwd-wrapper">
+  <view class="set-pwd-wrapper" :class="themeClass">
 
     <scroll-view
         scroll-y
@@ -117,7 +117,11 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
 import { useUserStore } from '@/store/modules/user'
+import { useThemeStore } from '@/store'
 import { validateSmsCode } from '@/api/auth'
+
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 const userStore = useUserStore()
 
@@ -308,7 +312,7 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 .set-pwd-wrapper {
   min-height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
   display: flex;
   flex-direction: column;
 }
@@ -324,14 +328,14 @@ onUnmounted(() => {
   margin: 60rpx 0 80rpx;
   .main-title {
     display: block;
-    color: #fff;
+    color: var(--text-primary);
     font-size: 52rpx;
     font-weight: 700;
     margin-bottom: 20rpx;
   }
   .sub-title {
     display: block;
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 28rpx;
   }
 }
@@ -346,16 +350,16 @@ onUnmounted(() => {
     align-items: center;
     justify-content: space-between;
     padding: 24rpx 30rpx;
-    background: #1E252B;
+    background: var(--bg-card);
     border-radius: 24rpx;
 
     .label {
       font-size: 28rpx;
-      color: #9CA3AF;
+      color: var(--text-secondary);
     }
     .value {
       font-size: 28rpx;
-      color: #fff;
+      color: var(--text-primary);
     }
   }
 
@@ -363,17 +367,17 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     gap: 16rpx;
-    background: #1E252B;
+    background: var(--bg-card);
     border-radius: 24rpx;
     padding: 24rpx 30rpx;
     .input-field {
       flex: 1;
-      color: #fff;
+      color: var(--text-primary);
       font-size: 32rpx;
       line-height: 1.5;
     }
     .input-placeholder {
-      color: #6B7280;
+      color: var(--text-tertiary);
     }
     .eye-btn {
       width: 60rpx;
@@ -388,7 +392,7 @@ onUnmounted(() => {
       height: 56rpx;
       line-height: 56rpx;
       background: #00BB88;
-      color: #fff;
+      color: var(--text-primary);
       border-radius: 28rpx;
       font-size: 24rpx;
       border: none;
@@ -398,7 +402,7 @@ onUnmounted(() => {
     }
     .code-btn-disabled {
       background: rgba(0, 187, 136, 0.3) !important;
-      color: rgba(255,255,255,0.5) !important;
+      color: var(--text-tertiary) !important;
     }
   }
 }
@@ -417,7 +421,7 @@ onUnmounted(() => {
     .bar-item {
       flex: 1;
       height: 8rpx;
-      background: #2a3338;
+      background: var(--bg-secondary);
       border-radius: 4rpx;
       &.active-weak {
         background: #EF4444;
@@ -445,7 +449,7 @@ onUnmounted(() => {
     height: 96rpx;
     line-height: 96rpx;
     background: #00BB88;
-    color: #fff;
+    color: var(--text-primary);
     border-radius: 48rpx;
     font-size: 34rpx;
     font-weight: 700;
@@ -455,7 +459,7 @@ onUnmounted(() => {
     }
     &.disabled {
       background: rgba(0, 187, 136, 0.3);
-      color: rgba(255,255,255,0.5);
+      color: var(--text-tertiary);
       pointer-events: none;
     }
   }
@@ -473,7 +477,7 @@ onUnmounted(() => {
     .checkbox-box {
       width: 32rpx;
       height: 32rpx;
-      border: 2rpx solid #9CA3AF;
+      border: 2rpx solid var(--text-secondary);
       border-radius: 6rpx;
       margin-right: 8rpx;
       display: flex;
@@ -486,7 +490,7 @@ onUnmounted(() => {
       }
     }
     .agreement-text {
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 26rpx;
     }
     .agreement-link {

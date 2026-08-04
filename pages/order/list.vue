@@ -1,5 +1,5 @@
 <template>
-  <view class="order-list-wrapper">
+  <view class="order-list-wrapper" :class="themeClass">
     <!-- 顶部Tab - 滑动 -->
     <view class="tab-bar" id="tabBar">
       <scroll-view scroll-x="true" :show-scrollbar="false" class="tab-scroll">
@@ -187,10 +187,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getOrderList, cancelOrder as cancelOrderApi, deleteOrder } from '@/api/billiard/order'
 import { guardReviewEntry, isReviewMode } from '@/utils/review'
+import { useThemeStore } from '@/store'
+
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // 当前Tab
 const activeTab = ref(null)
@@ -571,7 +575,7 @@ onShow(() => {
 <style lang="scss" scoped>
 .order-list-wrapper {
   min-height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
   display: flex;
   flex-direction: column;
 }
@@ -579,7 +583,7 @@ onShow(() => {
 /* 顶部Tab */
 .tab-bar {
   display: flex;
-  background: #1E252B;
+  background: var(--bg-card);
   padding: 20rpx 0;
   flex-shrink: 0;
   .tab-scroll {
@@ -594,13 +598,13 @@ onShow(() => {
   .tab-item {
     flex-shrink: 0;
     padding: 12rpx 32rpx;
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 28rpx;
     border-radius: 32rpx;
     white-space: nowrap;
     &.active {
       background: #00BB88;
-      color: #fff;
+      color: var(--text-primary);
     }
   }
 }
@@ -627,7 +631,7 @@ onShow(() => {
   width: 100%;
   transition: transform 0.3s ease;
   z-index: 2;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 24rpx;
   &.swiped {
     transform: translateX(-120rpx);
@@ -648,7 +652,7 @@ onShow(() => {
   border-radius: 0 24rpx 24rpx 0;
   z-index: 1;
   .delete-text {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 28rpx;
     font-weight: 500;
   }
@@ -673,7 +677,7 @@ onShow(() => {
       font-size: 36rpx;
     }
     .type-name {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 30rpx;
       font-weight: 500;
     }
@@ -683,32 +687,32 @@ onShow(() => {
     padding: 8rpx 20rpx;
     border-radius: 20rpx;
     &.pending {
-      background: rgba(255, 149, 0, 0.2);
-      color: #FF9500;
+      background: rgba(255, 149, 0, 0.15);
+      color: #EA7C00;
     }
     &.pending-accept {
-      background: rgba(59, 130, 246, 0.2);
-      color: #3B82F6;
+      background: rgba(59, 130, 246, 0.15);
+      color: #2563EB;
     }
     &.accepted {
-      background: rgba(59, 130, 246, 0.2);
-      color: #3B82F6;
+      background: rgba(59, 130, 246, 0.15);
+      color: #2563EB;
     }
     &.ongoing {
-      background: rgba(59, 130, 246, 0.2);
-      color: #3B82F6;
+      background: rgba(59, 130, 246, 0.15);
+      color: #2563EB;
     }
     &.to-review {
-      background: rgba(245, 158, 11, 0.2);
-      color: #F59E0B;
+      background: rgba(245, 158, 11, 0.15);
+      color: #D97706;
     }
     &.completed {
-      background: rgba(0, 187, 136, 0.2);
-      color: #00BB88;
+      background: rgba(0, 187, 136, 0.15);
+      color: #059669;
     }
     &.cancelled {
-      background: rgba(107, 114, 128, 0.2);
-      color: #6B7280;
+      background: rgba(107, 114, 128, 0.15);
+      color: #4B5563;
     }
   }
 }
@@ -718,8 +722,8 @@ onShow(() => {
   display: flex;
   align-items: center;
   padding: 20rpx 0;
-  border-top: 1rpx solid rgba(255,255,255,0.05);
-  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  border-top: 1rpx solid var(--border-color);
+  border-bottom: 1rpx solid var(--border-color);
   .coach-avatar {
     width: 100rpx;
     height: 100rpx;
@@ -729,14 +733,14 @@ onShow(() => {
   .coach-info {
     flex: 1;
     .coach-name {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 30rpx;
       font-weight: 500;
       display: block;
       margin-bottom: 8rpx;
     }
     .order-time {
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 24rpx;
     }
   }
@@ -750,11 +754,11 @@ onShow(() => {
     justify-content: space-between;
     padding: 8rpx 0;
     .info-label {
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 26rpx;
     }
     .info-value {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 26rpx;
     }
   }
@@ -766,13 +770,13 @@ onShow(() => {
   justify-content: space-between;
   align-items: center;
   padding-top: 20rpx;
-  border-top: 1rpx solid rgba(255,255,255,0.05);
+  border-top: 1rpx solid var(--border-color);
   .order-price {
     display: flex;
     align-items: baseline;
     gap: 8rpx;
     .price-label {
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 26rpx;
     }
     .price-unit {
@@ -798,7 +802,7 @@ onShow(() => {
       &::after { border: none; }
       &.cancel {
         background: rgba(107, 114, 128, 0.2);
-        color: #9CA3AF;
+        color: var(--text-secondary);
       }
       &.review {
         background: rgba(245, 158, 11, 0.2);
@@ -806,7 +810,7 @@ onShow(() => {
       }
       &.book-again {
         background: #00BB88;
-        color: #fff;
+        color: var(--text-primary);
       }
     }
   }
@@ -824,7 +828,7 @@ onShow(() => {
     margin-bottom: 24rpx;
   }
   .empty-text {
-    color: #666;
+    color: var(--text-tertiary);
     font-size: 28rpx;
   }
 }

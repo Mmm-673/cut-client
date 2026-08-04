@@ -1,5 +1,5 @@
 <template>
-  <view class="home-wrapper">
+  <view class="home-wrapper" :class="themeClass">
     <!-- 导航栏 -->
 <!--    <view class="navbar" :style="{ paddingTop: statusBarHeight + 'rpx', height: navBarHeight + 'rpx' }">-->
 <!--      <view class="nav-left">-->
@@ -195,19 +195,27 @@
 </template>
 
 <script setup>
-import {ref, computed, onMounted, nextTick} from 'vue'
+import {ref, computed, onMounted, nextTick, watch} from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getNewCoachList, getHotCoachList } from '@/api/billiard/coach'
 import { shouldShowIosPrivacy, hasPrivacyRefused } from '@/utils/privacy'
 import { isIOS, isMPWeixin } from '@/utils/platform'
 import { isLoggedIn } from '@/utils/token'
 import {
-  useConfigStore
+  useConfigStore, useThemeStore
 } from '@/store'
+import { usePageTheme } from '@/composables/usePageTheme'
 import IosPrivacyDialog from '@/components/ios-privacy-dialog/ios-privacy-dialog.vue'
 
 const configStore = useConfigStore()
+const themeStore = useThemeStore()
 const globalConfig = configStore.config
+
+// 页面主题管理
+usePageTheme()
+
+// 主题类名
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // 审核模式状态（响应式，开关变化时各区块自动切换）
 const reviewMode = computed(() => configStore.reviewMode)
@@ -231,6 +239,13 @@ const bannerList = ref([
   // { id: 2, img: '/static/images/banner/banner02.jpg' }
 ])
 const privacyDialogRef = ref(null)
+
+// 更新自定义 TabBar 选中状态
+const updateCustomTabBar = () => {
+  if (uni.$updateCustomTabBar) {
+    uni.$updateCustomTabBar(0)
+  }
+}
 
 
 /** 打开 iOS 隐私协议弹窗 */
@@ -408,13 +423,15 @@ onShow(() => {
   if (reviewLoaded.value && !reviewMode.value && !hotCoachList.value.length && !loading.value) {
     initData()
   }
+  // 更新自定义 TabBar 选中状态
+  updateCustomTabBar()
 })
 </script>
 
 <style lang="scss" scoped>
 .home-wrapper {
   min-height: 100vh;
-  background-color: #121619;
+  background-color: var(--bg-page);
   box-sizing: border-box;
 }
 
@@ -549,7 +566,7 @@ onShow(() => {
   align-items: center;
   position: sticky;
   top: 0;
-  background: #121619;
+  background: var(--bg-page);
   z-index: 99;
   padding-top: 20rpx;
 
@@ -559,13 +576,13 @@ onShow(() => {
     gap: 8rpx;
 
     .greeting {
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 26rpx;
       font-weight: 500;
     }
 
     .welcome-text {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 36rpx;
       font-weight: 700;
       letter-spacing: -1rpx;
@@ -576,7 +593,7 @@ onShow(() => {
     .scan-btn {
       width: 60rpx;
       height: 60rpx;
-      background: rgba(0, 187, 136, 0.2);
+      background: var(--brand-light-bg);
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -667,13 +684,13 @@ onShow(() => {
     margin-bottom: 24rpx;
 
     .section-title {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 32rpx;
       font-weight: 700;
     }
 
     .section-desc {
-      color: #6B7280;
+      color: var(--text-tertiary);
       font-size: 24rpx;
     }
   }
@@ -686,12 +703,13 @@ onShow(() => {
 
   .service-item {
     position: relative;
-    background: #1E252B;
-    border: 1rpx solid rgba(255,255,255,0.05);
+    background: var(--bg-card);
+    border: 1rpx solid var(--border-color);
     border-radius: 28rpx;
     padding: 28rpx;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: var(--card-shadow);
 
     &:active {
       transform: scale(0.97);
@@ -727,7 +745,7 @@ onShow(() => {
       justify-content: center;
       margin-right: 20rpx;
       transition: all 0.3s ease;
-      box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.2);
+      box-shadow: var(--card-shadow);
 
       .service-emoji {
         font-size: 44rpx;
@@ -741,13 +759,13 @@ onShow(() => {
       gap: 6rpx;
 
       .s-title {
-        color: #fff;
+        color: var(--text-primary);
         font-size: 34rpx;
         font-weight: 600;
       }
 
       .s-desc {
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 24rpx;
       }
     }
@@ -755,7 +773,7 @@ onShow(() => {
     .service-arrow {
       width: 48rpx;
       height: 48rpx;
-      background: rgba(255,255,255,0.05);
+      background: var(--bg-secondary);
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -793,7 +811,7 @@ onShow(() => {
         .title-dot {
           width: 12rpx;
           height: 12rpx;
-          background: #00BB88;
+          background: var(--brand-primary);
           border-radius: 50%;
           box-shadow: 0 0 12rpx rgba(0, 187, 136, 0.5);
 
@@ -816,15 +834,15 @@ onShow(() => {
       }
 
       .title-text {
-        color: #fff;
+        color: var(--text-primary);
         font-size: 34rpx;
         font-weight: 700;
         letter-spacing: -0.5rpx;
       }
 
       .title-badge {
-        background: linear-gradient(135deg, rgba(0, 187, 136, 0.2), rgba(0, 187, 136, 0.08));
-        color: #00BB88;
+        background: var(--brand-light-bg);
+        color: var(--brand-primary);
         font-size: 18rpx;
         font-weight: 700;
         padding: 4rpx 10rpx;
@@ -844,7 +862,7 @@ onShow(() => {
       align-items: center;
       gap: 6rpx;
       padding: 8rpx 12rpx;
-      background: rgba(255,255,255,0.04);
+      background: var(--bg-secondary);
       border-radius: 50rpx;
       transition: all 0.3s ease;
 
@@ -853,7 +871,7 @@ onShow(() => {
       }
 
       text {
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 26rpx;
         font-weight: 500;
       }
@@ -885,12 +903,12 @@ onShow(() => {
   .hot-coach-card {
     width: 260rpx;
     margin-right: 20rpx;
-    background: linear-gradient(145deg, #1E252B, #1a2024);
+    background: var(--bg-card);
     border-radius: 28rpx;
     overflow: hidden;
     flex-shrink: 0;
-    box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.25);
-    border: 1rpx solid rgba(255, 255, 255, 0.05);
+    box-shadow: var(--card-shadow);
+    border: 1rpx solid var(--border-color);
     transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 
     &:active {
@@ -911,7 +929,7 @@ onShow(() => {
       .hot-avatar {
         width: 100%;
         height: 100%;
-        background-color: #2a2e32;
+        background-color: var(--bg-secondary);
         transition: transform 0.4s ease;
       }
 
@@ -923,7 +941,7 @@ onShow(() => {
         position: absolute;
         top: 16rpx;
         left: 16rpx;
-        background: rgba(0, 0, 0, 0.6);
+        background: var(--online-bg);
         backdrop-filter: blur(10rpx);
         padding: 6rpx 14rpx;
         border-radius: 50rpx;
@@ -938,7 +956,7 @@ onShow(() => {
           .dot {
             width: 10rpx;
             height: 10rpx;
-            background: #00BB88;
+            background: var(--online-dot);
             border-radius: 50%;
             position: relative;
             z-index: 1;
@@ -958,7 +976,7 @@ onShow(() => {
         }
 
         text {
-          color: #fff;
+          color: var(--text-primary);
           font-size: 20rpx;
           font-weight: 600;
         }
@@ -968,7 +986,7 @@ onShow(() => {
         position: absolute;
         bottom: 16rpx;
         right: 16rpx;
-        background: rgba(0, 0, 0, 0.65);
+        background: var(--online-bg);
         backdrop-filter: blur(10rpx);
         padding: 6rpx 12rpx;
         border-radius: 50rpx;
@@ -978,7 +996,7 @@ onShow(() => {
         border: 1rpx solid rgba(255, 184, 0, 0.25);
 
         text {
-          color: #FFB800;
+          color: var(--star-color);
           font-size: 22rpx;
           font-weight: 700;
         }
@@ -989,7 +1007,7 @@ onShow(() => {
       padding: 20rpx;
 
       .hot-name {
-        color: #FFFFFF;
+        color: var(--text-primary);
         font-size: 30rpx;
         font-weight: 600;
         margin-bottom: 10rpx;
@@ -1004,7 +1022,7 @@ onShow(() => {
         justify-content: space-between;
 
         .stat-count {
-          color: #9CA3AF;
+          color: var(--text-secondary);
           font-size: 22rpx;
           font-weight: 500;
         }
@@ -1012,7 +1030,7 @@ onShow(() => {
         .order-icon {
           width: 36rpx;
           height: 36rpx;
-          background: rgba(0, 187, 136, 0.12);
+          background: var(--brand-light-bg);
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -1084,7 +1102,7 @@ onShow(() => {
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        border: 4rpx solid #121619;
+        border: 4rpx solid var(--bg-page);
         object-fit: cover;
         position: relative;
         z-index: 1;
@@ -1100,7 +1118,7 @@ onShow(() => {
         font-weight: 800;
         padding: 5rpx 12rpx;
         border-radius: 50rpx;
-        border: 2rpx solid #121619;
+        border: 2rpx solid var(--bg-page);
         line-height: 1.2;
         z-index: 2;
         box-shadow: 0 4rpx 12rpx rgba(246, 59, 130, 0.4);
@@ -1124,7 +1142,7 @@ onShow(() => {
     }
 
     .new-name {
-      color: #E5E7EB;
+      color: var(--text-primary);
       font-size: 26rpx;
       font-weight: 600;
       max-width: 140rpx;
@@ -1164,19 +1182,20 @@ onShow(() => {
   gap: 20rpx;
 
   .skeleton-card {
-    background: linear-gradient(145deg, #1E252B, #1a2024);
-    border: 1rpx solid rgba(255, 255, 255, 0.05);
+    background: var(--bg-card);
+    border: 1rpx solid var(--border-color);
     border-radius: 24rpx;
     padding: 28rpx;
     display: flex;
     flex-direction: column;
     gap: 16rpx;
+    box-shadow: var(--card-shadow);
     animation: skeletonPulse 1.4s ease-in-out infinite;
 
     .skeleton-line {
       height: 24rpx;
       border-radius: 12rpx;
-      background: rgba(255, 255, 255, 0.06);
+      background: var(--bg-secondary);
 
       &.title {
         width: 50%;

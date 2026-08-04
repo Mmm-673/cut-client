@@ -1,5 +1,5 @@
 <template>
-  <view class="scan-wrapper">
+  <view class="scan-wrapper" :class="themeClass">
 
     <!-- 扫码区域 -->
     <view class="scan-content">
@@ -30,8 +30,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { showCameraPurposeModal, showAlbumPurposeModal, showCameraPermissionModal, showAlbumPermissionModal } from '@/utils/photo'
+import { useThemeStore } from '@/store'
+
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 const statusBarHeight = ref(0)
 const loading = ref(false)
@@ -292,7 +296,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .scan-wrapper {
   height: 100vh;
-  background-color: #121619;
+  background-color: var(--bg-page);
 }
 .album-btn {
   display: flex;
@@ -348,7 +352,7 @@ onMounted(() => {
       }
 
       .logo-text {
-        color: #fff;
+        color: var(--text-primary);
         font-weight: 800;
         font-size: 34rpx;
         position: relative;
@@ -359,14 +363,14 @@ onMounted(() => {
       display: flex;
       flex-direction: column;
       .nav-title {
-        color: #fff;
+        color: var(--text-primary);
         font-size: 36rpx;
         font-weight: 700;
         line-height: 1.2;
         letter-spacing: -1rpx;
       }
       .nav-subtitle {
-        color: #6B7280;
+        color: var(--text-tertiary);
         font-size: 24rpx;
         margin-top: 2rpx;
         font-weight: 500;
@@ -394,14 +398,14 @@ onMounted(() => {
   }
 
   .scan-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 36rpx;
     font-weight: 600;
     margin-bottom: 16rpx;
   }
 
   .scan-desc {
-    color: #6B7280;
+    color: var(--text-tertiary);
     font-size: 28rpx;
     margin-bottom: 80rpx;
   }
@@ -413,7 +417,7 @@ onMounted(() => {
     box-shadow: 0 8rpx 24rpx rgba(0, 187, 136, 0.3);
 
     .scan-btn-text {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 32rpx;
       font-weight: 600;
     }
@@ -458,7 +462,7 @@ onMounted(() => {
     backdrop-filter: blur(10px);
 
     .loading-text {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 28rpx;
     }
   }

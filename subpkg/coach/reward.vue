@@ -1,7 +1,7 @@
 
 <template>
   <!-- #ifdef MP-WEIXIN -->
-  <view class="reward-page">
+  <view class="reward-page" :class="themeClass">
     <view class="not-available">
       <uni-icons type="info" size="80" color="#9CA3AF"></uni-icons>
       <text class="not-available-text">微信小程序暂不支持此功能</text>
@@ -9,7 +9,7 @@
   </view>
   <!-- #endif -->
   <!-- #ifndef MP-WEIXIN -->
-  <view class="reward-page">
+  <view class="reward-page" :class="themeClass">
     <view class="scroll-content">
       <!-- 教练信息 -->
       <view class="coach-info">
@@ -143,6 +143,10 @@ import { onNavigationBarButtonTap } from '@dcloudio/uni-app'
 import { getCoachDetail, createRewardOrder } from '@/api/billiard/coach'
 import { executePayment, fetchEnabledChannels } from '@/utils/payment'
 import { guardReviewEntry } from '@/utils/review'
+import { useThemeStore } from '@/store'
+
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // 状态管理
 const statusBarHeight = ref(0)
@@ -427,7 +431,7 @@ const submitReward = async () => {
 /* #ifdef MP-WEIXIN */
 .reward-page {
   min-height: 100vh;
-  background-color: #1a1a1a;
+  background-color: var(--bg-page);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -440,7 +444,7 @@ const submitReward = async () => {
   padding: 60rpx 40rpx;
 }
 .not-available-text {
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-size: 30rpx;
 }
 /* #endif */
@@ -448,7 +452,7 @@ const submitReward = async () => {
 /* #ifndef MP-WEIXIN */
 .reward-page {
   min-height: 100vh;
-  background-color: #1a1a1a;
+  background-color: var(--bg-page);
   padding-bottom: 120rpx;
 }
 
@@ -483,7 +487,7 @@ const submitReward = async () => {
   .coach-name {
     font-size: 32rpx;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text-primary);
     margin-top: 20rpx;
   }
 
@@ -494,7 +498,7 @@ const submitReward = async () => {
 
     .level-tag {
       font-size: 22rpx;
-      color: #ffffff;
+      color: var(--text-primary);
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       padding: 4rpx 16rpx;
       border-radius: 6rpx;
@@ -512,7 +516,7 @@ const submitReward = async () => {
 .tip-text {
   text-align: center;
   font-size: 26rpx;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 24rpx 0 40rpx;
 }
 
@@ -526,7 +530,7 @@ const submitReward = async () => {
     gap: 16rpx;
 
     .amount-item {
-      background-color: #2a2a2a;
+      background-color: var(--bg-card);
       border-radius: 16rpx;
       padding: 24rpx 16rpx;
       display: flex;
@@ -543,12 +547,12 @@ const submitReward = async () => {
       .amount-value {
         font-size: 36rpx;
         font-weight: 700;
-        color: #ffffff;
+        color: var(--text-primary);
       }
 
       .amount-label {
         font-size: 22rpx;
-        color: #999999;
+        color: var(--text-tertiary);
         margin-top: 6rpx;
       }
 
@@ -569,7 +573,7 @@ const submitReward = async () => {
   .input-wrapper {
     display: flex;
     align-items: center;
-    background-color: #2a2a2a;
+    background-color: var(--bg-card);
     border-radius: 16rpx;
     padding: 24rpx 28rpx;
 
@@ -583,10 +587,10 @@ const submitReward = async () => {
     .custom-input {
       flex: 1;
       font-size: 28rpx;
-      color: #ffffff;
+      color: var(--text-primary);
 
       &::placeholder {
-        color: #666666;
+        color: var(--text-tertiary);
       }
     }
   }
@@ -598,12 +602,12 @@ const submitReward = async () => {
 
   .section-title {
     font-size: 26rpx;
-    color: #ffffff;
+    color: var(--text-primary);
     margin-bottom: 16rpx;
   }
 
   .message-input-wrapper {
-    background-color: #2a2a2a;
+    background-color: var(--bg-card);
     border-radius: 16rpx;
     padding: 24rpx;
 
@@ -611,11 +615,11 @@ const submitReward = async () => {
       width: 100%;
       min-height: 120rpx;
       font-size: 28rpx;
-      color: #ffffff;
+      color: var(--text-primary);
       line-height: 1.6;
 
       &::placeholder {
-        color: #666666;
+        color: var(--text-tertiary);
       }
     }
   }
@@ -631,8 +635,8 @@ const submitReward = async () => {
   padding: 12rpx 24rpx;
   display: flex;
   align-items: center;
-  border-top: 2rpx solid #2a2a2a;
-  background-color: #1E252B;
+  border-top: 2rpx solid var(--border-color);
+  background-color: var(--bg-card);
   padding-bottom: calc(16rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
 
@@ -641,7 +645,7 @@ const submitReward = async () => {
 
     .total-label {
       font-size: 22rpx;
-      color: #999999;
+      color: var(--text-tertiary);
     }
 
     .total-value {
@@ -687,7 +691,7 @@ const submitReward = async () => {
 }
 
 .pay-popup-wrapper {
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 32rpx 32rpx 0 0;
   animation: slideUp 0.3s ease;
 }
@@ -702,15 +706,15 @@ const submitReward = async () => {
   align-items: center;
   justify-content: space-between;
   padding: 30rpx;
-  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  border-bottom: 1rpx solid var(--border-color);
 
   .close-btn {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 30rpx;
   }
 
   .pay-popup-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 36rpx;
     font-weight: 600;
   }
@@ -739,10 +743,10 @@ const submitReward = async () => {
   align-items: center;
   margin-bottom: 30rpx;
   padding-bottom: 30rpx;
-  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  border-bottom: 1rpx solid var(--border-color);
 
   .pay-label {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 28rpx;
   }
 
@@ -759,7 +763,7 @@ const submitReward = async () => {
     justify-content: space-between;
     align-items: center;
     padding: 24rpx 0;
-    border-bottom: 1rpx solid rgba(255,255,255,0.05);
+    border-bottom: 1rpx solid var(--border-color);
 
     &:last-child {
       border-bottom: none;
@@ -786,7 +790,7 @@ const submitReward = async () => {
       }
 
       .pay-method-name {
-        color: #fff;
+        color: var(--text-primary);
         font-size: 30rpx;
         font-weight: 500;
       }
@@ -795,7 +799,7 @@ const submitReward = async () => {
     .pay-method-radio {
       width: 40rpx;
       height: 40rpx;
-      border: 3rpx solid #2a3338;
+      border: 3rpx solid var(--bg-secondary);
       border-radius: 50%;
       display: flex;
       align-items: center;

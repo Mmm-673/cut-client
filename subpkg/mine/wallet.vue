@@ -1,5 +1,5 @@
 <template>
-  <view class="wallet-page-wrapper">
+  <view class="wallet-page-wrapper" :class="themeClass">
     <!-- 收支统计 -->
     <view class="stat-card">
       <view class="stat-header">
@@ -55,9 +55,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { onShow, onPullDownRefresh } from  "@dcloudio/uni-app"
+import { useThemeStore } from '@/store'
 import { getWalletTransactions, getWalletTransactionSummary } from '@/api/billiard/wallet'
+
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // 当前月份
 const currentMonth = ref('本月')
@@ -241,7 +245,7 @@ onShow(() => {
 <style lang="scss" scoped>
 .wallet-page-wrapper {
   min-height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
   display: flex;
   flex-direction: column;
 }
@@ -262,7 +266,7 @@ onShow(() => {
     justify-content: center;
   }
   .nav-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 36rpx;
     font-weight: 600;
   }
@@ -276,7 +280,7 @@ onShow(() => {
 /* 通用卡片 */
 .stat-card, .record-card {
   margin: 0 30rpx 30rpx;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 30rpx;
 }
@@ -290,7 +294,7 @@ onShow(() => {
     align-items: center;
     margin-bottom: 30rpx;
     .stat-title {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 32rpx;
       font-weight: 600;
     }
@@ -299,7 +303,7 @@ onShow(() => {
       align-items: center;
       gap: 8rpx;
       .month-text {
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 28rpx;
       }
     }
@@ -312,7 +316,7 @@ onShow(() => {
       text-align: center;
       .stat-label {
         display: block;
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 28rpx;
         margin-bottom: 12rpx;
       }
@@ -331,7 +335,7 @@ onShow(() => {
     .stat-divider {
       width: 2rpx;
       height: 80rpx;
-      background: rgba(255,255,255,0.1);
+      background: var(--border-color);
     }
   }
 }
@@ -344,12 +348,12 @@ onShow(() => {
     align-items: center;
     margin-bottom: 24rpx;
     .record-title {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 32rpx;
       font-weight: 600;
     }
     .view-more {
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 28rpx;
       display: flex;
       align-items: center;
@@ -362,7 +366,7 @@ onShow(() => {
       align-items: center;
       gap: 20rpx;
       padding: 20rpx 0;
-      border-bottom: 1rpx solid rgba(255,255,255,0.05);
+      border-bottom: 1rpx solid var(--border-color);
       &:last-child {
         border-bottom: none;
       }
@@ -378,14 +382,14 @@ onShow(() => {
         flex: 1;
         .record-title {
           display: block;
-          color: #fff;
+          color: var(--text-primary);
           font-size: 30rpx;
           font-weight: 500;
           margin-bottom: 8rpx;
         }
         .record-time {
           display: block;
-          color: #9CA3AF;
+          color: var(--text-secondary);
           font-size: 26rpx;
         }
       }

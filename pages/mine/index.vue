@@ -1,5 +1,5 @@
 <template>
-  <view class="my-page-wrapper">
+  <view class="my-page-wrapper" :class="themeClass">
     <!-- ==========================================
          2. 页面内容容器（普通布局自然滚动）
          ========================================== -->
@@ -93,14 +93,6 @@
             </view>
             <view class="order-right">
               <text class="order-status" :style="{background: order.statusColor}">{{ order.statusText }}</text>
-              <button
-                  v-if="order.showAction"
-                  class="order-action-btn"
-                  :style="{background: order.actionColor}"
-                  @click.stop="toReview(order.id)"
-              >
-                {{ order.actionText }}
-              </button>
             </view>
           </view>
 
@@ -166,8 +158,22 @@ import { onShow, onPullDownRefresh } from  "@dcloudio/uni-app"
 import { getUserInfo } from '@/api/billiard/user'
 import { getOrderList } from '@/api/billiard/order'
 import { useUserStore } from '@/store/modules/user'
-import { useConfigStore } from '@/store'
+import { useConfigStore, useThemeStore } from '@/store'
+import { usePageTheme } from '@/composables/usePageTheme'
 import { isLoggedIn } from '@/utils/token'
+
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
+
+// 页面主题管理
+usePageTheme()
+
+// 更新自定义 TabBar 选中状态
+const updateCustomTabBar = () => {
+  if (uni.$updateCustomTabBar) {
+    uni.$updateCustomTabBar(2)
+  }
+}
 
 // 后端状态映射：10=待付款,20=待接单,30=已接单,40=进行中,50=待评价,60=已完成,70=已取消
 const STATUS_MAP = {
@@ -202,13 +208,13 @@ const STATUS_TEXT = {
 
 // 状态颜色映射
 const STATUS_COLOR = {
-  [STATUS_MAP.TO_PAY]: 'rgba(251, 191, 36, 0.2)',
-  [STATUS_MAP.PENDING_ACCEPT]: 'rgba(0, 187, 136, 0.2)',
-  [STATUS_MAP.ACCEPTED]: 'rgba(0, 187, 136, 0.2)',
-  [STATUS_MAP.IN_SERVICE]: 'rgba(0, 187, 136, 0.2)',
-  [STATUS_MAP.TO_REVIEW]: 'rgba(0, 187, 136, 0.2)',
-  [STATUS_MAP.COMPLETED]: 'rgba(107, 114, 128, 0.2)',
-  [STATUS_MAP.CANCELLED]: 'rgba(239, 68, 68, 0.2)'
+  [STATUS_MAP.TO_PAY]: '#F59E0B',
+  [STATUS_MAP.PENDING_ACCEPT]: '#2563EB',
+  [STATUS_MAP.ACCEPTED]: '#2563EB',
+  [STATUS_MAP.IN_SERVICE]: '#2563EB',
+  [STATUS_MAP.TO_REVIEW]: '#D97706',
+  [STATUS_MAP.COMPLETED]: '#059669',
+  [STATUS_MAP.CANCELLED]: '#DC2626'
 }
 
 // 服务类型映射
@@ -484,13 +490,15 @@ onShow(() => {
     loadUserInfo()
     loadOrders()
   }
+  // 更新自定义 TabBar 选中状态
+  updateCustomTabBar()
 })
 </script>
 
 <style lang="scss" scoped>
 .my-page-wrapper {
   min-height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
   padding-top: 130rpx;
 }
 
@@ -500,11 +508,11 @@ onShow(() => {
 
 .func-card {
   margin: 0 30rpx 30rpx;
-  background: linear-gradient(145deg, #1E252B 0%, #1a2024 100%);
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 30rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
-  border: 1rpx solid rgba(255, 255, 255, 0.03);
+  box-shadow: var(--card-shadow);
+  border: 1rpx solid var(--border-color);
   transition: all 0.3s ease;
   transform: translateY(0);
 
@@ -519,12 +527,12 @@ onShow(() => {
     align-items: center;
     margin-bottom: 24rpx;
     .card-title {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 32rpx;
       font-weight: 600;
     }
     .view-more {
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 26rpx;
       display: flex;
       align-items: center;
@@ -539,7 +547,7 @@ onShow(() => {
 
 .user-card {
   margin: 20rpx 30rpx 30rpx;
-  background: linear-gradient(135deg, rgba(0, 187, 136, 0.2) 0%, #1E252B 100%);
+  background: linear-gradient(135deg, rgba(0, 187, 136, 0.2) 0%, var(--bg-card) 100%);
   border-radius: 40rpx;
   padding: 40rpx 30rpx;
   .user-header {
@@ -551,7 +559,7 @@ onShow(() => {
       width: 120rpx;
       height: 120rpx;
       border-radius: 50%;
-      border: 4rpx solid #00BB88;
+      border: 4rpx solid var(--brand-primary);
       flex-shrink: 0;
     }
     .user-info {
@@ -566,18 +574,18 @@ onShow(() => {
         gap: 16rpx;
         margin-bottom: 8rpx;
         .user-name {
-          color: #fff;
+          color: var(--text-primary);
           font-size: 40rpx;
           font-weight: 700;
         }
       }
       .user-phone {
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 28rpx;
         margin-bottom: 12rpx;
       }
       .edit-btn {
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 24rpx;
       }
     }
@@ -602,20 +610,20 @@ onShow(() => {
       text-align: center;
       .stats-num {
         display: block;
-        color: #fff;
+        color: var(--text-primary);
         font-size: 44rpx;
         font-weight: bold;
         margin-bottom: 8rpx;
       }
       .stats-label {
         display: block;
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 26rpx;
       }
     }
     .stats-divider {
       width: 2rpx;
-      background: rgba(255,255,255,0.1);
+      background: var(--border-color);
       margin-top: 8rpx;
       margin-bottom: 8rpx;
     }
@@ -648,7 +656,7 @@ onShow(() => {
         height: 16rpx;
         border-radius: 50%;
         background: #EF4444;
-        border: 2rpx solid #1E252B;
+        border: 2rpx solid var(--bg-card);
       }
     }
     text {
@@ -660,7 +668,7 @@ onShow(() => {
 
 .order-list {
   .order-card {
-    background: #2a3338;
+    background: var(--bg-secondary);
     border-radius: 20rpx;
     padding: 20rpx;
     display: flex;
@@ -686,7 +694,7 @@ onShow(() => {
         flex: 1;
         min-width: 0;
         .order-title {
-          color: #fff;
+          color: var(--text-primary);
           font-size: 30rpx;
           font-weight: 600;
           margin-bottom: 8rpx;
@@ -695,7 +703,7 @@ onShow(() => {
           white-space: nowrap;
         }
         .order-subtitle {
-          color: #9CA3AF;
+          color: var(--text-secondary);
           font-size: 24rpx;
           margin-bottom: 12rpx;
           overflow: hidden;
@@ -703,7 +711,7 @@ onShow(() => {
           white-space: nowrap;
         }
         .order-time {
-          color: #6B7280;
+          color: var(--text-tertiary);
           font-size: 24rpx;
         }
       }
@@ -739,7 +747,7 @@ onShow(() => {
   }
   .empty-tip {
     text-align: center;
-    color: #6B7280;
+    color: var(--text-tertiary);
     font-size: 26rpx;
     padding: 60rpx 0 20rpx;
   }
@@ -752,7 +760,7 @@ onShow(() => {
     align-items: center;
     gap: 20rpx;
     padding: 28rpx 30rpx;
-    border-bottom: 1rpx solid rgba(255,255,255,0.05);
+    border-bottom: 1rpx solid var(--border-color);
     &:last-child {
       border-bottom: none;
     }
@@ -767,7 +775,7 @@ onShow(() => {
     }
     .menu-title {
       flex: 1;
-      color: #fff;
+      color: var(--text-primary);
       font-size: 30rpx;
       font-weight: 500;
     }
@@ -806,7 +814,7 @@ onShow(() => {
 .prompt-icon {
   width: 200rpx;
   height: 200rpx;
-  background: rgba(0, 187, 136, 0.1);
+  background: var(--brand-light-bg);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -817,13 +825,13 @@ onShow(() => {
 .prompt-title {
   font-size: 36rpx;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 16rpx;
 }
 
 .prompt-desc {
   font-size: 28rpx;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   margin-bottom: 60rpx;
 }
 

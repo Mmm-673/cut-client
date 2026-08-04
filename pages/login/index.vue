@@ -1,5 +1,5 @@
 <template>
-  <view class="login-wrapper">
+  <view class="login-wrapper" :class="themeClass">
     <!-- 顶部Logo区域 -->
     <view class="logo-section">
       <view class="logo-circle">
@@ -133,7 +133,8 @@
 import { ref, computed, onMounted } from 'vue'
 import {
   useConfigStore,
-  useUserStore
+  useUserStore,
+  useThemeStore
 } from '@/store'
 import { onUnload, onHide, onShow } from '@dcloudio/uni-app';
 import { isLoggedIn } from '@/utils/token'
@@ -142,6 +143,8 @@ import { syncReviewAccount } from '@/utils/review'
 
 const userStore = useUserStore()
 const configStore = useConfigStore()
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 const globalConfig = configStore.config
 
 // 审核模式下展示球厅预约平台文案（后端开关 OR 白名单账号生效）
@@ -355,7 +358,7 @@ onUnload(() => {
 <style lang="scss" scoped>
 .login-wrapper {
   min-height: 100vh;
-  background: #1E252B;
+  background: var(--bg-card);
   padding: 180rpx 48rpx 40rpx;
   box-sizing: border-box;
   display: flex;
@@ -386,7 +389,7 @@ onUnload(() => {
   .app-desc {
     display: block;
     font-size: 32rpx;
-    color: #9CA3AF;
+    color: var(--text-secondary);
   }
 }
 
@@ -394,7 +397,7 @@ onUnload(() => {
 .tab-section {
   display: flex;
   width: 100%;
-  background: #2A3138;
+  background: var(--bg-secondary);
   border-radius: 48rpx;
   padding: 8rpx;
   margin-bottom: 40rpx;
@@ -406,13 +409,13 @@ onUnload(() => {
   height: 80rpx;
   line-height: 80rpx;
   font-size: 28rpx;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   border-radius: 40rpx;
   transition: all 0.3s;
 }
 .tab-active {
   background: #00BB88;
-  color: #fff;
+  color: var(--text-primary);
   font-weight: bold;
 }
 
@@ -422,7 +425,7 @@ onUnload(() => {
   .input-group {
     width: 100%;
     height: 96rpx;
-    background: #2A3138;
+    background: var(--bg-secondary);
     border-radius: 48rpx;
     display: flex;
     align-items: center;
@@ -436,11 +439,11 @@ onUnload(() => {
     .input {
       flex: 1;
       font-size: 32rpx;
-      color: #fff;
+      color: var(--text-primary);
       line-height: 1;
     }
     .placeholder {
-      color: #9CA3AF;
+      color: var(--text-secondary);
     }
     .password-eye {
       margin-left: 16rpx;
@@ -450,7 +453,7 @@ onUnload(() => {
   .input-group-eye {
     width: 100%;
     height: 96rpx;
-    background: #2A3138;
+    background: var(--bg-secondary);
     border-radius: 48rpx;
     display: flex;
     align-items: center;
@@ -464,11 +467,11 @@ onUnload(() => {
     .input {
       flex: 1;
       font-size: 32rpx;
-      color: #fff;
+      color: var(--text-primary);
       line-height: 1;
     }
     .placeholder {
-      color: #9CA3AF;
+      color: var(--text-secondary);
     }
     .password-eye {
       margin-left: 16rpx;
@@ -490,7 +493,7 @@ onUnload(() => {
     height: 96rpx;
     line-height: 96rpx;
     background: #00BB88;
-    color: #fff;
+    color: var(--text-primary);
     border-radius: 48rpx;
     font-size: 28rpx;
     white-space: nowrap;
@@ -518,7 +521,7 @@ onUnload(() => {
     height: 96rpx;
     line-height: 96rpx;
     background: #00BB88;
-    color: #fff;
+    color: var(--text-primary);
     border-radius: 48rpx;
     font-size: 36rpx;
     font-weight: bold;
@@ -591,7 +594,7 @@ onUnload(() => {
   }
   .agreement-text {
     font-size: 26rpx;
-    color: #9CA3AF;
+    color: var(--text-secondary);
     line-height: 1.4;
   }
   .link {

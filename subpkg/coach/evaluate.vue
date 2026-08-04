@@ -1,6 +1,6 @@
 
 <template>
-  <view class="evaluate-page">
+  <view class="evaluate-page" :class="themeClass">
     <!-- 教练信息区 -->
     <view class="coach-info">
       <image class="coach-avatar" :src="coachInfo.avatar || '/static/default-avatar.png'" mode="aspectFill" />
@@ -109,12 +109,16 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { createReview, getCoachDetail } from '@/api/billiard/coach'
 import { uploadFile } from '@/api/billiard/user';
 import { showCameraPurposeModal, showAlbumPurposeModal, requestCameraPermission, requestAlbumPermission, showImageSourceModal, showCameraPermissionModal, showAlbumPermissionModal } from '@/utils/photo';
 import { guardReviewEntry } from '@/utils/review'
+import { useThemeStore } from '@/store'
+
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // 教练信息
 const coachInfo = reactive({

@@ -1,5 +1,5 @@
 <template>
-  <view class="edit-page-wrapper">
+  <view class="edit-page-wrapper" :class="themeClass">
     <scroll-view
         scroll-y
         class="edit-scroll"
@@ -103,9 +103,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { onShow } from "@dcloudio/uni-app"
+import { useThemeStore } from '@/store'
 import { getUserInfo, updateUser, sendUpdateMobileSms, updateMobile, uploadFile } from '@/api/billiard/user'
 import { getAreaTree } from '@/api/billiard/area'
 import { showCameraPurposeModal, showAlbumPurposeModal, requestCameraPermission, requestAlbumPermission, showImageSourceModal, showCameraPermissionModal, showAlbumPermissionModal } from '@/utils/photo'
+
+// 主题相关
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // 性别选项
 const genderOptions = [
@@ -433,7 +438,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .edit-page-wrapper {
   min-height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
 }
 
 .avatar-section {
@@ -445,7 +450,7 @@ onMounted(() => {
     width: 200rpx;
     height: 200rpx;
     border-radius: 50%;
-    border: 4rpx solid #2a3338;
+    border: 4rpx solid var(--bg-secondary);
   }
   .camera-btn {
     z-index: 2;
@@ -455,13 +460,13 @@ onMounted(() => {
     height: 60rpx;
     border-radius: 50%;
     background: #00BB88;
-    border: 3rpx solid #121619;
+    border: 3rpx solid var(--bg-page);
     display: flex;
     align-items: center;
     justify-content: center;
   }
   .avatar-tip {
-    color: #6B7280;
+    color: var(--text-tertiary);
     font-size: 26rpx;
     margin-top: 20rpx;
   }
@@ -469,7 +474,7 @@ onMounted(() => {
 
 .info-card {
   margin: 30rpx;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 0 30rpx;
   .info-row {
@@ -477,9 +482,9 @@ onMounted(() => {
     justify-content: space-between;
     align-items: center;
     padding: 30rpx 0;
-    border-bottom: 1rpx solid rgba(255,255,255,0.05);
+    border-bottom: 1rpx solid var(--border-color);
     &:last-child { border-bottom: none; }
-    .label { color: #fff; font-size: 30rpx; }
+    .label { color: var(--text-primary); font-size: 30rpx; }
   }
 
   /* 重点修复：让 picker 撑满整行但保持布局 */
@@ -497,7 +502,7 @@ onMounted(() => {
     justify-content: flex-end;
     gap: 12rpx;
     .value {
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 30rpx;
       text-align: right;
     }

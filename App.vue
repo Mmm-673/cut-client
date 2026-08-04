@@ -1,22 +1,40 @@
 <script setup>
+// ==========================================
+// 最顶部：立即初始化主题（避免深色闪烁）
+// ==========================================
+import { initThemeEarly } from '@/utils/theme'
+initThemeEarly()
+// ==========================================
+
 import config from './config'
 import { getAccessToken, getRefreshToken, getExpiresTime, setAuthInfo, clearAuthInfo } from '@/utils/token'
-import { useConfigStore } from '@/store'
+import { useConfigStore, useThemeStore } from '@/store'
 import { useUserStore } from '@/store/modules/user'
-import { getCurrentInstance } from "vue"
+import { applyThemeToPage, setWebviewBackground, getThemeStyleObject, styleObjectToString } from '@/utils/theme'
+import { getCurrentInstance, watch, computed } from "vue"
 import { onLaunch, onShow} from '@dcloudio/uni-app'
 import { initPushService, syncPushForUser, retryPushSyncIfNeeded } from '@/utils/jpush'
 import { shouldShowIosPrivacy, setPrivacyAgreedCallback } from '@/utils/privacy'
 import { isReviewMode } from '@/utils/review'
 import { extractCoachId } from '@/utils/common'
 
-
 const { proxy } = getCurrentInstance()
 
+// 初始化主题 store
+const themeStore = useThemeStore()
+themeStore.initTheme()
+
+// 计算主题类和样式
+const themeClass = computed(() => `theme-${themeStore.theme}`)
+const themeStyle = computed(() => {
+  const styleObj = getThemeStyleObject(themeStore.theme)
+  return styleObjectToString(styleObj)
+})
+
 onLaunch((options) => {
+  console.log('[App] onLaunch, 当前主题:', themeStore.theme)
   setPrivacyAgreedCallback(continueAppInit)
   initApp()
-  // 处理小程序启动参数（包括Scheme拉起）
   handleLaunchOptions(options)
 })
 
@@ -28,13 +46,34 @@ onShow((options) => {
   retryPushSyncIfNeeded()
   // #endif
   checkLogin()
-  // 刷新审核模式开关（不阻塞启动）
+
+  // 应用主题
+  applyThemeToPage(themeStore.theme)
+
+  // #ifdef APP-PLUS
+  // 只使用 plus.webview 设置背景
+  if (typeof plus !== 'undefined' && plus.webview) {
+    try {
+      const bgColor = themeStore.theme === 'light' ? '#F5F7FA' : '#121619'
+      const currentWebview = plus.webview.currentWebview()
+      if (currentWebview) {
+        currentWebview.setStyle({ background: bgColor })
+      }
+    } catch (e) {
+      console.warn('[App] onShow 设置背景失败:', e)
+    }
+  }
+  // #endif
+
   useConfigStore().initReviewMode()
-  // 处理小程序显示参数（包括Scheme拉起）
   handleLaunchOptions(options)
 })
 
-// 从 URL 中提取参数
+watch(() => themeStore.theme, () => {
+  applyThemeToPage(themeStore.theme)
+  setWebviewBackground(themeStore.theme)
+})
+
 const getQueryParam = (url, param) => {
   const queryString = url.split('?')[1]
   if (!queryString) return null
@@ -49,57 +88,42 @@ const getQueryParam = (url, param) => {
   return null
 }
 
-// 防重复跳转记录（扫码进入时 onLaunch/onShow 会相继触发）
 let lastCoachNavId = null
 let lastCoachNavTime = 0
 
-// 处理启动参数（Scheme拉起）
 const handleLaunchOptions = (options) => {
   console.log('[App] 启动参数:', options)
   // #ifdef MP-WEIXIN
   if (!options) return
 
-  // 从启动参数中获取 coachId
   let coachId = null
 
-  // 方式1：从 query 中获取（推荐）
   if (options.query && options.query.coachId) {
     coachId = options.query.coachId
   } else if (options.query && options.query.id) {
     coachId = options.query.id
-  }
-  // 方式2：扫小程序码进入，业务参数在 query.scene 中（如 coachId=12 / id=12 / 纯数字）
-  else if (options.query && options.query.scene) {
+  } else if (options.query && options.query.scene) {
     console.log('[App] query.scene 参数:', options.query.scene)
     coachId = extractCoachId(options.query.scene)
-  }
-  // 方式3：扫普通链接二维码进入，完整 URL 在 query.q 中
-  else if (options.query && options.query.q) {
+  } else if (options.query && options.query.q) {
     console.log('[App] query.q 参数:', options.query.q)
     coachId = extractCoachId(options.query.q)
-  }
-  // 方式4：从 path 中解析
-  else if (options.path && options.path.includes('coachId=')) {
+  } else if (options.path && options.path.includes('coachId=')) {
     coachId = getQueryParam(options.path, 'coachId') || getQueryParam(options.path, 'id')
   }
 
-  // 如果获取到了 coachId，跳转到详情页
   if (coachId) {
     console.log('[App] 检测到 coachId，跳转到详情页:', coachId)
-    // 延迟跳转，等待页面初始化完成
     setTimeout(() => {
-      // 审核模式下不跳转教练详情
       if (isReviewMode()) {
         console.log('[App] 审核模式开启，跳过教练详情跳转')
         return
       }
-      // 防重复：onLaunch/onShow 会相继触发，3 秒内同一教练只跳一次
       const now = Date.now()
       if (lastCoachNavId === String(coachId) && now - lastCoachNavTime < 3000) {
         console.log('[App] 短时间内重复触发，跳过跳转:', coachId)
         return
       }
-      // 当前已在该教练的详情页时不再跳转（微信扫码直接落在详情页的场景，页面已自行解析参数）
       try {
         const pages = getCurrentPages()
         const top = pages.length ? pages[pages.length - 1] : null
@@ -112,28 +136,41 @@ const handleLaunchOptions = (options) => {
             return
           }
         }
-      } catch (e) {
-        // 页面栈读取失败不阻塞跳转
-      }
+      } catch (e) {}
       lastCoachNavId = String(coachId)
       lastCoachNavTime = now
-      uni.navigateTo({
-        url: `/subpkg/coach/detail?id=${coachId}`
-      })
+      uni.navigateTo({ url: `/subpkg/coach/detail?id=${coachId}` })
     }, 500)
   }
   // #endif
 }
 
-// 初始化应用
 function initApp() {
-  // 本地配置不涉隐私，需尽早初始化，避免登录页渲染时报错
   initConfig()
+
+  // 主题已经在顶层初始化了
+
+  // #ifdef APP-PLUS
+  // 只使用 plus.webview 设置初始背景
+  if (typeof plus !== 'undefined' && plus.webview) {
+    try {
+      const bgColor = themeStore.theme === 'light' ? '#F5F7FA' : '#121619'
+      const currentWebview = plus.webview.currentWebview()
+      if (currentWebview) {
+        currentWebview.setStyle({ background: bgColor })
+      }
+    } catch (e) {
+      console.warn('[App] init 设置背景失败:', e)
+    }
+  }
+  // #endif
+
+  // 应用主题（导航栏和 TabBar）
+  applyThemeToPage(themeStore.theme)
 
   // #ifdef APP-PLUS
   setStatusBarHeight()
 
-  // iOS 需先同意隐私协议，弹窗挂载在登录页，此处仅阻断后续初始化
   if (shouldShowIosPrivacy()) {
     return
   }
@@ -142,16 +179,12 @@ function initApp() {
   continueAppInit()
 }
 
-
-/** 应用核心初始化流程 */
 function continueAppInit() {
   // #ifdef APP-PLUS
   initPushService()
   // #endif
 
-  // 拉取审核模式开关（不阻塞主流程）
   useConfigStore().initReviewMode()
-
   checkLogin()
 }
 
@@ -170,9 +203,6 @@ function setStatusBarHeight() {
   }
 }
 
-/**
- * 使用 refreshToken 刷新 accessToken
- */
 async function refreshTokenOnStartup() {
   const refreshToken = getRefreshToken()
   console.log('[App] refreshToken:', refreshToken ? '存在' : '不存在')
@@ -195,27 +225,21 @@ async function refreshTokenOnStartup() {
         const res = response.data
         console.log('[App] 刷新 token 响应:', res)
         if (res.code === 0 && res.data) {
-          // 刷新成功，更新本地存储
           setAuthInfo(res.data)
           resolve(true)
         } else {
-          // 刷新失败，清除登录信息
           clearAuthInfo()
           resolve(false)
         }
       },
       fail: (err) => {
         console.log('[App] 刷新 token 失败:', err)
-        // 网络错误等，不清除登录信息，让用户继续使用（后续请求会处理）
         resolve(false)
       }
     })
   })
 }
 
-/**
- * 恢复用户状态到 Store
- */
 function restoreUserState() {
   console.log('[App] 恢复用户状态...')
   const userStore = useUserStore()
@@ -233,7 +257,6 @@ function restoreUserState() {
     mobile: userStore.mobile
   })
 
-  // 🔥 恢复登录后，自动触发极光别名绑定
   // #ifdef APP-PLUS
   const userId = userStore.userId
   if (userId) {
@@ -242,9 +265,6 @@ function restoreUserState() {
   // #endif
 }
 
-/**
- * 检查登录状态
- */
 async function checkLogin() {
   console.log('[App] checkLogin 开始...')
 
@@ -258,7 +278,6 @@ async function checkLogin() {
     isValid: expiresTime ? new Date() < expiresTime : false
   })
 
-  // 如果没有登录信息，直接返回
   if (!token || !expiresTime) {
     console.log('[App] 没有登录信息')
     return false
@@ -266,7 +285,6 @@ async function checkLogin() {
 
   const now = new Date()
 
-  // Token 已过期，尝试刷新
   if (now >= expiresTime) {
     console.log('[App] Token 已过期，尝试刷新...')
     const refreshSuccess = await refreshTokenOnStartup()
@@ -277,9 +295,7 @@ async function checkLogin() {
     console.log('[App] 刷新成功')
   }
 
-  // 恢复用户状态
   restoreUserState()
-
   return true
 }
 </script>
@@ -287,31 +303,45 @@ async function checkLogin() {
 <style lang="scss">
 @import '@/static/scss/index.scss';
 
-/* 全局样式 - 安全区域适配 */
 page {
   min-height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
+  transition: background-color 0.3s ease;
 }
 
-/* 防止下拉出现白色空白 */
+/* #ifdef H5 */
+* {
+  transition: background-color 0.3s ease,
+              color 0.3s ease,
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+/* #endif */
+
+/* #ifndef H5 */
+view, text, button, image, input, textarea {
+  transition: background-color 0.3s ease,
+              color 0.3s ease,
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+/* #endif */
+
 body {
   overscroll-behavior: none;
 }
 
-/* 隐藏滚动条 */
 ::-webkit-scrollbar {
   display: none;
   width: 0;
   height: 0;
 }
 
-/* 顶部安全区域适配 */
 .safe-area-top {
   padding-top: constant(safe-area-inset-top);
   padding-top: env(safe-area-inset-top);
 }
 
-/* 底部安全区域适配 */
 .safe-area-bottom {
   padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom);

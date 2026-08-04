@@ -8,6 +8,9 @@
     "app-plus" : {
         "usingComponents" : true,
         "nvueCompiler" : "uni-app",
+        "safearea" : {
+            "background" : "#1E252B"
+        },
         "splashscreen" : {
             "alwaysShowBeforeRender" : true,
             "waiting" : true,
@@ -365,5 +368,8 @@
             "base" : "./"
         }
     },
-    "fallbackLocale" : "zh-Hans"
+    "fallbackLocale" : "zh-Hans",
+    "mp-toutiao" : {
+        "appid" : "tt75b3030eebd635f101"
+    }
 }

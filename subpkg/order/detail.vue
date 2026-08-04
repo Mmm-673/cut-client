@@ -1,5 +1,5 @@
 <template>
-  <view class="order-detail-wrapper">
+  <view class="order-detail-wrapper" :class="themeClass">
     <!-- 订单不存在空状态 -->
     <view v-if="orderNotExist" class="empty-state">
       <uni-icons type="info" size="120" color="#9CA3AF"></uni-icons>
@@ -125,7 +125,7 @@
             </view>
             <view class="coach-stats">
               <view class="stat-item">
-                <uni-icons type="star-filled" size="14" color="#FFC107" />
+                <uni-icons type="star-filled" size="14" color="#FFB800" />
                 <text>{{ coachInfo.overallScore ? coachInfo.overallScore.toFixed(1) : '暂无' }}</text>
               </view>
               <view class="stat-item">
@@ -237,8 +237,7 @@
                 :key="option.value"
                 class="add-time-option"
                 :class="{ active: selectedAddMinutes === option.value || (option.value === 'custom' && showCustomInput) }"
-                @click="handleOptionSelect(option)"
-            >
+                @click="handleOptionSelect(option)">
               <text class="option-label">{{ option.label }}</text>
             </view>
           </view>
@@ -252,8 +251,7 @@
                   placeholder="最少10分钟"
                   placeholder-class="input-placeholder"
                   @input="handleCustomInput"
-                  @blur="handleCustomBlur"
-              />
+                  @blur="handleCustomBlur" />
               <text class="custom-unit">分钟</text>
             </view>
           </view>
@@ -291,8 +289,7 @@
               :key="item.channelCode || item.value"
               class="pay-method-item"
               :class="{ active: selectedPay === item.value }"
-              @click="selectPay(item.value)"
-            >
+              @click="selectPay(item.value)">
               <view class="pay-method-left">
                 <view class="pay-method-icon" :style="{ background: item.icon && item.icon.startsWith('/') ? 'transparent' : item.bgColor }">
                   <image v-if="item.icon && item.icon.startsWith('/')" :src="item.icon" class="pay-method-icon-img" mode="aspectFit" />
@@ -312,8 +309,7 @@
             class="pay-submit-btn"
             :class="{ disabled: isPaying || !selectedPayItem || !currentPayOrderId || isAddTimeExpired }"
             :disabled="isPaying || !selectedPayItem || !currentPayOrderId || isAddTimeExpired"
-            @click="confirmPay"
-          >
+            @click="confirmPay">
             {{ isPaying ? '支付中...' : (isAddTimeExpired ? '已过期' : '确认支付') }}
           </button>
         </view>
@@ -336,29 +332,25 @@
               <view
                 class="type-item"
                 :class="{active: exceptionType === 1}"
-                @click="exceptionType = 1"
-              >
+                @click="exceptionType = 1">
                 用户投诉
               </view>
               <view
                 class="type-item"
                 :class="{active: exceptionType === 2}"
-                @click="exceptionType = 2"
-              >
+                @click="exceptionType = 2">
                 教练超时
               </view>
               <view
                 class="type-item"
                 :class="{active: exceptionType === 3}"
-                @click="exceptionType = 3"
-              >
+                @click="exceptionType = 3">
                 系统异常
               </view>
               <view
                 class="type-item"
                 :class="{active: exceptionType === 4}"
-                @click="exceptionType = 4"
-              >
+                @click="exceptionType = 4">
                 其他
               </view>
             </view>
@@ -372,8 +364,7 @@
               v-model="exceptionReason"
               placeholder="请描述您遇到的问题（最多500字）"
               placeholder-class="input-placeholder"
-              :maxlength="500"
-            />
+              :maxlength="500" />
             <text class="char-count">{{ exceptionReason.length }}/500</text>
           </view>
         </view>
@@ -398,15 +389,20 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { onLoad, onShow } from  "@dcloudio/uni-app"
+import { onLoad, onShow } from "@dcloudio/uni-app"
+import { useThemeStore } from '@/store'
+
+// 主题相关
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 import { getOrderDetail, cancelOrder, addTimeOrder, deleteOrder } from '@/api/billiard/order'
 import { getCoachDetail } from '@/api/billiard/coach'
 import { getRewardSwitch } from '@/api/billiard/user'
 import { getTimerStatus } from '@/api/billiard/timer'
 import { reportException } from '@/api/billiard/exception'
 import { executePayment, fetchEnabledChannels } from '@/utils/payment'
-import {openMapNavigation} from "../../utils/platform";
-import { showCallPermissionModal, requestCallPermission, doCallPhone } from '@/utils/call';
+import {openMapNavigation} from "../../utils/platform"
+import { showCallPermissionModal, requestCallPermission, doCallPhone } from '@/utils/call'
 import { guardReviewEntry } from '@/utils/review'
 
 // 订单ID
@@ -731,7 +727,7 @@ const openHallNavigate = () => {
 
   openMapNavigation({
     latitude: params.latitude,
-    longitude: params.longitude ,
+    longitude: params.longitude,
     name: params.name,
     address: params.address,
     mode: 'driving'
@@ -1130,10 +1126,7 @@ const confirmAddTime = async () => {
   isAddingTime.value = true
   try {
     // 调用加钟接口（直接使用分钟数）
-    const res = await addTimeOrder({
-      orderId: orderId.value,
-      addMinutes: selectedAddMinutes.value
-    })
+    const res = await addTimeOrder({ orderId: orderId.value, addMinutes: selectedAddMinutes.value })
 
     // 获取加钟支付订单ID、金额和过期时间
     addTimePayOrderId.value = res.data.payOrderId
@@ -1454,7 +1447,7 @@ let lastStatus = null
 <style lang="scss" scoped>
 .order-detail-wrapper {
   min-height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
   overscroll-behavior: none;
 }
 
@@ -1469,7 +1462,7 @@ let lastStatus = null
   box-sizing: border-box;
 
   .empty-text {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 32rpx;
     margin-top: 30rpx;
     margin-bottom: 60rpx;
@@ -1492,7 +1485,7 @@ let lastStatus = null
   min-height: 100vh;
   padding-top: 30rpx;
   padding-bottom: 140rpx;
-  background: #121619;
+  background: var(--bg-page);
   box-sizing: border-box;
   overscroll-behavior: none;
 }
@@ -1500,7 +1493,7 @@ let lastStatus = null
 /* 顶部状态卡片 */
 .status-card {
   margin: 0 30rpx 30rpx;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 30rpx;
   display: flex;
@@ -1537,7 +1530,7 @@ let lastStatus = null
   }
 
   .status-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 36rpx;
     font-weight: 600;
     white-space: nowrap;
@@ -1546,7 +1539,7 @@ let lastStatus = null
   }
 
   .status-subtitle {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 24rpx;
     white-space: nowrap;
     overflow: hidden;
@@ -1554,7 +1547,7 @@ let lastStatus = null
   }
 
   .order-no {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 24rpx;
     white-space: nowrap;
     flex-shrink: 0;
@@ -1571,7 +1564,7 @@ let lastStatus = null
     .time-item {
       width: 100rpx;
       height: 100rpx;
-      background: #2A3338;
+      background: var(--bg-secondary);
       border-radius: 16rpx;
       display: flex;
       flex-direction: column;
@@ -1585,14 +1578,14 @@ let lastStatus = null
       }
       .time-label {
         font-size: 20rpx;
-        color: #9CA3AF;
+        color: var(--text-secondary);
         margin-top: 6rpx;
         line-height: 1;
       }
     }
     .time-colon {
       font-size: 40rpx;
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-weight: bold;
       line-height: 1;
     }
@@ -1611,7 +1604,7 @@ let lastStatus = null
 /* 通用信息卡片 */
 .info-card {
   margin: 30rpx;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 30rpx;
   margin-top: 0;
@@ -1625,7 +1618,7 @@ let lastStatus = null
   .card-title {
     display: flex;
     align-items: center;
-    color: #fff;
+    color: var(--text-primary);
     font-size: 32rpx;
     font-weight: 600;
     margin-bottom: 24rpx;
@@ -1641,7 +1634,7 @@ let lastStatus = null
     .card-title {
       display: flex;
       align-items: center;
-      color: #fff;
+      color: var(--text-primary);
       font-size: 32rpx;
       font-weight: 600;
       .title-icon {
@@ -1680,16 +1673,16 @@ let lastStatus = null
   justify-content: space-between;
   align-items: center;
   padding: 16rpx 0;
-  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  border-bottom: 1rpx solid var(--border-color);
   &:last-child {
     border-bottom: none;
   }
   .label {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 28rpx;
   }
   .value {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 28rpx;
     text-align: right;
     &.price {
@@ -1718,7 +1711,7 @@ let lastStatus = null
       gap: 16rpx;
       margin-bottom: 12rpx;
       .coach-name {
-        color: #fff;
+        color: var(--text-primary);
         font-size: 36rpx;
         font-weight: 600;
       }
@@ -1739,7 +1732,7 @@ let lastStatus = null
         display: flex;
         align-items: center;
         gap: 6rpx;
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 26rpx;
       }
     }
@@ -1747,8 +1740,8 @@ let lastStatus = null
       display: flex;
       gap: 12rpx;
       .tag {
-        background: rgba(255,255,255,0.05);
-        color: #9CA3AF;
+        background: var(--border-color);
+        color: var(--text-secondary);
         font-size: 24rpx;
         padding: 4rpx 12rpx;
         border-radius: 8rpx;
@@ -1759,7 +1752,7 @@ let lastStatus = null
 
 /* 球厅信息 */
 .hall-name {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 32rpx;
   font-weight: 600;
   display: block;
@@ -1769,7 +1762,7 @@ let lastStatus = null
   display: flex;
   align-items: flex-start;
   gap: 8rpx;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-size: 28rpx;
   margin-bottom: 20rpx;
 }
@@ -1777,7 +1770,7 @@ let lastStatus = null
   width: 100%;
   height: 320rpx;
   border-radius: 16rpx;
-  background: #2A3338;
+  background: var(--bg-secondary);
 }
 
 /* 底部安全区域 */
@@ -1793,7 +1786,7 @@ let lastStatus = null
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: #1E252B;
+  background-color: var(--bg-card);
   border-top: 2rpx solid #333333;
   padding: 16rpx 32rpx;
   padding-bottom: calc(16rpx + constant(safe-area-inset-bottom));
@@ -1817,7 +1810,7 @@ let lastStatus = null
     &::after { border: none; }
     &.cancel {
       background: rgba(107, 114, 128, 0.2);
-      color: #9CA3AF;
+      color: var(--text-secondary);
     }
     &.pay {
       background: #00BB88;
@@ -1843,7 +1836,7 @@ let lastStatus = null
       background: rgba(255, 149, 0, 0.2);
       color: #FF9500;
     }
-    &.cancel-order {
+    &.delete-order {
       background: rgba(239, 68, 68, 0.2);
       color: #EF4444;
     }
@@ -1865,7 +1858,7 @@ let lastStatus = null
 }
 
 .pay-popup-wrapper {
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 32rpx 32rpx 0 0;
   animation: slideUp 0.3s ease;
   max-height: 78vh;
@@ -1889,10 +1882,10 @@ let lastStatus = null
   justify-content: center;
   position: relative;
   padding: 28rpx 30rpx;
-  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  border-bottom: 1rpx solid var(--border-color);
   flex-shrink: 0;
   .pay-popup-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 32rpx;
     font-weight: 600;
   }
@@ -1907,10 +1900,10 @@ let lastStatus = null
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 40rpx;
     line-height: 1;
-    background: rgba(255,255,255,0.06);
+    background: var(--border-color);
   }
 }
 
@@ -1929,9 +1922,9 @@ let lastStatus = null
   margin-bottom: 24rpx;
   padding: 24rpx;
   border-radius: 24rpx;
-  background: rgba(255,255,255,0.04);
+  background: var(--border-color);
   .pay-label {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 26rpx;
   }
   .pay-amount {
@@ -1978,7 +1971,7 @@ let lastStatus = null
     min-height: 112rpx;
     padding: 24rpx;
     border-radius: 24rpx;
-    background: #2A3338;
+    background: var(--bg-secondary);
     border: 2rpx solid transparent;
     box-sizing: border-box;
 
@@ -2004,7 +1997,7 @@ let lastStatus = null
       }
 
       .pay-method-name {
-        color: #fff;
+        color: var(--text-primary);
         font-size: 30rpx;
         font-weight: 500;
         flex: 1;
@@ -2012,7 +2005,7 @@ let lastStatus = null
       }
 
       .pay-method-balance {
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 24rpx;
       }
     }
@@ -2050,7 +2043,7 @@ let lastStatus = null
 .pay-empty-tip {
   padding: 48rpx 24rpx;
   text-align: center;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-size: 28rpx;
 }
 
@@ -2058,8 +2051,8 @@ let lastStatus = null
   flex-shrink: 0;
   padding: 24rpx 30rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid rgba(255,255,255,0.05);
-  background: #1E252B;
+  border-top: 1rpx solid var(--border-color);
+  background: var(--bg-card);
 }
 
 .pay-submit-btn {
@@ -2097,7 +2090,7 @@ let lastStatus = null
 }
 
 .add-time-popup-wrapper {
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 32rpx 32rpx 0 0;
   animation: slideUp 0.3s ease;
 }
@@ -2107,13 +2100,13 @@ let lastStatus = null
   align-items: center;
   justify-content: space-between;
   padding: 30rpx;
-  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  border-bottom: 1rpx solid var(--border-color);
   .close-btn {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 30rpx;
   }
   .add-time-popup-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 36rpx;
     font-weight: 600;
   }
@@ -2133,7 +2126,7 @@ let lastStatus = null
   padding-bottom: calc(60rpx + env(safe-area-inset-bottom));
   padding-bottom: calc(60rpx + constant(safe-area-inset-bottom));
   .add-time-tip {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 28rpx;
     margin-bottom: 40rpx;
     text-align: center;
@@ -2149,14 +2142,14 @@ let lastStatus = null
     grid-template-columns: 1fr 1fr;
     gap: 24rpx;
     .add-time-option {
-      background: #2A3338;
+      background: var(--bg-secondary);
       border-radius: 16rpx;
       padding: 50rpx 20rpx;
       text-align: center;
       border: 2rpx solid transparent;
       transition: all 0.2s ease;
       .option-label {
-        color: #fff;
+        color: var(--text-primary);
         font-size: 32rpx;
         font-weight: 500;
       }
@@ -2175,17 +2168,17 @@ let lastStatus = null
       display: flex;
       align-items: center;
       gap: 20rpx;
-      background: #2A3338;
+      background: var(--bg-secondary);
       border-radius: 16rpx;
       padding: 30rpx;
       border: 2rpx solid #00BB88;
       .custom-input {
         flex: 1;
-        color: #fff;
+        color: var(--text-primary);
         font-size: 32rpx;
       }
       .custom-unit {
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 28rpx;
       }
     }
@@ -2208,7 +2201,7 @@ let lastStatus = null
 
 .delete-popup-wrapper {
   width: 560rpx;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 24rpx;
   animation: fadeIn 0.2s ease;
 }
@@ -2227,14 +2220,14 @@ let lastStatus = null
 .delete-popup-content {
   padding: 48rpx 40rpx 40rpx;
   .delete-popup-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 36rpx;
     font-weight: 600;
     text-align: center;
     margin-bottom: 16rpx;
   }
   .delete-popup-text {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 28rpx;
     text-align: center;
     line-height: 1.6;
@@ -2254,7 +2247,7 @@ let lastStatus = null
       &::after { border: none; }
       &.cancel {
         background: rgba(107, 114, 128, 0.2);
-        color: #9CA3AF;
+        color: var(--text-secondary);
       }
       &.confirm {
         background: #EF4444;
@@ -2303,7 +2296,7 @@ let lastStatus = null
 }
 
 .timer-label {
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-size: 24rpx;
 }
 
@@ -2316,7 +2309,7 @@ let lastStatus = null
 .timer-divider {
   width: 2rpx;
   height: 60rpx;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-color);
 }
 
 /* 异常报告弹窗遮罩 */
@@ -2334,7 +2327,7 @@ let lastStatus = null
 }
 
 .report-popup-wrapper {
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 32rpx 32rpx 0 0;
   animation: slideUp 0.3s ease;
   max-height: 80vh;
@@ -2345,13 +2338,13 @@ let lastStatus = null
   align-items: center;
   justify-content: space-between;
   padding: 30rpx;
-  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  border-bottom: 1rpx solid var(--border-color);
   .close-btn {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 30rpx;
   }
   .report-popup-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 36rpx;
     font-weight: 600;
   }
@@ -2373,7 +2366,7 @@ let lastStatus = null
 }
 
 .section-label {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 28rpx;
   font-weight: 500;
   display: block;
@@ -2387,11 +2380,11 @@ let lastStatus = null
 }
 
 .type-item {
-  background: #2A3338;
+  background: var(--bg-secondary);
   border-radius: 12rpx;
   padding: 24rpx 16rpx;
   text-align: center;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-size: 26rpx;
   border: 2rpx solid transparent;
   transition: all 0.2s;
@@ -2409,24 +2402,24 @@ let lastStatus = null
 .reason-input {
   width: 100%;
   min-height: 200rpx;
-  background: #2A3338;
+  background: var(--bg-secondary);
   border-radius: 16rpx;
   padding: 24rpx;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 28rpx;
   line-height: 1.6;
   box-sizing: border-box;
 }
 
 .input-placeholder {
-  color: #6B7280;
+  color: var(--text-tertiary);
 }
 
 .char-count {
   position: absolute;
   right: 16rpx;
   bottom: 16rpx;
-  color: #6B7280;
+  color: var(--text-tertiary);
   font-size: 22rpx;
 }
 </style>

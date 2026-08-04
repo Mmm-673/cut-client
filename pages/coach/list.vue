@@ -1,5 +1,5 @@
 <template>
-  <view class="coach-list-page">
+  <view class="coach-list-page" :class="themeClass">
     <!-- 审核模式：球厅预约 -->
     <scroll-view v-if="reviewLoaded && reviewMode" scroll-y class="review-scroll" show-scrollbar="false">
       <review-venue />
@@ -187,12 +187,25 @@ import {getRewardSwitch} from '@/api/billiard/user'
 import {debounce, formatPrice, showLoading, hideLoading} from '@/utils/common'
 import {getLocation, extractCity, formatDistance, showPermissionModal} from '@/utils/location'
 import {isLoggedIn} from '@/utils/token'
-import {useConfigStore} from '@/store'
+import {useConfigStore, useThemeStore} from '@/store'
+import {usePageTheme} from '@/composables/usePageTheme'
 
 const configStore = useConfigStore()
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
+
+// 页面主题管理
+usePageTheme()
 // 审核模式状态（响应式）
 const reviewMode = computed(() => configStore.reviewMode)
 const reviewLoaded = computed(() => configStore.reviewLoaded)
+
+// 更新自定义 TabBar 选中状态
+const updateCustomTabBar = () => {
+  if (uni.$updateCustomTabBar) {
+    uni.$updateCustomTabBar(1)
+  }
+}
 
 const statusBarHeight = ref(0)
 const scrollHeight = ref(0)
@@ -716,6 +729,8 @@ onShow(() => {
   } else if (locationDenied.value || !coachList.value.length || !hasCoordinates()) {
     refreshPageData()
   }
+  // 更新自定义 TabBar 选中状态
+  updateCustomTabBar()
 })
 </script>
 
@@ -724,7 +739,7 @@ onShow(() => {
 .coach-list-page {
   width: 100%;
   height: 100vh;
-  background-color: #121619;
+  background-color: var(--bg-page);
   display: flex;
   flex-direction: column;
 }
@@ -732,7 +747,7 @@ onShow(() => {
 /* 顶部固定区域 */
 .header-section {
   flex-shrink: 0;
-  background-color: #1E252B;
+  background-color: var(--bg-card);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -744,19 +759,19 @@ onShow(() => {
   .search-input-wrapper {
     display: flex;
     align-items: center;
-    background-color: #2a2a2a;
+    background-color: var(--bg-secondary);
     border-radius: 48rpx;
     padding: 16rpx 32rpx;
 
     .search-input {
       flex: 1;
       margin-left: 16rpx;
-      color: #fff;
+      color: var(--text-primary);
       font-size: 28rpx;
     }
 
     .search-placeholder {
-      color: #666;
+      color: var(--text-placeholder);
     }
 
     .clear-icon {
@@ -781,8 +796,8 @@ onShow(() => {
       margin-right: 20rpx;
       border-radius: 40rpx;
       font-size: 26rpx;
-      color: #9CA3AF;
-      background-color: #2a2a2a;
+      color: var(--text-secondary);
+      background-color: var(--bg-secondary);
       transition: all 0.2s;
 
       &:last-child {
@@ -801,14 +816,14 @@ onShow(() => {
   display: flex;
   justify-content: space-around;
   padding: 20rpx 0;
-  border-top: 1rpx solid #333;
+  border-top: 1rpx solid var(--border-color);
 
   .sort-item {
     display: flex;
     align-items: center;
     gap: 4rpx;
     font-size: 26rpx;
-    color: #999;
+    color: var(--text-tertiary);
 
     &.active {
       color: #00d4aa;
@@ -834,15 +849,15 @@ onShow(() => {
   gap: 12rpx;
   margin: 24rpx 30rpx 0rpx;
   .location-text {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 26rpx;
     flex: 1;
   }
   .retry-btn {
-    color: #00BB88;
+    color: var(--brand-primary);
     font-size: 24rpx;
     padding: 8rpx 16rpx;
-    border: 1rpx solid #00BB88;
+    border: 1rpx solid var(--brand-primary);
     border-radius: 32rpx;
     flex-shrink: 0;
   }
@@ -859,7 +874,7 @@ onShow(() => {
   .empty-text {
     margin-top: 20rpx;
     font-size: 28rpx;
-    color: #666;
+    color: var(--text-tertiary);
   }
 }
 
@@ -869,13 +884,13 @@ onShow(() => {
   height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
   width: 100%;
-  background-color: #121619;
+  background-color: var(--bg-page);
 }
 
 /* 裁教卡片样式优化 */
 .coach-card {
   display: flex;
-  background-color: #1E252B;
+  background-color: var(--bg-card);
   border-radius: 20rpx;
   padding: 20rpx;
   margin-bottom: 20rpx;
@@ -906,7 +921,7 @@ onShow(() => {
 
         .coach-name {
           font-size: 28rpx;
-          color: #fff;
+          color: var(--text-primary);
           font-weight: bold;
         }
 
@@ -986,12 +1001,12 @@ onShow(() => {
 
       .service-status-text {
         font-size: 20rpx;
-        color: #999;
+        color: var(--text-tertiary);
       }
 
       .distance {
         font-size: 22rpx;
-        color: #777;
+        color: var(--text-tertiary);
       }
     }
 
@@ -1001,13 +1016,13 @@ onShow(() => {
       margin: 8rpx 0;
 
       .rating {
-        color: #FFD700;
+        color: var(--star-color);
         font-size: 24rpx;
         margin: 0 6rpx;
       }
 
       .review-count {
-        color: #777;
+        color: var(--text-tertiary);
         font-size: 22rpx;
       }
 
@@ -1132,7 +1147,7 @@ onShow(() => {
 
     .desc-row .coach-desc {
       font-size: 22rpx;
-      color: #999;
+      color: var(--text-tertiary);
       line-height: 1.4;
       display: -webkit-box;
       -webkit-line-clamp: 1;
@@ -1159,7 +1174,7 @@ onShow(() => {
         }
 
         .price-unit {
-          color: #777;
+          color: var(--text-tertiary);
           font-size: 20rpx;
         }
       }
@@ -1178,7 +1193,7 @@ onShow(() => {
         }
 
         .reward-btn {
-          background: #3a3a3a;
+          background: var(--bg-secondary);
           color: #FF9500;
           display: flex;
           align-items: center;
@@ -1190,8 +1205,8 @@ onShow(() => {
           color: #fff;
 
           &.disabled {
-            background: #444;
-            color: #888;
+            background: var(--bg-secondary);
+            color: var(--text-tertiary);
           }
         }
       }
@@ -1221,8 +1236,8 @@ onShow(() => {
   gap: 20rpx;
 
   .skeleton-card {
-    background: #1E252B;
-    border: 1rpx solid rgba(255, 255, 255, 0.05);
+    background: var(--bg-card);
+    border: 1rpx solid var(--border-color);
     border-radius: 20rpx;
     padding: 28rpx;
     display: flex;
@@ -1233,7 +1248,7 @@ onShow(() => {
     .skeleton-line {
       height: 24rpx;
       border-radius: 12rpx;
-      background: rgba(255, 255, 255, 0.06);
+      background: var(--bg-secondary);
 
       &.title {
         width: 50%;

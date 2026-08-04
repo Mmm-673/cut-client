@@ -1,5 +1,5 @@
 <template>
-  <view class="pay-success-wrapper">
+  <view class="pay-success-wrapper" :class="themeClass">
     <view class="success-content">
       <!-- 成功图标 -->
       <view class="icon-wrapper">
@@ -46,10 +46,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
+import { useThemeStore } from '@/store'
 import { getOrderDetail } from '@/api/billiard/order'
 import { guardReviewEntry } from '@/utils/review'
+
+// 主题相关
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 const orderId = ref(null)
 const orderDetail = ref(null)
@@ -115,7 +120,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .pay-success-wrapper {
   min-height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
   display: flex;
   flex-direction: column;
   padding: 120rpx 30rpx 0;
@@ -136,19 +141,19 @@ onMounted(() => {
   text-align: center;
   font-size: 40rpx;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 16rpx;
 }
 
 .subtitle {
   text-align: center;
   font-size: 28rpx;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   margin-bottom: 60rpx;
 }
 
 .info-card {
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 30rpx;
   margin-bottom: 40rpx;
@@ -159,17 +164,17 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 24rpx 0;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1rpx solid var(--border-color);
   &:last-child {
     border-bottom: none;
     padding-bottom: 0;
   }
   .label {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 28rpx;
   }
   .value {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 28rpx;
     &.price {
       color: #00BB88;
@@ -213,11 +218,11 @@ onMounted(() => {
   font-weight: 600;
   &.primary {
     background: #00BB88;
-    color: #fff;
+    color: var(--text-primary);
   }
   &.secondary {
-    background: #2a3338;
-    color: #fff;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
   }
 }
 </style>

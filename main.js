@@ -1,3 +1,10 @@
+// ==========================================
+// 最顶部：立即初始化主题（避免深色闪烁）
+// ==========================================
+import { initThemeEarly } from '@/utils/theme'
+initThemeEarly()
+// ==========================================
+
 import { createSSRApp } from 'vue'
 import App from './App'
 import store from './store'

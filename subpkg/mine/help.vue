@@ -1,5 +1,5 @@
 <template>
-  <view class="help-page-wrapper">
+  <view class="help-page-wrapper" :class="themeClass">
 
 <!--    <scroll-view-->
 <!--        scroll-y-->
@@ -69,9 +69,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
+import { useThemeStore } from '@/store'
 import { showCallPermissionModal, requestCallPermission, doCallPhone } from '@/utils/call'
+
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // 刷新状态
 const refreshing = ref(false)
@@ -181,7 +185,7 @@ onShow(() => {
 <style lang="scss" scoped>
 .help-page-wrapper {
   min-height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
   display: flex;
   flex-direction: column;
   padding-top: 20rpx;
@@ -203,7 +207,7 @@ onShow(() => {
     justify-content: center;
   }
   .nav-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 36rpx;
     font-weight: 600;
   }
@@ -218,7 +222,7 @@ onShow(() => {
 /* 搜索框 */
 .search-box {
   margin: 30rpx;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 20rpx 30rpx;
   display: flex;
@@ -226,17 +230,17 @@ onShow(() => {
   gap: 16rpx;
   .search-input {
     flex: 1;
-    color: #fff;
+    color: var(--text-primary);
     font-size: 28rpx;
   }
   .search-placeholder {
-    color: #9CA3AF;
+    color: var(--text-secondary);
   }
 }
 
 /*  section标题 */
 .section-title {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 32rpx;
   font-weight: 600;
   margin: 0 30rpx 24rpx;
@@ -245,12 +249,12 @@ onShow(() => {
 /* 常见问题卡片 */
 .faq-card {
   margin: 0 30rpx 30rpx;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 0 30rpx;
   .faq-item {
     padding: 30rpx 0;
-    border-bottom: 1rpx solid rgba(255,255,255,0.05);
+    border-bottom: 1rpx solid var(--border-color);
     &:last-child {
       border-bottom: none;
     }
@@ -260,7 +264,7 @@ onShow(() => {
       justify-content: space-between;
     }
     .faq-question {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 30rpx;
       font-weight: 500;
     }
@@ -270,7 +274,7 @@ onShow(() => {
       background: rgba(0, 187, 136, 0.1);
       border-radius: 12rpx;
       text {
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 26rpx;
         line-height: 1.6;
       }
@@ -281,7 +285,7 @@ onShow(() => {
 /* 联系客服卡片 */
 .service-card {
   margin: 0 30rpx 30rpx;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 30rpx;
   .qr-section {
@@ -294,13 +298,13 @@ onShow(() => {
     }
     .qr-tip {
       display: block;
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 26rpx;
     }
   }
   .divider {
     height: 1rpx;
-    background: rgba(255,255,255,0.1);
+    background: var(--border-color);
     margin: 30rpx 0;
   }
   .service-item {
@@ -323,14 +327,14 @@ onShow(() => {
       flex: 1;
       .service-title {
         display: block;
-        color: #fff;
+        color: var(--text-primary);
         font-size: 32rpx;
         font-weight: 600;
         margin-bottom: 8rpx;
       }
       .service-desc {
         display: block;
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 26rpx;
       }
       .service-hotline {
@@ -342,7 +346,7 @@ onShow(() => {
     }
     .call-btn {
       background: #00BB88;
-      color: #fff;
+      color: var(--text-primary);
       border-radius: 40rpx;
       //padding: 16rpx 32rpx;
       font-size: 28rpx;

@@ -1,5 +1,5 @@
 <template>
-  <view class="my-page-wrapper">
+  <view class="my-page-wrapper" :class="themeClass">
     <!-- ==========================================
          1. 统一的自定义顶部导航栏（适配上安全区）
          ========================================== -->
@@ -195,8 +195,13 @@ import { onShow } from  "@dcloudio/uni-app"
 import { getUserInfo } from '@/api/billiard/user'
 import { getWallet } from '@/api/billiard/wallet'
 import { useUserStore } from '@/store/modules/user'
+import { useThemeStore } from '@/store'
 
 const userStore = useUserStore()
+
+// 主题相关
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // ---------------------- 状态定义 ----------------------
 // 刷新状态
@@ -414,7 +419,7 @@ onShow(() => {
    ========================================== */
 .my-page-wrapper {
   min-height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
   display: flex;
   flex-direction: column;
 }
@@ -441,7 +446,7 @@ onShow(() => {
     justify-content: center;
   }
   .nav-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 36rpx;
     font-weight: 600;
   }
@@ -460,7 +465,7 @@ onShow(() => {
    ========================================== */
 .func-card {
   margin: 0 30rpx 30rpx;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 30rpx;
   .card-header {
@@ -469,12 +474,12 @@ onShow(() => {
     align-items: center;
     margin-bottom: 24rpx;
     .card-title {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 32rpx;
       font-weight: 600;
     }
     .view-more {
-      color: #9CA3AF;
+      color: var(--text-secondary);
       font-size: 26rpx;
       display: flex;
       align-items: center;
@@ -488,7 +493,7 @@ onShow(() => {
    ========================================== */
 .user-card {
   margin: 20rpx 30rpx 30rpx; /* 比通用卡片多20rpx的顶部间距 */
-  background: linear-gradient(135deg, rgba(0, 187, 136, 0.2) 0%, #1E252B 100%);
+  background: linear-gradient(135deg, rgba(0, 187, 136, 0.2) 0%, var(--bg-card) 100%);
   border-radius: 40rpx;
   padding: 40rpx 30rpx;
   .user-header {
@@ -515,7 +520,7 @@ onShow(() => {
         gap: 16rpx;
         margin-bottom: 8rpx;
         .user-name {
-          color: #fff;
+          color: var(--text-primary);
           font-size: 40rpx;
           font-weight: 700;
         }
@@ -536,12 +541,12 @@ onShow(() => {
         }
       }
       .user-phone {
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 28rpx;
         margin-bottom: 12rpx;
       }
       .edit-btn {
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 24rpx;
       }
     }
@@ -567,20 +572,20 @@ onShow(() => {
       text-align: center;
       .stats-num {
         display: block;
-        color: #fff;
+        color: var(--text-primary);
         font-size: 44rpx;
         font-weight: bold;
         margin-bottom: 8rpx;
       }
       .stats-label {
         display: block;
-        color: #9CA3AF;
+        color: var(--text-secondary);
         font-size: 26rpx;
       }
     }
     .stats-divider {
       width: 2rpx;
-      background: rgba(255,255,255,0.1);
+      background: var(--border-color);
       margin-top: 8rpx;
       margin-bottom: 8rpx;
     }
@@ -613,7 +618,7 @@ onShow(() => {
   }
   .item-title {
     display: block;
-    color: #fff;
+    color: var(--text-primary);
     font-size: 30rpx;
     font-weight: 600;
     margin-bottom: 8rpx;
@@ -638,7 +643,7 @@ onShow(() => {
 .dual-divider {
   width: 2rpx;
   height: 100rpx; /* 固定高度撑住双栏的视觉分隔 */
-  background: rgba(255,255,255,0.1);
+  background: var(--border-color);
 }
 
 /* ==========================================
@@ -670,7 +675,7 @@ onShow(() => {
         height: 16rpx;
         border-radius: 50%;
         background: #EF4444;
-        border: 2rpx solid #1E252B;
+        border: 2rpx solid var(--bg-card);
       }
     }
     text {
@@ -682,7 +687,7 @@ onShow(() => {
 
 .order-list {
   .order-card {
-    background: #2a3338;
+    background: var(--bg-secondary);
     border-radius: 20rpx;
     padding: 20rpx;
     display: flex;
@@ -708,7 +713,7 @@ onShow(() => {
         flex: 1;
         min-width: 0; /* 防止flex子元素溢出 */
         .order-title {
-          color: #fff;
+          color: var(--text-primary);
           font-size: 30rpx;
           font-weight: 600;
           margin-bottom: 8rpx;
@@ -717,7 +722,7 @@ onShow(() => {
           white-space: nowrap;
         }
         .order-subtitle {
-          color: #9CA3AF;
+          color: var(--text-secondary);
           font-size: 24rpx;
           margin-bottom: 12rpx;
           overflow: hidden;
@@ -725,7 +730,7 @@ onShow(() => {
           white-space: nowrap;
         }
         .order-time {
-          color: #6B7280;
+          color: var(--text-tertiary);
           font-size: 24rpx;
         }
       }
@@ -740,7 +745,7 @@ onShow(() => {
       .order-status {
         padding: 4rpx 14rpx;
         border-radius: 8rpx;
-        color: #fff;
+        color: var(--text-primary);
         font-size: 24rpx;
         white-space: nowrap;
       }
@@ -749,7 +754,7 @@ onShow(() => {
         height: 56rpx;
         line-height: 56rpx;
         border-radius: 28rpx;
-        color: #fff;
+        color: var(--text-primary);
         font-size: 26rpx;
         font-weight: 600;
         padding: 0;
@@ -761,7 +766,7 @@ onShow(() => {
   }
   .empty-tip {
     text-align: center;
-    color: #6B7280;
+    color: var(--text-tertiary);
     font-size: 26rpx;
     padding: 60rpx 0 20rpx;
   }
@@ -777,7 +782,7 @@ onShow(() => {
     align-items: center;
     gap: 20rpx;
     padding: 28rpx 30rpx;
-    border-bottom: 1rpx solid rgba(255,255,255,0.05);
+    border-bottom: 1rpx solid var(--border-color);
     &:last-child {
       border-bottom: none;
     }
@@ -792,7 +797,7 @@ onShow(() => {
     }
     .menu-title {
       flex: 1;
-      color: #fff;
+      color: var(--text-primary);
       font-size: 30rpx;
       font-weight: 500;
     }

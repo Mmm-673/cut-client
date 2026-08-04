@@ -1,6 +1,6 @@
 
 <template>
-  <view class="detail-container">
+  <view class="detail-container" :class="themeClass">
     <!-- 内容区域 -->
     <view class="content-wrapper">
       <!-- 头部导航栏 -->
@@ -244,6 +244,10 @@ import { getRewardSwitch } from '@/api/billiard/user'
 import { formatPrice, extractCoachId } from '@/utils/common'
 import { isLoggedIn } from '@/utils/token'
 import { guardReviewEntry, isReviewMode } from '@/utils/review'
+import { useThemeStore } from '@/store'
+
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // 图片查看器
 const showImageViewer = ref(false)
@@ -740,13 +744,13 @@ onMounted(() => {
 <style lang="scss" scoped>
 .detail-container {
   min-height: 100vh;
-  background-color: #2a2a2a;
+  background-color: var(--bg-page);
   position: relative;
 }
 
 .content-wrapper {
   min-height: calc(100vh - 120rpx); /* 减去底部栏高度 */
-  background-color: #1a1a1a;
+  background-color: var(--bg-page);
   padding-bottom: calc(env(safe-area-inset-bottom) + 120rpx); /* 确保内容不会被底部栏遮挡 */
 }
 
@@ -783,7 +787,7 @@ onMounted(() => {
 }
 
 .scroll-view {
-  background-color: #1a1a1a;
+  background-color: var(--bg-page);
 }
 
 .header-section {
@@ -824,7 +828,7 @@ onMounted(() => {
       width: 160rpx;
       height: 160rpx;
       border-radius: 32rpx;
-      border: 6rpx solid rgba(255, 255, 255, 0.2);
+      border: 6rpx solid var(--border-color);
       flex-shrink: 0;
     }
 
@@ -840,7 +844,7 @@ onMounted(() => {
         .name {
           font-size: 48rpx;
           font-weight: 700;
-          color: #ffffff;
+          color: var(--text-primary);
         }
 
         .tag.level {
@@ -850,17 +854,17 @@ onMounted(() => {
 
           &.level-0 {
             background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
-            color: #ffffff;
+            color: var(--text-primary);
           }
 
           &.level-1 {
             background: linear-gradient(135deg, #faad14 0%, #d48806 100%);
-            color: #ffffff;
+            color: var(--text-primary);
           }
 
           &.level-2 {
             background: linear-gradient(135deg, #f5222d 0%, #cf1322 100%);
-            color: #ffffff;
+            color: var(--text-primary);
           }
 
           &.level-3 {
@@ -895,7 +899,7 @@ onMounted(() => {
           align-items: center;
           gap: 8rpx;
           font-size: 28rpx;
-          color: #cccccc;
+          color: var(--text-secondary);
         }
       }
 
@@ -943,13 +947,13 @@ onMounted(() => {
     margin-bottom: 32rpx;
     font-size: 36rpx;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--text-primary);
 
     .see-more {
       margin-left: auto;
       font-size: 28rpx;
       font-weight: 400;
-      color: #666;
+      color: var(--text-tertiary);
     }
 
     .rating-text {
@@ -961,19 +965,19 @@ onMounted(() => {
   }
 
   .intro-content {
-    background-color: #2a2a2a;
+    background-color: var(--bg-card);
     border-radius: 32rpx;
     padding: 32rpx;
 
     text {
       font-size: 28rpx;
-      color: #cccccc;
+      color: var(--text-secondary);
       line-height: 1.8;
     }
   }
 
   .login-tip-box {
-    background-color: #2a2a2a;
+    background-color: var(--bg-card);
     border-radius: 32rpx;
     padding: 80rpx 32rpx;
     display: flex;
@@ -983,7 +987,7 @@ onMounted(() => {
 
     .login-tip-text {
       font-size: 28rpx;
-      color: #999999;
+      color: var(--text-tertiary);
     }
   }
 }
@@ -994,7 +998,7 @@ onMounted(() => {
   gap: 24rpx;
 
   .service-item {
-    background-color: #2a2a2a;
+    background-color: var(--bg-card);
     border-radius: 32rpx;
     padding: 32rpx;
     display: flex;
@@ -1020,7 +1024,7 @@ onMounted(() => {
         .service-name {
           font-size: 32rpx;
           font-weight: 600;
-          color: #ffffff;
+          color: var(--text-primary);
         }
 
         .tag.hot {
@@ -1028,20 +1032,20 @@ onMounted(() => {
           padding: 4rpx 16rpx;
           border-radius: 40rpx;
           background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%);
-          color: #ffffff;
+          color: var(--text-primary);
         }
       }
 
       .service-desc {
         font-size: 26rpx;
-        color: #999999;
+        color: var(--text-tertiary);
         margin-bottom: 12rpx;
         line-height: 1.5;
       }
 
       .service-sales {
         font-size: 24rpx;
-        color: #666666;
+        color: var(--text-tertiary);
       }
     }
 
@@ -1071,21 +1075,9 @@ onMounted(() => {
           font-size: 26rpx;
           color: #999999;
         }
-      }
 
-      .select-btn {
-        padding: 16rpx 48rpx;
-        background: linear-gradient(135deg, #00c896 0%, #00a87a 100%);
-        color: #ffffff;
-        font-size: 28rpx;
-        font-weight: 600;
-        border-radius: 40rpx;
-        transition: all 0.3s;
-
-        &.active {
-          background: #2a3338;
-          border: 2rpx solid #00c896;
-          color: #00c896;
+        &:last-child {
+          color: #999;
         }
       }
     }
@@ -1106,18 +1098,11 @@ onMounted(() => {
     .album-item {
       width: 200rpx;
       height: 200rpx;
-      flex-shrink: 0;
-      border-radius: 24rpx;
-      background-color: #2a2a2a;
+      border-radius: 96;
+      background-color: var(--bg-secondary);
+      border-color: rgba(0,0,0,0.1);
     }
   }
-}
-
-.review-list,
-.review-list-scroll {
-  display: flex;
-  flex-direction: column;
-  gap: 32rpx;
 }
 
 .review-list-scroll {
@@ -1127,7 +1112,7 @@ onMounted(() => {
 }
 
 .review-item {
-  background-color: #2a2a2a;
+  background-color: var(--bg-card);
   border-radius: 32rpx;
   padding: 32rpx;
   flex-shrink: 0;
@@ -1150,7 +1135,7 @@ onMounted(() => {
       .review-name {
         font-size: 30rpx;
         font-weight: 600;
-        color: #ffffff;
+        color: var(--text-primary);
         display: block;
         margin-bottom: 8rpx;
       }
@@ -1163,13 +1148,13 @@ onMounted(() => {
 
     .review-time {
       font-size: 24rpx;
-      color: #666666;
+      color: var(--text-tertiary);
     }
   }
 
   .review-content {
     font-size: 28rpx;
-    color: #cccccc;
+    color: var(--text-secondary);
     line-height: 1.6;
     margin-bottom: 24rpx;
   }
@@ -1198,7 +1183,7 @@ onMounted(() => {
 
       text {
         font-size: 36rpx;
-        color: #ffffff;
+        color: var(--text-primary);
         font-weight: 600;
       }
     }
@@ -1222,13 +1207,13 @@ onMounted(() => {
 .more-reviews {
   margin-top: 16rpx;
   padding: 28rpx;
-  background-color: #2a2a2a;
+  background-color: var(--bg-card);
   border-radius: 24rpx;
   text-align: center;
 
   text {
     font-size: 28rpx;
-    color: #999999;
+    color: var(--text-tertiary);
   }
 }
 
@@ -1244,8 +1229,8 @@ onMounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: #1E252B;
-  border-top: 2rpx solid #2a2a2a;
+  background-color: var(--bg-card);
+  border-top: 2rpx solid var(--border-color);
   padding: 16rpx 32rpx;
   padding-bottom: calc(16rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
@@ -1272,14 +1257,14 @@ onMounted(() => {
 
     .price-unit {
       font-size: 24rpx;
-      color: #999999;
+      color: var(--text-tertiary);
     }
   }
 
   .book-btn {
     padding: 20rpx 56rpx;
     background: linear-gradient(135deg, #00c896 0%, #00a87a 100%);
-    color: #ffffff;
+    color: var(--text-primary);
     font-size: 28rpx;
     font-weight: 600;
     border-radius: 44rpx;

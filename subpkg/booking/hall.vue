@@ -1,5 +1,5 @@
 <template>
-  <view class="choose-hall-wrapper">
+  <view class="choose-hall-wrapper" :class="themeClass">
       <view class="nav-filter" @click="openFilter">
         <uni-icons type="filter" size="22" color="#fff" />
       </view>
@@ -244,12 +244,17 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
+import { useThemeStore } from '@/store'
 import { getVenueList } from '@/api/billiard/venue'
 import { createOrder } from '@/api/billiard/order'
 import { debounce, showLoading, hideLoading } from '@/utils/common'
 import { getLocation, extractStreet, formatDistance, showPermissionModal, openAppSetting } from '@/utils/location'
 import {openMapNavigation} from "../../utils/platform";
 import { showCallPermissionModal, requestCallPermission, doCallPhone as makePhoneCall } from '@/utils/call';
+
+// 主题相关
+const themeStore = useThemeStore()
+const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // ---------------------- 状态定义 ----------------------
 // 刷新/加载状态
@@ -905,7 +910,7 @@ onShow(() => {
 .choose-hall-wrapper {
   min-height: 100vh;
   height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
   display: flex;
   flex-direction: column;
 }
@@ -937,11 +942,11 @@ onShow(() => {
 /* 预约信息卡片 */
 .info-card {
   margin: 20rpx 30rpx 30rpx;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 30rpx;
   .card-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 32rpx;
     font-weight: 700;
     margin-bottom: 24rpx;
@@ -953,13 +958,13 @@ onShow(() => {
   justify-content: space-between;
   align-items: center;
   padding: 20rpx 0;
-  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  border-bottom: 1rpx solid var(--border-color);
   &:last-child {
     border-bottom: none;
     padding-bottom: 0;
   }
   .label {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 28rpx;
   }
   .value-wrap {
@@ -967,7 +972,7 @@ onShow(() => {
     align-items: center;
     gap: 12rpx;
     .value {
-      color: #fff;
+      color: var(--text-primary);
       font-size: 28rpx;
     }
   }
@@ -982,7 +987,7 @@ onShow(() => {
     width: 60rpx;
     height: 60rpx;
     border-radius: 50%;
-    background: #2a3338;
+    background: var(--bg-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -992,7 +997,7 @@ onShow(() => {
     }
   }
   .duration-num {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 32rpx;
     font-weight: 600;
     min-width: 120rpx;
@@ -1003,7 +1008,7 @@ onShow(() => {
 /* 搜索框 */
 .search-box {
   margin: 0 30rpx 20rpx;
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 20rpx 30rpx;
   display: flex;
@@ -1011,11 +1016,11 @@ onShow(() => {
   gap: 16rpx;
   .search-input {
     flex: 1;
-    color: #fff;
+    color: var(--text-primary);
     font-size: 28rpx;
   }
   .search-placeholder {
-    color: #6B7280;
+    color: var(--text-tertiary);
   }
   .clear-icon {
     padding: 4rpx;
@@ -1029,7 +1034,7 @@ onShow(() => {
   gap: 12rpx;
   margin: 24rpx 30rpx;
   .location-text {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 26rpx;
     flex: 1;
   }
@@ -1059,8 +1064,8 @@ onShow(() => {
     gap: 16rpx;
     .tab-item {
       padding: 14rpx 28rpx;
-      background: rgba(30, 37, 43, 1);
-      color: #9CA3AF;
+      background: var(--bg-card);
+      color: var(--text-secondary);
       font-size: 26rpx;
       font-weight: 500;
       border-radius: 32rpx;
@@ -1068,7 +1073,7 @@ onShow(() => {
       transition: all 0.2s ease;
       &.active {
         background: #00BB88;
-        color: #fff;
+        color: var(--text-primary);
         font-weight: 600;
       }
     }
@@ -1079,7 +1084,7 @@ onShow(() => {
 .hall-list {
   padding: 0 30rpx;
   .hall-card {
-    background: #1E252B;
+    background: var(--bg-card);
     border-radius: 24rpx;
     margin-bottom: 30rpx;
     overflow: hidden;
@@ -1097,7 +1102,7 @@ onShow(() => {
         left: 0;
         padding: 8rpx 20rpx;
         border-radius: 0 16rpx 16rpx 0;
-        color: #fff;
+        color: var(--text-primary);
         font-size: 24rpx;
         font-weight: 600;
       }
@@ -1106,7 +1111,7 @@ onShow(() => {
         top: 20rpx;
         right: 20rpx;
         background: rgba(0,0,0,0.6);
-        color: #fff;
+        color: var(--text-primary);
         font-size: 24rpx;
         padding: 8rpx 16rpx;
         border-radius: 16rpx;
@@ -1125,7 +1130,7 @@ onShow(() => {
           gap: 12rpx;
           flex: 1;
           .hall-name {
-            color: #fff;
+            color: var(--text-primary);
             font-size: 32rpx;
             font-weight: 700;
           }
@@ -1147,7 +1152,7 @@ onShow(() => {
             font-weight: 700;
           }
           .price-unit {
-            color: #9CA3AF;
+            color: var(--text-secondary);
             font-size: 24rpx;
           }
         }
@@ -1158,11 +1163,11 @@ onShow(() => {
         gap: 8rpx;
         margin-bottom: 12rpx;
         .meta-text {
-          color: #9CA3AF;
+          color: var(--text-secondary);
           font-size: 24rpx;
         }
         .meta-divider {
-          color: #2a3338;
+          color: var(--bg-secondary);
         }
       }
       .hall-address {
@@ -1171,7 +1176,7 @@ onShow(() => {
         gap: 8rpx;
         margin-bottom: 16rpx;
         .address-text {
-          color: #9CA3AF;
+          color: var(--text-secondary);
           font-size: 24rpx;
           flex: 1;
           overflow: hidden;
@@ -1185,8 +1190,8 @@ onShow(() => {
         gap: 12rpx;
         margin-bottom: 16rpx;
         .tag-item {
-          background: #2a3338;
-          color: #9CA3AF;
+          background: var(--bg-secondary);
+          color: var(--text-secondary);
           font-size: 22rpx;
           padding: 6rpx 16rpx;
           border-radius: 12rpx;
@@ -1220,13 +1225,13 @@ onShow(() => {
           font-weight: 600;
           &.secondary {
             flex: 1;
-            background: #2a3338;
-            color: #9CA3AF;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
           }
           &.primary {
             flex: 1.5;
             background: #00BB88;
-            color: #fff;
+            color: var(--text-primary);
           }
         }
       }
@@ -1242,7 +1247,7 @@ onShow(() => {
   justify-content: center;
   padding: 120rpx 0;
   .empty-text {
-    color: #6B7280;
+    color: var(--text-tertiary);
     font-size: 28rpx;
     margin-top: 20rpx;
   }
@@ -1251,7 +1256,7 @@ onShow(() => {
 /* 加载提示 */
 .load-tip {
   text-align: center;
-  color: #6B7280;
+  color: var(--text-tertiary);
   font-size: 26rpx;
   padding: 40rpx 0;
   &.loading {
@@ -1283,7 +1288,7 @@ onShow(() => {
 }
 
 .time-picker-wrapper {
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 32rpx 32rpx 0 0;
   animation: slideUp 0.3s ease;
 }
@@ -1298,13 +1303,13 @@ onShow(() => {
   align-items: center;
   justify-content: space-between;
   padding: 30rpx;
-  border-bottom: 1rpx solid rgba(255,255,255,0.05);
+  border-bottom: 1rpx solid var(--border-color);
   .cancel-btn {
-    color: #9CA3AF;
+    color: var(--text-secondary);
     font-size: 30rpx;
   }
   .picker-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 32rpx;
     font-weight: 600;
   }
@@ -1318,14 +1323,14 @@ onShow(() => {
 .picker-view {
   width: 100%;
   height: 500rpx;
-  background-color: #2a3338;
+  background-color: var(--bg-secondary);
 }
 
 .picker-item {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #FFFFFF !important;
+  color: var(--text-primary) !important;
   font-size: 32rpx;
   height: 80rpx;
   line-height: 80rpx;

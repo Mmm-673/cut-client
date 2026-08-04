@@ -1,5 +1,5 @@
 <template>
-  <view class="setting-wrapper">
+  <view class="setting-wrapper" :class="['theme-' + themeStore.theme]">
 
     <scroll-view
         scroll-y
@@ -8,6 +8,17 @@
       <!-- 菜单列表 -->
       <view class="menu-section">
         <view class="menu-card">
+          <!-- 主题切换 -->
+          <view class="menu-item">
+            <view class="menu-left">
+              <view class="menu-icon-box" style="background: rgba(0, 187, 136, 0.2);">
+                <uni-icons :type="themeStore.isDark() ? 'color-filled' : 'color'" size="24" color="#00BB88" />
+              </view>
+              <text class="menu-text">{{ themeStore.isDark() ? '深色模式' : '白天模式' }}</text>
+            </view>
+            <switch :checked="themeStore.isLight()" @change="handleThemeChange" color="#00BB88" />
+          </view>
+
           <!-- 修改密码 -->
           <view class="menu-item" @click="goToPwd">
             <view class="menu-left">
@@ -17,20 +28,6 @@
               <text class="menu-text">修改密码</text>
             </view>
             <uni-icons type="right" size="20" color="#9CA3AF" />
-          </view>
-
-          <!-- 检查更新 -->
-          <view class="menu-item" @click="checkUpgrade">
-            <view class="menu-left">
-              <view class="menu-icon-box" style="background: rgba(59, 130, 246, 0.2);">
-                <uni-icons type="refresh-filled" size="24" color="#3B82F6" />
-              </view>
-              <text class="menu-text">检查更新</text>
-            </view>
-            <view class="menu-right">
-              <text class="menu-meta">v1.0.0</text>
-              <uni-icons type="right" size="20" color="#9CA3AF" />
-            </view>
           </view>
 
         </view>
@@ -74,14 +71,34 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { onShow } from  "@dcloudio/uni-app"
-import { useUserStore } from '@/store'
+import { ref, computed, onMounted, watch } from 'vue'
+import { onShow } from  '@dcloudio/uni-app'
+import { useUserStore, useThemeStore } from '@/store'
+import { applyTheme } from '@/utils/theme'
 import { cancelAccount } from '@/api/billiard/user'
 import { clearReviewAccount } from '@/utils/review'
 
 // ---------------------- 状态定义 ----------------------
 const userStore = useUserStore()
+const themeStore = useThemeStore()
+
+// 切换主题
+const handleThemeChange = () => {
+  // 提供触觉反馈（如果支持）
+  uni.vibrateShort?.({ type: 'light' })
+
+  const newTheme = themeStore.toggleTheme()
+  console.log('[Setting] 切换主题到:', newTheme)
+
+  applyTheme(newTheme)
+
+  // 显示切换成功提示
+  uni.showToast({
+    title: newTheme === 'light' ? '已切换到浅色模式' : '已切换到深色模式',
+    icon: 'success',
+    duration: 1500
+  })
+}
 
 
 // 是否登录
@@ -109,53 +126,8 @@ const goToPwd = () => {
 const goToAgree = (type) => {
   const title = type === 'user' ? '用户协议' : '隐私政策'
   uni.navigateTo({
-    url: `/subpkg/common/webview?url=${encodeURIComponent(agreementUrls[type])}&title=${encodeURIComponent(title)}`
+    url: '/subpkg/common/webview?url=' + encodeURIComponent(agreementUrls[type]) + '&title=' + encodeURIComponent(title)
   })
-}
-
-// 检查更新
-const checkUpgrade = () => {
-  // #ifdef MP-WEIXIN
-  const updateManager = uni.getUpdateManager()
-  uni.showLoading({ title: '检查中...' })
-  updateManager.onCheckForUpdate((res) => {
-    uni.hideLoading()
-    if (res.hasUpdate) {
-      uni.showModal({
-        title: '发现新版本',
-        content: '下载进度：0%',
-        showCancel: false,
-        confirmColor: '#00BB88'
-      })
-      updateManager.onUpdateReady(() => {
-        uni.hideLoading()
-        uni.showModal({
-          title: '更新提示',
-          content: '新版本已准备好，是否重启应用？',
-          confirmColor: '#00BB88',
-          success: (res) => {
-            if (res.confirm) {
-              updateManager.applyUpdate()
-            }
-          }
-        })
-      })
-      updateManager.onUpdateFailed(() => {
-        uni.hideLoading()
-        uni.showModal({
-          title: '更新失败',
-          content: '新版本下载失败，是否重试？',
-          confirmColor: '#00BB88'
-        })
-      })
-    } else {
-      uni.showToast({ title: '当前已是最新版本', icon: 'none' })
-    }
-  })
-  // #endif
-  // #ifndef MP-WEIXIN
-  uni.showToast({ title: '当前已是最新版本', icon: 'none' })
-  // #endif
 }
 
 // 退出登录
@@ -218,7 +190,7 @@ const handleCancelAccount = async () => {
 <style lang="scss" scoped>
 .setting-wrapper {
   min-height: 100vh;
-  background: #121619;
+  background: var(--bg-page);
   display: flex;
   flex-direction: column;
 }
@@ -257,7 +229,7 @@ const handleCancelAccount = async () => {
 .menu-section {
   padding: 30rpx;
   .menu-card {
-    background: #1E252B;
+    background: var(--bg-card);
     border-radius: 24rpx;
     padding: 0 30rpx;
     .menu-item {
@@ -265,7 +237,7 @@ const handleCancelAccount = async () => {
       align-items: center;
       justify-content: space-between;
       padding: 30rpx 0;
-      border-bottom: 1rpx solid rgba(255,255,255,0.05);
+      border-bottom: 1rpx solid var(--border-color);
       &:last-child {
         border-bottom: none;
       }
@@ -283,7 +255,7 @@ const handleCancelAccount = async () => {
           flex-shrink: 0;
         }
         .menu-text {
-          color: #fff;
+          color: var(--text-primary);
           font-size: 32rpx;
           font-weight: 500;
         }
@@ -293,7 +265,7 @@ const handleCancelAccount = async () => {
         align-items: center;
         gap: 12rpx;
         .menu-meta {
-          color: #9CA3AF;
+          color: var(--text-secondary);
           font-size: 28rpx;
         }
       }
@@ -308,8 +280,8 @@ const handleCancelAccount = async () => {
     width: 100%;
     height: 96rpx;
     line-height: 96rpx;
-    background: rgba(239, 68, 68, 0.15);
-    color: #EF4444;
+    background: #EF4444;
+    color: #FFFFFF;
     border-radius: 48rpx;
     font-size: 32rpx;
     font-weight: 600;
@@ -323,8 +295,8 @@ const handleCancelAccount = async () => {
     height: 88rpx;
     line-height: 88rpx;
     margin-top: 24rpx;
-    background: rgba(255, 255, 255, 0.08);
-    color: #F87171;
+    background: #FEE2E2;
+    color: #DC2626;
     border-radius: 44rpx;
     font-size: 30rpx;
     font-weight: 500;
@@ -359,12 +331,12 @@ const handleCancelAccount = async () => {
   right: 0;
   bottom: 0;
   padding: 40rpx 32rpx calc(40rpx + env(safe-area-inset-bottom));
-  background: #1E252B;
+  background: var(--bg-card);
   border-radius: 32rpx 32rpx 0 0;
 }
 
 .cancel-account-title {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 36rpx;
   font-weight: 700;
   text-align: center;
@@ -372,7 +344,7 @@ const handleCancelAccount = async () => {
 
 .cancel-account-tip {
   margin-top: 16rpx;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-size: 28rpx;
   text-align: center;
 }
@@ -383,8 +355,8 @@ const handleCancelAccount = async () => {
   margin-top: 32rpx;
   padding: 24rpx;
   box-sizing: border-box;
-  color: #fff;
-  background: #121619;
+  color: var(--text-primary);
+  background: var(--bg-page);
   border-radius: 20rpx;
   font-size: 28rpx;
 }
@@ -407,20 +379,19 @@ const handleCancelAccount = async () => {
 }
 
 .cancel-account-cancel {
-  color: #D1D5DB;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
 }
 
 .cancel-account-confirm {
-  color: #EF4444;
-  background: rgba(239, 68, 68, 0.15);
+  color: #FFFFFF;
+  background: #EF4444;
   font-weight: 600;
-  border: 1rpx solid rgba(239, 68, 68, 0.35);
-  box-shadow: 0 12rpx 28rpx rgba(239, 68, 68, 0.12);
+  box-shadow: 0 12rpx 28rpx rgba(239, 68, 68, 0.25);
 }
 
 .cancel-account-confirm:active {
-  background: rgba(239, 68, 68, 0.22);
+  background: #DC2626;
   transform: scale(0.98);
 }
 
@@ -433,7 +404,7 @@ const handleCancelAccount = async () => {
 .agreement-text {
   padding-top: 30rpx;
   font-size: 26rpx;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   line-height: 1.4;
 }
 .link {
