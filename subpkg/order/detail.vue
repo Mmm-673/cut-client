@@ -605,9 +605,11 @@ const payStatusMap = {
 
 // 获取服务类型名称
 const getServiceTypeName = (type) => {
-  if (type === 1) return '台球陪练'
-  if (type === 2) return '达人带路'
-  return '台球陪练'
+  if (type === 1) return '台球指导'
+  if (type === 2) return '潮玩领航'
+  if (type === 3) return '酒艺品鉴'
+  if (type === 4) return '影视赏析'
+  return '台球指导'
 }
 
 // 获取支付状态文本

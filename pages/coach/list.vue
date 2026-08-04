@@ -69,17 +69,34 @@
     </view>
 
     <!-- 定位信息 -->
-    <view class="location-box">
-      <uni-icons type="location" size="18" color="#00BB88" />
-      <text class="location-text">
-        <text v-if="locating">定位中...</text>
-        <text v-else-if="locationDenied">定位权限未开启</text>
-        <text v-else-if="currentCity">{{ currentCity }}</text>
-        <text v-else>定位失败</text>
-      </text>
-      <view v-if="!locating && (locationDenied || !currentCity)" class="retry-btn" @click="getCurrentLocation">
-        重试定位
-      </view>
+    <view class="location-picker-wrapper" style="margin: 24rpx 30rpx 0rpx;">
+      <uni-data-picker
+          class="location-picker"
+          :localdata="areaLocalData"
+          :clear-icon="false"
+          :border="false"
+          :map="{value:'id', text:'name', children:'children'}"
+          popup-title="选择城市"
+          @change="onCityChange"
+      >
+        <view class="location-box">
+          <uni-icons type="location" size="18" color="#00BB88" />
+          <text class="location-text">
+            <text v-if="locating">定位中...</text>
+            <text v-else-if="locationDenied">定位权限未开启</text>
+            <text v-else-if="displayCityName">{{ displayCityName }}</text>
+            <text v-else>选择城市</text>
+          </text>
+          <uni-icons type="right" size="16" color="#9CA3AF" />
+        </view>
+      </uni-data-picker>
+    </view>
+
+
+    <!-- 重新定位按钮 -->
+    <view v-if="selectedCityId" class="relocate-box" @click="reLocate">
+      <uni-icons type="refresh" size="14" color="#00BB88" />
+      <text class="relocate-text">重新定位</text>
     </view>
 
     <scroll-view
@@ -164,7 +181,8 @@
 
         <view v-if="coachList.length === 0 && !loading && !refreshing" class="empty-state">
           <uni-icons type="info" size="60" color="#666"></uni-icons>
-          <text class="empty-text">暂无裁教数据</text>
+          <text class="empty-text">{{ currentCity ? `${currentCity}暂无裁教数据` : '暂无裁教数据' }}</text>
+          <text v-if="currentCity" class="empty-tip">可以尝试到其他城市看看</text>
         </view>
 
         <view class="loading-status">
@@ -184,6 +202,7 @@ import {ref, onMounted, computed, watch} from 'vue'
 import {onLoad, onShow} from  "@dcloudio/uni-app"
 import {getCoachList} from '@/api/billiard/coach'
 import {getRewardSwitch} from '@/api/billiard/user'
+import {getAreaTree} from '@/api/billiard/area'
 import {debounce, formatPrice, showLoading, hideLoading} from '@/utils/common'
 import {getLocation, extractCity, formatDistance, showPermissionModal} from '@/utils/location'
 import {isLoggedIn} from '@/utils/token'
@@ -230,6 +249,29 @@ const currentLocation = ref({
   latitude: null
 })
 const currentCity = ref('')
+const selectedCityId = ref(null)
+
+// 城市选择相关
+const areaLocalData = ref([])
+const areaTree = ref([])
+
+// 用于显示的城市名
+const displayCityName = computed(() => {
+  if (selectedCityId.value) {
+    const findName = (list, id) => {
+      for (const area of list) {
+        if (area.id === id) return area.name
+        if (area.children) {
+          const found = findName(area.children, id)
+          if (found) return found
+        }
+      }
+      return null
+    }
+    return findName(areaTree.value, selectedCityId.value) || ''
+  }
+  return currentCity.value || ''
+})
 
 const tabs = ['全部', '新人', '低碳出行', '活跃','沉稳','初级', '中级', '高级', '星级',]
 
@@ -368,6 +410,72 @@ const ensureLocation = async () => {
   }
 }
 
+// 加载地区树
+const loadAreaTree = async () => {
+  try {
+    const res = await getAreaTree()
+    if (res.code === 0 && res.data) {
+      // 处理数据，只保留到市级，去掉区县级
+      const processData = (list) => {
+        return list.map(item => {
+          const newItem = { ...item }
+          if (newItem.children && newItem.children.length > 0) {
+            // 处理市级，清空市级的children（去掉区县）
+            newItem.children = newItem.children.map(city => {
+              const cityItem = { ...city }
+              cityItem.children = undefined // 去掉区县级
+              return cityItem
+            })
+          }
+          return newItem
+        })
+      }
+      const processedData = processData(res.data)
+      areaTree.value = processedData
+      areaLocalData.value = processedData
+    }
+  } catch (error) {
+    console.error('加载地区树失败:', error)
+  }
+}
+
+// 从地区树中查找城市名
+const findCityNameById = (id) => {
+  if (!id) return ''
+  const findName = (list, targetId) => {
+    for (const area of list) {
+      if (area.id === targetId) return area.name
+      if (area.children) {
+        const found = findName(area.children, targetId)
+        if (found) return found
+      }
+    }
+    return null
+  }
+  return findName(areaTree.value, id) || ''
+}
+
+// 城市选择变化
+const onCityChange = async (e) => {
+  const selected = e.detail.value
+  if (selected && selected.length > 0) {
+    // 获取最后一级（城市级）
+    const selectedArea = selected[selected.length - 1]
+    selectedCityId.value = selectedArea.value
+    const cityName = findCityNameById(selectedCityId.value)
+    // 清空当前城市，使用选中的城市名
+    currentCity.value = cityName
+    // 重新加载列表
+    await loadData(true)
+  }
+}
+
+// 重新定位
+const reLocate = async () => {
+  selectedCityId.value = null
+  await refreshPageData()
+}
+
 // 页面初始化：定位完成后拉取列表，全程保持定位中状态
 const refreshPageData = async () => {
   // 审核模式开关未就绪时先等待；开启时展示球厅，不请求定位/教练数据
@@ -469,6 +577,11 @@ const fetchCoachList = async (isRefresh = false) => {
       params.latitude = currentLocation.value.latitude
     }
 
+    // 添加城市筛选参数
+    if (currentCity.value) {
+      params.city = currentCity.value
+    }
+    console.log(currentCity.value,'======currentCity.value')
     console.log("🚀 ~ loadData ~ params:", params)
     const res = await getCoachList(params)
     console.log(res,'===res')
@@ -490,13 +603,6 @@ const fetchCoachList = async (isRefresh = false) => {
       hasMore.value = list.length >= pageSize.value
     }
     loadMoreStatus.value = hasMore.value ? 'more' : 'noMore'
-
-    if (!hasMore.value && pageNo.value > 1) {
-      uni.showToast({
-        title: '没有更多了',
-        icon: 'none'
-      })
-    }
   } catch (error) {
     console.error('加载裁教列表失败:', error)
     loadMoreStatus.value = 'noMore'
@@ -659,6 +765,8 @@ onMounted(() => {
     })
   }, 100)
 
+  // 加载地区树
+  loadAreaTree()
   // 加载是否显示心意按钮
   loadCountdownEnabled()
 })
@@ -842,24 +950,95 @@ onShow(() => {
   }
 }
 
+/* 城市选择器外层容器 */
+.location-picker-wrapper {
+  margin: 0;
+  padding: 0;
+}
+
+/* 完全清除uni-data-picker的默认样式 */
+.location-picker {
+  display: block;
+  width: 100%;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  min-height: auto !important;
+  height: auto !important;
+}
+
+.location-picker :deep(.uni-data-picker) {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  min-height: auto !important;
+  height: auto !important;
+}
+
+.location-picker :deep(.uni-data-picker__picker) {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  min-height: auto !important;
+  height: auto !important;
+}
+
+.location-picker :deep(.uni-data-picker__box) {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  min-height: auto !important;
+  height: auto !important;
+}
+
+.location-picker :deep(.uni-data-picker__placeholder) {
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: auto !important;
+  height: auto !important;
+  display: none !important;
+}
+
+.location-picker :deep(.uni-data-picker__input) {
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: auto !important;
+  height: auto !important;
+}
+
 /* 定位信息 */
 .location-box {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  margin: 24rpx 30rpx 0rpx;
+  padding: 20rpx;
+  background: var(--bg-card);
+  border-radius: 16rpx;
   .location-text {
     color: var(--text-primary);
-    font-size: 26rpx;
+    font-size: 28rpx;
     flex: 1;
   }
-  .retry-btn {
+}
+
+/* 重新定位按钮 */
+.relocate-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  margin: 16rpx 30rpx 0rpx;
+  padding: 12rpx 24rpx;
+  background: rgba(0, 187, 136, 0.1);
+  border-radius: 32rpx;
+  align-self: flex-start;
+  .relocate-text {
     color: var(--brand-primary);
     font-size: 24rpx;
-    padding: 8rpx 16rpx;
-    border: 1rpx solid var(--brand-primary);
-    border-radius: 32rpx;
-    flex-shrink: 0;
   }
 }
 
@@ -875,6 +1054,13 @@ onShow(() => {
     margin-top: 20rpx;
     font-size: 28rpx;
     color: var(--text-tertiary);
+  }
+
+  .empty-tip {
+    margin-top: 12rpx;
+    font-size: 24rpx;
+    color: var(--text-tertiary);
+    opacity: 0.7;
   }
 }
 

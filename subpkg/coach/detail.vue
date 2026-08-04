@@ -70,22 +70,25 @@
         </view>
         <view class="service-list">
           <view class="service-item" :class="{selected: selectedService?.id === service.id}" v-for="(service, index) in services" :key="index">
-            <view class="service-left">
+            <view class="service-main">
               <view class="service-name-row">
+                <text class="service-icon">{{ getServiceIcon(service.type) }}</text>
                 <text class="service-name">{{ service.name }}</text>
                 <view class="tag hot" v-if="service.hot">热销</view>
               </view>
               <view class="service-desc">{{ service.desc }}</view>
-              <view class="service-sales">已售{{ service.sales }}单</view>
-            </view>
-            <view class="service-right">
-              <view class="price-row">
-                <text class="price-symbol">¥</text>
-                <text class="price">{{ formatPrice(service.price) }}</text>
-                <text class="price-unit">/{{ service.unit }}</text>
-              </view>
-              <view class="select-btn" :class="{active: selectedService?.id === service.id}" @click="selectService(service)">
-                {{ selectedService?.id === service.id ? '已选择' : '选择' }}
+              <view class="service-bottom">
+                <view class="service-sales">已售{{ service.sales }}单</view>
+                <view class="service-action">
+                  <view class="service-price">
+                    <text class="price-symbol">¥</text>
+                    <text class="price">{{ formatPrice(service.price) }}</text>
+                    <text class="price-unit">{{ service.unit }}</text>
+                  </view>
+                  <view class="select-btn" :class="{active: selectedService?.id === service.id}" @click="selectService(service)">
+                    {{ selectedService?.id === service.id ? '已选择' : '选择' }}
+                  </view>
+                </view>
               </view>
             </view>
           </view>
@@ -319,10 +322,10 @@ const showAllReviews = ref(false)
 
 // 等级映射
 const levelMap = {
-  0: '初级教练',
-  1: '中级教练',
-  2: '高级教练',
-  3: '星级教练'
+  0: '初级',
+  1: '中级',
+  2: '高级',
+  3: '星级'
 }
 
 const getLevelText = (level) => {
@@ -355,6 +358,15 @@ const formatDistance = (distance) => {
     return distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`
   }
   return distance
+}
+
+// 获取服务图标
+const getServiceIcon = (type) => {
+  if (type === 1) return '🎱'
+  if (type === 2) return '🌆'
+  if (type === 3) return '🍷'
+  if (type === 4) return '🎬'
+  return '🎱'
 }
 
 // 加载教练详情
@@ -392,13 +404,15 @@ const loadCoachData = async () => {
     })
 
 
-    const defaultServices = [
+    const totalServiceCount = data.serviceCount || data.orderCount || 0
+
+    const serviceBaseList = [
       {
         id: 1,
         type: 1,
-        name: '台球教学',
-        desc: '2小时起步，包含基础动作指导、技术纠错、实战演练',
-        sales: 86,
+        name: '台球指导',
+        desc: '提供台球基础姿势校正、击球线路规划及进阶战术对练服务。由专业助教协助提升台球技能，打造标准化的体育健身对练体验。',
+        sales: 0,
         unit: '',
         hot: true,
         hourTime: 2,
@@ -406,31 +420,62 @@ const loadCoachData = async () => {
       {
         id: 2,
         type: 2,
-        name: '达人带路',
-        desc: '5小时起达人专属向导服务，全程随行规划出行行程',
-        sales: 42,
+        name: '潮玩领航',
+        desc: '提供本地特色店铺打卡指引与特色路线规划服务。由本地达人引导体验特色场景，探索城市优质吃喝玩乐打卡点。',
+        sales: 0,
         unit: '',
         hot: false,
         hourTime: 5,
+      },
+      {
+        id: 3,
+        type: 3,
+        name: '酒艺品鉴',
+        desc: '提供酒类历史文化宣讲、酿造工艺介绍及餐酒搭配指导。侧重酒文化知识分享与品鉴技巧交流，传播健康高雅的酒道文化。',
+        sales: 0,
+        unit: '',
+        hot: false,
+        hourTime: 3,
+      },
+      {
+        id: 4,
+        type: 4,
+        name: '影视赏析',
+        desc: '提供经典影视作品的背景解读、艺术风格赏析与剧本创作探讨。通过线下观影沙龙形式，开展光影艺术交流与影视文化导读。',
+        sales: 0,
+        unit: '',
+        hot: false,
+        hourTime: 2,
       }
     ]
 
-    services.value = data.serviceItemList
+    const availableServices = data.serviceItemList
         .map(item => {
-          const localConfig = defaultServices.find(
+          const localConfig = serviceBaseList.find(
               service => service.type === item.serviceType
           )
-          // 找不到配置直接丢弃
           if (!localConfig) return null
           return {
             ...localConfig,
             ...item,
             type: item.serviceType,
-            name: localConfig.name, // 优先使用本地配置的名称
+            name: localConfig.name,
             price: item.hourlyPrice * localConfig.hourTime
           }
         })
         .filter(Boolean)
+
+    const serviceCount = availableServices.length
+    if (serviceCount > 0) {
+      const baseSales = Math.floor(totalServiceCount / serviceCount)
+      const remainder = totalServiceCount % serviceCount
+
+      availableServices.forEach((service, index) => {
+        service.sales = baseSales + (index < remainder ? 1 : 0)
+      })
+    }
+
+    services.value = availableServices
 
     // 相册（从 photos 数组中提取 photoUrl）
     if (data.photos && Array.isArray(data.photos)) {
@@ -620,25 +665,39 @@ const bookNow = async () => {
     selectedService: selectedService.value
   })
 
-  // 判断服务类型：1=台球陪练(需要选择球厅)，2=达人带路(直接创建订单)
-  const isCompanion = selectedService.value.type === 2
+  // 判断服务类型：1=台球陪练(需要选择球厅)，其他=直接创建订单
+  const isBilliardsService = selectedService.value.type === 1
 
-  if (isCompanion) {
-    // 达人带路服务，先直接创建订单
+  if (!isBilliardsService) {
+    // 非台球服务，直接创建订单
     try {
       uni.showLoading({ title: '创建订单中...' })
 
       // 计算默认预约时间（1小时后）
       const bookingTime = Date.now() + 3600000
 
-      // 达人带路服务时长：默认300分钟（5小时）
-      const serviceDuration = 300
-      const quantity = 5
+      // 根据服务类型确定默认时长
+      let serviceDuration = 120 // 默认2小时
+      let quantity = 2
+
+      if (selectedService.value.type === 2) {
+        // 达人带路：5小时
+        serviceDuration = 300
+        quantity = 5
+      } else if (selectedService.value.type === 3) {
+        // 酒文化讲解：3小时
+        serviceDuration = 180
+        quantity = 3
+      } else if (selectedService.value.type === 4) {
+        // 影视讲解分享：2小时
+        serviceDuration = 120
+        quantity = 2
+      }
 
       // 创建订单
       const createParams = {
         coachId: coachInfo.id,
-        serviceType: 2, // 达人带路
+        serviceType: selectedService.value.type,
         bookingTime: bookingTime,
         serviceDuration: serviceDuration,
         quantity: quantity,
@@ -663,7 +722,7 @@ const bookNow = async () => {
         ...resultData,
         coachInfo: coachInfo,
         selectedService: selectedService.value,
-        serviceType: 2, // 达人带路
+        serviceType: selectedService.value.type,
         serviceDuration: serviceDuration,
         quantity: quantity,
         bookingTime: bookingTime,
@@ -1002,8 +1061,6 @@ onMounted(() => {
     border-radius: 32rpx;
     padding: 32rpx;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
     border: 4rpx solid transparent;
     transition: all 0.3s;
 
@@ -1012,7 +1069,7 @@ onMounted(() => {
       background-color: rgba(0, 200, 150, 0.1);
     }
 
-    .service-left {
+    .service-main {
       flex: 1;
 
       .service-name-row {
@@ -1020,6 +1077,10 @@ onMounted(() => {
         align-items: center;
         gap: 20rpx;
         margin-bottom: 12rpx;
+
+        .service-icon {
+          font-size: 36rpx;
+        }
 
         .service-name {
           font-size: 32rpx;
@@ -1039,45 +1100,61 @@ onMounted(() => {
       .service-desc {
         font-size: 26rpx;
         color: var(--text-tertiary);
-        margin-bottom: 12rpx;
+        margin-bottom: 16rpx;
         line-height: 1.5;
       }
 
-      .service-sales {
-        font-size: 24rpx;
-        color: var(--text-tertiary);
-      }
-    }
-
-    .service-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 20rpx;
-
-      .price-row {
+      .service-bottom {
         display: flex;
-        align-items: baseline;
+        justify-content: space-between;
+        align-items: center;
 
-        .price-symbol {
-          font-size: 28rpx;
-          color: #00c896;
-          font-weight: 600;
+        .service-sales {
+          font-size: 24rpx;
+          color: var(--text-tertiary);
         }
 
-        .price {
-          font-size: 48rpx;
-          color: #00c896;
-          font-weight: 700;
-        }
+        .service-action {
+          display: flex;
+          align-items: center;
+          gap: 20rpx;
 
-        .price-unit {
-          font-size: 26rpx;
-          color: #999999;
-        }
+          .service-price {
+            display: flex;
+            align-items: baseline;
 
-        &:last-child {
-          color: #999;
+            .price-symbol {
+              font-size: 28rpx;
+              color: #00c896;
+              font-weight: 600;
+            }
+
+            .price {
+              font-size: 48rpx;
+              color: #00c896;
+              font-weight: 700;
+            }
+
+            .price-unit {
+              font-size: 26rpx;
+              color: #999999;
+            }
+          }
+
+          .select-btn {
+            padding: 16rpx 32rpx;
+            border-radius: 40rpx;
+            font-size: 26rpx;
+            font-weight: 600;
+            color: #ffffff;
+            background-color: #00c896;
+            border: none;
+            transition: all 0.3s;
+
+            &.active {
+              background-color: #059669;
+            }
+          }
         }
       }
     }
@@ -1086,8 +1163,8 @@ onMounted(() => {
 
 .album-scroll {
   width: 100%;
-  margin-left: -40rpx;
-  padding: 0 40rpx;
+  //margin-left: -10rpx;
+  padding: 0 10rpx;
 
   .album-grid {
     display: inline-flex;
