@@ -29,13 +29,13 @@
         >
           <swiper-item v-for="(item, index) in bannerList" :key="index" @click="handleBannerClick(item)">
             <view class="banner-card">
-              <image class="banner-img" :src="item.img" mode="aspectFill"></image>
-              <view class="banner-overlay">
-                <view class="banner-content">
-                  <text class="banner-tag">限时特惠</text>
-                  <text class="banner-title">新人首单立减50元</text>
-                </view>
-              </view>
+              <image class="banner-img" :src="item.imageUrl" mode="aspectFill"></image>
+<!--              <view class="banner-overlay">-->
+<!--                <view class="banner-content">-->
+<!--                  <text class="banner-tag">{{ item.tag || '限时特惠' }}</text>-->
+<!--                  <text class="banner-title">{{ item.title || '新人首单立减50元' }}</text>-->
+<!--                </view>-->
+<!--              </view>-->
             </view>
           </swiper-item>
         </swiper>
@@ -53,35 +53,6 @@
         </view>
       </view>
 
-      <!-- 服务入口 -->
-      <view class="service-section" v-if="showCoachSections">
-        <view class="section-title-wrap">
-          <text class="section-title">热门服务</text>
-          <text class="section-desc">为您精选优质服务</text>
-        </view>
-        <view class="service-grid">
-          <view
-              class="service-item"
-              v-for="(item, index) in serviceList"
-              :key="item.id"
-              @click="handleServiceClick(item)"
-          >
-            <view class="service-bg" :style="{background: item.bgGradient}"></view>
-            <view class="service-content">
-              <view class="service-icon-wrap" :style="{background: item.iconBg}">
-                <text class="service-emoji">{{item.icon}}</text>
-              </view>
-              <view class="service-body">
-                <text class="s-title">{{item.title}}</text>
-                <text class="s-desc">{{item.desc}}</text>
-              </view>
-              <view class="service-arrow">
-                <uni-icons type="right" size="16" color="rgba(255,255,255,0.5)" />
-              </view>
-            </view>
-          </view>
-        </view>
-      </view>
 
       <!-- 热门裁教 -->
       <view class="section-container" v-if="showCoachSections">
@@ -119,11 +90,18 @@
               </view>
               <view class="hot-info">
                 <text class="hot-name">{{item.name}}</text>
+                <!-- 新增：裁教简介 -->
+<!--                <text class="hot-desc" v-if="item.desc">{{item.desc}}</text>-->
                 <view class="hot-stats">
                   <text class="stat-count">已接{{item.orderCount}}单</text>
                   <view class="order-icon">
                     <uni-icons type="checkbox-filled" size="12" color="#00BB88" />
                   </view>
+                </view>
+                <!-- 新增：价格信息 -->
+                <view class="price-info" v-if="item.price">
+                  <text class="price-text">¥{{item.price}}</text>
+                  <text class="price-unit">/小时</text>
                 </view>
               </view>
             </view>
@@ -164,6 +142,10 @@
                     <text>NEW</text>
                   </view>
                   <view class="shine-overlay"></view>
+                  <!-- 新增：在线状态指示器 -->
+                  <view class="new-online-status" v-if="item.online">
+                    <view class="online-dot"></view>
+                  </view>
                 </view>
                 <text class="new-name">{{item.name}}</text>
               </view>
@@ -172,7 +154,7 @@
         </view>
       </view>
 
-      <view class="safe-bottom"></view>
+<!--      <view class="safe-bottom"></view>-->
     </scroll-view>
     <!-- #ifdef APP-PLUS -->
     <ios-privacy-dialog ref="privacyDialogRef" @agree="handlePrivacyAgreed" />
@@ -183,7 +165,7 @@
 <script setup>
 import {ref, computed, onMounted, nextTick, watch} from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import { getNewCoachList, getHotCoachList } from '@/api/billiard/coach'
+import { getNewCoachList, getHotCoachList, getBannerList } from '@/api/billiard/coach'
 import { shouldShowIosPrivacy, hasPrivacyRefused } from '@/utils/privacy'
 import { isIOS, isMPWeixin } from '@/utils/platform'
 import { isLoggedIn } from '@/utils/token'
@@ -220,10 +202,7 @@ const loading = ref(false)
 const locationDenied = ref(false) // 记录是否已拒绝定位权限
 const hasQueriedVenue = ref(false) // 记录是否已查询过球厅列表
 
-const bannerList = ref([
-  { id: 1, img: '/static/images/banner/banner01.jpg' },
-  // { id: 2, img: '/static/images/banner/banner02.jpg' }
-])
+const bannerList = ref([])
 const privacyDialogRef = ref(null)
 
 // 更新自定义 TabBar 选中状态
@@ -254,41 +233,41 @@ function handlePrivacyAgreed() {
   initData()
 }
 
-const serviceList = ref([
-  {
-    id: 1,
-    title: '沉稳耐心',
-    desc: '细致教学，稳扎稳打',
-    priceColor: '#00BB88',
-    icon: '🧘',
-    iconBg: 'rgba(0, 187, 136, 0.2)',
-    bgGradient: 'linear-gradient(135deg, rgba(0, 187, 136, 0.15) 0%, rgba(0, 187, 136, 0.05) 100%)'
-  },
-  {
-    id: 2,
-    title: '活跃热情',
-    desc: '活力满满，快速提升',
-    priceColor: '#3B82F6',
-    icon: '⚡',
-    iconBg: 'rgba(59, 130, 246, 0.2)',
-    bgGradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%)'
-  }
-])
 
 const hotCoachList = ref([])
 const newCoachList = ref([])
 
+const loadBanners = async () => {
+  try {
+    const res = await getBannerList()
+    const list = res.data.banners || []
+    bannerList.value = Array.isArray(list) ? list.map(item => ({
+      id: item.id,
+      imageUrl: item.imageUrl,
+      linkType: item.linkType,
+      linkUrl: item.linkUrl,
+      tag: item.tag,
+      title: item.title
+    })) : []
+  } catch (error) {
+    console.error('加载轮播图失败:', error)
+  }
+}
+
 const loadHotCoaches = async () => {
   try {
-    const res = await getHotCoachList({ limit: 10 })
-    const list = res.data || res || []
+    const res = await getHotCoachList({ limit: 20 }) // 减少显示数量以突出单个卡片
+    const list = res.data?.filter(item => item.id !== 27) || res || []
     hotCoachList.value = Array.isArray(list) ? list.map(item => ({
       id: item.id,
       name: item.stageName,
       avatar: item.avatar || item.mainPhotoUrl || 'https://picsum.photos/300/300',
       score: item.overallScore || 5.0,
       orderCount: item.serviceCount || 0,
-      online: Math.random() > 0.3
+      online: Math.random() > 0.3,
+      level: item.level || '资深', // 新增：裁教等级
+      // desc: item.introduction || '专业裁教，经验丰富', // 新增：简介
+      price: item.hourlyRate || 120 // 新增：小时价格
     })) : []
   } catch (error) {
     console.error('加载热门裁教失败:', error)
@@ -300,12 +279,13 @@ const loadHotCoaches = async () => {
 
 const loadNewCoaches = async () => {
   try {
-    const res = await getNewCoachList({ limit: 10 })
+    const res = await getNewCoachList({ limit: 20 })
     const list = res.data || res || []
     newCoachList.value = Array.isArray(list) ? list.map(item => ({
       id: item.id,
       name: item.stageName,
       avatar: item.avatar || item.mainPhotoUrl || 'https://picsum.photos/300/300',
+      online: Math.random() > 0.5 // 新增：在线状态
     })) : []
   } catch (error) {
     console.error('加载新人裁教失败:', error)
@@ -319,7 +299,9 @@ const goCoachList = () => {
   })
 }
 
-const handleBannerClick = () => goCoachList()
+const handleBannerClick = (item) => {
+ return
+}
 const handleServiceClick = (item) => {
   // 根据服务类型设置默认筛选标签
   if (item.title === '沉稳耐心') {
@@ -368,6 +350,7 @@ const initData = async () => {
   if (reviewMode.value) return
   loading.value = true
   await Promise.all([
+    loadBanners(),
     loadHotCoaches(),
     loadNewCoaches()
   ])
@@ -405,7 +388,6 @@ onShow(() => {
   if (!isLoggedIn()) {
     openPrivacyDialogIfNeeded()
   }
-  // 每次页面显示时都重新加载数据，确保显示最新内容
   initData()
   // 更新自定义 TabBar 选中状态
   updateCustomTabBar()
@@ -595,13 +577,13 @@ onShow(() => {
 
 /* 轮播图 */
 .banner-section {
-  margin: 0 30rpx 40rpx;
+  margin: 0 30rpx 50rpx;
   border-radius: 32rpx;
   overflow: hidden;
   box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.3);
 
   .banner-swiper {
-    height: 360rpx;
+    height: 420rpx;
     border-radius: 32rpx;
     overflow: hidden;
 
@@ -616,7 +598,6 @@ onShow(() => {
     .banner-img {
       width: 100%;
       height: 100%;
-      transform: scale(1.02);
       transition: transform 0.4s ease;
     }
 
@@ -774,13 +755,13 @@ onShow(() => {
 
 /* 通用章节 */
 .section-container {
-  padding: 0 30rpx 44rpx;
+  padding: 0 30rpx 50rpx;
 
   .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 28rpx;
+    margin-bottom: 32rpx;
 
     .title-left {
       display: flex;
@@ -885,10 +866,10 @@ onShow(() => {
   display: inline-flex;
 
   .hot-coach-card {
-    width: 260rpx;
-    margin-right: 20rpx;
+    width: 320rpx;
+    margin-right: 24rpx;
     background: var(--bg-card);
-    border-radius: 28rpx;
+    border-radius: 32rpx;
     overflow: hidden;
     flex-shrink: 0;
     box-shadow: var(--card-shadow);
@@ -907,7 +888,7 @@ onShow(() => {
     .hot-img-box {
       position: relative;
       width: 100%;
-      height: 260rpx;
+      height: 320rpx;
       overflow: hidden;
 
       .hot-avatar {
@@ -985,25 +966,51 @@ onShow(() => {
           font-weight: 700;
         }
       }
+
+      .level-tag {
+        position: absolute;
+        top: 16rpx;
+        right: 16rpx;
+        background: linear-gradient(135deg, #F59E0B, #D97706);
+        color: #fff;
+        font-size: 18rpx;
+        font-weight: 700;
+        padding: 4rpx 10rpx;
+        border-radius: 20rpx;
+        box-shadow: 0 2rpx 8rpx rgba(245, 158, 11, 0.3);
+      }
     }
 
     .hot-info {
-      padding: 20rpx;
+      padding: 24rpx;
 
       .hot-name {
         color: var(--text-primary);
-        font-size: 30rpx;
-        font-weight: 600;
-        margin-bottom: 10rpx;
+        font-size: 32rpx;
+        font-weight: 700;
+        margin-bottom: 8rpx;
         overflow: hidden;
         text-overflow: ellipsis;
         display: block;
+      }
+
+      .hot-desc {
+        color: var(--text-secondary);
+        font-size: 22rpx;
+        line-height: 1.4;
+        margin-bottom: 12rpx;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
       }
 
       .hot-stats {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        margin-bottom: 12rpx;
 
         .stat-count {
           color: var(--text-secondary);
@@ -1019,6 +1026,24 @@ onShow(() => {
           display: flex;
           align-items: center;
           justify-content: center;
+        }
+      }
+
+      .price-info {
+        display: flex;
+        align-items: baseline;
+        gap: 4rpx;
+
+        .price-text {
+          color: var(--brand-primary);
+          font-size: 36rpx;
+          font-weight: 800;
+        }
+
+        .price-unit {
+          color: var(--text-secondary);
+          font-size: 22rpx;
+          font-weight: 500;
         }
       }
     }
@@ -1062,8 +1087,8 @@ onShow(() => {
 
     .new-img-wrap {
       position: relative;
-      width: 112rpx;
-      height: 112rpx;
+      width: 140rpx;
+      height: 140rpx;
       padding: 6rpx;
       background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #3B82F6 100%);
       border-radius: 50%;
@@ -1123,18 +1148,37 @@ onShow(() => {
         animation: shine 3s ease-in-out infinite;
         z-index: 3;
       }
+
+      .new-online-status {
+        position: absolute;
+        bottom: 8rpx;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 4;
+      }
+
+      .online-dot {
+        width: 16rpx;
+        height: 16rpx;
+        background: #00BB88;
+        border-radius: 50%;
+        border: 1rpx solid var(--bg-page);
+        box-shadow: 0 0 8rpx rgba(0, 187, 136, 0.6);
+      }
     }
 
     .new-name {
       color: var(--text-primary);
-      font-size: 26rpx;
+      font-size: 28rpx;
       font-weight: 600;
       max-width: 140rpx;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       text-align: center;
+      margin-bottom: 6rpx;
     }
+
 
     &:last-child {
       margin-right: 0;

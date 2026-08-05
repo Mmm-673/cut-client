@@ -1,6 +1,22 @@
 import request from '@/utils/request'
 
 /**
+ * 获取轮播图数据
+ * @returns {Promise<Object>} 返回轮播图数据
+ * @returns {Array} returns.data - 轮播图列表
+ * @returns {string} returns.data[].imageurl - 图片访问地址
+ * @returns {number} returns.data[].linkType - 点击跳转类型
+ * @returns {string} [returns.data[].linkUrl] - 外部链接地址（当 linkType=3 时）
+ */
+export function getBannerList() {
+  return request({
+    url: '/app-api/billiard/home',
+    method: 'get',
+    headers: { isToken: true }
+  })
+}
+
+/**
  * 获取在线裁教分页列表
  * @param {Object} params - 请求参数
  * @param {number} [params.pageNo=1] - 页码，默认 1
