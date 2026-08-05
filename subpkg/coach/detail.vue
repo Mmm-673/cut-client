@@ -51,16 +51,6 @@
         </view>
       </view>
 
-      <!-- 个人介绍 -->
-      <view class="section">
-        <view class="section-title">
-          <uni-icons type="person" size="18" color="#00c896"></uni-icons>
-          <text>个人介绍</text>
-        </view>
-        <view class="intro-content">
-          <text>{{ coachInfo.introduction || coachInfo.intro }}</text>
-        </view>
-      </view>
 
       <!-- 服务项目 -->
       <view class="section" >
@@ -92,6 +82,17 @@
               </view>
             </view>
           </view>
+        </view>
+      </view>
+
+      <!-- 个人介绍 -->
+      <view class="section">
+        <view class="section-title">
+          <uni-icons type="person" size="18" color="#00c896"></uni-icons>
+          <text>个人介绍</text>
+        </view>
+        <view class="intro-content">
+          <text>{{ coachInfo.introduction || coachInfo.intro }}</text>
         </view>
       </view>
 
@@ -781,6 +782,12 @@ onLoad((options) => {
 onShow(() => {
   // 页面显示时更新登录状态
   isUserLoggedIn.value = isLoggedIn()
+  // 每次页面显示时都重新加载数据，确保显示最新内容
+  if (coachId.value) {
+    loadCoachData()
+  }
+  // 重新加载按钮状态
+  loadCountdownEnabled()
 })
 
 onMounted(() => {

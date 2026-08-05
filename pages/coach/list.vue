@@ -831,10 +831,10 @@ onShow(() => {
     console.error('处理默认tab失败:', e)
   }
 
-  // 如果需要刷新数据
+  // 每次页面显示时都重新加载数据，确保显示最新内容
   if (needRefresh) {
     loadData(true)
-  } else if (locationDenied.value || !coachList.value.length || !hasCoordinates()) {
+  } else {
     refreshPageData()
   }
   // 更新自定义 TabBar 选中状态

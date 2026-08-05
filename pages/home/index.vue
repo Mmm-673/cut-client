@@ -1,19 +1,5 @@
 <template>
   <view class="home-wrapper" :class="themeClass">
-    <!-- 导航栏 -->
-<!--    <view class="navbar" :style="{ paddingTop: statusBarHeight + 'rpx', height: navBarHeight + 'rpx' }">-->
-<!--      <view class="nav-left">-->
-<!--        <view class="logo-circle">-->
-<!--          <image class="logo-img" :src="globalConfig.appInfo.logo" mode="aspectFit"></image>-->
-<!--          <view class="logo-glow"></view>-->
-<!--        </view>-->
-<!--        <view class="nav-title-group">-->
-<!--          <text class="nav-title">初球</text>-->
-<!--          <text class="nav-subtitle">专业裁教预约平台</text>-->
-<!--        </view>-->
-<!--      </view>-->
-<!--    </view>-->
-
     <!-- 滚动区域 -->
     <scroll-view scroll-y class="scroll-container" show-scrollbar="false" :style="{ paddingTop: navBarHeight + 'rpx', height: `calc(100vh)` }">
       <!-- 欢迎语 -->
@@ -419,10 +405,8 @@ onShow(() => {
   if (!isLoggedIn()) {
     openPrivacyDialogIfNeeded()
   }
-  // 开关在页面存活期间变为正常模式且教练数据为空时，补加载数据
-  if (reviewLoaded.value && !reviewMode.value && !hotCoachList.value.length && !loading.value) {
-    initData()
-  }
+  // 每次页面显示时都重新加载数据，确保显示最新内容
+  initData()
   // 更新自定义 TabBar 选中状态
   updateCustomTabBar()
 })
