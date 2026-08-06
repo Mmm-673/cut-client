@@ -75,7 +75,7 @@ export function getOrderDetail(params) {
  * 创建订单
  * @param {Object} data - 请求参数
  * @param {number} data.coachId - 裁教ID（billiard_coach.id），必须为在线状态
- * @param {number} data.serviceType - 服务类型：1=台球陪练 2=达人带路
+ * @param {number} data.serviceType - 服务类型：1=台球陪练 2=达人带路 3=酒艺品鉴 4=影视赏析
  * @param {number} data.bookingTime - 预约服务开始时间（毫秒时间戳）
  * @param {number} data.serviceDuration - 预定时长（分钟），台球陪练 >= 120，达人带路 >= 300
  * @param {number} data.quantity - 份数或小时数，用于金额计算
@@ -85,6 +85,7 @@ export function getOrderDetail(params) {
  * @param {string} [data.venueAddress] - 服务地址文本，达人带路场景可由前端约定地点回填
  * @param {number} [data.venueLongitude] - 服务地址经度，用于导航与车费测算
  * @param {number} [data.venueLatitude] - 服务地址纬度，用于导航与车费测算
+ * @param {string} [data.servicePlaceToken] - 地点搜索接口返回的 selectionToken，serviceType=2/3/4 时必填
  * @param {number} [data.couponId] - 使用的优惠券ID；不使用则不传
  * @param {string} [data.remark] - 备注，最长 500 字符
  *

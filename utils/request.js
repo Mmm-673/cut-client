@@ -3,6 +3,7 @@ import { getAccessToken, getRefreshToken, shouldRefreshToken, setAuthInfo, clear
 import getErrorMessage from '@/utils/error-messages'
 import { toast } from '@/utils/common'
 import { isMP, isHarmony } from '@/utils/platform'
+import { refreshToken } from '@/api/auth'
 
 let timeout = 10000
 const baseUrl = config.baseUrl
@@ -27,38 +28,21 @@ function onTokenRefreshed() {
  * 刷新Token
  */
 async function refreshTokenRequest() {
-  const refreshToken = getRefreshToken()
-  if (!refreshToken) {
+  const refreshTokenValue = getRefreshToken()
+  if (!refreshTokenValue) {
     return Promise.reject(new Error('Refresh token is missing'))
   }
 
-  return new Promise((resolve, reject) => {
-    uni.request({
-      method: 'POST',
-      timeout: timeout,
-      url: baseUrl + '/app-api/member/auth/refresh-token',
-      data: {
-        refreshToken: refreshToken
-      },
-      header: {
-        'Content-Type': 'application/json',
-        'tenant-id': '122'
-      },
-      dataType: 'json'
-    }).then(response => {
-      const res = response
-      const code = res.data.code || 0
-      if (code === 0 && res.data.data) {
-        const data = res.data.data
-        setAuthInfo(data)
-        resolve(data.accessToken)
-      } else {
-        reject(res.data)
-      }
-    }).catch(error => {
-      reject(error)
-    })
-  })
+  try {
+    const response = await refreshToken(refreshTokenValue)
+    if (response.data) {
+      setAuthInfo(response.data)
+      return response.data.accessToken
+    }
+    return Promise.reject(new Error('Refresh token failed'))
+  } catch (error) {
+    return Promise.reject(error)
+  }
 }
 
 const request = async config => {
@@ -75,6 +59,8 @@ const request = async config => {
 
   // 添加 tenant-id
   config.header['tenant-id'] = '122'
+  // 添加客户端版本号
+  config.header['client-version'] = '1.0.1'
 
   // 添加 Authorization header
   const accessToken = getAccessToken()

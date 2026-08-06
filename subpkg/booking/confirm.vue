@@ -73,6 +73,39 @@
             <uni-icons type="right" size="18" color="#9CA3AF" />
           </view>
         </view>
+
+        <!-- 服务类型 2/3/4 需要选择服务城市和服务地点 -->
+        <view class="info-row venue-row" v-if="[2, 3, 4].includes(serviceType)">
+          <text class="label">服务城市</text>
+          <view class="value-wrap venue-wrap location-picker-wrapper" @click="showCityPicker = true">
+            <view class="location-box">
+              <uni-icons type="location" size="18" color="#00BB88" />
+              <text class="location-text">
+                <text v-if="locating">定位中...</text>
+                <text v-else-if="locationDenied">定位权限未开启</text>
+                <text v-else-if="displayCityName">{{ displayCityName }}</text>
+                <text v-else>选择城市</text>
+              </text>
+              <uni-icons type="right" size="16" color="#9CA3AF" />
+            </view>
+          </view>
+        </view>
+
+        <view class="info-row venue-row" v-if="[2, 3, 4].includes(serviceType)">
+          <text class="label">服务地点</text>
+          <view class="value-wrap venue-wrap location-picker-wrapper" @click="showPlacePicker = true">
+            <view class="location-box">
+              <uni-icons type="location" size="18" color="#00BB88" />
+              <text class="location-text">
+                <text v-if="selectedPlace">{{ selectedPlace.name }}</text>
+                <text v-else>选择服务地点</text>
+              </text>
+              <uni-icons type="right" size="16" color="#9CA3AF" />
+            </view>
+          </view>
+        </view>
+
+
       </view>
 
       <!-- 订单信息 -->
@@ -91,7 +124,7 @@
       </view>
 
       <!-- 费用明细 -->
-      <view class="info-card">
+      <view class="info-card" v-if="isOrderCreated">
         <view class="card-title">费用明细</view>
 
         <view class="fee-row">
@@ -165,20 +198,108 @@
     </view>
 
     <!-- 底部支付栏 -->
-    <view class="bottom-bar">
-      <view class="total-info">
+    <view class="bottom-bar" v-if="showBottomBar">
+      <view class="total-info" v-if="isOrderCreated">
         <text class="total-label">总计：</text>
         <text class="total-price">¥{{ (orderData.payAmount / 100).toFixed(2) }}</text>
       </view>
       <button
           class="pay-btn"
-          :class="{disabled: !canAction}"
+          :class="{disabled: !canAction, fullWidth: !isOrderCreated}"
           :disabled="!canAction"
           @click="handleAction"
       >
         {{ isSubmitting ? '处理中...' : (isOrderCreated ? '立即支付' : '创建订单') }}
       </button>
     </view>
+
+
+    <!-- 手动实现的城市选择器 -->
+    <view class="city-picker-mask" v-if="showCityPicker" @click="showCityPicker = false">
+      <view class="city-picker-wrapper" @click.stop>
+        <view class="city-picker-header">
+          <text class="cancel-btn" @click="showCityPicker = false">取消</text>
+          <text class="picker-title">选择城市</text>
+          <text class="confirm-btn" @click="confirmCitySelection">确定</text>
+        </view>
+        <view class="city-picker-content">
+          <!-- 省份选择 -->
+          <view class="province-list">
+            <view
+                v-for="(province, index) in areaTree"
+                :key="index"
+                :class="{active: selectedProvinceIndex === index}"
+                class="province-item"
+                @click="onProvinceSelect(index)"
+            >
+              {{ province.name }}
+            </view>
+          </view>
+          <!-- 城市选择 -->
+          <view class="city-list">
+            <view
+                v-for="(city, index) in selectedProvince?.children || []"
+                :key="index"
+                :class="{active: selectedCityIndex === index}"
+                class="city-item"
+                @click="onCitySelect(index)"
+            >
+              {{ city.name }}
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 服务地点选择器 -->
+    <view class="place-picker-mask" v-if="showPlacePicker" @click="showPlacePicker = false">
+      <view class="place-picker-wrapper" @click.stop>
+        <view class="place-picker-header">
+          <text class="cancel-btn" @click="showPlacePicker = false">取消</text>
+          <text class="picker-title">选择服务地点</text>
+          <text class="confirm-btn" @click="confirmPlaceSelection" :class="{disabled: !selectedPlace}">确定</text>
+        </view>
+        <view class="place-picker-content">
+          <!-- 搜索框 -->
+          <view class="search-box">
+            <uni-icons type="search" size="18" color="#9CA3AF" />
+            <input
+                v-model="placeSearchKeyword"
+                class="search-input"
+                placeholder="请输入服务地点关键词"
+                @input="onPlaceSearch"
+                @confirm="onPlaceSearch"
+            />
+            <uni-icons
+                v-if="placeSearchKeyword"
+                type="clear"
+                size="18"
+                color="#9CA3AF"
+                class="clear-icon"
+                @click="clearSearch"
+            />
+          </view>
+          <!-- 搜索结果 -->
+          <view class="place-results" v-if="placeSearchResults.length > 0">
+            <view
+                v-for="(place, index) in placeSearchResults"
+                :key="index"
+                :class="{active: selectedPlace?.name === place.name}"
+                class="place-item"
+                @click="selectPlace(place)"
+            >
+              <text class="place-name">{{ place.name }}</text>
+              <text class="place-address">{{ place.address }}</text>
+            </view>
+          </view>
+          <!-- 无结果提示 -->
+          <view class="no-results" v-if="placeSearchKeyword && placeSearchResults.length === 0">
+            未找到相关地点，请尝试其他关键词
+          </view>
+        </view>
+      </view>
+    </view>
+
 
     <!-- 时间选择器弹窗 -->
     <view class="time-picker-mask" v-if="showTimePicker" @click="cancelTime">
@@ -229,6 +350,7 @@
         </picker-view>
       </view>
     </view>
+
   </view>
 </template>
 
@@ -238,9 +360,12 @@ import { useThemeStore } from '@/store'
 import { fetchEnabledChannels, executePayment } from '@/utils/payment'
 import { createOrder } from '@/api/billiard/order'
 import { getCoachDetail } from '@/api/billiard/coach'
+import { searchServicePlace } from '@/api/billiard/venue'
+import { getAreaTree } from '@/api/billiard/area'
 import { onLoad } from '@dcloudio/uni-app'
 import { getWallet } from '@/api/billiard/wallet'
 import { guardReviewEntry } from '@/utils/review'
+import { getLocation, extractStreet, extractCity, showPermissionModal, openAppSetting } from '@/utils/location'
 
 // 主题相关
 const themeStore = useThemeStore()
@@ -253,6 +378,88 @@ const selectedPay = ref('')
 const showTimePicker = ref(false)
 const createDirect = ref(false)
 const isOrderCreated = ref(false)
+
+// 地点选择相关
+const placeSearchKeyword = ref('')
+const placeSearchResults = ref([])
+const selectedPlace = ref(null)
+
+// 定位相关
+const locating = ref(false)
+const locationDenied = ref(false) // 记录是否已拒绝定位权限
+const currentLocation = ref({
+  longitude: null,
+  latitude: null
+})
+const currentCity = ref('') // 当前定位的城市名称
+
+// 城市选择相关
+const areaLocalData = ref([])
+const areaTree = ref([])
+const selectedCityId = ref(null)
+const showCityPicker = ref(false)
+const selectedProvinceIndex = ref(-1)
+const selectedCityIndex = ref(-1)
+
+	// 服务地点选择相关
+	const showPlacePicker = ref(false)
+
+// 城市选择器操作
+const onProvinceSelect = (index) => {
+  selectedProvinceIndex.value = index
+  selectedCityIndex.value = -1
+}
+
+const onCitySelect = (index) => {
+  selectedCityIndex.value = index
+}
+
+const confirmCitySelection = () => {
+  if (selectedProvinceIndex.value !== -1 && selectedCityIndex.value !== -1) {
+    const province = areaTree.value[selectedProvinceIndex.value]
+    const city = province.children[selectedCityIndex.value]
+    selectedCityId.value = city.id
+    currentCity.value = city.name
+    showCityPicker.value = false
+  } else {
+    uni.showToast({ title: '请选择城市', icon: 'none' })
+  }
+}
+
+// 服务地点选择器操作
+const confirmPlaceSelection = () => {
+  if (selectedPlace.value) {
+    showPlacePicker.value = false
+  } else {
+    uni.showToast({ title: '请选择服务地点', icon: 'none' })
+  }
+}
+
+const selectPlace = (place) => {
+  selectedPlace.value = place
+}
+
+const selectedProvince = computed(() => {
+  return selectedProvinceIndex.value !== -1 ? areaTree.value[selectedProvinceIndex.value] : null
+})
+
+// 用于显示的城市名
+const displayCityName = computed(() => {
+  if (selectedCityId.value) {
+    const findName = (list, id) => {
+      for (const area of list) {
+        if (area.id === id) return area.name
+        if (area.children) {
+          const found = findName(area.children, id)
+          if (found) return found
+        }
+      }
+      return null
+    }
+    return findName(areaTree.value, selectedCityId.value) || ''
+  }
+  return currentCity.value || ''
+})
 
 // 订单数据
 const orderData = ref({})
@@ -465,6 +672,11 @@ const canAction = computed(() => {
   if (orderExpired.value) return false
 
   if (!isOrderCreated.value) {
+    // 服务类型 2/3/4 需要选择服务地点
+    if ([2, 3, 4].includes(serviceType.value)) {
+      return orderData.value.bookingTime !== undefined && selectedPlace.value
+    }
+    // 服务类型 1 需要选择球厅
     return orderData.value.bookingTime !== undefined
   } else {
     return orderData.value.payOrderId !== null && orderData.value.payOrderId !== undefined && !!selectedPayChannel.value
@@ -472,6 +684,175 @@ const canAction = computed(() => {
 })
 
 // ---------------------- 方法 ----------------------
+// 获取当前位置（使用统一封装）
+const getCurrentLocation = async () => {
+  if (locating.value) return
+  locating.value = true
+
+  try {
+    const { longitude, latitude, regeocodeData } = await getLocation({ needRegeocode: true })
+    currentLocation.value = { longitude, latitude }
+    currentCity.value = extractCity(regeocodeData)
+    locationDenied.value = false // 重置权限拒绝状态
+  } catch (err) {
+    console.error('定位失败:', err)
+    if (err.message === 'permission_denied') {
+      locationDenied.value = true // 标记权限被拒绝
+      showPermissionModal({
+        content: '您未开启定位权限，将无法获取当前位置。是否前往开启？',
+        onSuccess: () => {
+          locationDenied.value = false // 用户去设置了，重置状态
+          getCurrentLocation()
+        }
+      })
+    } else {
+      uni.showToast({ title: '定位失败，请检查定位功能', icon: 'none' })
+    }
+  } finally {
+    locating.value = false
+  }
+}
+
+// 选择城市
+const selectCity = (city) => {
+  currentCity.value = city
+  showCityList.value = false
+  // 重置地点搜索结果
+  placeSearchKeyword.value = ''
+  placeSearchResults.value = []
+  selectedPlace.value = null
+}
+
+// 加载地区树
+const loadAreaTree = async () => {
+  try {
+    const res = await getAreaTree()
+    if (res.code === 0 && res.data) {
+      // 处理数据，只保留到市级，去掉区县级
+      const processData = (list) => {
+        return list.map(item => {
+          const newItem = { ...item }
+          if (newItem.children && newItem.children.length > 0) {
+            // 处理市级，清空市级的children（去掉区县）
+            newItem.children = newItem.children.map(city => {
+              const cityItem = { ...city }
+              cityItem.children = undefined // 去掉区县级
+              return cityItem
+            })
+          }
+          return newItem
+        })
+      }
+      const processedData = processData(res.data)
+      areaTree.value = processedData
+      areaLocalData.value = processedData
+    }
+  } catch (error) {
+    console.error('加载地区树失败:', error)
+  }
+}
+
+// 从地区树中查找城市名
+const findCityNameById = (id) => {
+  if (!id) return ''
+  const findName = (list, targetId) => {
+    for (const area of list) {
+      if (area.id === targetId) return area.name
+      if (area.children) {
+        const found = findName(area.children, targetId)
+        if (found) return found
+      }
+    }
+    return null
+  }
+  return findName(areaTree.value, id) || ''
+}
+
+// 城市选择变化
+const onCityChange = async (e) => {
+  const selected = e.detail.value
+  if (selected && selected.length > 0) {
+    // 获取最后一级（城市级）
+    const selectedArea = selected[selected.length - 1]
+    selectedCityId.value = selectedArea.value
+    const cityName = findCityNameById(selectedCityId.value)
+    // 清空当前城市，使用选中的城市名
+    currentCity.value = cityName
+    // 重置地点搜索结果
+    placeSearchKeyword.value = ''
+    placeSearchResults.value = []
+    selectedPlace.value = null
+  }
+}
+
+// 重新定位
+const reLocate = async () => {
+  selectedCityId.value = null
+  await getCurrentLocation()
+}
+
+// 地点搜索
+const onPlaceSearch = async () => {
+  if (!placeSearchKeyword.value.trim()) {
+    placeSearchResults.value = []
+    return
+  }
+
+  try {
+    const res = await searchServicePlace({
+      keywords: placeSearchKeyword.value,
+      city: displayCityName.value
+    })
+    if (res.code === 0 && res.data) {
+      placeSearchResults.value = res.data
+    }
+  } catch (error) {
+    console.error('搜索地点失败:', error)
+    uni.showToast({ title: '搜索失败，请重试', icon: 'none' })
+  }
+}
+
+// 获取选中的城市名称
+const getSelectedCityName = () => {
+  if (selectedAreaIds.value.length === 0) return null
+
+  // 从 areaTree 中查找选中的城市名称
+  const findArea = (list, id) => {
+    for (const area of list) {
+      if (area.id === id) return area
+      if (area.children) {
+        const found = findArea(area.children, id)
+        if (found) return found
+      }
+    }
+    return null
+  }
+
+  const selectedAreaId = selectedAreaIds.value[selectedAreaIds.value.length - 1]
+  const area = findArea(areaTree.value, selectedAreaId)
+  return area?.name
+}
+
+// 清除搜索
+const clearSearch = () => {
+  placeSearchKeyword.value = ''
+  placeSearchResults.value = []
+}
+
+// 获取选中的城市名称（使用当前选择的城市）
+const selectedAreaName = computed(() => {
+  return currentCity.value
+})
+
+// 城市选择器显示和隐藏
+const showBottomBar = ref(true)
+const onPickerShow = () => {
+  showBottomBar.value = false
+}
+const onPickerHide = () => {
+  showBottomBar.value = true
+}
+
 // 格式化时间
 const formatTime = (timestamp) => {
   if (!timestamp) return ''
@@ -555,7 +936,13 @@ const handleAction = async () => {
     uni.showToast({ title: '请先阅读并同意服务协议和退款规则', icon: 'none' })
     return
   }
-  if (!canAction.value) return
+  if (!canAction.value) {
+    // 检查是否缺少地点选择
+    if ([2, 3, 4].includes(serviceType.value) && !selectedPlace.value) {
+      uni.showToast({ title: '请选择服务地点', icon: 'none' })
+    }
+    return
+  }
 
   if (!isOrderCreated.value) {
     await handleCreateOrder()
@@ -566,6 +953,7 @@ const handleAction = async () => {
 
 // 创建订单
 const handleCreateOrder = async () => {
+  console.log(orderData.value)
   if (!orderData.value.coachInfo?.id) {
     uni.showToast({ title: '教练信息缺失', icon: 'none' })
     return
@@ -581,6 +969,12 @@ const handleCreateOrder = async () => {
     return
   }
 
+  // 服务类型 2/3/4 需要选择服务地点
+  if ([2, 3, 4].includes(serviceType.value) && !selectedPlace.value) {
+    uni.showToast({ title: '请选择服务地点', icon: 'none' })
+    return
+  }
+
   isSubmitting.value = true
   try {
     const createParams = {
@@ -588,19 +982,27 @@ const handleCreateOrder = async () => {
       serviceType: serviceType.value,
       bookingTime: orderData.value.bookingTime,
       serviceDuration: orderData.value.serviceDuration || 120,
-      quantity: orderData.value.quantity || 2,
-      venueId: orderData.value.hallInfo?.id || orderData.value.venueId,
-      venueName: orderData.value.hallInfo?.name || orderData.value.venueName,
-      venueAddress: orderData.value.hallInfo?.address || orderData.value.venueAddress,
-      venueLongitude: orderData.value.hallInfo?.longitude || orderData.value.venueLongitude,
-      venueLatitude: orderData.value.hallInfo?.latitude || orderData.value.venueLatitude
+      quantity: orderData.value.quantity || 2
+    }
+
+    // 服务类型 1 使用球厅信息
+    if (serviceType.value === 1) {
+      createParams.venueId = orderData.value.hallInfo?.id || orderData.value.venueId
+      createParams.venueName = orderData.value.hallInfo?.name || orderData.value.venueName
+      createParams.venueAddress = orderData.value.hallInfo?.address || orderData.value.venueAddress
+      createParams.venueLongitude = orderData.value.hallInfo?.longitude || orderData.value.venueLongitude
+      createParams.venueLatitude = orderData.value.hallInfo?.latitude || orderData.value.venueLatitude
+    } else if ([2, 3, 4].includes(serviceType.value)) {
+      // 服务类型 2/3/4 使用服务地点凭证
+      createParams.servicePlaceToken = selectedPlace.value.selectionToken
     }
 
     // 如果有选中的服务项目，传递服务项目ID
     if (orderData.value.selectedService?.id) {
       createParams.serviceItemId = orderData.value.selectedService.id
     }
-
+    console.log(createParams,'======createParams=====')
+    // 处理地点凭证失效的情况
     const createRes = await createOrder(createParams)
     const resultData = createRes.data || {}
 
@@ -624,7 +1026,13 @@ const handleCreateOrder = async () => {
     uni.showToast({ title: '订单创建成功', icon: 'success' })
   } catch (error) {
     console.error('创建订单失败:', error)
-    uni.showToast({ title: error.message || '创建订单失败，请重试', icon: 'none' })
+    // 处理地点凭证失效的情况
+    if (error.code === 1010000336) {
+      uni.showToast({ title: '服务地点已失效，请重新选择', icon: 'none' })
+      selectedPlace.value = null
+    } else {
+      uni.showToast({ title: error.message || '创建订单失败，请重试', icon: 'none' })
+    }
   } finally {
     isSubmitting.value = false
   }
@@ -714,7 +1122,13 @@ onLoad((options) => {
 })
 
 onMounted(async () => {
-  // 从 storage 获取已创建的订单数据
+  // 加载省市区数据
+  await loadAreaTree()
+
+  // 自动获取当前位置和城市信息
+  await getCurrentLocation()
+
+  // 从 storage 获取订单数据
   try {
     const createdOrder = uni.getStorageSync('createdOrderData')
     console.log('确认订单页面获取到的订单数据:', createdOrder)
@@ -729,10 +1143,16 @@ onMounted(async () => {
         serviceType.value = 1
       }
       uni.removeStorageSync('createdOrderData')
-      isOrderCreated.value = true
-      startCountdown()
-      await loadWalletBalance()
-      await loadPayChannels()
+
+      // 判断订单是否已经创建（通过是否包含 orderId 或 orderNo 来判断）
+      isOrderCreated.value = !!(createdOrder.orderId || createdOrder.orderNo)
+
+      if (isOrderCreated.value) {
+        startCountdown()
+        await loadWalletBalance()
+        await loadPayChannels()
+      }
+
       // 重新获取教练详情以确保头像等信息最新
       if (orderData.value.coachInfo?.id) {
         loadCoachDetail(orderData.value.coachInfo.id)
@@ -1099,7 +1519,7 @@ onUnmounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 100;
+  z-index: 90;
   background: var(--bg-card);
   border-top: 1rpx solid var(--border-color);
   padding: 12rpx 24rpx;
@@ -1134,9 +1554,82 @@ onUnmounted(() => {
     }
     &.disabled {
       background: rgba(0, 187, 136, 0.3);
-      color: rgba(255,255,255,0.5);
-      pointer-events: none;
     }
+    &.fullWidth {
+      padding: 18rpx 0;
+      font-size: 32rpx;
+      width: 100%;
+    }
+  }
+}
+
+/* 手动实现的城市选择器样式 */
+.city-picker-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.city-picker-wrapper {
+  background: var(--bg-card);
+  border-radius: 32rpx 32rpx 0 0;
+  animation: slideUp 0.3s ease;
+  z-index: 1000;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.city-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx;
+  border-bottom: 1rpx solid var(--border-color);
+  .cancel-btn {
+    color: var(--text-secondary);
+    font-size: 30rpx;
+  }
+  .picker-title {
+    color: var(--text-primary);
+    font-size: 32rpx;
+    font-weight: 600;
+  }
+  .confirm-btn {
+    color: #00BB88;
+    font-size: 30rpx;
+    font-weight: 600;
+  }
+}
+
+.city-picker-content {
+  display: flex;
+  height: 500rpx;
+  overflow: hidden;
+}
+
+.province-list, .city-list {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.province-item, .city-item {
+  padding: 24rpx 30rpx;
+  color: var(--text-primary);
+  font-size: 28rpx;
+  &.active {
+    background: var(--bg-secondary);
+    color: #00BB88;
   }
 }
 
@@ -1145,6 +1638,109 @@ onUnmounted(() => {
   height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
   width: 100%;
+}
+
+/* 城市选择器外层容器 */
+.location-picker-wrapper {
+  margin: 0;
+  padding: 0;
+}
+
+/* 定位信息 */
+.location-box {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 20rpx;
+  background: var(--bg-card);
+  border-radius: 16rpx;
+  .location-text {
+    color: var(--text-primary);
+    font-size: 28rpx;
+    flex: 1;
+  }
+}
+
+/* 重新定位按钮 */
+.relocate-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  margin: 16rpx 30rpx 0rpx;
+  padding: 12rpx 24rpx;
+  background: rgba(0, 187, 136, 0.1);
+  border-radius: 32rpx;
+  align-self: flex-start;
+  .relocate-text {
+    color: var(--brand-primary);
+    font-size: 24rpx;
+  }
+}
+
+/* 地点搜索样式 */
+.place-search {
+  padding: 20rpx 30rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: var(--bg-secondary);
+  margin: 20rpx;
+  border-radius: 12rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: var(--text-primary);
+  height: 60rpx;
+  line-height: 60rpx;
+}
+
+.clear-icon {
+  padding: 4rpx;
+}
+
+.place-results {
+  max-height: 600rpx;
+  overflow-y: auto;
+  padding: 0 20rpx 20rpx;
+}
+
+.place-item {
+  padding: 24rpx;
+  border-bottom: 1rpx solid var(--border-color);
+  &:last-child {
+    border-bottom: none;
+  }
+  &.active {
+    background: var(--bg-secondary);
+  }
+}
+
+.place-name {
+  color: var(--text-primary);
+  font-size: 30rpx;
+  font-weight: 500;
+  margin-bottom: 8rpx;
+}
+
+.place-address {
+  color: var(--text-secondary);
+  font-size: 24rpx;
+  line-height: 1.4;
+}
+
+.no-results {
+  text-align: center;
+  padding: 60rpx 20rpx;
+  color: var(--text-secondary);
+  font-size: 28rpx;
+}
+
+.time-picker-header .confirm-btn.disabled {
+  color: var(--text-secondary);
+  pointer-events: none;
 }
 
 /* 时间选择器遮罩 */
@@ -1208,5 +1804,108 @@ onUnmounted(() => {
   font-size: 32rpx;
   height: 80rpx;
   line-height: 80rpx;
+}
+
+/* 服务地点选择器样式 */
+.place-picker-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.place-picker-wrapper {
+  background: var(--bg-card);
+  border-radius: 32rpx 32rpx 0 0;
+  animation: slideUp 0.3s ease;
+  z-index: 1000;
+  max-height: 80vh;
+}
+
+.place-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx;
+  border-bottom: 1rpx solid var(--border-color);
+  .cancel-btn {
+    color: var(--text-secondary);
+    font-size: 30rpx;
+  }
+  .picker-title {
+    color: var(--text-primary);
+    font-size: 32rpx;
+    font-weight: 600;
+  }
+  .confirm-btn {
+    color: #00BB88;
+    font-size: 30rpx;
+    font-weight: 600;
+    &.disabled {
+      color: var(--text-secondary);
+      pointer-events: none;
+    }
+  }
+}
+
+.place-picker-content {
+  padding: 20rpx;
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+    padding: 20rpx;
+    background: var(--bg-secondary);
+    border-radius: 16rpx;
+    margin-bottom: 20rpx;
+    .search-input {
+      flex: 1;
+      font-size: 28rpx;
+      color: var(--text-primary);
+      height: 60rpx;
+      line-height: 60rpx;
+    }
+    .clear-icon {
+      padding: 4rpx;
+    }
+  }
+  .place-results {
+    max-height: 500rpx;
+    overflow-y: auto;
+    padding: 0 20rpx 20rpx;
+  }
+  .place-item {
+    padding: 24rpx;
+    border-bottom: 1rpx solid var(--border-color);
+    &:last-child {
+      border-bottom: none;
+    }
+    &.active {
+      background: var(--bg-secondary);
+    }
+    .place-name {
+      color: var(--text-primary);
+      font-size: 30rpx;
+      font-weight: 500;
+      margin-bottom: 8rpx;
+    }
+    .place-address {
+      color: var(--text-secondary);
+      font-size: 24rpx;
+      line-height: 1.4;
+    }
+  }
+  .no-results {
+    text-align: center;
+    padding: 60rpx 20rpx;
+    color: var(--text-secondary);
+    font-size: 28rpx;
+  }
 }
 </style>

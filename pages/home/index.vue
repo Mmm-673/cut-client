@@ -41,6 +41,38 @@
         </swiper>
       </view>
 
+<!--      &lt;!&ndash; 服务项目四宫格（紧凑版） &ndash;&gt;-->
+<!--      <view class="service-grid-section">-->
+<!--        <view class="section-header">-->
+<!--          <view class="title-left">-->
+<!--            <view class="title-decoration">-->
+<!--              <view class="title-dot"></view>-->
+<!--              <view class="title-line"></view>-->
+<!--            </view>-->
+<!--            <text class="title-text">特色服务</text>-->
+<!--            <view class="title-badge">NEW</view>-->
+<!--          </view>-->
+<!--        </view>-->
+
+<!--        <view class="service-grid">-->
+<!--          <view-->
+<!--            class="service-item"-->
+<!--            v-for="(item, index) in serviceList"-->
+<!--            :key="index"-->
+<!--            @click="handleServiceItemClick(item)"-->
+<!--            :style="{ background: item.bgColor }"-->
+<!--          >-->
+<!--            <view class="service-icon">-->
+<!--              <text class="service-emoji">{{ item.icon }}</text>-->
+<!--            </view>-->
+<!--            <view class="service-info">-->
+<!--              <text class="service-title">{{ item.title }}</text>-->
+<!--              <text class="service-desc">{{ item.desc }}</text>-->
+<!--            </view>-->
+<!--          </view>-->
+<!--        </view>-->
+<!--      </view>-->
+
       <!-- 审核模式：球厅预约 -->
       <review-venue v-if="showVenueSection" />
 
@@ -204,6 +236,43 @@ const hasQueriedVenue = ref(false) // 记录是否已查询过球厅列表
 
 const bannerList = ref([])
 const privacyDialogRef = ref(null)
+
+// 服务项目数据
+const serviceList = ref([
+  {
+    title: '台球教学',
+    desc: '专业教练一对一指导',
+    icon: '🎱',
+    bgColor: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)'
+  },
+  {
+    title: '达人带路',
+    desc: '资深球友带您玩转台球',
+    icon: '👥',
+    bgColor: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)'
+  },
+  {
+    title: '红酒鉴赏',
+    desc: '品味红酒文化，提升生活品质',
+    icon: '🍷',
+    bgColor: 'linear-gradient(135deg, #FFD166 0%, #FF6B6B 100%)'
+  },
+  {
+    title: '电影赏析',
+    desc: '深度解析经典影片',
+    icon: '🎬',
+    bgColor: 'linear-gradient(135deg, #6A0572 0%, #AB83A1 100%)'
+  }
+])
+
+// 处理服务项目点击
+const handleServiceItemClick = (item) => {
+  uni.showToast({
+    title: `即将进入${item.title}`,
+    icon: 'none',
+    duration: 1500
+  })
+}
 
 // 更新自定义 TabBar 选中状态
 const updateCustomTabBar = () => {
@@ -575,6 +644,157 @@ onShow(() => {
   }
 }
 
+/* 服务项目四宫格（紧凑版） */
+.service-grid-section {
+  padding: 0 30rpx 40rpx;
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24rpx;
+
+    .title-left {
+      display: flex;
+      align-items: center;
+      gap: 12rpx;
+
+      .title-decoration {
+        display: flex;
+        align-items: center;
+        gap: 6rpx;
+
+        .title-dot {
+          width: 12rpx;
+          height: 12rpx;
+          background: var(--brand-primary);
+          border-radius: 50%;
+          box-shadow: 0 0 12rpx rgba(0, 187, 136, 0.5);
+
+          &.blue {
+            background: #3B82F6;
+            box-shadow: 0 0 12rpx rgba(59, 130, 246, 0.5);
+          }
+        }
+
+        .title-line {
+          width: 24rpx;
+          height: 4rpx;
+          background: linear-gradient(90deg, #00BB88, transparent);
+          border-radius: 2rpx;
+
+          &.blue {
+            background: linear-gradient(90deg, #3B82F6, transparent);
+          }
+        }
+      }
+
+      .title-text {
+        color: var(--text-primary);
+        font-size: 34rpx;
+        font-weight: 700;
+        letter-spacing: -0.5rpx;
+      }
+
+      .title-badge {
+        background: var(--brand-light-bg);
+        color: var(--brand-primary);
+        font-size: 18rpx;
+        font-weight: 700;
+        padding: 4rpx 10rpx;
+        border-radius: 8rpx;
+        border: 1rpx solid rgba(0, 187, 136, 0.3);
+
+        &.blue {
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.08));
+          color: #3B82F6;
+          border-color: rgba(59, 130, 246, 0.3);
+        }
+      }
+    }
+  }
+}
+
+/* 确保grid布局正常工作 */
+.service-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 16rpx !important;
+  width: 100% !important;
+
+  .service-item {
+    border-radius: 16rpx;
+    padding: 20rpx 16rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.1);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    &:active {
+      transform: scale(0.95);
+
+      &::before {
+        opacity: 1;
+      }
+    }
+
+    .service-icon {
+      margin-bottom: 12rpx;
+      width: 60rpx;
+      height: 60rpx;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10rpx);
+    }
+
+    .service-emoji {
+      font-size: 32rpx;
+      line-height: 1;
+    }
+
+    .service-info {
+      position: relative;
+      z-index: 1;
+    }
+
+    .service-title {
+      display: block;
+      color: #fff;
+      font-size: 26rpx;
+      font-weight: 700;
+      margin-bottom: 4rpx;
+      text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.3);
+    }
+
+    .service-desc {
+      display: block;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 18rpx;
+      line-height: 1.3;
+      text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.3);
+    }
+  }
+}
+
 /* 轮播图 */
 .banner-section {
   margin: 0 30rpx 50rpx;
@@ -583,7 +803,7 @@ onShow(() => {
   box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.3);
 
   .banner-swiper {
-    height: 420rpx;
+    height: 360rpx;
     border-radius: 32rpx;
     overflow: hidden;
 
@@ -661,97 +881,6 @@ onShow(() => {
   }
 }
 
-.service-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
-
-  .service-item {
-    position: relative;
-    background: var(--bg-card);
-    border: 1rpx solid var(--border-color);
-    border-radius: 28rpx;
-    padding: 28rpx;
-    overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    box-shadow: var(--card-shadow);
-
-    &:active {
-      transform: scale(0.97);
-    }
-
-    .service-bg {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    &:active .service-bg {
-      opacity: 1;
-    }
-
-    .service-content {
-      position: relative;
-      display: flex;
-      align-items: center;
-      z-index: 1;
-    }
-
-    .service-icon-wrap {
-      width: 88rpx;
-      height: 88rpx;
-      border-radius: 24rpx;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-right: 20rpx;
-      transition: all 0.3s ease;
-      box-shadow: var(--card-shadow);
-
-      .service-emoji {
-        font-size: 44rpx;
-      }
-    }
-
-    .service-body {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 6rpx;
-
-      .s-title {
-        color: var(--text-primary);
-        font-size: 34rpx;
-        font-weight: 600;
-      }
-
-      .s-desc {
-        color: var(--text-secondary);
-        font-size: 24rpx;
-      }
-    }
-
-    .service-arrow {
-      width: 48rpx;
-      height: 48rpx;
-      background: var(--bg-secondary);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s ease;
-    }
-
-    &:active .service-arrow {
-      background: rgba(255,255,255,0.1);
-      transform: translateX(4rpx);
-    }
-  }
-}
 
 /* 通用章节 */
 .section-container {

@@ -111,6 +111,13 @@
                 <uni-icons type="right" size="20" color="#9CA3AF" />
               </view>
 
+              <!-- 服务地点 -->
+              <view class="venue-section" v-if="order.venueName">
+                <text class="venue-label">{{ order.serviceType === 1 ? '球厅' : '服务地点' }}</text>
+                <text class="venue-name">{{ order.venueName }}</text>
+                <text class="venue-address" v-if="order.venueAddress">{{ order.venueAddress }}</text>
+              </view>
+
               <!-- 订单信息 -->
               <view class="order-info">
                 <view class="info-item">
@@ -747,6 +754,29 @@ onShow(() => {
       color: var(--text-secondary);
       font-size: 24rpx;
     }
+  }
+}
+
+/* 服务地点 */
+.venue-section {
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid var(--border-color);
+  .venue-label {
+    color: var(--text-secondary);
+    font-size: 24rpx;
+    display: block;
+    margin-bottom: 8rpx;
+  }
+  .venue-name {
+    color: var(--text-primary);
+    font-size: 28rpx;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 4rpx;
+  }
+  .venue-address {
+    color: var(--text-secondary);
+    font-size: 24rpx;
   }
 }
 

@@ -26,9 +26,6 @@ import request from '@/utils/request'
  * @returns {string} [returns.data[].promotionText] - 优惠信息
  * @returns {string} [returns.data[].phone] - 联系电话
  * @returns {string} returns.data[].address - 详细地址
- * @returns {number} returns.data[].longitude - 经度
- * @returns {number} returns.data[].latitude - 纬度
- * @returns {string} [returns.data[].advantage] - 门店优势说明
  * @returns {number} [returns.data[].distance] - 距离（km），仅当传入经纬度时返回
  * @returns {number} returns.data[].source - 数据来源：0=平台自维护, 1=高德同步
  */
@@ -55,7 +52,30 @@ export function getVenueDetail(params) {
   })
 }
 
+/**
+ * 搜索服务地点（高德地图输入提示）
+ * @param {Object} params - 请求参数
+ * @param {string} params.keywords - 用户输入的地点关键词
+ * @param {string} params.city - 当前城市名称或行政区编码，用于限制高德只返回该城市结果
+ *
+ * @returns {Promise<Object>} 返回搜索结果
+ * @returns {Array} returns.data - 搜索结果列表
+ * @returns {string} returns.data[].name - 地点名称
+ * @returns {string} returns.data[].address - 地点地址
+ * @returns {number} returns.data[].longitude - 经度
+ * @returns {number} returns.data[].latitude - 纬度
+ * @returns {string} returns.data[].selectionToken - 地点选择凭证
+ */
+export function searchServicePlace(params) {
+  return request({
+    url: '/app-api/billiard/amap/inputtips',
+    method: 'get',
+    params
+  })
+}
+
 export default {
   getVenueList,
-  getVenueDetail
+  getVenueDetail,
+  searchServicePlace
 }

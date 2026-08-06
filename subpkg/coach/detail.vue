@@ -436,7 +436,7 @@ const loadCoachData = async () => {
         sales: 0,
         unit: '',
         hot: false,
-        hourTime: 3,
+        hourTime: 7,
       },
       {
         id: 4,
@@ -446,7 +446,7 @@ const loadCoachData = async () => {
         sales: 0,
         unit: '',
         hot: false,
-        hourTime: 2,
+        hourTime: 7,
       }
     ]
 
@@ -666,90 +666,57 @@ const bookNow = async () => {
     selectedService: selectedService.value
   })
 
-  // 判断服务类型：1=台球陪练(需要选择球厅)，其他=直接创建订单
+  // 计算默认预约时间（1小时后）
+  const bookingTime = Date.now() + 3600000
+
+  // 根据服务类型确定默认时长
+  let serviceDuration = 120 // 默认2小时
+  let quantity = 2
+
+  if (selectedService.value.type === 2) {
+    // 达人带路：5小时
+    serviceDuration = 300
+    quantity = 5
+  } else if (selectedService.value.type === 3) {
+    // 酒文化讲解：7小时
+    serviceDuration = 420
+    quantity = 7
+  } else if (selectedService.value.type === 4) {
+    // 影视讲解分享：7小时
+    serviceDuration = 420
+    quantity = 7
+  }
+
+  // 格式化时间显示
+  const date = new Date(bookingTime)
+  const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hour = String(date.getHours()).padStart(2, '0')
+  const minute = String(date.getMinutes()).padStart(2, '0')
+  const weekDay = weekDays[date.getDay()]
+  const timeText = `${weekDay} ${month}.${day} ${hour}:${minute}`
+
+  // 保存订单初始化数据到 storage
+  uni.setStorageSync('createdOrderData', {
+    coachInfo: coachInfo,
+    selectedService: selectedService.value,
+    serviceType: selectedService.value.type,
+    serviceDuration: serviceDuration,
+    quantity: quantity,
+    bookingTime: bookingTime,
+    timeText: timeText
+  })
+
+  // 判断服务类型：1=台球陪练(需要选择球厅)，其他=跳转到确认订单页面
   const isBilliardsService = selectedService.value.type === 1
 
-  if (!isBilliardsService) {
-    // 非台球服务，直接创建订单
-    try {
-      uni.showLoading({ title: '创建订单中...' })
-
-      // 计算默认预约时间（1小时后）
-      const bookingTime = Date.now() + 3600000
-
-      // 根据服务类型确定默认时长
-      let serviceDuration = 120 // 默认2小时
-      let quantity = 2
-
-      if (selectedService.value.type === 2) {
-        // 达人带路：5小时
-        serviceDuration = 300
-        quantity = 5
-      } else if (selectedService.value.type === 3) {
-        // 酒文化讲解：3小时
-        serviceDuration = 180
-        quantity = 3
-      } else if (selectedService.value.type === 4) {
-        // 影视讲解分享：2小时
-        serviceDuration = 120
-        quantity = 2
-      }
-
-      // 创建订单
-      const createParams = {
-        coachId: coachInfo.id,
-        serviceType: selectedService.value.type,
-        bookingTime: bookingTime,
-        serviceDuration: serviceDuration,
-        quantity: quantity,
-        serviceItemId: selectedService.value.id
-      }
-
-      const createRes = await createOrder(createParams)
-      const resultData = createRes.data || {}
-
-      // 格式化时间显示
-      const date = new Date(bookingTime)
-      const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-      const month = String(date.getMonth() + 1).padStart(2, '0')
-      const day = String(date.getDate()).padStart(2, '0')
-      const hour = String(date.getHours()).padStart(2, '0')
-      const minute = String(date.getMinutes()).padStart(2, '0')
-      const weekDay = weekDays[date.getDay()]
-      const timeText = `${weekDay} ${month}.${day} ${hour}:${minute}`
-
-      // 保存订单数据到 storage
-      uni.setStorageSync('createdOrderData', {
-        ...resultData,
-        coachInfo: coachInfo,
-        selectedService: selectedService.value,
-        serviceType: selectedService.value.type,
-        serviceDuration: serviceDuration,
-        quantity: quantity,
-        bookingTime: bookingTime,
-        timeText: timeText
-      })
-
-      uni.hideLoading()
-      uni.showToast({ title: '订单创建成功', icon: 'success' })
-
-      // 跳转到确认支付页
-      setTimeout(() => {
-        uni.redirectTo({ url: '/subpkg/booking/confirm' })
-      }, 500)
-
-    } catch (error) {
-      uni.hideLoading()
-      console.error('创建订单失败:', error)
-      uni.showToast({
-        title: error.message || '创建订单失败，请重试',
-        icon: 'none',
-        duration: 2000
-      })
-    }
-  } else {
+  if (isBilliardsService) {
     // 台球陪练，需要选择球厅
     uni.navigateTo({ url: '/subpkg/booking/hall' })
+  } else {
+    // 其他服务类型，直接跳转到确认订单页面
+    uni.redirectTo({ url: '/subpkg/booking/confirm' })
   }
 }
 

@@ -140,12 +140,12 @@
         </view>
       </view>
 
-      <!-- 球厅信息卡片 -->
+      <!-- 服务地点卡片 -->
       <view class="info-card hall-card" v-if="orderInfo.venueName">
         <view class="card-title-row">
           <view class="card-title">
             <text class="title-icon">📍</text>
-            球厅信息
+            {{ orderInfo.serviceType === 1 ? '球厅信息' : '服务地点' }}
           </view>
           <view>
             <button class="nav-btn" @click="openHallNavigate" v-if="orderInfo.venueLongitude && orderInfo.venueLatitude">

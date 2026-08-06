@@ -393,12 +393,12 @@
     top: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, .4);
+    background-color: rgba(0, 0, 0, .6);
     /* #ifndef APP-NVUE */
     display: flex;
     /* #endif */
     flex-direction: column;
-    z-index: 100;
+    z-index: 9999;
   }
 
   .uni-data-tree-dialog {
@@ -419,7 +419,7 @@
     display: flex;
     /* #endif */
     flex-direction: column;
-    z-index: 102;
+    z-index: 10000;
     overflow: hidden;
     /* #ifdef APP-NVUE */
     width: 750rpx;
