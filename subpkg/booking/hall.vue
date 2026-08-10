@@ -196,11 +196,10 @@
         </view>
         <picker-view
             class="picker-view"
-            :indicator-style="indicatorStyle"
+            :indicator-style="pickerIndicatorStyle"
             :value="pickerValue"
             @change="onPickerChange"
-            indicator-style="height: 80rpx; border-top: 1rpx solid rgba(255,255,255,0.1); border-bottom: 1rpx solid rgba(255,255,255,0.1);"
-            mask-style="background-image: linear-gradient(to bottom, rgba(42, 51, 56, 0.95), rgba(42, 51, 56, 0.4), rgba(42, 51, 56, 0.95));"
+            :mask-style="pickerMaskStyle"
         >
           <!-- 日期列 -->
           <picker-view-column>
@@ -279,8 +278,22 @@ const currentStreet = ref('')
 // 城市选择相关
 const showCityPicker = ref(false)
 const showTimePicker = ref(false)
-const indicatorStyle = ref('height: 80rpx;')
 const pickerValue = ref([0, 0, 0])
+
+// picker-view 主题适配样式
+const pickerIndicatorStyle = computed(() => {
+  const isLight = themeStore.theme === 'light'
+  const borderColor = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.1)'
+  return `height: 80rpx; border-top: 1rpx solid ${borderColor}; border-bottom: 1rpx solid ${borderColor};`
+})
+
+const pickerMaskStyle = computed(() => {
+  const isLight = themeStore.theme === 'light'
+  if (isLight) {
+    return 'background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.95));'
+  }
+  return 'background-image: linear-gradient(to bottom, rgba(42, 51, 56, 0.95), rgba(42, 51, 56, 0.4), rgba(42, 51, 56, 0.95));'
+})
 
 // 最小服务时长
 const minDuration = ref(2)

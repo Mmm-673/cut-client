@@ -382,20 +382,13 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped lang="scss">
-// 全局样式变量
-$bg-primary: #1a1a1a;
-$bg-card: #2d2d2d;
-$text-primary: #ffffff;
-$text-secondary: #b3b3b3;
-$accent-yellow: #f5c518;
-$accent-green: #00b578;
 $border-radius: 16px;
 $transition: all 0.3s ease;
 
 .evaluate-page {
   min-height: 100vh;
-  background-color: $bg-primary;
-  color: $text-primary;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
   padding-bottom: 120rpx;
 }
 
@@ -411,25 +404,25 @@ $transition: all 0.3s ease;
     height: 160rpx;
     border-radius: 50%;
     margin-bottom: 20rpx;
-    border: 4rpx solid $accent-yellow;
+    border: 4rpx solid #FFB800;
   }
 
   .coach-name {
     font-size: 40rpx;
     font-weight: 600;
-    color: $text-primary;
+    color: var(--text-primary);
     margin-bottom: 16rpx;
   }
 
   .coach-desc {
     font-size: 28rpx;
-    color: $text-secondary;
+    color: var(--text-secondary);
   }
 }
 
 // 星级评分卡片
 .score-card {
-  background-color: $bg-card;
+  background-color: var(--bg-card);
   margin: 0 30rpx 40rpx;
   border-radius: $border-radius;
   padding: 40rpx 30rpx;
@@ -441,6 +434,7 @@ $transition: all 0.3s ease;
     font-size: 36rpx;
     font-weight: 600;
     margin-bottom: 40rpx;
+    color: var(--text-primary);
   }
 
   .score-stars {
@@ -454,11 +448,11 @@ $transition: all 0.3s ease;
       transition: $transition;
 
       .iconfont {
-        color: #666666;
+        color: var(--text-tertiary);
         transition: $transition;
 
         &.star-active {
-          color: $accent-yellow;
+          color: #FFB800;
         }
       }
 
@@ -470,7 +464,7 @@ $transition: all 0.3s ease;
 
   .score-desc {
     font-size: 32rpx;
-    color: $accent-yellow;
+    color: #FFB800;
     font-weight: 500;
   }
 }
@@ -483,6 +477,7 @@ $transition: all 0.3s ease;
     font-size: 32rpx;
     font-weight: 600;
     margin-bottom: 30rpx;
+    color: var(--text-primary);
   }
 
   .tag-list {
@@ -492,17 +487,17 @@ $transition: all 0.3s ease;
 
     .tag-item {
       padding: 16rpx 32rpx;
-      background-color: $bg-card;
+      background-color: var(--bg-card);
       border-radius: 40rpx;
       font-size: 28rpx;
-      color: $text-secondary;
+      color: var(--text-secondary);
       border: 2rpx solid transparent;
       transition: $transition;
 
       &.tag-active {
-        background-color: rgba(0, 181, 120, 0.15);
-        color: $accent-green;
-        border-color: $accent-green;
+        background-color: rgba(0, 187, 136, 0.15);
+        color: #00BB88;
+        border-color: #00BB88;
       }
 
       &:active {
@@ -520,16 +515,17 @@ $transition: all 0.3s ease;
     font-size: 32rpx;
     font-weight: 600;
     margin-bottom: 20rpx;
+    color: var(--text-primary);
   }
 
   .content-input {
     width: 100%;
     min-height: 240rpx;
-    background-color: $bg-card;
+    background-color: var(--bg-card);
     border-radius: $border-radius;
     padding: 30rpx;
     font-size: 28rpx;
-    color: $text-primary;
+    color: var(--text-primary);
     box-sizing: border-box;
     line-height: 1.6;
     border: none;
@@ -537,7 +533,7 @@ $transition: all 0.3s ease;
     resize: none;
 
     &::placeholder {
-      color: $text-secondary;
+      color: var(--text-placeholder);
     }
   }
 
@@ -592,7 +588,7 @@ $transition: all 0.3s ease;
       .tool-btn {
         width: 100rpx;
         height: 100rpx;
-        background-color: $bg-card;
+        background-color: var(--bg-card);
         border-radius: 16rpx;
         display: flex;
         align-items: center;
@@ -600,14 +596,14 @@ $transition: all 0.3s ease;
 
         .iconfont {
           font-size: 40rpx;
-          color: $text-secondary;
+          color: var(--text-secondary);
         }
       }
     }
 
     .content-count {
       font-size: 28rpx;
-      color: $text-secondary;
+      color: var(--text-secondary);
     }
   }
 }
@@ -626,17 +622,17 @@ $transition: all 0.3s ease;
 
     .iconfont {
       font-size: 32rpx;
-      color: $text-secondary;
+      color: var(--text-secondary);
     }
 
     .anonymous-text {
       font-size: 28rpx;
-      color: $text-secondary;
+      color: var(--text-secondary);
     }
 
     .anonymous-status {
       font-size: 24rpx;
-      color: #9CA3AF;
+      color: var(--text-tertiary);
       &.active {
         color: #00BB88;
         font-weight: 600;
@@ -654,7 +650,7 @@ $transition: all 0.3s ease;
   display: flex;
   padding: 16rpx 24rpx 24rpx;
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  background-color: $bg-primary;
+  background-color: var(--bg-page);
   z-index: 999;
 
   .submit-btn {
@@ -663,10 +659,10 @@ $transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: $accent-green;
+    background-color: #00BB88;
     border-radius: 36rpx;
     font-size: 28rpx;
-    color: $text-primary;
+    color: #fff;
     font-weight: 600;
 
     &:active {

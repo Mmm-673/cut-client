@@ -46,6 +46,15 @@
       }
     },
     {
+      "path": "pages/onsite/list",
+      "style": {
+        "navigationBarTitleText": "现场订单",
+        "navigationBarBackgroundColor": "#121619",
+        "navigationBarTextStyle": "white",
+        "backgroundColor": "#121619"
+      }
+    },
+    {
       "path": "pages/mine/index",
       "style": {
         "navigationStyle": "custom",
@@ -133,6 +142,20 @@
             "navigationBarTitleText": "订单详情",
             "navigationBarBackgroundColor": "#121619",
             "navigationBarTextStyle": "white"
+          }
+        }
+      ]
+    },
+    {
+      "root": "subpkg/onsite",
+      "pages": [
+        {
+          "path": "detail",
+          "style": {
+            "navigationBarTitleText": "订单详情",
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white",
+            "backgroundColor": "#121619"
           }
         }
       ]
@@ -234,6 +257,10 @@
     "pages/order/list": {
       "network": "all",
       "packages": ["subpkg/order"]
+    },
+    "pages/onsite/list": {
+      "network": "all",
+      "packages": ["subpkg/onsite"]
     },
     "pages/mine/index": {
       "network": "all",

@@ -38,6 +38,23 @@
           ></uni-icons>
         </view>
       </view>
+
+      <!-- 服务类型筛选 -->
+      <scroll-view class="service-type-scroll" scroll-x="true" :show-scrollbar="false">
+        <view class="service-type-list">
+          <view
+              v-for="(item, index) in serviceTypeList"
+              :key="item.value"
+              class="service-type-item"
+              :class="{ active: currentServiceType === item.value }"
+              @click="switchServiceType(item.value)"
+          >
+            {{ item.name }}
+          </view>
+        </view>
+      </scroll-view>
+
+      <!-- 风格标签筛选（暂隐藏，仅保留服务类型筛选）
       <scroll-view class="tab-scroll" scroll-x="true" :show-scrollbar="false">
         <view class="tab-list">
           <view
@@ -66,6 +83,7 @@
         >好评优先
         </view>
       </view>
+      -->
     </view>
 
     <!-- 定位信息 -->
@@ -181,8 +199,8 @@
 
         <view v-if="coachList.length === 0 && !loading && !refreshing" class="empty-state">
           <uni-icons type="info" size="60" color="#666"></uni-icons>
-          <text class="empty-text">{{ currentCity ? `${currentCity}暂无裁教数据` : '暂无裁教数据' }}</text>
-          <text v-if="currentCity" class="empty-tip">可以尝试到其他城市看看</text>
+          <text class="empty-text">当前暂未开通，敬请期待</text>
+          <text class="empty-tip">有意合作请联系客服</text>
         </view>
 
         <view class="loading-status">
@@ -230,6 +248,7 @@ const statusBarHeight = ref(0)
 const scrollHeight = ref(0)
 const currentTab = ref(0)
 const currentSort = ref(0)
+const currentServiceType = ref(null) // null = 全部
 const refreshing = ref(false)
 const loading = ref(false)
 const loadMoreStatus = ref('more') // more: loading前, loading: 加载中, noMore: 没有更多数据
@@ -274,6 +293,21 @@ const displayCityName = computed(() => {
 })
 
 const tabs = ['全部', '新人', '低碳出行', '活跃','沉稳','初级', '中级', '高级', '星级',]
+
+// 服务类型列表
+const serviceTypeList = [
+  { value: null, name: '全部' },
+  { value: 1, name: '台球陪练' },
+  { value: 2, name: '潮玩领航' },
+  { value: 3, name: '酒艺品鉴' },
+  { value: 4, name: '影视赏析' }
+]
+
+// 切换服务类型
+const switchServiceType = (value) => {
+  currentServiceType.value = value
+  loadData(true)
+}
 
 // 等级映射
 const levelMap = {
@@ -575,6 +609,11 @@ const fetchCoachList = async (isRefresh = false) => {
       // 距离最近：添加经纬度（仅登录用户可用）
       params.longitude = currentLocation.value.longitude
       params.latitude = currentLocation.value.latitude
+    }
+
+    // 添加服务类型筛选
+    if (currentServiceType.value !== null && currentServiceType.value !== undefined) {
+      params.serviceType = currentServiceType.value
     }
 
     // 添加城市筛选参数
@@ -884,6 +923,39 @@ onShow(() => {
 
     .clear-icon {
       margin-left: 10rpx;
+    }
+  }
+}
+
+/* 服务类型筛选（与下方 tab 同款胶囊样式） */
+.service-type-scroll {
+  white-space: nowrap;
+  overflow-x: scroll;
+  padding: 0 32rpx;
+  box-sizing: border-box;
+
+  .service-type-list {
+    display: flex;
+    padding: 10rpx 0 12rpx;
+
+    .service-type-item {
+      flex-shrink: 0;
+      padding: 12rpx 32rpx;
+      margin-right: 20rpx;
+      border-radius: 40rpx;
+      font-size: 26rpx;
+      color: var(--text-secondary);
+      background-color: var(--bg-secondary);
+      transition: all 0.2s;
+
+      &:last-child {
+        margin-right: 0;
+      }
+
+      &.active {
+        background-color: #00d4aa;
+        color: #fff;
+      }
     }
   }
 }

@@ -362,6 +362,7 @@ const loadOrders = async () => {
 
 // 功能菜单
 const menuList = ref([
+  { key: 'onsite', title: '现场订单', icon: 'location', bgColor: 'rgba(245, 158, 11, 0.2)', color: '#F59E0B', path: '/pages/onsite/list' },
   { key: 'wallet', title: '收支统计', icon: 'wallet-filled', bgColor: 'rgba(0, 187, 136, 0.2)', color: '#00BB88', path: '/subpkg/mine/wallet' },
   { key: 'collection', title: '我的收藏', icon: 'heart', bgColor: 'rgba(255, 77, 79, 0.2)', color: '#ff4d4f', path: '/subpkg/mine/favorites' },
   { key: 'help', title: '客服中心', icon: 'headphones', bgColor: 'rgba(107, 114, 128, 0.2)', color: '#6B7280', path: '/subpkg/mine/help' }
@@ -370,7 +371,7 @@ const menuList = ref([
 // 审核模式下隐藏陪玩相关入口（收支统计/我的收藏）
 const visibleMenuList = computed(() => {
   if (!reviewMode.value) return menuList.value
-  return menuList.value.filter(item => !['wallet', 'collection'].includes(item.key))
+  return menuList.value.filter(item => !['wallet', 'collection', 'onsite'].includes(item.key))
 })
 
 // ---------------------- 计算属性 ----------------------

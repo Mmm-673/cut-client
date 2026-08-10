@@ -5,6 +5,7 @@
 
 import { isMPWeixin, isApp } from '@/utils/platform'
 import { submitPayOrder, getEnableChannelCodeList, getPayOrder } from '@/api/billiard/pay'
+import { createOnsitePayment, getOnsitePaymentStatus } from '@/api/billiard/onsitePay'
 import { bindWX } from '@/api/billiard/user'
 // 支付请求状态管理，用于防止重复提交
 const payRequestStates = new Map()
@@ -589,6 +590,206 @@ export function pollPayStatus(options) {
   })
 }
 
+/**
+ * ========================================
+ * 现场订单支付（新增，不影响现有支付逻辑）
+ * ========================================
+ */
+
+/**
+ * 创建轮询器（用于现场支付状态轮询）
+ * @param {Object} options
+ * @param {Function} options.fn - 轮询执行的异步函数
+ * @param {Function} options.check - 检查是否停止的函数，返回 true 则停止并 resolve
+ * @param {number} [options.interval=2500] - 轮询间隔（毫秒）
+ * @param {number} [options.maxAttempts=30] - 最大轮询次数
+ * @returns {Object} 轮询器对象 { start(), stop(), pause(), resume() }
+ */
+function createPoller({ fn, check, interval = 2500, maxAttempts = 30 }) {
+  let timer = null
+  let attempts = 0
+  let stopped = false
+  let paused = false
+  let resolvePromise = null
+  let rejectPromise = null
+
+  const run = async () => {
+    if (stopped || paused) return
+
+    attempts++
+    try {
+      const result = await fn()
+
+      if (check(result)) {
+        stopped = true
+        if (resolvePromise) resolvePromise(result)
+        return
+      }
+
+      if (attempts >= maxAttempts) {
+        stopped = true
+        if (resolvePromise) resolvePromise(result)
+        return
+      }
+
+      timer = setTimeout(run, interval)
+    } catch (error) {
+      stopped = true
+      if (rejectPromise) rejectPromise(error)
+    }
+  }
+
+  return {
+    start() {
+      return new Promise((resolve, reject) => {
+        resolvePromise = resolve
+        rejectPromise = reject
+        stopped = false
+        paused = false
+        attempts = 0
+        run()
+      })
+    },
+    stop() {
+      stopped = true
+      if (timer) {
+        clearTimeout(timer)
+        timer = null
+      }
+    },
+    pause() {
+      paused = true
+      if (timer) {
+        clearTimeout(timer)
+        timer = null
+      }
+    },
+    resume() {
+      if (stopped) return
+      paused = false
+      run()
+    }
+  }
+}
+
+/**
+ * 执行现场订单支付
+ * @description 先创建现场支付尝试，再调用现有 executePayment 执行支付，最后轮询结算状态
+ * @param {Object} options - 支付选项
+ * @param {number} options.orderId - 现场订单ID
+ * @param {string} options.payValue - 支付方式值（wechat / alipay）
+ * @param {string} [options.channelCode] - 支付渠道编码，优先使用
+ * @param {Function} [options.onPaymentSuccess] - 原生支付成功回调（通知页面隐藏支付按钮）
+ * @param {Function} [options.onSettlementSuccess] - 结算成功回调
+ * @param {Function} [options.onCancel] - 支付取消回调
+ * @param {Function} [options.onError] - 支付失败回调
+ * @returns {Object} { payResult, poller, paymentData } - 支付结果和轮询器实例
+ */
+export async function executeOnsitePayment(options) {
+  const {
+    orderId,
+    payValue,
+    channelCode,
+    onPaymentSuccess,
+    onSettlementSuccess,
+    onCancel,
+    onError
+  } = options
+
+  let poller = null
+
+  try {
+    if (!orderId) {
+      throw new Error('订单信息缺失')
+    }
+
+    // 1. 确定渠道编码
+    const finalChannelCode = channelCode || getChannelCode(payValue)
+    if (!finalChannelCode) {
+      throw new Error('不支持的支付方式')
+    }
+
+    // 2. 创建现场支付尝试
+    const createRes = await createOnsitePayment({
+      orderId,
+      channelCode: finalChannelCode
+    })
+    const paymentData = createRes.data || {}
+    const payOrderId = paymentData.payOrderId
+
+    if (!payOrderId) {
+      throw new Error('支付单创建失败')
+    }
+
+    // 3. 调用现有支付执行（复用 executePayment）
+    const payResult = await executePayment({
+      payOrderId,
+      payValue,
+      channelCode: finalChannelCode,
+      orderId,
+      onCancel: (err) => {
+        if (onCancel && typeof onCancel === 'function') {
+          onCancel(err)
+        }
+      },
+      onError: (err) => {
+        if (onError && typeof onError === 'function') {
+          onError(err)
+        }
+      }
+    })
+
+    // 4. 原生支付成功，通知页面
+    if (onPaymentSuccess && typeof onPaymentSuccess === 'function') {
+      onPaymentSuccess(paymentData)
+    }
+
+    // 5. 启动结算状态轮询
+    poller = createPoller({
+      fn: () => getOnsitePaymentStatus(orderId).then(res => res.data),
+      check: (data) => {
+        return data && data.settlementStatus === 20
+      },
+      interval: 2500,
+      maxAttempts: 30
+    })
+
+    poller.start().then((finalStatus) => {
+      if (finalStatus && finalStatus.settlementStatus === 20) {
+        if (onSettlementSuccess && typeof onSettlementSuccess === 'function') {
+          onSettlementSuccess(finalStatus)
+        }
+      }
+    }).catch((err) => {
+      console.error('现场支付结算轮询异常:', err)
+    })
+
+    return { payResult, poller, paymentData }
+  } catch (error) {
+    console.error('现场支付失败:', error)
+
+    if (error.canceled) {
+      throw error
+    }
+
+    if (onError && typeof onError === 'function') {
+      onError(error)
+    }
+    throw error
+  }
+}
+
+/**
+ * 获取现场订单可用的支付渠道（仅微信+支付宝App支付）
+ * @param {Array<string>} [enabledCodes] - 后端返回的启用渠道编码
+ * @returns {Array} 可用支付渠道列表
+ */
+export function getOnsitePayChannels(enabledCodes) {
+  const onsiteSupported = ['wx_app', 'alipay_app']
+  const allChannels = enabledCodes ? getPayChannelsByEnabled(enabledCodes) : getAvailablePayChannels()
+  return allChannels.filter(ch => onsiteSupported.includes(ch.channelCode))
+}
+
 export default {
   PAY_CHANNEL,
   getAvailablePayChannels,
@@ -596,5 +797,8 @@ export default {
   fetchEnabledChannels,
   getChannelCode,
   executePayment,
-  pollPayStatus
+  pollPayStatus,
+  executeOnsitePayment,
+  getOnsitePayChannels,
+  createPoller,
 }

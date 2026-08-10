@@ -1211,7 +1211,7 @@ onUnmounted(() => {
 .order-content {
   flex: 1;
   width: 100%;
-  padding-bottom: 200rpx;
+  padding-bottom: 220rpx; /* 增加底部间距，确保内容不被固定栏遮挡 */
   box-sizing: border-box;
   overflow-y: auto; /* 允许内容垂直滚动 */
   -webkit-overflow-scrolling: touch; /* iOS 惯性滚动支持 */
@@ -1519,7 +1519,8 @@ onUnmounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 90;
+  width: 100%;
+  z-index: 999;
   background: var(--bg-card);
   border-top: 1rpx solid var(--border-color);
   padding: 12rpx 24rpx;
@@ -1529,6 +1530,9 @@ onUnmounted(() => {
   align-items: center;
   gap: 16rpx;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.3);
+  /* 确保在iOS和Android上都能正确固定 */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
   .total-info {
     flex: 1;
     .total-label {

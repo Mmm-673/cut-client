@@ -25,6 +25,7 @@ export function getBannerList() {
  * @param {string} [params.city] - 城市筛选（如"杭州市"）
  * @param {number} [params.level] - 技术等级：0=初级 1=中级 2=高级 3=星级
  * @param {string} [params.tag] - 标签筛选（如：新人、低碳出行），枚举值待运营确认
+ * @param {number} [params.serviceType] - 服务类型：1=台球陪练 2=潮玩领航 3=酒艺品鉴 4=影视赏析
  * @param {number} [params.longitude] - 用户当前经度（用于距离排序）
  * @param {number} [params.latitude] - 用户当前纬度（用于距离排序）
  * @returns {Promise<Object>} 返回裁教列表数据
