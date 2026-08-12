@@ -1,9 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getCountdownEnabled } from '@/api/billiard/order'
+import { getRemoteConfig } from '@/api/billiard/remoteConfig'
 
 const REVIEW_MODE_CACHE_KEY = 'review_mode'
 const REVIEW_ACCOUNT_PHONE_KEY = 'review_account_phone'
+const REMOTE_CONFIG_CACHE_KEY = 'remote_config'
+
+// 远程配置常量 Key
+export const REMOTE_CONFIG_KEYS = {
+  SHOW_COACH_CITY: 'SHOW_COACH_CITY'
+}
 
 // tab 页面路由（setTabBarItem 仅在这些页面展示时才能调用成功）
 const TAB_PAGE_ROUTES = ['pages/home/index', 'pages/coach/list', 'pages/mine/index']
@@ -55,6 +62,65 @@ export const useConfigStore = defineStore('config', () => {
     // #endif
     return reviewMode.value || accountReviewMode.value
   })
+
+  // 远程配置
+  const remoteConfig = ref({})
+  const remoteConfigLoaded = ref(false)
+  let remoteConfigFetchPromise = null
+
+  // 加载远程配置
+  const loadRemoteConfig = () => {
+    if (remoteConfigFetchPromise) {
+      return remoteConfigFetchPromise
+    }
+    // 同步读取缓存
+    try {
+      const cached = uni.getStorageSync(REMOTE_CONFIG_CACHE_KEY)
+      if (cached && typeof cached === 'object') {
+        remoteConfig.value = cached
+        remoteConfigLoaded.value = true
+      }
+    } catch (e) {
+      console.warn('[config] 读取远程配置缓存失败:', e)
+    }
+
+    remoteConfigFetchPromise = getRemoteConfig()
+        .then((res) => {
+          const data = (res && res.data) || {}
+          remoteConfig.value = data
+          remoteConfigLoaded.value = true
+          try {
+            uni.setStorageSync(REMOTE_CONFIG_CACHE_KEY, data)
+          } catch (e) {
+            console.warn('[config] 缓存远程配置失败:', e)
+          }
+          return data
+        })
+        .catch((e) => {
+          console.warn('[config] 获取远程配置失败:', e)
+          remoteConfigLoaded.value = true
+          return remoteConfig.value
+        })
+        .finally(() => {
+          remoteConfigFetchPromise = null
+        })
+    return remoteConfigFetchPromise
+  }
+
+  // 获取指定 key 的配置值
+  const getRemoteConfigValue = (key, defaultValue = '') => {
+    const val = remoteConfig.value[key]
+    return val !== undefined && val !== null ? val : defaultValue
+  }
+
+  // 获取布尔类型配置值
+  const getRemoteConfigBoolean = (key, defaultValue = false) => {
+    console.log('getRemoteConfigValue', key, defaultValue)
+    const val = remoteConfig.value[key]
+    console.log(val,'=====val=======')
+    if (val === undefined || val === null) return defaultValue
+    return val === 'true' || val === true || val === '1' || val === 1
+  }
 
   // 防止并发重复拉取
   let reviewFetchPromise = null
@@ -126,6 +192,11 @@ export const useConfigStore = defineStore('config', () => {
     finalReviewMode,
     initReviewMode,
     refreshAccountReviewMode,
-    syncTabBarLabel
+    syncTabBarLabel,
+    remoteConfig,
+    remoteConfigLoaded,
+    loadRemoteConfig,
+    getRemoteConfigValue,
+    getRemoteConfigBoolean
   }
 })

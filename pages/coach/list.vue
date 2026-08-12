@@ -87,7 +87,7 @@
     </view>
 
     <!-- 定位信息 -->
-    <view class="location-picker-wrapper" style="margin: 24rpx 30rpx 0rpx;">
+    <view v-if="showCoachCity" class="location-picker-wrapper" style="margin: 24rpx 30rpx 0rpx;">
       <uni-data-picker
           class="location-picker"
           :localdata="areaLocalData"
@@ -112,7 +112,7 @@
 
 
     <!-- 重新定位按钮 -->
-    <view v-if="selectedCityId" class="relocate-box" @click="reLocate">
+    <view v-if="showCoachCity && selectedCityId" class="relocate-box" @click="reLocate">
       <uni-icons type="refresh" size="14" color="#00BB88" />
       <text class="relocate-text">重新定位</text>
     </view>
@@ -225,6 +225,7 @@ import {debounce, formatPrice, showLoading, hideLoading} from '@/utils/common'
 import {getLocation, extractCity, formatDistance, showPermissionModal} from '@/utils/location'
 import {isLoggedIn} from '@/utils/token'
 import {useConfigStore, useThemeStore} from '@/store'
+import {REMOTE_CONFIG_KEYS} from '@/store/modules/config'
 import {usePageTheme} from '@/composables/usePageTheme'
 
 const configStore = useConfigStore()
@@ -236,6 +237,11 @@ usePageTheme()
 // 审核模式状态（响应式）
 const reviewMode = computed(() => configStore.reviewMode)
 const reviewLoaded = computed(() => configStore.reviewLoaded)
+
+// 是否显示裁教城市选择器（远程配置 SHOW_COACH_CITY，默认显示）
+const showCoachCity = computed(() => {
+  return configStore.getRemoteConfigBoolean(REMOTE_CONFIG_KEYS.SHOW_COACH_CITY, true)
+})
 
 // 更新自定义 TabBar 选中状态
 const updateCustomTabBar = () => {
@@ -615,18 +621,17 @@ const fetchCoachList = async (isRefresh = false) => {
     if (currentServiceType.value !== null && currentServiceType.value !== undefined) {
       params.serviceType = currentServiceType.value
     }
-
+    console.log(showCoachCity.value,'showCoachCity=======')
     // 添加城市筛选参数
-    if (currentCity.value) {
+    if (showCoachCity.value && currentCity.value) {
       params.city = currentCity.value
     }
-    console.log(currentCity.value,'======currentCity.value')
     console.log("🚀 ~ loadData ~ params:", params)
     const res = await getCoachList(params)
     console.log(res,'===res')
     const data = res.data || {}
     // 兼容不同的返回结构：list / records / rows
-    const list = data.list || data.records || data.rows || []
+    const list = data.list.filter(item => item.id !== 27) || data.records || data.rows || []
 
     if (isRefresh) {
       coachList.value = list
@@ -804,6 +809,8 @@ onMounted(() => {
     })
   }, 100)
 
+  // 加载远程配置
+  configStore.loadRemoteConfig()
   // 加载地区树
   loadAreaTree()
   // 加载是否显示心意按钮

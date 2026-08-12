@@ -423,16 +423,18 @@ const loadPayChannels = async () => {
   try {
     // 先从后端获取启用的支付渠道列表
     const enabledChannels = await fetchEnabledChannels()
-    // 过滤出现场订单支持的渠道（wx_app / alipay_app）
+    // 过滤出现场订单支持的渠道，并过滤掉微信支付
     const channels = getOnsitePayChannels(enabledChannels.map(ch => ch.channelCode))
+      .filter(ch => ch.channelCode !== 'wx_app' && ch.channelCode !== 'wx_lite')
     payChannels.value = channels
     if (channels.length > 0 && !selectedPay.value) {
       selectedPay.value = channels[0].value
     }
   } catch (error) {
     console.error('加载支付渠道失败:', error)
-    // 失败时降级为本地渠道
+    // 失败时降级为本地渠道，并过滤掉微信支付
     const localChannels = getOnsitePayChannels()
+      .filter(ch => ch.channelCode !== 'wx_app' && ch.channelCode !== 'wx_lite')
     payChannels.value = localChannels
     if (localChannels.length > 0 && !selectedPay.value) {
       selectedPay.value = localChannels[0].value
