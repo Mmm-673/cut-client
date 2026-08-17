@@ -1789,7 +1789,6 @@ let lastStatus = null
   left: 0;
   right: 0;
   background-color: var(--bg-card);
-  border-top: 2rpx solid #333333;
   padding: 16rpx 32rpx;
   padding-bottom: calc(16rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));

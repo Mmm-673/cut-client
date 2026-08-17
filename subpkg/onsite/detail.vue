@@ -69,8 +69,14 @@
         </view>
       </view>
 
+      <!-- 计费规则提示卡片 -->
+      <view class="billing-tip-card" v-if="billingTipText">
+        <text class="tip-icon">💡</text>
+        <text class="tip-text">{{ billingTipText }}</text>
+      </view>
+
       <!-- 助教信息卡片 -->
-      <view class="info-card">
+      <view class="info-card coach-card" v-if="hasCoachInfo" @click="goToCoachDetail">
         <view class="card-title">
           <text class="title-icon">👤</text>
           助教信息
@@ -78,12 +84,13 @@
         <view class="coach-info">
           <image
             class="coach-avatar"
-            :src="orderDetail.coachMainPhoto || '/static/default-avatar.png'"
+            :src="coachInfo.avatar || '/static/default-avatar.png'"
             mode="aspectFill"
           ></image>
           <view class="coach-info-right">
-            <text class="coach-name">{{ orderDetail.coachStageName || '助教' }}</text>
+            <text class="coach-name">{{ coachInfo.stageName || '未知助教' }}</text>
           </view>
+          <uni-icons class="coach-arrow" type="right" size="16" :color="arrowColor" />
         </view>
       </view>
 
@@ -233,6 +240,47 @@ const SERVICE_TYPE_NAMES = {
 const orderStatus = computed(() => Number(orderDetail.value.status) || 0)
 const paymentStatus = computed(() => Number(orderDetail.value.paymentStatus) || 0)
 
+// 助教信息（优先使用 coach 对象，降级使用旧字段）
+const coachInfo = computed(() => {
+  const detail = orderDetail.value
+  const coach = detail.coach
+  if (coach && typeof coach === 'object') {
+    return {
+      id: coach.id ?? detail.coachId,
+      stageName: coach.stageName || detail.coachStageName || '',
+      avatar: coach.avatar || detail.coachMainPhoto || ''
+    }
+  }
+  return {
+    id: detail.coachId,
+    stageName: detail.coachStageName || '',
+    avatar: detail.coachMainPhoto || ''
+  }
+})
+
+// 是否有助教信息可展示
+const hasCoachInfo = computed(() => {
+  const info = coachInfo.value
+  return !!(info.id || info.stageName || info.avatar)
+})
+
+// 箭头图标颜色（适配主题）
+const arrowColor = computed(() => {
+  return themeStore.theme === 'dark' ? '#999999' : '#999999'
+})
+
+// 计费规则提示
+const BILLING_TIPS = {
+  1: '温馨提示：台球指导起步时长为1小时，不足1小时按1小时计费，超出部分按分钟计费。',
+  2: '温馨提示：潮玩领航起步时长为2小时，不足2小时按2小时计费，超出部分按分钟计费。',
+  3: '温馨提示：酒艺品鉴起步时长为4小时，不足4小时按4小时计费，超出部分按分钟计费。',
+  4: '温馨提示：影视赏析起步时长为8小时，不足8小时按8小时计费，超出部分按分钟计费。'
+}
+
+const billingTipText = computed(() => {
+  return BILLING_TIPS[orderDetail.value.serviceType] || ''
+})
+
 // 是否显示底部栏
 const showBottomBar = computed(() => {
   const status = orderStatus.value
@@ -346,6 +394,7 @@ const loadOrderDetail = async (silent = false) => {
     loading.value = true
   }
   try {
+
     const res = await getOnsiteOrderDetail({ id: orderId.value })
     const data = res.data || {}
     if (!data || !data.id) return
@@ -515,6 +564,15 @@ const confirmPay = async () => {
   }
 }
 
+// 跳转助教详情
+const goToCoachDetail = () => {
+  const coachId = coachInfo.value.id
+  if (!coachId) return
+  uni.navigateTo({
+    url: `/subpkg/coach/detail?id=${coachId}`
+  })
+}
+
 // 去评价
 const goToEvaluate = () => {
   uni.navigateTo({
@@ -524,6 +582,7 @@ const goToEvaluate = () => {
 
 // 生命周期
 onLoad((options) => {
+  console.log('optionsoptions===',options)
   // 审核模式入口守卫
   if (guardReviewEntry()) return
   if (options.id) {
@@ -601,7 +660,7 @@ onUnmounted(() => {
     background: linear-gradient(135deg, rgba(0, 187, 136, 0.25) 0%, rgba(0, 187, 136, 0.1) 100%);
   }
   &.status-60 {
-    background: linear-gradient(135deg, rgba(107, 114, 128, 0.25) 0%, rgba(107, 114, 128, 0.1) 100%);
+    background: linear-gradient(135deg, rgba(0, 187, 136, 0.25) 0%, rgba(0, 187, 136, 0.1) 100%);
   }
 
   .status-center {
@@ -728,6 +787,35 @@ onUnmounted(() => {
   }
 }
 
+/* 计费规则提示卡片 */
+.billing-tip-card {
+  margin: 20rpx 24rpx;
+  padding: 24rpx 28rpx;
+  background: var(--bg-secondary);
+  border-radius: 16rpx;
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+
+  .tip-icon {
+    font-size: 32rpx;
+    flex-shrink: 0;
+    line-height: 1.4;
+  }
+
+  .tip-text {
+    flex: 1;
+    color: var(--text-secondary);
+    font-size: 26rpx;
+    line-height: 1.6;
+  }
+}
+
+/* 助教信息卡片可点击 */
+.coach-card {
+  cursor: pointer;
+}
+
 /* 助教信息 */
 .coach-info {
   display: flex;
@@ -749,6 +837,11 @@ onUnmounted(() => {
       font-weight: 600;
     }
   }
+
+  .coach-arrow {
+    flex-shrink: 0;
+    margin-left: 8rpx;
+  }
 }
 
 /* 底部安全区域 */
@@ -764,7 +857,6 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   background-color: var(--bg-card);
-  border-top: 2rpx solid #333333;
   padding: 16rpx 32rpx;
   padding-bottom: calc(16rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));

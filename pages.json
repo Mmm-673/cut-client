@@ -46,15 +46,6 @@
       }
     },
     {
-      "path": "pages/onsite/list",
-      "style": {
-        "navigationBarTitleText": "现场订单",
-        "navigationBarBackgroundColor": "#121619",
-        "navigationBarTextStyle": "white",
-        "backgroundColor": "#121619"
-      }
-    },
-    {
       "path": "pages/mine/index",
       "style": {
         "navigationStyle": "custom",
@@ -257,10 +248,6 @@
     "pages/order/list": {
       "network": "all",
       "packages": ["subpkg/order"]
-    },
-    "pages/onsite/list": {
-      "network": "all",
-      "packages": ["subpkg/onsite"]
     },
     "pages/mine/index": {
       "network": "all",

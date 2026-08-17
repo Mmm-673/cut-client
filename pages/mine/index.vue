@@ -80,13 +80,21 @@
           <view
               class="order-card"
               v-for="order in showOrders"
-              :key="order.id"
-              @click="toOrderDetail(order.id)"
+              :key="order.key"
+              @click="toOrderDetail(order)"
               >
             <view class="order-left">
               <image class="coach-avatar" :src="order.coachAvatar" mode="aspectFill"></image>
               <view class="order-info">
-                <view class="order-title">{{ order.coachName }} · {{ order.coachLevel }}</view>
+                <view class="order-title-row">
+                  <text class="order-title">{{ order.coachName }} · {{ order.coachLevel }}</text>
+                  <text
+                    class="order-type-tag"
+                    :class="order.type === 2 ? 'onsite' : 'normal'"
+                  >
+                    {{ order.type === 2 ? '现场订单' : '普通订单' }}
+                  </text>
+                </view>
                 <view class="order-subtitle">{{ order.serviceName }} · {{ order.duration }}小时</view>
                 <view class="order-time">{{ order.time }}</view>
               </view>
@@ -239,11 +247,24 @@ const formatTime = (timestamp) => {
   return `${year}-${month}-${day} ${hour}:${minute}-${endHour}:${endMinute}`
 }
 
+// 订单类型常量
+const ORDER_TYPE_NORMAL = 1
+const ORDER_TYPE_ONSITE = 2
+
+// 判断是否为现场订单
+const isOnsiteOrder = (order) => Number(order.type) === ORDER_TYPE_ONSITE
+
 // 转换订单数据
 const transformOrder = (item) => {
-  const durationHours = Math.round(item.serviceDuration / 60)
-  const endTime = item.bookingTime + item.serviceDuration * 60 * 1000
-  const startTime = new Date(item.bookingTime)
+  const isOnsite = isOnsiteOrder(item)
+  // 时长兼容：普通订单 serviceDuration（分钟），现场订单 billingMinutes（分钟）
+  const durationMinutes = isOnsite
+    ? (item.billingMinutes || item.serviceDuration || 0)
+    : (item.serviceDuration || 0)
+  const durationHours = Math.round(durationMinutes / 60) || 1
+  const bookingTime = isOnsite ? item.startTime : item.bookingTime
+  const endTime = bookingTime + durationMinutes * 60 * 1000
+  const startTime = new Date(bookingTime)
   const endTimeDate = new Date(endTime)
 
   const startHour = String(startTime.getHours()).padStart(2, '0')
@@ -253,9 +274,20 @@ const transformOrder = (item) => {
   const dateStr = `${startTime.getFullYear()}-${String(startTime.getMonth() + 1).padStart(2, '0')}-${String(startTime.getDate()).padStart(2, '0')}`
   const timeStr = `${dateStr} ${startHour}:${startMin}-${endHour}:${endMin}`
 
+  // 头像兼容：普通订单 coachAvatar，现场订单 coachMainPhoto
+  const avatar = isOnsite
+    ? (item.coachMainPhoto || '/static/default-avatar.png')
+    : (item.coachAvatar || item.coachMainPhoto || '/static/default-avatar.png')
+
+  // 唯一 key，避免普通订单与现场订单 ID 冲突
+  const key = isOnsite ? `onsite_${item.id}` : `normal_${item.orderId}`
+
   return {
-    id: item.orderId,
-    coachAvatar: item.coachMainPhoto || '/static/default-avatar.png',
+    key,
+    id: isOnsite ? item.id : item.orderId,
+    orderId: item.orderId,
+    type: isOnsite ? ORDER_TYPE_ONSITE : ORDER_TYPE_NORMAL,
+    coachAvatar: avatar,
     coachName: item.coachStageName || '裁教',
     coachLevel: '教练',
     serviceName: SERVICE_TYPE_TEXT[item.serviceType] || '台球陪练',
@@ -362,7 +394,6 @@ const loadOrders = async () => {
 
 // 功能菜单
 const menuList = ref([
-  { key: 'onsite', title: '现场订单', icon: 'location', bgColor: 'rgba(245, 158, 11, 0.2)', color: '#F59E0B', path: '/pages/onsite/list' },
   { key: 'wallet', title: '收支统计', icon: 'wallet-filled', bgColor: 'rgba(0, 187, 136, 0.2)', color: '#00BB88', path: '/subpkg/mine/wallet' },
   { key: 'collection', title: '我的收藏', icon: 'heart', bgColor: 'rgba(255, 77, 79, 0.2)', color: '#ff4d4f', path: '/subpkg/mine/favorites' },
   { key: 'help', title: '客服中心', icon: 'headphones', bgColor: 'rgba(107, 114, 128, 0.2)', color: '#6B7280', path: '/subpkg/mine/help' }
@@ -371,7 +402,7 @@ const menuList = ref([
 // 审核模式下隐藏陪玩相关入口（收支统计/我的收藏）
 const visibleMenuList = computed(() => {
   if (!reviewMode.value) return menuList.value
-  return menuList.value.filter(item => !['wallet', 'collection', 'onsite'].includes(item.key))
+  return menuList.value.filter(item => !['wallet', 'collection'].includes(item.key))
 })
 
 // ---------------------- 计算属性 ----------------------
@@ -457,8 +488,12 @@ const toAllOrder = () => {
   uni.navigateTo({ url: '/pages/order/list' })
 }
 
-const toOrderDetail = (orderId) => {
-  uni.navigateTo({ url: `/subpkg/order/detail?id=${orderId}` })
+const toOrderDetail = (order) => {
+  if (order.type === ORDER_TYPE_ONSITE) {
+    uni.navigateTo({ url: `/subpkg/onsite/detail?id=${order.id}` })
+  } else {
+    uni.navigateTo({ url: `/subpkg/order/detail?id=${order.orderId}` })
+  }
 }
 
 const toReview = (orderId) => {
@@ -507,6 +542,7 @@ onShow(() => {
 
 .page-content {
   width: 100%;
+  height: 100%;
 }
 
 .func-card {
@@ -696,14 +732,38 @@ onShow(() => {
       .order-info {
         flex: 1;
         min-width: 0;
-        .order-title {
-          color: var(--text-primary);
-          font-size: 30rpx;
-          font-weight: 600;
+        .order-title-row {
+          display: flex;
+          align-items: center;
+          gap: 10rpx;
           margin-bottom: 8rpx;
           overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          .order-title {
+            color: var(--text-primary);
+            font-size: 28rpx;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex-shrink: 1;
+            min-width: 0;
+          }
+          .order-type-tag {
+            font-size: 20rpx;
+            padding: 2rpx 10rpx;
+            border-radius: 12rpx;
+            font-weight: 500;
+            flex-shrink: 0;
+            line-height: 1.4;
+            &.normal {
+              background: rgba(0, 187, 136, 0.15);
+              color: var(--brand-primary, #00BB88);
+            }
+            &.onsite {
+              background: rgba(245, 166, 35, 0.15);
+              color: #f5a623;
+            }
+          }
         }
         .order-subtitle {
           color: var(--text-secondary);

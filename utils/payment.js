@@ -785,7 +785,7 @@ export async function executeOnsitePayment(options) {
  * @returns {Array} 可用支付渠道列表
  */
 export function getOnsitePayChannels(enabledCodes) {
-  const onsiteSupported = ['wx_app', 'alipay_app']
+  const onsiteSupported = ['wx_app', 'alipay_app','wallet']
   const allChannels = enabledCodes ? getPayChannelsByEnabled(enabledCodes) : getAvailablePayChannels()
   return allChannels.filter(ch => onsiteSupported.includes(ch.channelCode))
 }
