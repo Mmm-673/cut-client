@@ -120,10 +120,12 @@
     <scroll-view
         class="list-scroll"
         scroll-y="true"
+        :scroll-top="scrollTop"
         refresher-enabled="true"
         :refresher-triggered="refreshing"
         @refresherrefresh="onRefresh"
         @scrolltolower="loadMore"
+        @scroll="onScroll"
     >
       <view class="coach-list">
         <view
@@ -209,6 +211,16 @@
       </view>
       <view class="safe-area-bottom"></view>
     </scroll-view>
+
+    <!-- 刷新/返回顶部按钮 -->
+    <view
+        v-show="showBackTop"
+        class="back-top-btn"
+        @click="scrollToTop"
+    >
+      <uni-icons type="refresh" size="20" color="#fff"></uni-icons>
+      <text class="back-top-text">刷新</text>
+    </view>
     </template>
 
 
@@ -265,6 +277,23 @@ const pageSize = ref(20)
 const searchKeyword = ref('')
 const coachList = ref([])
 const hasMore = ref(true)
+const listLoaded = ref(false) // 列表是否已加载，onShow 非首次不自动刷新
+
+// 返回顶部
+const scrollTop = ref(0)
+const showBackTop = ref(false)
+const BACK_TOP_THRESHOLD = 500 // 滚动超过 500px 显示返回顶部按钮
+
+const onScroll = (e) => {
+  showBackTop.value = e.detail.scrollTop > BACK_TOP_THRESHOLD
+}
+
+const scrollToTop = () => {
+  // 回到顶部
+  scrollTop.value = scrollTop.value === 0 ? 1 : 0
+  // 重新加载最新数据（从第1页开始）
+  loadData(true)
+}
 
 // 定位相关
 const locating = ref(false)
@@ -647,6 +676,8 @@ const fetchCoachList = async (isRefresh = false) => {
       hasMore.value = list.length >= pageSize.value
     }
     loadMoreStatus.value = hasMore.value ? 'more' : 'noMore'
+    // 标记列表已加载
+    listLoaded.value = true
   } catch (error) {
     console.error('加载裁教列表失败:', error)
     loadMoreStatus.value = 'noMore'
@@ -839,37 +870,26 @@ onShow(() => {
   configStore.syncTabBarLabel()
   // 审核模式下展示球厅预约，跳过教练列表逻辑
   if (reviewMode.value) return
-  // 每次显示都检查是否有默认tab参数
+
   let needRefresh = false
   try {
     const defaultTab = uni.getStorageSync('coachListDefaultTab')
     const tabTimestamp = uni.getStorageSync('coachListTabTimestamp')
     const now = Date.now()
 
-    console.log('onShow 检查默认tab:', defaultTab, '时间戳:', tabTimestamp)
-
     // 检查是否是3秒内从首页跳转过来的
     const isRecentFromHome = tabTimestamp && (now - tabTimestamp < 3000)
 
     if (defaultTab && isRecentFromHome) {
       const tabIndex = tabs.indexOf(defaultTab)
-      console.log('tab索引:', tabIndex)
       if (tabIndex !== -1 && currentTab.value !== tabIndex) {
         currentTab.value = tabIndex
         needRefresh = true
-        console.log('已设置tab为:', defaultTab)
       }
       // 清除参数
       uni.removeStorageSync('coachListDefaultTab')
       uni.removeStorageSync('coachListTabTimestamp')
     } else {
-      // 不是从首页跳转过来的，重置为全部
-      if (currentTab.value !== 0) {
-        console.log('重置为全部')
-        currentTab.value = 0
-        needRefresh = true
-      }
-      // 确保清除旧参数
       uni.removeStorageSync('coachListDefaultTab')
       uni.removeStorageSync('coachListTabTimestamp')
     }
@@ -877,12 +897,13 @@ onShow(() => {
     console.error('处理默认tab失败:', e)
   }
 
-  // 每次页面显示时都重新加载数据，确保显示最新内容
-  if (needRefresh) {
-    loadData(true)
-  } else {
+  // 首次进入加载数据；从首页带tab过来时刷新；其他情况（如从详情页返回）不自动刷新
+  if (!listLoaded.value) {
     refreshPageData()
+  } else if (needRefresh) {
+    loadData(true)
   }
+
   // 更新自定义 TabBar 选中状态
   updateCustomTabBar()
 })
@@ -1530,5 +1551,29 @@ onShow(() => {
 @keyframes skeletonPulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.55; }
+}
+
+/* 刷新按钮 */
+.back-top-btn {
+  position: fixed;
+  right: 30rpx;
+  bottom: 180rpx;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: rgba(0, 187, 136, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.25);
+  z-index: 999;
+
+  .back-top-text {
+    color: #fff;
+    font-size: 20rpx;
+    line-height: 1;
+  }
 }
 </style>

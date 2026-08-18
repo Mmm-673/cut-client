@@ -3,7 +3,7 @@
     <!-- 顶部Logo区域 -->
     <view class="logo-section">
       <view class="logo-circle">
-        <image class="logo-img" :src="globalConfig.appInfo.logo" mode="aspectFit"></image>
+        <image class="logo-img" :src="themeStore.theme === 'dark' ? globalConfig.appInfo.logoDark : globalConfig.appInfo.logoLight" mode="aspectFit"></image>
       </view>
       <text class="app-desc">{{ sloganText }}</text>
     </view>

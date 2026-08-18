@@ -7,8 +7,10 @@ export default {
     name: "初球",
     // 应用版本
     version: "1.0.0",
-    // 应用logo
+    // 应用logo（深色/浅色主题）
     logo: "/static/logo.png",
+    logoDark: "/static/logo.png",
+    logoLight: "/static/logo_.png",
     // 官方网站
     site_url: "https://qiulem.com/homepage",
     // 政策协议
