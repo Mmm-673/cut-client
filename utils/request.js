@@ -8,6 +8,11 @@ import { refreshToken } from '@/api/auth'
 let timeout = 10000
 const baseUrl = config.baseUrl
 
+// 获取客户端版本号（三段式，用于服务端版本分流）
+function getClientVersion() {
+  return config.appInfo?.clientVersion || '1.0.1'
+}
+
 // 刷新Token锁，防止并发刷新
 let isRefreshing = false
 // 等待刷新的请求队列
@@ -60,7 +65,7 @@ const request = async config => {
   // 添加 tenant-id
   config.header['tenant-id'] = '122'
   // 添加客户端版本号
-  config.header['client-version'] = '1.0.1'
+  config.header['client-version'] = getClientVersion()
 
   // 添加 Authorization header
   const accessToken = getAccessToken()

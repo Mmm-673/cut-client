@@ -93,7 +93,7 @@
         <view
             class="hall-card"
             v-for="hall in hallList"
-            :key="hall.id"
+            :key="getHallKey(hall)"
         >
           <!-- 球厅图片 -->
           <view class="hall-image-wrap">
@@ -134,10 +134,13 @@
             </view>
 
             <view class="hall-meta">
-              <uni-icons type="star-filled" size="16" color="#FBBF24" />
-              <text class="meta-text">{{ hall.score }}</text>
-              <text class="meta-divider">|</text>
-              <text class="meta-text">{{ hall.reviewCount }}条评价</text>
+              <template v-if="hall.score != null || hall.reviewCount != null">
+                <uni-icons v-if="hall.score != null" type="star-filled" size="16" color="#FBBF24" />
+                <text v-if="hall.score != null" class="meta-text">{{ hall.score }}</text>
+                <text v-if="hall.score != null && hall.reviewCount != null" class="meta-divider">|</text>
+                <text v-if="hall.reviewCount != null" class="meta-text">{{ hall.reviewCount }}条评价</text>
+              </template>
+              <text v-else class="meta-text">暂无评分</text>
             </view>
 
             <view class="hall-address">
@@ -170,7 +173,7 @@
                 <text>电话</text>
               </view>
               <view class="action-btn primary" @click="chooseHall(hall)">
-                <text>{{ creatingHallId === hall.id ? '创建中...' : '选择' }}</text>
+                <text>{{ creatingHallKey === getHallKey(hall) ? '创建中...' : '选择' }}</text>
               </view>
             </view>
           </view>
@@ -322,10 +325,10 @@ const selectedDateTime = ref({
 const coachInfo = ref(null)
 
 // 搜索半径（km）
-const radius = ref(5)
+const radius = ref(20)
 
-// 创建订单中状态（跟踪正在创建的球厅ID）
-const creatingHallId = ref(null)
+// 创建订单中状态（跟踪正在创建的球厅 key，兼容 id 为 null 的高德直查数据）
+const creatingHallKey = ref(null)
 
 const getNextValidTime = () => {
   const next = new Date()
@@ -645,6 +648,7 @@ const loadHallList = async () => {
     // 排序类型
     params.sortType = currentSortType.value
 
+    console.log('=====参数',params)
     const res = await getVenueList(params)
     // 给没有封面的场馆加随机默认图
     hallList.value = (res.data || []).map(item => ({
@@ -807,9 +811,15 @@ const increaseDuration = () => {
   orderInfo.value.duration++
 }
 
+// 球厅列表唯一 key（兼容 id 为 null 的情况）
+const getHallKey = (hall) => {
+  if (hall.id != null) return String(hall.id)
+  return `${hall.name || ''}-${hall.address || ''}-${hall.longitude || ''}-${hall.latitude || ''}`
+}
+
 // 选择球厅 - 创建订单
 const chooseHall = async (hall) => {
-  if (creatingHallId.value) return  // 防止重复点击
+  if (creatingHallKey.value) return  // 防止重复点击
 
   if (!coachInfo.value) {
     uni.showToast({ title: '教练信息缺失，请重试', icon: 'none' })
@@ -825,7 +835,7 @@ const chooseHall = async (hall) => {
     return
   }
 
-  creatingHallId.value = hall.id
+  creatingHallKey.value = getHallKey(hall)
   try {
     // 构建创建订单参数
     const createParams = {
@@ -834,7 +844,7 @@ const chooseHall = async (hall) => {
       bookingTime: selectedBookingTime.value,
       serviceDuration: orderInfo.value.duration * 60,
       quantity: orderInfo.value.duration,
-      venueId: hall.id,
+      venueId: hall.id ?? null,
       venueName: hall.name,
       venueAddress: hall.address,
       venueLongitude: hall.longitude,
@@ -876,7 +886,7 @@ const chooseHall = async (hall) => {
       duration: 2000
     })
   } finally {
-    creatingHallId.value = null
+    creatingHallKey.value = null
   }
 }
 

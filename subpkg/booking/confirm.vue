@@ -975,6 +975,26 @@ const handleCreateOrder = async () => {
     return
   }
 
+  // 服务类型 1 需要球厅名称、地址和坐标
+  if (serviceType.value === 1) {
+    const venueName = orderData.value.hallInfo?.name || orderData.value.venueName
+    const venueAddress = orderData.value.hallInfo?.address || orderData.value.venueAddress
+    const venueLongitude = orderData.value.hallInfo?.longitude ?? orderData.value.venueLongitude
+    const venueLatitude = orderData.value.hallInfo?.latitude ?? orderData.value.venueLatitude
+    if (!venueName) {
+      uni.showToast({ title: '请选择球厅', icon: 'none' })
+      return
+    }
+    if (!venueAddress) {
+      uni.showToast({ title: '球厅地址缺失', icon: 'none' })
+      return
+    }
+    if (venueLongitude == null || venueLatitude == null) {
+      uni.showToast({ title: '球厅坐标缺失', icon: 'none' })
+      return
+    }
+  }
+
   isSubmitting.value = true
   try {
     const createParams = {
@@ -987,11 +1007,11 @@ const handleCreateOrder = async () => {
 
     // 服务类型 1 使用球厅信息
     if (serviceType.value === 1) {
-      createParams.venueId = orderData.value.hallInfo?.id || orderData.value.venueId
+      createParams.venueId = (orderData.value.hallInfo?.id ?? orderData.value.venueId) ?? null
       createParams.venueName = orderData.value.hallInfo?.name || orderData.value.venueName
       createParams.venueAddress = orderData.value.hallInfo?.address || orderData.value.venueAddress
-      createParams.venueLongitude = orderData.value.hallInfo?.longitude || orderData.value.venueLongitude
-      createParams.venueLatitude = orderData.value.hallInfo?.latitude || orderData.value.venueLatitude
+      createParams.venueLongitude = orderData.value.hallInfo?.longitude ?? orderData.value.venueLongitude
+      createParams.venueLatitude = orderData.value.hallInfo?.latitude ?? orderData.value.venueLatitude
     } else if ([2, 3, 4].includes(serviceType.value)) {
       // 服务类型 2/3/4 使用服务地点凭证
       createParams.servicePlaceToken = selectedPlace.value.selectionToken
