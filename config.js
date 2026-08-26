@@ -1,6 +1,6 @@
 // 应用全局配置
 export default {
-  baseUrl: 'https://qiulem.com/test/',
+  baseUrl: 'https://qiulem.com/test',
   // 应用信息
   appInfo: {
     // 应用名称

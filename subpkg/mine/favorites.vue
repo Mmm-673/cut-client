@@ -51,8 +51,8 @@
             <view class="bottom-row">
               <view class="price-row">
                 <text class="price-symbol">¥</text>
-                <text class="price">{{ formatPrice(coach.hourlyPrice || coach.price) }}</text>
-                <text class="price-unit">/小时</text>
+                <text class="price">{{ formatPrice(getCoachDisplayPrice(coach)) }}</text>
+                <text class="price-unit">/{{ getCoachPriceUnit(coach) }}起</text>
               </view>
               <view class="action-buttons">
                 <button class="reward-btn" @click.stop="goToReward(coach.id)">
@@ -84,6 +84,7 @@ import {ref, onMounted, computed} from 'vue'
 import { useThemeStore } from '@/store'
 import {getFavoriteCoachPage} from '@/api/billiard/coach'
 import {guardReviewEntry} from '@/utils/review'
+import { getPriceUnit } from '@/utils/pricing'
 
 // 主题相关
 const themeStore = useThemeStore()
@@ -103,6 +104,26 @@ const hasMore = ref(true)
 const formatPrice = (price) => {
   if (!price) return '0'
   return (price / 100).toFixed(2)
+}
+
+// 获取助教展示价格
+const getCoachDisplayPrice = (coach) => {
+  if (!coach) return 0
+  const firstService = coach.serviceItemList?.[0]
+  if (firstService && firstService.price != null) {
+    return firstService.price
+  }
+  return coach.price ?? coach.hourlyPrice ?? 0
+}
+
+// 获取助教价格单位
+const getCoachPriceUnit = (coach) => {
+  if (!coach) return '小时'
+  const firstService = coach.serviceItemList?.[0]
+  if (firstService) {
+    return getPriceUnit(firstService)
+  }
+  return '小时'
 }
 
 // 等级映射

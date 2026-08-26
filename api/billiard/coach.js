@@ -63,6 +63,14 @@ export function getCoachList(params) {
  * @returns {string} returns.data.photos[].photoUrl - 照片URL
  * @returns {number} returns.data.photos[].sort - 排序值
  * @returns {boolean} returns.data.photos[].isMain - 是否主图
+ * @returns {Array} [returns.data.serviceItemList] - 服务项目列表
+ * @returns {number} returns.data.serviceItemList[].id - 服务项目ID
+ * @returns {number} returns.data.serviceItemList[].serviceType - 服务类型：1=台球陪练 2=潮玩领航 3=酒艺品鉴 4=影视赏析
+ * @returns {string} returns.data.serviceItemList[].serviceName - 服务名称
+ * @returns {number} [returns.data.serviceItemList[].hourlyPrice] - 旧版小时单价（分），仅兼容旧客户端使用
+ * @returns {number|null} returns.data.serviceItemList[].price - 当前服务价（分），新版以此字段为准
+ * @returns {string} returns.data.serviceItemList[].pricingMode - 计价模式：HOURLY=小时价 FIXED=固定价
+ * @returns {string} returns.data.serviceItemList[].priceUnit - 价格单位：小时 / 次
  */
 export function getCoachDetail(params) {
   return request({

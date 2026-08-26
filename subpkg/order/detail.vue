@@ -45,7 +45,15 @@
 
         <!-- 计时状态（仅进行中状态显示） -->
         <view class="service-timer" v-if="orderInfo.status === 40">
-          <view class="timer-row">
+          <!-- 固定价：只展示已服务时长 -->
+          <view class="timer-row fixed" v-if="isFixedOrder">
+            <view class="timer-item">
+              <text class="timer-label">已服务</text>
+              <text class="timer-value">{{ formatSeconds(timerInfo.elapsedSeconds) }}</text>
+            </view>
+          </view>
+          <!-- 小时价：已服务 + 剩余 -->
+          <view class="timer-row" v-else>
             <view class="timer-item">
               <text class="timer-label">已服务</text>
               <text class="timer-value">{{ formatSeconds(timerInfo.elapsedSeconds) }}</text>
@@ -71,7 +79,7 @@
           <text class="value">{{ orderInfo.serviceTime }}</text>
         </view>
 
-        <view class="info-row">
+        <view class="info-row" v-if="!isFixedOrder">
           <text class="label">服务时长</text>
           <text class="value">{{ orderInfo.serviceDuration }}分钟</text>
         </view>
@@ -86,9 +94,9 @@
           <text class="value">{{ orderInfo.createTime }}</text>
         </view>
 
-        <view class="info-row">
+        <view class="info-row" v-if="orderInfo.payMethod">
           <text class="label">支付方式</text>
-          <text class="value">微信支付</text>
+          <text class="value">{{ orderInfo.payMethod }}</text>
         </view>
 
         <view class="info-row">
@@ -101,7 +109,7 @@
           <text class="value price">¥{{ formatAmount(orderInfo.payAmount) }}</text>
         </view>
 
-        <view class="info-row" v-if="orderInfo.extraPayAmount > 0">
+        <view class="info-row" v-if="!isFixedOrder && orderInfo.extraPayAmount > 0">
           <text class="label">加钟支付</text>
           <text class="value price">¥{{ formatAmount(orderInfo.extraPayAmount) }}</text>
         </view>
@@ -187,8 +195,8 @@
       </button>
     </view>
 
-    <!-- 进行中 -->
-    <view class="bottom-bar" v-if="orderInfo.status === 40">
+    <!-- 进行中（固定价不显示加钟） -->
+    <view class="bottom-bar" v-if="orderInfo.status === 40 && !isFixedOrder">
       <button class="action-btn add-time" @click="addTime">加钟</button>
     </view>
 
@@ -396,6 +404,7 @@ import { useThemeStore } from '@/store'
 const themeStore = useThemeStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
 import { getOrderDetail, cancelOrder, addTimeOrder, deleteOrder } from '@/api/billiard/order'
+import { isFixedPricing } from '@/utils/pricing'
 import { getCoachDetail } from '@/api/billiard/coach'
 import { getRewardSwitch } from '@/api/billiard/user'
 import { getTimerStatus } from '@/api/billiard/timer'
@@ -515,6 +524,7 @@ const orderInfo = ref({
   venueLatitude: null,
   venuePhotoUrl: '',
   serviceType: 1,
+  pricingMode: 1, // 1=小时价 2=固定价
   bookingTime: 0,
   serviceDuration: 0,
   status: 0,
@@ -523,9 +533,13 @@ const orderInfo = ref({
   totalAmount: 0,
   createTime: 0,
   payStatus: 0,
+  payMethod: '', // 支付方式名称
   statusText: '',
   serviceTime: ''
 })
+
+// 是否为固定价订单
+const isFixedOrder = computed(() => isFixedPricing(orderInfo.value.pricingMode))
 
 // 裁教详情信息
 const coachInfo = ref({
@@ -856,6 +870,7 @@ const loadOrderDetail = async (silent = false) => {
       venueLatitude: data.venueLatitude,
       venuePhotoUrl: venuePhotoUrl,
       serviceType: data.serviceType,
+      pricingMode: data.pricingMode ?? 1, // 计价模式：1=小时价 2=固定价，默认兜底 1
       bookingTime: data.bookingTime,
       serviceDuration: data.serviceDuration,
       status: data.status,
@@ -863,6 +878,7 @@ const loadOrderDetail = async (silent = false) => {
       extraPayAmount: data.extraPayAmount,
       totalAmount: data.totalAmount,
       payStatus: data.payStatus,
+      payMethod: data.payMethod || data.payChannelName || '',
       statusText: statusMap[data.status]?.text || '未知',
       serviceTime: formatBookingTime(data.bookingTime),
       createTime: formatCreateTime(data.createTime)
@@ -1304,11 +1320,12 @@ const startTimerPolling = () => {
   // 10秒轮询一次服务端（放慢速度）
   timerPollingInterval = setInterval(loadTimerStatus, 10000)
 
-  // 本地每秒递减，用于平滑显示（这个保留，因为是本地计算）
+  // 本地每秒递增已服务时长，用于平滑显示
   localTimerInterval = setInterval(() => {
-    if (timerInfo.value.remainingSeconds > 0) {
+    timerInfo.value.elapsedSeconds++
+    // 小时价模式才递减剩余时间；固定价没有剩余时间概念
+    if (!isFixedOrder.value && timerInfo.value.remainingSeconds > 0) {
       timerInfo.value.remainingSeconds--
-      timerInfo.value.elapsedSeconds++
     }
   }, 1000)
 }

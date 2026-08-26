@@ -21,9 +21,10 @@ import request from '@/utils/request'
  * @returns {string} returns.data.list[].orderNo - 订单号
  * @returns {string} returns.data.list[].coachStageName - 裁教艺名
  * @returns {string} [returns.data.list[].coachMainPhoto] - 裁教主图 URL
- * @returns {number} returns.data.list[].serviceType - 服务类型：1=台球陪练 2=达人带路
+ * @returns {number} returns.data.list[].serviceType - 服务类型：1=台球陪练 2=达人带路 3=酒艺品鉴 4=影视赏析
+ * @returns {number} returns.data.list[].pricingMode - 计价模式：1=小时价(HOURLY) 2=固定价(FIXED)
  * @returns {number} returns.data.list[].bookingTime - 预约服务开始时间（毫秒时间戳）
- * @returns {number} returns.data.list[].serviceDuration - 预定总时长（分钟）
+ * @returns {number} returns.data.list[].serviceDuration - 预定总时长（分钟），固定价订单为 0
  * @returns {number} returns.data.list[].status - 订单状态
  * @returns {number} returns.data.list[].totalAmount - 订单总金额（分）
  * @returns {number} returns.data.list[].createTime - 下单时间（毫秒时间戳）
@@ -53,12 +54,13 @@ export function getOrderList(params) {
  * @returns {string} [returns.data.venueAddress] - 球厅地址
  * @returns {number} [returns.data.venueLongitude] - 球厅经度
  * @returns {number} [returns.data.venueLatitude] - 球厅纬度
- * @returns {number} returns.data.serviceType - 服务类型：1=台球陪练 2=达人带路
+ * @returns {number} returns.data.serviceType - 服务类型：1=台球陪练 2=达人带路 3=酒艺品鉴 4=影视赏析
+ * @returns {number} returns.data.pricingMode - 计价模式：1=小时价(HOURLY) 2=固定价(FIXED)
  * @returns {number} returns.data.bookingTime - 预约服务开始时间（毫秒时间戳）
- * @returns {number} returns.data.serviceDuration - 预定总时长（分钟）
+ * @returns {number} returns.data.serviceDuration - 预定总时长（分钟），固定价订单为 0
  * @returns {number} returns.data.status - 订单状态
  * @returns {number} returns.data.payAmount - 实际支付金额（分）
- * @returns {number} returns.data.extraPayAmount - 加钟累计支付金额（分）
+ * @returns {number} returns.data.extraPayAmount - 加钟累计支付金额（分），固定价订单为 0
  * @returns {number} returns.data.totalAmount - 订单总金额（分）
  * @returns {number} returns.data.createTime - 下单时间（毫秒时间戳）
  * @returns {number} returns.data.payStatus - 支付状态：0=未支付 10=支付成功 20=已退款 30=支付关闭

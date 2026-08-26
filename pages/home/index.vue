@@ -131,9 +131,9 @@
                   </view>
                 </view>
                 <!-- 新增：价格信息 -->
-                <view class="price-info" v-if="item.price">
-                  <text class="price-text">¥{{item.price}}</text>
-                  <text class="price-unit">/小时</text>
+                <view class="price-info" v-if="item.displayPrice">
+                  <text class="price-text">¥{{item.displayPrice}}</text>
+                  <text class="price-unit">/{{item.priceUnit}}起</text>
                 </view>
               </view>
             </view>
@@ -327,17 +327,30 @@ const loadHotCoaches = async () => {
   try {
     const res = await getHotCoachList({ limit: 20 }) // 减少显示数量以突出单个卡片
     const list = res.data?.filter(item => item.id !== 27) || res || []
-    hotCoachList.value = Array.isArray(list) ? list.map(item => ({
-      id: item.id,
-      name: item.stageName,
-      avatar: item.avatar || item.mainPhotoUrl || 'https://picsum.photos/300/300',
-      score: item.overallScore || 5.0,
-      orderCount: item.serviceCount || 0,
-      online: Math.random() > 0.3,
-      level: item.level || '资深', // 新增：裁教等级
-      // desc: item.introduction || '专业裁教，经验丰富', // 新增：简介
-      price: item.hourlyRate || 120 // 新增：小时价格
-    })) : []
+    hotCoachList.value = Array.isArray(list) ? list.map(item => {
+      // 价格取值：优先 serviceItemList[0].price，兜底 hourlyPrice / hourlyRate / price
+      const firstService = item.serviceItemList?.[0]
+      let displayPrice = 0
+      let priceUnit = '小时'
+      if (firstService && firstService.price != null) {
+        displayPrice = (firstService.price / 100).toFixed(2)
+        priceUnit = firstService.priceUnit || '小时'
+      } else {
+        const rawPrice = item.price ?? item.hourlyPrice ?? item.hourlyRate
+        displayPrice = rawPrice ? (rawPrice / 100).toFixed(2) : '0.00'
+      }
+      return {
+        id: item.id,
+        name: item.stageName,
+        avatar: item.avatar || item.mainPhotoUrl || 'https://picsum.photos/300/300',
+        score: item.overallScore || 5.0,
+        orderCount: item.serviceCount || 0,
+        online: Math.random() > 0.3,
+        level: item.level || '资深',
+        displayPrice,
+        priceUnit
+      }
+    }) : []
   } catch (error) {
     console.error('加载热门裁教失败:', error)
     uni.showToast({ title: '加载热门裁教失败', icon: 'none' })

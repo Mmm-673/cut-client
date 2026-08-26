@@ -45,7 +45,7 @@
           <text class="value">{{ serviceTypeName }}</text>
         </view>
 
-        <view class="info-row">
+        <view class="info-row" v-if="!isFixedOrder">
           <text class="label">服务时长</text>
           <text class="value">{{ (orderData.serviceDuration / 60) || 2 }}小时</text>
         </view>
@@ -128,7 +128,7 @@
         <view class="card-title">费用明细</view>
 
         <view class="fee-row">
-          <text class="fee-label">{{ serviceTypeName }} x{{ orderData.quantity || 2 }}小时</text>
+          <text class="fee-label">{{ serviceTypeName }} {{ serviceFeeQuantityText }}</text>
           <text class="fee-value">¥{{ (orderData.serviceAmount / 100).toFixed(2) }}</text>
         </view>
 
@@ -359,6 +359,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useThemeStore } from '@/store'
 import { fetchEnabledChannels, executePayment } from '@/utils/payment'
 import { createOrder } from '@/api/billiard/order'
+import { isFixedPricing, getPriceUnit } from '@/utils/pricing'
 import { getCoachDetail } from '@/api/billiard/coach'
 import { searchServicePlace } from '@/api/billiard/venue'
 import { getAreaTree } from '@/api/billiard/area'
@@ -634,6 +635,22 @@ const serviceTypeName = computed(() => {
   if (serviceType.value === 3) return '酒艺品鉴'
   if (serviceType.value === 4) return '影视赏析'
   return '台球指导'
+})
+
+// 是否为固定价订单
+const isFixedOrder = computed(() => {
+  // 优先从选中服务的 pricingMode 判断，其次从订单数据中取
+  const mode = orderData.value.selectedService?.pricingMode || orderData.value.pricingMode
+  return isFixedPricing(mode)
+})
+
+// 费用明细中服务项的数量+单位文案
+const serviceFeeQuantityText = computed(() => {
+  if (isFixedOrder.value) {
+    return 'x1次'
+  }
+  const qty = orderData.value.quantity || 2
+  return `x${qty}小时`
 })
 
 const selectedPayChannel = computed(() => payList.value.find(item => item.value === selectedPay.value))
@@ -1000,9 +1017,13 @@ const handleCreateOrder = async () => {
     const createParams = {
       coachId: orderData.value.coachInfo.id,
       serviceType: serviceType.value,
-      bookingTime: orderData.value.bookingTime,
-      serviceDuration: orderData.value.serviceDuration || 120,
-      quantity: orderData.value.quantity || 2
+      bookingTime: orderData.value.bookingTime
+    }
+
+    // 小时价模式才传时长和数量；固定价不传，由后端处理
+    if (!isFixedOrder.value) {
+      createParams.serviceDuration = orderData.value.serviceDuration || 120
+      createParams.quantity = orderData.value.quantity || 2
     }
 
     // 服务类型 1 使用球厅信息
@@ -1051,7 +1072,7 @@ const handleCreateOrder = async () => {
       uni.showToast({ title: '服务地点已失效，请重新选择', icon: 'none' })
       selectedPlace.value = null
     } else {
-      uni.showToast({ title: error.message || '创建订单失败，请重试', icon: 'none' })
+      uni.showToast({ title: error || '创建订单失败，请重试', icon: 'none' })
     }
   } finally {
     isSubmitting.value = false
