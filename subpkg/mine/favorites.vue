@@ -238,7 +238,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .favorites-page {
   width: 100%;
-  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
   background-color: var(--bg-page);
   display: flex;
   flex-direction: column;

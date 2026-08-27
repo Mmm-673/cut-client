@@ -931,8 +931,8 @@ onShow(() => {
 
 <style lang="scss" scoped>
 .choose-hall-wrapper {
-  min-height: 100vh;
-  height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
+  height: calc(var(--vh, 1vh) * 100);
   background: var(--bg-page);
   display: flex;
   flex-direction: column;
@@ -952,7 +952,7 @@ onShow(() => {
 .hall-scroll {
   flex: 1;
   width: 100%;
-  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
   box-sizing: border-box;
 }
 

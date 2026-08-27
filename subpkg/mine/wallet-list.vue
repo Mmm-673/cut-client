@@ -444,7 +444,7 @@ onShow(() => {
 
 <style lang="scss" scoped>
 .record-all-wrapper {
-  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
   background: var(--bg-page);
   display: flex;
   flex-direction: column;

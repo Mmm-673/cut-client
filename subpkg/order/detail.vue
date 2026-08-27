@@ -1448,14 +1448,14 @@ let lastStatus = null
 
 <style lang="scss" scoped>
 .order-detail-wrapper {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   background: var(--bg-page);
   overscroll-behavior: none;
 }
 
 /* 空状态 */
 .empty-state {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1484,7 +1484,7 @@ let lastStatus = null
 }
 
 .page-content {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   padding-top: 30rpx;
   padding-bottom: 140rpx;
   background: var(--bg-page);

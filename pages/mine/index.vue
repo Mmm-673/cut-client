@@ -396,7 +396,10 @@ const loadOrders = async () => {
 const menuList = ref([
   { key: 'wallet', title: '收支统计', icon: 'wallet-filled', bgColor: 'rgba(0, 187, 136, 0.2)', color: '#00BB88', path: '/subpkg/mine/wallet' },
   { key: 'collection', title: '我的收藏', icon: 'heart', bgColor: 'rgba(255, 77, 79, 0.2)', color: '#ff4d4f', path: '/subpkg/mine/favorites' },
-  { key: 'help', title: '客服中心', icon: 'headphones', bgColor: 'rgba(107, 114, 128, 0.2)', color: '#6B7280', path: '/subpkg/mine/help' }
+  { key: 'help', title: '客服中心', icon: 'headphones', bgColor: 'rgba(107, 114, 128, 0.2)', color: '#6B7280', path: '/subpkg/mine/help' },
+  // #ifdef H5
+  { key: 'download', title: '下载 APP', icon: 'download', bgColor: 'rgba(0, 122, 255, 0.2)', color: '#007AFF', path: '/subpkg/common/download' }
+  // #endif
 ])
 
 // 审核模式下隐藏陪玩相关入口（收支统计/我的收藏）
@@ -535,7 +538,7 @@ onShow(() => {
 
 <style lang="scss" scoped>
 .my-page-wrapper {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   background: var(--bg-page);
   padding-top: 130rpx;
 }
@@ -856,7 +859,7 @@ onShow(() => {
    未登录提示页面样式
    ========================================== */
 .login-prompt-wrapper {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   display: flex;
   flex-direction: column;
   justify-content: center;

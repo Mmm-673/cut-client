@@ -363,10 +363,45 @@
             "port" : 9090,
             "https" : false
         },
-        "title" : "球了么",
+        "title" : "初球",
         "router" : {
             "mode" : "hash",
             "base" : "./"
+        },
+        "sdkConfigs" : {
+            "geolocation" : {
+                "type" : "amap",
+                "key" : "f66420f63919c84eda1b14e1cf8db73e"
+            },
+            "maps" : {
+                "type" : "amap",
+                "key" : "f66420f63919c84eda1b14e1cf8db73e"
+            }
+        },
+        "pwa" : {
+            "enabled" : true,
+            "manifest" : {
+                "name" : "初球",
+                "short_name" : "初球",
+                "description" : "专业台球裁教预约平台",
+                "display" : "standalone",
+                "orientation" : "portrait-primary",
+                "background_color" : "#121619",
+                "theme_color" : "#121619",
+                "start_url" : "./",
+                "icons" : [
+                    {
+                        "src" : "static/icons/pwa/icon-192.png",
+                        "sizes" : "192x192",
+                        "type" : "image/png"
+                    },
+                    {
+                        "src" : "static/icons/pwa/icon-512.png",
+                        "sizes" : "512x512",
+                        "type" : "image/png"
+                    }
+                ]
+            }
         }
     },
     "fallbackLocale" : "zh-Hans",

@@ -430,7 +430,7 @@ const submitReward = async () => {
 <style lang="scss" scoped>
 /* #ifdef MP-WEIXIN */
 .reward-page {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   background-color: var(--bg-page);
   display: flex;
   align-items: center;
@@ -451,7 +451,7 @@ const submitReward = async () => {
 
 /* #ifndef MP-WEIXIN */
 .reward-page {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   background-color: var(--bg-page);
   padding-bottom: 120rpx;
 }

@@ -30,14 +30,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { showCameraPurposeModal, showAlbumPurposeModal, showCameraPermissionModal, showAlbumPermissionModal } from '@/utils/photo'
 import { useThemeStore } from '@/store'
 
 const themeStore = useThemeStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
 
-const statusBarHeight = ref(0)
 const loading = ref(false)
 // 从 URL 中提取参数
 const getQueryParam = (url, param) => {
@@ -56,7 +55,6 @@ const getQueryParam = (url, param) => {
 
 // 处理扫码结果（扫码和相册共用）
 const processQrResult = (rawResult) => {
-  console.log('[processQrResult] 原始内容:', rawResult, '类型:', typeof rawResult)
 
   let coachId = null
 
@@ -115,7 +113,6 @@ const convertToNativePath = (tempPath) => {
 const decodeImage = async (filePath) => {
   try {
     // #ifdef APP-PLUS
-    console.log('[相册扫码] 原始临时路径:', filePath)
 
     // 尝试多种方式获取可用路径
     let scanPath = filePath
@@ -134,13 +131,11 @@ const decodeImage = async (filePath) => {
       scanPath = filePath
     }
 
-    console.log('[相册扫码] 最终扫描路径:', scanPath)
 
     const code = await new Promise((resolve, reject) => {
       plus.barcode.scan(
           scanPath,
           (type, result) => {
-            console.log('[相册扫码] 解码成功, type:', type, 'result:', result)
             resolve(result)
           },
           (err) => {
@@ -151,7 +146,6 @@ const decodeImage = async (filePath) => {
     })
 
     loading.value = false
-    console.log('[相册扫码] 最终解码内容:', code)
     if (code) {
       processQrResult(code)
     } else {
@@ -160,13 +154,57 @@ const decodeImage = async (filePath) => {
     // #endif
 
     // #ifdef H5
-    // H5 平台：提示暂不支持
-    loading.value = false
-    console.log('[相册扫码-H5] 路径:', filePath)
-    uni.showToast({
-      title: 'H5 相册扫码功能开发中，请使用直接扫码',
-      icon: 'none'
-    })
+    // H5 平台：使用 jsQR 解码
+    loading.value = true
+
+    try {
+      const img = new Image()
+      // 仅网络跨域图片需要 crossOrigin，本地临时文件（blob/base64）不需要
+      if (filePath && (filePath.startsWith('http://') || filePath.startsWith('https://'))) {
+        img.crossOrigin = 'anonymous'
+      }
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d')
+          canvas.width = img.width
+          canvas.height = img.height
+          ctx.drawImage(img, 0, 0, img.width, img.height)
+
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+          // 动态 import jsQR，避免非 H5 打包
+          import('jsqr').then(({ default: jsQR }) => {
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+              inversionAttempts: 'dontInvert'
+            })
+
+            loading.value = false
+            if (code && code.data) {
+              processQrResult(code.data)
+            } else {
+              uni.showToast({ title: '未识别到二维码，请选择清晰的二维码图片', icon: 'none' })
+            }
+          }).catch((err) => {
+            loading.value = false
+            console.error('[相册扫码-H5] jsQR 加载失败:', err)
+            uni.showToast({ title: '解码库加载失败', icon: 'none' })
+          })
+        } catch (err) {
+          loading.value = false
+          console.error('[相册扫码-H5] 解码异常:', err)
+          uni.showToast({ title: '未识别到二维码，请选择清晰的二维码图片', icon: 'none' })
+        }
+      }
+      img.onerror = () => {
+        loading.value = false
+        uni.showToast({ title: '图片加载失败', icon: 'none' })
+      }
+      img.src = filePath
+    } catch (err) {
+      loading.value = false
+      console.error('[相册扫码-H5] 异常:', err)
+      uni.showToast({ title: '未识别到二维码，请选择清晰的二维码图片', icon: 'none' })
+    }
     // #endif
   } catch (err) {
     loading.value = false
@@ -185,7 +223,6 @@ const handleAlbumScan = async () => {
     uni.scanCode({
       scanType: ['qrCode'],
       success: (res) => {
-        console.log('[相册扫码-小程序] 成功:', res.result)
         processQrResult(res.result)
       },
       fail: (err) => {
@@ -226,7 +263,6 @@ const handleAlbumScan = async () => {
   } catch (err) {
     loading.value = false
     if (err?.message === 'user_cancelled') {
-      console.log('用户取消了相册权限用途说明')
     } else if (err?.errMsg?.includes('cancel')) {
       // 用户取消选图，不做处理
     } else {
@@ -243,31 +279,26 @@ const handleScan = async () => {
     uni.scanCode({
       onlyFromCamera: true,
       success: (res) => {
-        console.log('扫码结果:', res)
         processQrResult(res.result)
       },
       fail: (err) => {
         console.error('扫码失败:', err)
         if (err.errMsg && err.errMsg.includes('cancel')) {
-          // 用户取消，返回首页
-          // uni.switchTab({
-          //   url: '/pages/home/index'
-          // })
+          // 用户取消
         } else if (err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize') || err.errMsg.includes('denied') || err.errMsg.includes('fail'))) {
           // 权限拒绝，显示引导弹窗
           showCameraPermissionModal()
+          // #ifdef H5
+          // H5 端额外提示：可以使用相册扫码作为替代
+          setTimeout(() => {
+            uni.showToast({ title: '相机不可用，可尝试从相册选择二维码', icon: 'none', duration: 2500 })
+          }, 500)
+          // #endif
         } else {
           uni.showToast({
             title: '扫码失败，请重试',
             icon: 'none',
-            duration: 1500,
-            complete: () => {
-              // setTimeout(() => {
-              //   uni.switchTab({
-              //     url: '/pages/home/index'
-              //   })
-              // }, 1500)
-            }
+            duration: 1500
           })
         }
       }
@@ -276,7 +307,6 @@ const handleScan = async () => {
     console.error('处理扫码请求失败:', err)
     if (err?.message === 'user_cancelled') {
       // 用户取消了相机权限用途说明，不进行任何操作
-      console.log('用户取消了相机权限用途说明')
     } else {
       uni.showToast({
         title: '扫码失败，请重试',
@@ -287,15 +317,11 @@ const handleScan = async () => {
   }
 }
 
-onMounted(() => {
-  const systemInfo = uni.getSystemInfoSync()
-  statusBarHeight.value = systemInfo.statusBarHeight || 0
-})
 </script>
 
 <style lang="scss" scoped>
 .scan-wrapper {
-  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
   background-color: var(--bg-page);
 }
 .album-btn {

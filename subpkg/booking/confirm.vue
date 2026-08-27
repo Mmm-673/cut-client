@@ -1198,7 +1198,7 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .confirm-order-wrapper {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   background: var(--bg-page);
   display: flex;
   flex-direction: column;

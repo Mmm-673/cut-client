@@ -1,7 +1,7 @@
 <template>
   <view class="home-wrapper" :class="themeClass">
     <!-- 滚动区域 -->
-    <scroll-view scroll-y class="scroll-container" show-scrollbar="false" :style="{ paddingTop: navBarHeight + 'rpx', height: `calc(100vh)` }">
+    <scroll-view scroll-y class="scroll-container" show-scrollbar="false" :style="{ paddingTop: navBarHeight + 'rpx', height: `calc(var(--vh, 1vh) * 100)` }">
       <!-- 欢迎语 -->
       <view class="welcome-section">
         <view class="welcome-left">
@@ -465,7 +465,7 @@ onShow(() => {
 
 <style lang="scss" scoped>
 .home-wrapper {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   background-color: var(--bg-page);
   box-sizing: border-box;
 }

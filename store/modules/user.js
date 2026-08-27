@@ -80,6 +80,8 @@ export const useUserStore = defineStore('user', () => {
             mobile: loginData.mobile
           })
           bindPushAfterLogin(data.userId)
+          // H5 深链跳转
+          redirectAfterLogin()
           resolve(data)
         }).catch(error => {
           reject(error)
@@ -101,6 +103,8 @@ export const useUserStore = defineStore('user', () => {
           mobile: loginData.mobile
         })
         bindPushAfterLogin(data.userId)
+        // H5 深链跳转
+        redirectAfterLogin()
         resolve(data)
       }).catch(error => {
         reject(error)
@@ -115,6 +119,25 @@ export const useUserStore = defineStore('user', () => {
       syncPushForUser(userId)
     }
     // #endif
+  }
+
+  // 登录后跳转到深链目标（H5 专属）
+  const redirectAfterLogin = () => {
+    // #ifdef H5
+    try {
+      const target = uni.getStorageSync('deep_link_target')
+      if (target) {
+        uni.removeStorageSync('deep_link_target')
+        setTimeout(() => {
+          uni.reLaunch({ url: target })
+        }, 500)
+        return true
+      }
+    } catch (e) {
+      console.warn('[UserStore] 深链跳转失败:', e)
+    }
+    // #endif
+    return false
   }
 
   // 退出登录

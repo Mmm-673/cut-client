@@ -11,7 +11,15 @@
       "mcp__codegraph__codegraph_search",
       "Bash(npm audit *)",
       "Skill(superpowers:using-git-worktrees)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(node -e ' *)",
+      "Bash(node -c utils/payment.js)",
+      "Bash(node -c utils/location.js)",
+      "Bash(node -c utils/theme.js)",
+      "Bash(node -c utils/platform.js)",
+      "Bash(node -c api/auth.js)",
+      "Bash(node)",
+      "Bash(cd *)"
     ]
   }
 }

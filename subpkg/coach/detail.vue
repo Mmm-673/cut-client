@@ -776,13 +776,13 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .detail-container {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   background-color: var(--bg-page);
   position: relative;
 }
 
 .content-wrapper {
-  min-height: calc(100vh - 120rpx); /* 减去底部栏高度 */
+  min-height: calc(var(--vh, 1vh) * 100 - 120rpx); /* 减去底部栏高度 */
   background-color: var(--bg-page);
   padding-bottom: calc(env(safe-area-inset-bottom) + 120rpx); /* 确保内容不会被底部栏遮挡 */
 }

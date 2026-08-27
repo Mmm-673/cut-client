@@ -1,6 +1,11 @@
 // 主题工具函数
 import { useThemeStore } from '@/store'
 
+// #ifdef H5
+// 主题过渡定时器（用于快速切换时避免竞态）
+let themeTransitionTimer = null
+// #endif
+
 // 最早期的主题初始化（在应用启动时立即调用）
 export function initThemeEarly() {
   try {
@@ -8,7 +13,6 @@ export function initThemeEarly() {
     const stored = uni.getStorageSync('app_theme')
     const theme = (stored === 'dark' || stored === 'light') ? stored : 'dark'
 
-    console.log('[Theme] 早期初始化主题:', theme)
 
     // #ifdef H5
     // H5：立即给 html 和 body 添加主题类
@@ -161,7 +165,6 @@ export function updateNavigationBarStyle(theme) {
 // 更新 TabBar 样式
 export function updateTabBarStyle(theme) {
   const style = getTabBarStyle(theme)
-  console.log('[Theme] 更新 TabBar 样式:', style)
 
   try {
     uni.setTabBarStyle({
@@ -170,7 +173,6 @@ export function updateTabBarStyle(theme) {
       backgroundColor: style.backgroundColor,
       borderStyle: style.borderStyle,
       success: () => {
-        console.log('[Theme] TabBar 样式更新成功')
       },
       fail: (err) => {
         console.warn('[Theme] 更新 TabBar 样式失败:', err)
@@ -183,10 +185,12 @@ export function updateTabBarStyle(theme) {
 
 // 应用主题到当前页面
 export function applyThemeToPage(theme) {
-  console.log('[Theme] applyThemeToPage:', theme)
 
   // #ifdef H5
   try {
+    // 添加过渡类，确保主题切换时有动画效果
+    document.documentElement.classList.add('theme-transitioning')
+
     if (theme === 'light') {
       document.documentElement.classList.remove('theme-dark')
       document.documentElement.classList.add('theme-light')
@@ -198,6 +202,16 @@ export function applyThemeToPage(theme) {
       document.body.classList.remove('theme-light')
       document.body.classList.add('theme-dark')
     }
+
+    // 清除上一次的定时器，防止快速切换时过渡类被提前移除
+    if (themeTransitionTimer) {
+      clearTimeout(themeTransitionTimer)
+    }
+    // 过渡结束后移除过渡类，避免性能损耗
+    themeTransitionTimer = setTimeout(() => {
+      document.documentElement.classList.remove('theme-transitioning')
+      themeTransitionTimer = null
+    }, 350)
   } catch (e) {
     console.warn('[Theme] H5 主题类名应用失败:', e)
   }
@@ -231,7 +245,6 @@ export function applyThemeToPage(theme) {
 
 // 应用主题（入口函数）
 export function applyTheme(theme) {
-  console.log('[Theme] applyTheme 入口:', theme)
   const themeStore = useThemeStore()
 
   if (themeStore.theme !== theme) {

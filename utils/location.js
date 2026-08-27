@@ -18,13 +18,11 @@ export const showLocationPurposeModal = () => {
   return new Promise((resolve, reject) => {
     // 检查用户是否已经同意过定位权限用途说明
     const hasAgreedLocationPurpose = uni.getStorageSync('hasAgreedLocationPurpose')
-    console.log('hasAgreedLocationPurpose:', hasAgreedLocationPurpose)
     if (hasAgreedLocationPurpose) {
       resolve()
       return
     }
 
-    console.log('开始显示定位权限说明弹窗')
 
     // 使用 setTimeout 确保 DOM 渲染完成后再显示弹窗
     setTimeout(() => {
@@ -34,7 +32,6 @@ export const showLocationPurposeModal = () => {
         confirmText: '同意',
         cancelText: '取消',
         success: (res) => {
-          console.log('showModal 回调:', res)
           if (res.confirm) {
             // 存储用户同意状态
             uni.setStorageSync('hasAgreedLocationPurpose', true)
@@ -141,7 +138,21 @@ export const showPermissionModal = ({
   // #endif
 
   // #ifdef H5
-  uni.showToast({ title: '定位失败，请检查浏览器定位权限', icon: 'none' })
+  // 区分是 HTTP 环境还是真的权限问题
+  try {
+    if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      uni.showModal({
+        title: '无法获取定位',
+        content: '当前为 HTTP 环境，浏览器禁止获取位置信息。请使用 HTTPS 访问后再试。',
+        showCancel: false,
+        confirmText: '知道了'
+      })
+    } else {
+      uni.showToast({ title: '定位失败，请检查浏览器定位权限', icon: 'none' })
+    }
+  } catch (e) {
+    uni.showToast({ title: '定位失败，请检查浏览器定位权限', icon: 'none' })
+  }
   // #endif
 }
 
@@ -159,6 +170,12 @@ const fetchCoordinates = ({
                             type = 'gcj02',
                             timeout = 15000
                           } = {}) => {
+  // #ifdef H5
+  // H5 端使用自定义 HTML 模板时，uni.getLocation 的内部坐标转换（gcj02）
+  // 会因 map provider 未正确初始化而失败。
+  // 解决：先用 wgs84 获取原始坐标，再通过 AMap.convertFrom 手动转为 gcj02。
+  type = 'wgs84'
+  // #endif
   if (coordinatesPromise) {
     return coordinatesPromise
   }
@@ -182,24 +199,71 @@ const fetchCoordinates = ({
       reject(err)
     }
 
-    const doLocate = () => {
-      uni.getLocation({
+    const doLocate = (retryCount = 0) => {
+      const locationOptions = {
         type,
         altitude: false,
         success: (res) => {
-          finish({
+          const location = {
             longitude: res.longitude,
             latitude: res.latitude
-          })
+          }
+
+          // #ifdef H5
+          // H5 端用 wgs84 获取成功后，通过高德 SDK 手动转换为 gcj02
+          // 原因：自定义 HTML 模板下 uni.getLocation 的内部坐标转换会失败
+          if (typeof AMap !== 'undefined' && AMap.convertFrom) {
+            AMap.convertFrom(
+              [location.longitude, location.latitude],
+              'gps',
+              (status, result) => {
+                if (status === 'complete' && result.info === 'ok' && result.locations && result.locations.length > 0) {
+                  const p = result.locations[0]
+                  finish({
+                    longitude: p.lng,
+                    latitude: p.lat
+                  })
+                } else {
+                  // 转换失败则降级返回原始 wgs84 坐标
+                  finish(location)
+                }
+              }
+            )
+          } else {
+            // 高德 SDK 未加载，直接返回原始坐标
+            finish(location)
+          }
+          // #endif
+
+          // #ifndef H5
+          finish(location)
+          // #endif
         },
         fail: (err) => {
+          // #ifdef H5
+          // H5 端：失败后重试一次（降级高精度模式）
+          if (retryCount < 1 && !err.errMsg?.includes('auth deny') && !err.errMsg?.includes('denied')) {
+            setTimeout(() => doLocate(retryCount + 1), 500)
+            return
+          }
+          // #endif
+
           if (err && err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize') || err.errMsg.includes('denied'))) {
             fail(new Error('permission_denied'))
           } else {
             fail(err)
           }
         }
-      })
+      }
+
+      // #ifdef H5
+      // H5 端增加高精度和超时参数
+      locationOptions.isHighAccuracy = true
+      locationOptions.timeout = 10000
+      locationOptions.maximumAge = 0
+      // #endif
+
+      uni.getLocation(locationOptions)
     }
 
     // #ifdef APP-PLUS
@@ -270,11 +334,10 @@ export const getLocation = async ({
   // #endif
 
   const location = await fetchCoordinates({ type, timeout })
-
+  console.log(location,'======定位')
   if (needRegeocode) {
     try {
       const geoRes = await regeocode(location)
-      console.log(geoRes,'======handlePrivacyAgreed')
       return {
         ...location,
         regeocodeData: geoRes.data

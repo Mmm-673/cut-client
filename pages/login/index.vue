@@ -357,7 +357,7 @@ onUnload(() => {
 
 <style lang="scss" scoped>
 .login-wrapper {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   background: var(--bg-card);
   padding: 180rpx 48rpx 40rpx;
   box-sizing: border-box;

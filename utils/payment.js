@@ -3,7 +3,7 @@
  * 支持多端支付：微信小程序支付、App微信支付、App支付宝支付、钱包支付
  */
 
-import { isMPWeixin, isApp } from '@/utils/platform'
+import { isMPWeixin, isApp, isH5, isWechatBrowser } from '@/utils/platform'
 import { submitPayOrder, getEnableChannelCodeList, getPayOrder } from '@/api/billiard/pay'
 import { createOnsitePayment, getOnsitePaymentStatus } from '@/api/billiard/onsitePay'
 import { bindWX } from '@/api/billiard/user'
@@ -47,12 +47,16 @@ function setPayRequestState(payOrderId, channelCode, status) {
  * 支付渠道编码
  */
 export const PAY_CHANNEL = {
-  // 微信小程序支付
+  // 微信小程序支付/公众号JSAPI支付
   WX_MINIPROGRAM: 'wx_pub',
   // 微信App支付
   WX_APP: 'wx_app',
+  // 微信WAP支付（H5）
+  WX_WAP: 'wx_wap',
   // 支付宝App支付
   ALIPAY_APP: 'alipay_app',
+  // 支付宝WAP支付（H5）
+  ALIPAY_WAP: 'alipay_wap',
   // 钱包余额支付
   WALLET: 'wallet'
 }
@@ -67,7 +71,7 @@ const ALL_PAY_CHANNELS = [
     channelCode: PAY_CHANNEL.WX_MINIPROGRAM, // 默认用JSAPI，App会覆盖
     icon: '/static/images/pay/wechat.png',
     bgColor: '#07C160',
-    platforms: ['mp-weixin', 'app-plus']
+    platforms: ['mp-weixin', 'app-plus', 'h5']
   },
   {
     value: 'alipay',
@@ -75,7 +79,7 @@ const ALL_PAY_CHANNELS = [
     channelCode: PAY_CHANNEL.ALIPAY_APP,
     icon: '/static/images/pay/alipay.png',
     bgColor: '#1677FF',
-    platforms: ['app-plus']
+    platforms: ['app-plus', 'h5']
   },
   {
     value: 'wallet',
@@ -102,8 +106,25 @@ export function getAvailablePayChannels() {
 }
 
 function resolvePlatformChannelCode(payValue) {
-  if (payValue === 'wechat' && getCurrentPlatform() === 'app-plus') {
-    return PAY_CHANNEL.WX_APP
+  const platform = getCurrentPlatform()
+
+  if (payValue === 'wechat') {
+    if (platform === 'app-plus') {
+      return PAY_CHANNEL.WX_APP
+    }
+    if (platform === 'h5') {
+      // H5 微信浏览器用 JSAPI，普通浏览器用 WAP
+      return isWechatBrowser() ? PAY_CHANNEL.WX_MINIPROGRAM : PAY_CHANNEL.WX_WAP
+    }
+    // mp-weixin 默认
+    return PAY_CHANNEL.WX_MINIPROGRAM
+  }
+
+  if (payValue === 'alipay') {
+    if (platform === 'h5') {
+      return PAY_CHANNEL.ALIPAY_WAP
+    }
+    return PAY_CHANNEL.ALIPAY_APP
   }
 
   const channel = ALL_PAY_CHANNELS.find(item => item.value === payValue)
@@ -141,14 +162,14 @@ export function getPayChannelsByEnabled(enabledCodes) {
   }
 
   const currentPlatform = getCurrentPlatform()
-  console.log('getPayChannelsByEnabled - 当前平台:', currentPlatform)
-  console.log('getPayChannelsByEnabled - 后端返回的渠道编码:', enabledCodes)
 
   // 渠道编码映射
   const codeToChannel = {
-    'wx_pub': { value: 'wechat', label: '微信支付', icon: '/static/images/pay/wechat.png', bgColor: '#07C160', channelCode: 'wx_pub', platforms: ['mp-weixin'] },
+    'wx_pub': { value: 'wechat', label: '微信支付', icon: '/static/images/pay/wechat.png', bgColor: '#07C160', channelCode: 'wx_pub', platforms: ['mp-weixin', 'h5'] },
+    'wx_wap': { value: 'wechat', label: '微信支付', icon: '/static/images/pay/wechat.png', bgColor: '#07C160', channelCode: 'wx_wap', platforms: ['h5'] },
     'wx_lite': { value: 'wechat', label: '微信支付', icon: '/static/images/pay/wechat.png', bgColor: '#07C160', channelCode: 'wx_lite', platforms: ['mp-weixin'] },
     'wx_app': { value: 'wechat', label: '微信支付', icon: '/static/images/pay/wechat.png', bgColor: '#07C160', channelCode: PAY_CHANNEL.WX_APP, platforms: ['app-plus'] },
+    'alipay_wap': { value: 'alipay', label: '支付宝', icon: '/static/images/pay/alipay.png', bgColor: '#1677FF', channelCode: PAY_CHANNEL.ALIPAY_WAP, platforms: ['h5'] },
     'alipay_app': { value: 'alipay', label: '支付宝', icon: '/static/images/pay/alipay.png', bgColor: '#1677FF', channelCode: PAY_CHANNEL.ALIPAY_APP, platforms: ['app-plus'] },
     'wallet': { value: 'wallet', label: '钱包余额', icon: 'wallet', bgColor: '#00BB88', channelCode: PAY_CHANNEL.WALLET, platforms: ['mp-weixin', 'app-plus', 'h5'] }
   }
@@ -156,20 +177,27 @@ export function getPayChannelsByEnabled(enabledCodes) {
   const result = []
   const addedValues = new Set()
 
+  // 微信浏览器环境下，微信支付优先使用 wx_pub (JSAPI)，而非 wx_wap
+  const wechatBrowser = isWechatBrowser()
+
   // 遍历后端返回的渠道
   enabledCodes.forEach(code => {
     const channel = codeToChannel[code]
     if (channel && channel.platforms && channel.platforms.includes(currentPlatform)) {
       // 避免重复添加相同 value 的渠道
       if (!addedValues.has(channel.value)) {
-        console.log('getPayChannelsByEnabled - 添加支付渠道:', channel)
         result.push(channel)
         addedValues.add(channel.value)
+      } else if (wechatBrowser && channel.value === 'wechat' && code === 'wx_pub') {
+        // 微信浏览器 + 微信支付：如果已经添加了 wx_wap，替换为 wx_pub
+        const existingIndex = result.findIndex(item => item.value === 'wechat' && item.channelCode === 'wx_wap')
+        if (existingIndex !== -1) {
+          result.splice(existingIndex, 1, channel)
+        }
       }
     }
   })
 
-  console.log('getPayChannelsByEnabled - 最终返回的支付渠道:', result)
   return result
 }
 
@@ -287,18 +315,15 @@ function wechatAppPay(payParams) {
  * @returns {Promise} 支付结果
  */
 function alipayAppPay(payParams) {
-  console.log(payParams,'支付信息')
   return new Promise((resolve, reject) => {
     // #ifdef APP-PLUS
     uni.requestPayment({
       provider: 'alipay',
       orderInfo: payParams.orderString || payParams,
       success: (res) => {
-        console.log(res)
         resolve({ success: true, ...res })
       },
       fail: (err) => {
-        console.log(err)
         console.error('App支付宝支付失败:', err)
         if (err.errMsg && err.errMsg.includes('cancel')) {
           reject({ success: false, canceled: true, message: '支付已取消', ...err })
@@ -311,6 +336,123 @@ function alipayAppPay(payParams) {
 
     // #ifndef APP-PLUS
     reject({ success: false, message: '非App环境不支持支付宝支付' })
+    // #endif
+  })
+}
+
+/**
+ * 构造 H5 支付回跳地址
+ * @param {number} payOrderId - 支付单ID
+ * @returns {string} 完整的回跳 URL
+ */
+function getReturnUrl(payOrderId) {
+  // #ifdef H5
+  try {
+    const baseUrl = window.location.origin + window.location.pathname
+    const hash = '#/pages/booking/pay-success'
+    const query = `?payOrderId=${payOrderId}&source=callback`
+    return baseUrl + hash + query
+  } catch (e) {
+    return ''
+  }
+  // #endif
+  // #ifndef H5
+  return ''
+  // #endif
+}
+
+/**
+ * H5 微信 JSAPI 支付（公众号内）
+ * @param {Object} payParams - 支付参数
+ * @param {string} payParams.appId - 公众号ID
+ * @param {string} payParams.timeStamp - 时间戳
+ * @param {string} payParams.nonceStr - 随机字符串
+ * @param {string} payParams.package - 统一下单 prepay_id
+ * @param {string} payParams.signType - 签名方式
+ * @param {string} payParams.paySign - 签名
+ * @returns {Promise} 支付结果
+ */
+function wechatJsapiPay(payParams) {
+  return new Promise((resolve, reject) => {
+    // #ifdef H5
+    // 调试：打印支付参数
+    const debugPayParams = {
+      appId: payParams.appId,
+      timeStamp: payParams.timeStamp,
+      nonceStr: payParams.nonceStr,
+      package: payParams.packageValue || payParams.package,
+      signType: payParams.signType || 'RSA',
+      paySign: payParams.paySign
+    }
+    uni.showModal({
+      title: '【调试】支付参数',
+      content: JSON.stringify(debugPayParams, null, 2),
+      showCancel: false,
+      confirmText: '继续'
+    })
+
+    if (typeof WeixinJSBridge === 'undefined') {
+      uni.showModal({
+        title: '【调试】错误',
+        content: 'WeixinJSBridge 未定义，请在微信浏览器中打开',
+        showCancel: false
+      })
+      reject({ success: false, message: '请在微信浏览器中打开后再支付' })
+      return
+    }
+
+    WeixinJSBridge.invoke(
+      'getBrandWCPayRequest',
+      debugPayParams,
+      (res) => {
+        // 调试：打印支付回调结果
+        uni.showModal({
+          title: '【调试】支付回调',
+          content: JSON.stringify(res, null, 2),
+          showCancel: false
+        })
+
+        if (res.err_msg === 'get_brand_wcpay_request:ok') {
+          resolve({ success: true, ...res })
+        } else if (res.err_msg === 'get_brand_wcpay_request:cancel') {
+          reject({ success: false, canceled: true, message: '支付已取消', ...res })
+        } else {
+          reject({ success: false, message: res.err_msg || '支付失败', ...res })
+        }
+      }
+    )
+    // #endif
+
+    // #ifndef H5
+    reject({ success: false, message: '非H5环境不支持微信JSAPI支付' })
+    // #endif
+  })
+}
+
+/**
+ * H5 WAP 跳转支付（微信 WAP / 支付宝 WAP 通用）
+ * 跳转到第三方支付页面，支付完成后通过 returnUrl 跳回
+ * @param {string} payUrl - 支付跳转链接
+ * @returns {Promise} 永远不会 resolve，因为页面会跳转
+ */
+function h5WapPay(payUrl) {
+  return new Promise((resolve, reject) => {
+    // #ifdef H5
+    if (!payUrl) {
+      reject({ success: false, message: '支付链接无效' })
+      return
+    }
+    // 标记支付中状态，用于回跳后的状态恢复
+    try {
+      uni.setStorageSync('h5_pay_pending', '1')
+    } catch (e) {}
+    // 跳转到支付页面
+    window.location.href = payUrl
+    // 不 resolve，等待页面跳转
+    // #endif
+
+    // #ifndef H5
+    reject({ success: false, message: '非H5环境不支持WAP支付' })
     // #endif
   })
 }
@@ -343,12 +485,8 @@ const getWxCode = async () => {
         fail: reject
       })
     })
-    console.log('🚀 ~ getWxCode ~ code:', loginRes.code)
     uni.showLoading({ title: '绑定中...', mask: true })
-    let platform = 'miniapp'
-    // #ifdef APP-PLUS
-    platform = 'app'
-    // #endif
+    const platform = 'miniapp'
     const res = await bindWX({
       code: loginRes.code,
       platform,
@@ -395,7 +533,6 @@ async function confirmPayOrderPaid(payOrderId) {
 export async function executePayment(options) {
   const { payOrderId, payValue, channelCode: selectedChannelCode, orderId, onSuccess, onCancel, onError } = options
 
-  console.log('executePayment 调用参数:', options)
 
   // 提前定义 channelCode，确保在 catch 块中可用
   let channelCode = selectedChannelCode || getChannelCode(payValue)
@@ -408,7 +545,6 @@ export async function executePayment(options) {
     // 1. 获取支付渠道编码
     // channelCode = selectedChannelCode || getChannelCode(payValue)
 
-    console.log('支付渠道编码:', channelCode)
     if (!channelCode) {
       throw new Error('不支持的支付方式')
     }
@@ -425,7 +561,6 @@ export async function executePayment(options) {
     // 如果是 timeout 状态且未超过冷却期（30秒），优先查单确认
     if (currentState && currentState.status === PAY_REQUEST_STATUS.TIMEOUT && (now - currentState.timestamp < 30 * 1000)) {
       try {
-        console.log('支付超时，优先查单确认')
         const payResult = await confirmPayOrderPaid(payOrderId)
         if (onSuccess && typeof onSuccess === 'function') {
           onSuccess(payResult)
@@ -433,7 +568,6 @@ export async function executePayment(options) {
         setPayRequestState(payOrderId, channelCode, PAY_REQUEST_STATUS.SUCCESS)
         return payResult
       } catch (error) {
-        console.log('查单未确认支付成功，继续支付流程')
       }
     }
 
@@ -441,11 +575,32 @@ export async function executePayment(options) {
     setPayRequestState(payOrderId, channelCode, PAY_REQUEST_STATUS.PENDING)
 
     // 3. 调用后端接口提交支付，获取支付参数
-    const submitRes = await submitPayOrder({
+    const submitParams = {
       id: payOrderId,
       channelCode: channelCode,
-      displayMode: payValue === 'alipay' ? 'app' : undefined // 支付宝支付添加 displayMode: 'app'
-    })
+      displayMode: payValue === 'alipay' ? (isH5() ? undefined : 'app') : undefined
+    }
+
+    // H5 WAP 支付下传递 returnUrl，用于支付完成后回跳
+    // 微信浏览器内 JSAPI 支付不需要 returnUrl（页面内唤起，不跳转）
+    const isWapPay = isH5() && !isWechatBrowser()
+    if (isWapPay) {
+      submitParams.returnUrl = getReturnUrl(payOrderId)
+    }
+
+    const submitRes = await submitPayOrder(submitParams)
+
+    // 调试：打印接口完整返回
+    // #ifdef H5
+    if (isH5()) {
+      uni.showModal({
+        title: '【调试】submitPayOrder 返回',
+        content: JSON.stringify(submitRes, null, 2),
+        showCancel: false,
+        confirmText: '继续'
+      })
+    }
+    // #endif
 
     const resultData = submitRes.data || {}
     const payStatus = resultData.status
@@ -475,7 +630,21 @@ export async function executePayment(options) {
     } catch (e) {
       payParams = displayContent
     }
-    console.log("🚀 ~ executePayment ~ payParams:", payParams)
+
+    // 调试：打印后端返回的原始支付数据
+    // #ifdef H5
+    if (isH5()) {
+      uni.showModal({
+        title: '【调试】后端原始返回',
+        content: 'channelCode: ' + channelCode + '\n' +
+                 'displayMode: ' + (resultData.displayMode || '-') + '\n' +
+                 'displayContent 类型: ' + typeof displayContent + '\n' +
+                 'displayContent:\n' + (typeof displayContent === 'string' ? displayContent : JSON.stringify(displayContent, null, 2)),
+        showCancel: false,
+        confirmText: '继续'
+      })
+    }
+    // #endif
 
     // 5. 根据支付方式和平台执行支付
     if (isMPWeixin() && payValue === 'wechat') {
@@ -485,6 +654,56 @@ export async function executePayment(options) {
     } else if (isApp() && payValue === 'alipay') {
       // 支付宝支付
       await alipayAppPay(payParams)
+    } else if (isH5() && payValue === 'wechat') {
+      // H5 微信支付：微信内用 JSAPI，微信外用 WAP 跳转
+      if (isWechatBrowser()) {
+        await wechatJsapiPay(payParams)
+      } else {
+        // WAP 支付：displayContent 是跳转 URL
+        const payUrl = typeof payParams === 'string' ? payParams : (payParams.url || payParams.mwebUrl || '')
+        await h5WapPay(payUrl)
+        // 不会执行到这里（页面跳转）
+        return { pending: true }
+      }
+    } else if (isH5() && payValue === 'alipay') {
+      // H5 支付宝 WAP 支付
+      const payUrl = typeof payParams === 'string' ? payParams : (payParams.url || '')
+      // 如果返回的是 HTML 表单（displayMode=form），安全解析后提交
+      if (resultData.displayMode === 'form' && typeof displayContent === 'string' && displayContent.includes('<form')) {
+        // #ifdef H5
+        try {
+          // 使用 DOMParser 在沙箱中解析 HTML，避免直接 innerHTML 注入风险
+          const parser = new DOMParser()
+          const doc = parser.parseFromString(displayContent, 'text/html')
+          const formEl = doc.querySelector('form')
+          if (formEl) {
+            // 手动构建表单元素（安全方式）
+            const form = document.createElement('form')
+            form.method = formEl.method || 'post'
+            form.action = formEl.action || ''
+            form.target = formEl.target || '_self'
+            form.acceptCharset = formEl.acceptCharset || 'utf-8'
+            // 复制所有 input 字段
+            const inputs = formEl.querySelectorAll('input')
+            inputs.forEach(input => {
+              const safeInput = document.createElement('input')
+              safeInput.type = input.type || 'hidden'
+              safeInput.name = input.name
+              safeInput.value = input.value
+              form.appendChild(safeInput)
+            })
+            form.style.display = 'none'
+            document.body.appendChild(form)
+            form.submit()
+            return { pending: true }
+          }
+        } catch (e) {
+          console.error('解析支付表单失败:', e)
+        }
+        // #endif
+      }
+      await h5WapPay(payUrl)
+      return { pending: true }
     } else {
       throw new Error('不支持的支付方式或平台')
     }
@@ -497,7 +716,6 @@ export async function executePayment(options) {
 
     return payResult
   } catch (error) {
-    console.log("🚀 ~ error ~ error:", error)
     // #ifdef MP-WEIXIN
     if (error === '请先绑定微信后再发起微信支付') {
       return new Promise((resolve, reject) => {

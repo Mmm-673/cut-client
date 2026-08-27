@@ -36,6 +36,9 @@ onLaunch((options) => {
   setPrivacyAgreedCallback(continueAppInit)
   initApp()
   handleLaunchOptions(options)
+  // #ifdef H5
+  handleDeepLink()
+  // #endif
 })
 
 onShow((options) => {
@@ -71,7 +74,7 @@ onShow((options) => {
 
 watch(() => themeStore.theme, () => {
   applyThemeToPage(themeStore.theme)
-  setWebviewBackground(themeStore.theme)
+  // setWebviewBackground 已在 applyThemeToPage 内部调用，无需重复调用
 })
 
 const getQueryParam = (url, param) => {
@@ -145,6 +148,65 @@ const handleLaunchOptions = (options) => {
   // #endif
 }
 
+// H5 深度链接白名单（不需要登录的页面）
+const DEEPLINK_PUBLIC_PAGES = [
+  '/pages/home/index',
+  '/subpkg/coach/detail',
+  '/pages/coach/list',
+  '/subpkg/booking/pay-success',
+]
+
+// H5 深度链接需要登录的页面
+const DEEPLINK_PRIVATE_PAGES = [
+  '/subpkg/order/detail',
+  '/pages/order/list',
+  '/pages/mine/index',
+]
+
+function handleDeepLink() {
+  // #ifdef H5
+  try {
+    const hash = window.location.hash || ''
+    // hash 格式: #/path?query=value
+    if (!hash || hash === '#' || hash === '#/') {
+      return
+    }
+
+    // 解析路径和查询参数
+    const hashPath = hash.replace(/^#/, '')
+    const [path] = hashPath.split('?')
+
+    // 检查是否是有效页面路径
+    const isPublicPage = DEEPLINK_PUBLIC_PAGES.some(p => path.startsWith(p))
+    const isPrivatePage = DEEPLINK_PRIVATE_PAGES.some(p => path.startsWith(p))
+
+    if (!isPublicPage && !isPrivatePage) {
+      return // 不是深度链接白名单页面，走正常流程
+    }
+
+    const token = getAccessToken()
+    const hasValidToken = token && getExpiresTime() && new Date() < getExpiresTime()
+
+    if (isPrivatePage && !hasValidToken) {
+      // 需要登录但未登录，保存目标路径，跳登录页
+      uni.setStorageSync('deep_link_target', hashPath)
+      setTimeout(() => {
+        uni.reLaunch({ url: '/pages/login/index' })
+      }, 100)
+      return
+    }
+
+    // 已登录或公开页面，直接跳转
+    // 延迟执行，确保 App 初始化完成
+    setTimeout(() => {
+      uni.reLaunch({ url: hashPath })
+    }, 300)
+  } catch (e) {
+    console.warn('[App] 深度链接解析失败:', e)
+  }
+  // #endif
+}
+
 function initApp() {
   initConfig()
 
@@ -176,6 +238,13 @@ function initApp() {
   }
   // #endif
 
+  // #ifdef H5
+  setStatusBarHeightH5()
+  setVh()
+  window.addEventListener('resize', setVh)
+  // 移动端地址栏收起/展开时也会触发 resize，自动更新 --vh
+  // #endif
+
   continueAppInit()
 }
 
@@ -201,6 +270,36 @@ function setStatusBarHeight() {
     const page = pages[pages.length - 1]
     page.$vm && (page.$vm.statusBarHeight = statusBarHeight)
   }
+}
+
+function setStatusBarHeightH5() {
+  // #ifdef H5
+  try {
+    const systemInfo = uni.getSystemInfoSync()
+    const statusBarHeight = systemInfo.statusBarHeight || 0
+    uni.$statusBarHeight = statusBarHeight
+
+    if (statusBarHeight > 0 && typeof document !== 'undefined') {
+      document.documentElement.style.setProperty('--status-bar-height', statusBarHeight + 'px')
+    } else {
+      // 兜底：使用 safe-area-inset-top
+      document.documentElement.style.setProperty('--status-bar-height', 'env(safe-area-inset-top)')
+    }
+  } catch (e) {
+    console.warn('[App] H5 状态栏高度设置失败:', e)
+  }
+  // #endif
+}
+
+function setVh() {
+  // #ifdef H5
+  try {
+    const vh = window.innerHeight * 0.01
+    document.documentElement.style.setProperty('--vh', `${vh}px`)
+  } catch (e) {
+    console.warn('[App] setVh 失败:', e)
+  }
+  // #endif
 }
 
 async function refreshTokenOnStartup() {
@@ -304,13 +403,15 @@ async function checkLogin() {
 @import '@/static/scss/index.scss';
 
 page {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   background: var(--bg-page);
   transition: background-color 0.3s ease;
 }
 
 /* #ifdef H5 */
-* {
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
   transition: background-color 0.3s ease,
               color 0.3s ease,
               border-color 0.3s ease,

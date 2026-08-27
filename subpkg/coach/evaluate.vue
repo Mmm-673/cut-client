@@ -386,7 +386,7 @@ $border-radius: 16px;
 $transition: all 0.3s ease;
 
 .evaluate-page {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   background-color: var(--bg-page);
   color: var(--text-primary);
   padding-bottom: 120rpx;

@@ -235,7 +235,7 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .reset-wrapper {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   background: var(--bg-card);
   padding: 0 48rpx;
   box-sizing: border-box;

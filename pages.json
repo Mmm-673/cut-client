@@ -232,7 +232,17 @@
             "navigationBarBackgroundColor": "#121619",
             "navigationBarTextStyle": "white"
           }
+        },
+        // #ifdef H5
+        {
+          "path": "download",
+          "style": {
+            "navigationBarTitleText": "下载 APP",
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white"
+          }
         }
+        // #endif
       ]
     }
   ],

@@ -45,7 +45,7 @@ onShow(() => {
 
 <style lang="scss" scoped>
 .theme-page-wrapper {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   width: 100%;
   transition: background-color 0.3s ease;
 }

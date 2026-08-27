@@ -666,7 +666,7 @@ onShow(() => {
 
 <style lang="scss" scoped>
 .order-list-wrapper {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   background: var(--bg-page);
   display: flex;
   flex-direction: column;

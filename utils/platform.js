@@ -273,6 +273,38 @@ export function openMapNavigation(options) {
   // #endif
 }
 
+/**
+ * 是否为微信内置浏览器（仅 H5 有效）
+ */
+export function isWechatBrowser() {
+  // #ifdef H5
+  try {
+    return /MicroMessenger/i.test(navigator.userAgent)
+  } catch (e) {
+    return false
+  }
+  // #endif
+  // #ifndef H5
+  return false
+  // #endif
+}
+
+/**
+ * 是否为支付宝内置浏览器（仅 H5 有效）
+ */
+export function isAlipayBrowser() {
+  // #ifdef H5
+  try {
+    return /AlipayClient/i.test(navigator.userAgent)
+  } catch (e) {
+    return false
+  }
+  // #endif
+  // #ifndef H5
+  return false
+  // #endif
+}
+
 export default {
   isH5,
   openPermissionSettings,
@@ -287,5 +319,7 @@ export default {
   getPlatformName,
   getSafeArea,
   getStatusBarHeight,
-  openMapNavigation
+  openMapNavigation,
+  isWechatBrowser,
+  isAlipayBrowser
 }

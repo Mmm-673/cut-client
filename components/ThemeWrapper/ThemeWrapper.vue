@@ -15,7 +15,7 @@ const theme = computed(() => themeStore.theme)
 
 <style lang="scss" scoped>
 .theme-wrapper {
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   width: 100%;
 }
 </style>
