@@ -104,8 +104,15 @@ const ALL_PAY_CHANNELS = [
  */
 export function getAvailablePayChannels() {
   const currentPlatform = getCurrentPlatform()
+  const wechatBrowser = isWechatBrowser()
+  const pureH5 = currentPlatform === 'h5' && !wechatBrowser
+
   return ALL_PAY_CHANNELS
     .filter(channel => channel.platforms.includes(currentPlatform))
+    // 微信浏览器环境：只保留微信支付和钱包余额
+    .filter(channel => !wechatBrowser || channel.value === 'wechat' || channel.value === 'wallet')
+    // 纯 H5 环境（普通浏览器）：只保留支付宝和钱包余额
+    .filter(channel => !pureH5 || channel.value === 'alipay' || channel.value === 'wallet')
     .map(channel => ({
       ...channel,
       channelCode: resolvePlatformChannelCode(channel.value)
@@ -169,6 +176,9 @@ export function getPayChannelsByEnabled(enabledCodes) {
   }
 
   const currentPlatform = getCurrentPlatform()
+  const wechatBrowser = isWechatBrowser()
+  // 纯 H5 环境（非微信浏览器的普通浏览器）
+  const pureH5 = currentPlatform === 'h5' && !wechatBrowser
 
   // 渠道编码映射
   const codeToChannel = {
@@ -184,23 +194,32 @@ export function getPayChannelsByEnabled(enabledCodes) {
   const result = []
   const addedValues = new Set()
 
-  // 微信浏览器环境下，微信支付优先使用 wx_pub (JSAPI)，而非 wx_wap
-  const wechatBrowser = isWechatBrowser()
-
   // 遍历后端返回的渠道
   enabledCodes.forEach(code => {
     const channel = codeToChannel[code]
-    if (channel && channel.platforms && channel.platforms.includes(currentPlatform)) {
-      // 避免重复添加相同 value 的渠道
-      if (!addedValues.has(channel.value)) {
-        result.push(channel)
-        addedValues.add(channel.value)
-      } else if (wechatBrowser && channel.value === 'wechat' && code === 'wx_pub') {
-        // 微信浏览器 + 微信支付：如果已经添加了 wx_wap，替换为 wx_pub
-        const existingIndex = result.findIndex(item => item.value === 'wechat' && item.channelCode === 'wx_wap')
-        if (existingIndex !== -1) {
-          result.splice(existingIndex, 1, channel)
-        }
+    if (!channel || !channel.platforms || !channel.platforms.includes(currentPlatform)) {
+      return
+    }
+
+    // 微信浏览器环境：只保留微信支付(wx_pub)和钱包余额
+    if (wechatBrowser && code !== 'wx_pub' && code !== 'wallet') {
+      return
+    }
+
+    // 纯 H5 环境（普通浏览器）：只保留支付宝(alipay_wap)和钱包余额
+    if (pureH5 && code !== 'alipay_wap' && code !== 'wallet') {
+      return
+    }
+
+    // 避免重复添加相同 value 的渠道
+    if (!addedValues.has(channel.value)) {
+      result.push(channel)
+      addedValues.add(channel.value)
+    } else if (wechatBrowser && channel.value === 'wechat' && code === 'wx_pub') {
+      // 微信浏览器 + 微信支付：如果已经添加了 wx_wap，替换为 wx_pub
+      const existingIndex = result.findIndex(item => item.value === 'wechat' && item.channelCode === 'wx_wap')
+      if (existingIndex !== -1) {
+        result.splice(existingIndex, 1, channel)
       }
     }
   })
@@ -748,15 +767,24 @@ export async function executePayment(options) {
       return confirmedResult
     }
 
-    // 4. 解析支付参数 - displayContent 是 JSON 字符串
-    let payParams
-    try {
-      payParams = typeof displayContent === 'string' ? JSON.parse(displayContent) : displayContent
-    } catch (e) {
-      payParams = displayContent
-    }
+    // 4. 根据 displayMode 解析 displayContent
+    //    url  → displayContent 是跳转链接字符串
+    //    form → displayContent 是 HTML 表单字符串
+    //    json → displayContent 是 JSON 字符串（如微信 JSAPI 参数）
+    const displayMode = resultData.displayMode || ''
+    let payParams = displayContent
 
-    // 调试：打印后端返回的原始支付数据
+    if (displayMode === 'url' || displayMode === 'form') {
+      // URL 或表单模式：displayContent 本身就是原始内容字符串，直接用
+      payParams = displayContent
+    } else if (typeof displayContent === 'string') {
+      // 其他模式（如 json）：尝试 JSON 解析
+      try {
+        payParams = JSON.parse(displayContent)
+      } catch (e) {
+        payParams = displayContent
+      }
+    }
 
     // 5. 根据支付方式和平台执行支付
     if (isMPWeixin() && payValue === 'wechat') {
@@ -778,24 +806,20 @@ export async function executePayment(options) {
         return { pending: true }
       }
     } else if (isH5() && payValue === 'alipay') {
+      // #ifdef H5
       // H5 支付宝 WAP 支付
-      const payUrl = typeof payParams === 'string' ? payParams : (payParams.url || '')
-      // 如果返回的是 HTML 表单（displayMode=form），安全解析后提交
-      if (resultData.displayMode === 'form' && typeof displayContent === 'string' && displayContent.includes('<form')) {
-        // #ifdef H5
+      if (displayMode === 'form' && typeof displayContent === 'string' && displayContent.includes('<form')) {
+        // form 模式：解析后自动提交表单
         try {
-          // 使用 DOMParser 在沙箱中解析 HTML，避免直接 innerHTML 注入风险
           const parser = new DOMParser()
           const doc = parser.parseFromString(displayContent, 'text/html')
           const formEl = doc.querySelector('form')
           if (formEl) {
-            // 手动构建表单元素（安全方式）
             const form = document.createElement('form')
             form.method = formEl.method || 'post'
             form.action = formEl.action || ''
             form.target = formEl.target || '_self'
             form.acceptCharset = formEl.acceptCharset || 'utf-8'
-            // 复制所有 input 字段
             const inputs = formEl.querySelectorAll('input')
             inputs.forEach(input => {
               const safeInput = document.createElement('input')
@@ -810,11 +834,18 @@ export async function executePayment(options) {
             return { pending: true }
           }
         } catch (e) {
-          console.error('解析支付表单失败:', e)
+          console.error('[支付宝H5] 解析表单失败:', e)
         }
-        // #endif
       }
+
+      // url 模式：直接跳转支付宝支付页
+      const payUrl = typeof payParams === 'string' ? payParams : (payParams.url || '')
+      if (!payUrl) {
+        throw new Error('支付链接无效，请重试')
+      }
+      console.log('[支付宝H5] 跳转到支付页:', payUrl)
       await h5WapPay(payUrl)
+      // #endif
       return { pending: true }
     } else {
       throw new Error('不支持的支付方式或平台')
