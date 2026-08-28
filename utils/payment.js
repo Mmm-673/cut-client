@@ -109,8 +109,8 @@ export function getAvailablePayChannels() {
 
   return ALL_PAY_CHANNELS
     .filter(channel => channel.platforms.includes(currentPlatform))
-    // 微信浏览器环境：只保留微信支付和钱包余额
-    .filter(channel => !wechatBrowser || channel.value === 'wechat' || channel.value === 'wallet')
+    // 微信浏览器环境：只保留微信支付、支付宝和钱包余额
+    .filter(channel => !wechatBrowser || channel.value === 'wechat' || channel.value === 'alipay' || channel.value === 'wallet')
     // 纯 H5 环境（普通浏览器）：只保留支付宝和钱包余额
     .filter(channel => !pureH5 || channel.value === 'alipay' || channel.value === 'wallet')
     .map(channel => ({
@@ -201,8 +201,8 @@ export function getPayChannelsByEnabled(enabledCodes) {
       return
     }
 
-    // 微信浏览器环境：只保留微信支付(wx_pub)和钱包余额
-    if (wechatBrowser && code !== 'wx_pub' && code !== 'wallet') {
+    // 微信浏览器环境：只保留微信支付(wx_pub)、支付宝(alipay_wap)和钱包余额
+    if (wechatBrowser && code !== 'wx_pub' && code !== 'alipay_wap' && code !== 'wallet') {
       return
     }
 
@@ -658,7 +658,7 @@ export async function handleWxPayBindCallback() {
 // #endif
 
 async function confirmPayOrderPaid(payOrderId) {
-  const res = await getPayOrder({ id: payOrderId, sync: true })
+  const res = await getPayOrder({ id: payOrderId, sync: true, silent: true })
   const data = res.data || {}
   const status = data.status ?? data.payStatus
 
@@ -742,7 +742,7 @@ export async function executePayment(options) {
       submitParams.returnUrl = getReturnUrl(payOrderId)
     }
 
-    const submitRes = await submitPayOrder(submitParams)
+    const submitRes = await submitPayOrder({ ...submitParams, silent: true })
 
     // 调试：打印接口完整返回
 

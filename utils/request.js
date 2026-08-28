@@ -156,7 +156,7 @@ const request = async config => {
       const resultData = res.data || {};
       const code = resultData.code ?? 0; // 使用 ?? 处理 0 的情况
       const msg = getErrorMessage(code, resultData.msg);
-
+      resultData.message = msg;
       console.log('当前Code:', code, '返回数据:', resultData);
 
       if (code === 401) {
@@ -165,7 +165,7 @@ const request = async config => {
         if (!isToken) {
           uni.reLaunch({ url: '/pages/login/index' });
         }
-        return reject(msg || '会话已过期');
+        return reject(resultData || '会话已过期');
       }
 
       if (code !== 0) {
@@ -173,7 +173,7 @@ const request = async config => {
         if (!config.silent) {
           toast(msg);
         }
-        return reject(msg || '请求失败');
+        return reject(resultData || '请求失败');
       }
 
       // 只有 code === 0 才会走到这里
@@ -181,6 +181,7 @@ const request = async config => {
 
     })
     .catch(error => {
+      console.log(error,'====err')
       let { message } = error
       if (message === 'Network Error') {
         message = '后端接口连接异常'

@@ -1051,7 +1051,7 @@ const handleCreateOrder = async () => {
       uni.showToast({ title: '服务地点已失效，请重新选择', icon: 'none' })
       selectedPlace.value = null
     } else {
-      uni.showToast({ title: error.message || '创建订单失败，请重试', icon: 'none' })
+      uni.showToast({ title: error.msg || '创建订单失败，请重试', icon: 'none' })
     }
   } finally {
     isSubmitting.value = false
