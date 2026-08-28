@@ -1,7 +1,41 @@
 <template>
   <view class="scan-wrapper" :class="themeClass">
 
-    <!-- 扫码区域 -->
+    <!-- #ifdef H5 -->
+    <!-- H5 端：html5-qrcode 实时相机扫码 -->
+    <view class="h5-scan-container">
+
+      <!-- 扫码区域：占位图和相机容器叠加，未开启时显示占位 -->
+      <view class="h5-scan-box">
+        <!-- 未开启时的占位提示 -->
+        <view v-if="!scannerActive" class="h5-scan-placeholder">
+          <view class="ph-icon">
+            <uni-icons type="scan" size="60" color="#00BB88" />
+          </view>
+          <text class="ph-title">扫描二维码</text>
+          <text class="ph-desc">点击下方按钮开启相机</text>
+        </view>
+        <!-- html5-qrcode 容器（始终存在，保证初始化可用） -->
+        <view id="qr-reader" class="h5-qr-reader" :class="{ active: scannerActive }"></view>
+      </view>
+
+      <view class="h5-scan-btns">
+        <view v-if="!scannerActive" class="scan-btn" @click="startScanner">
+          <text class="scan-btn-text">开启相机扫码</text>
+        </view>
+        <view v-else class="scan-btn scan-btn-secondary" @click="stopScanner">
+          <text class="scan-btn-text">关闭相机</text>
+        </view>
+        <view class="album-btn" @click="handleAlbumScan">
+          <uni-icons type="image" size="22" color="#00BB88" />
+          <text class="album-btn-text">从相册选择二维码</text>
+        </view>
+      </view>
+    </view>
+    <!-- #endif -->
+
+    <!-- #ifndef H5 -->
+    <!-- 非 H5 端：原生扫码 -->
     <view class="scan-content">
       <view class="scan-icon-box">
         <uni-icons type="scan" size="80" color="#00BB88" />
@@ -16,6 +50,8 @@
         <text class="album-btn-text">从相册选择二维码</text>
       </view>
     </view>
+    <!-- #endif -->
+
     <!-- 加载状态 -->
     <view v-if="loading" class="loading-mask">
       <view class="loading-box">
@@ -30,7 +66,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { showCameraPurposeModal, showAlbumPurposeModal, showCameraPermissionModal, showAlbumPermissionModal } from '@/utils/photo'
 import { useThemeStore } from '@/store'
 
@@ -38,6 +74,129 @@ const themeStore = useThemeStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 const loading = ref(false)
+
+// #ifdef H5
+// H5 端 html5-qrcode 扫码器实例
+let html5QrCode = null
+const scannerActive = ref(false)
+
+// 启动 H5 相机扫码
+const startScanner = async () => {
+  try {
+    loading.value = true
+    const { Html5Qrcode } = await import('html5-qrcode')
+
+    // 创建新实例（保证每次 start 都是干净状态）
+    if (html5QrCode) {
+      try {
+        await html5QrCode.clear()
+      } catch (e) { /* ignore */ }
+      html5QrCode = null
+    }
+    html5QrCode = new Html5Qrcode('qr-reader')
+
+    const config = {
+      fps: 15,
+      // 设为 undefined，由我们自己用 CSS 绘制更精致的扫码框
+      qrbox: undefined,
+      aspectRatio: 1.0,
+      videoConstraints: {
+        facingMode: 'environment',
+        aspectRatio: 1.0
+      }
+    }
+
+    const onSuccess = (decodedText) => {
+      stopScanner()
+      processQrResult(decodedText)
+    }
+    const onScanFailure = () => {
+      // 扫描过程中的识别失败，忽略
+    }
+
+    let started = false
+
+    // 1. 先尝试后置摄像头
+    try {
+      await html5QrCode.start(
+        { facingMode: 'environment' },
+        config,
+        onSuccess,
+        onScanFailure
+      )
+      started = true
+    } catch (firstErr) {
+      console.warn('[H5扫码] 后置失败，尝试前置:', firstErr?.message || firstErr)
+    }
+
+    // 2. 后置失败，重新 new 实例后尝试前置
+    if (!started) {
+      try {
+        await html5QrCode.clear()
+      } catch (e) { /* ignore */ }
+      html5QrCode = new Html5Qrcode('qr-reader')
+
+      await html5QrCode.start(
+        { facingMode: 'user' },
+        config,
+        onSuccess,
+        onScanFailure
+      )
+      started = true
+    }
+
+    if (started) {
+      scannerActive.value = true
+    }
+    loading.value = false
+  } catch (err) {
+    console.error('[H5扫码] 启动失败:', err?.name, err?.message)
+    loading.value = false
+    scannerActive.value = false
+    html5QrCode = null
+
+    const msg = (err?.message || err?.name || '').toString().toLowerCase()
+    let tip = '相机启动失败，请重试'
+    if (msg.includes('notallowederror') || msg.includes('notallowed') || msg.includes('denied') || msg.includes('permission')) {
+      tip = '相机权限被拒绝，请在浏览器设置中开启'
+      showCameraPermissionModal()
+    } else if (msg.includes('notfound') || msg.includes('no device')) {
+      tip = '未检测到可用摄像头设备'
+    } else if (typeof location !== 'undefined' && location.protocol === 'http:' &&
+               location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+      tip = 'HTTP 环境无法使用相机，请使用 HTTPS 访问'
+    }
+    uni.showToast({ title: tip, icon: 'none', duration: 2500 })
+  }
+}
+
+// 停止 H5 相机扫码
+const stopScanner = async () => {
+  if (html5QrCode && scannerActive.value) {
+    try {
+      await html5QrCode.stop()
+    } catch (e) {
+      console.warn('[H5扫码] stop 异常:', e)
+    }
+    try {
+      await html5QrCode.clear()
+    } catch (e) {
+      console.warn('[H5扫码] clear 异常:', e)
+    }
+    html5QrCode = null
+    scannerActive.value = false
+  }
+}
+
+// 页面卸载时清理
+onUnmounted(() => {
+  if (html5QrCode) {
+    html5QrCode.stop().catch(() => {})
+    html5QrCode.clear().catch(() => {})
+    html5QrCode = null
+  }
+})
+// #endif
 // 从 URL 中提取参数
 const getQueryParam = (url, param) => {
   const queryString = url.split('?')[1]
@@ -270,6 +429,8 @@ const handleAlbumScan = async () => {
     }
   }
 }
+// #ifndef H5
+// 非 H5 端：使用原生扫码
 const handleScan = async () => {
   try {
     // 显示相机权限用途说明弹窗
@@ -288,12 +449,6 @@ const handleScan = async () => {
         } else if (err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize') || err.errMsg.includes('denied') || err.errMsg.includes('fail'))) {
           // 权限拒绝，显示引导弹窗
           showCameraPermissionModal()
-          // #ifdef H5
-          // H5 端额外提示：可以使用相册扫码作为替代
-          setTimeout(() => {
-            uni.showToast({ title: '相机不可用，可尝试从相册选择二维码', icon: 'none', duration: 2500 })
-          }, 500)
-          // #endif
         } else {
           uni.showToast({
             title: '扫码失败，请重试',
@@ -316,23 +471,66 @@ const handleScan = async () => {
     }
   }
 }
+// #endif
 
 </script>
 
 <style lang="scss" scoped>
 .scan-wrapper {
-  height: calc(var(--vh, 1vh) * 100);
-  background-color: var(--bg-page);
+  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
+  background-color: #121619;
+  display: flex;
+  flex-direction: column;
 }
-.album-btn {
+
+/* 通用按钮样式 */
+.scan-btn {
+  width: 520rpx;
+  height: 92rpx;
+  background: linear-gradient(135deg, #00BB88 0%, #059669 100%);
+  border-radius: 46rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12rpx;
-  margin-top: 40rpx;
-  padding: 20rpx 48rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 187, 136, 0.25);
+  transition: all 0.2s ease;
+
+  .scan-btn-text {
+    color: #FFFFFF;
+    font-size: 30rpx;
+    font-weight: 600;
+  }
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.scan-btn-secondary {
+  background: rgba(0, 187, 136, 0.12);
+  border: 2rpx solid rgba(0, 187, 136, 0.3);
+  box-shadow: none;
+
+  .scan-btn-text {
+    color: #00BB88;
+  }
+}
+
+.album-btn {
+  width: 520rpx;
+  height: 92rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  margin-top: 28rpx;
   border: 2rpx solid rgba(0, 187, 136, 0.4);
-  border-radius: 50rpx;
+  border-radius: 46rpx;
+  background: transparent;
+  transition: all 0.2s ease;
 
   .album-btn-text {
     color: #00BB88;
@@ -341,156 +539,176 @@ const handleScan = async () => {
   }
 
   &:active {
-    background: rgba(0, 187, 136, 0.1);
+    background: rgba(0, 187, 136, 0.08);
   }
 }
-.navbar {
-  display: flex;
-  align-items: center;
-  padding-left: 30rpx;
-  padding-right: 30rpx;
-  padding-bottom: 24rpx;
-  background: rgba(18, 22, 25, 0.9);
 
-  .nav-left {
+/* H5 端扫码视口 */
+.h5-scan-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60rpx 40rpx 0;
+
+  .h5-scan-title {
+    color: #FFFFFF;
+    font-size: 38rpx;
+    font-weight: 700;
+    margin-bottom: 12rpx;
+  }
+
+  .h5-scan-desc {
+    color: #8E9AA8;
+    font-size: 26rpx;
+    margin-bottom: 50rpx;
+  }
+
+  .h5-scan-box {
+    width: 540rpx;
+    height: 540rpx;
+    position: relative;
+    border-radius: 32rpx;
+    overflow: hidden;
+    background: #0B0E10;
+    box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .h5-scan-placeholder {
+    position: absolute;
+    inset: 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    .logo-circle {
-      width: 60rpx;
-      height: 60rpx;
-      background: linear-gradient(135deg, #00BB88 0%, #059669 100%);
-      border-radius: 18rpx;
+    justify-content: center;
+    background: radial-gradient(circle, rgba(0, 187, 136, 0.08) 0%, rgba(18, 22, 25, 0.4) 100%);
+    border: 2rpx dashed rgba(0, 187, 136, 0.35);
+    border-radius: 32rpx;
+    z-index: 2;
+
+    .ph-icon {
+      width: 140rpx;
+      height: 140rpx;
+      background: rgba(0, 187, 136, 0.12);
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-right: 16rpx;
-      position: relative;
-      overflow: hidden;
-
-      .logo-glow {
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 60%);
-        animation: glowPulse 4s ease-in-out infinite;
-      }
-
-      .logo-text {
-        color: var(--text-primary);
-        font-weight: 800;
-        font-size: 34rpx;
-        position: relative;
-        z-index: 1;
-      }
+      margin-bottom: 24rpx;
     }
-    .nav-title-group {
-      display: flex;
-      flex-direction: column;
-      .nav-title {
-        color: var(--text-primary);
-        font-size: 36rpx;
-        font-weight: 700;
-        line-height: 1.2;
-        letter-spacing: -1rpx;
-      }
-      .nav-subtitle {
-        color: var(--text-tertiary);
-        font-size: 24rpx;
-        margin-top: 2rpx;
-        font-weight: 500;
-      }
+
+    .ph-title {
+      color: #E2E8F0;
+      font-size: 32rpx;
+      font-weight: 600;
+      margin-bottom: 8rpx;
     }
+
+    .ph-desc {
+      color: #8E9AA8;
+      font-size: 24rpx;
+    }
+  }
+
+  .h5-qr-reader {
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+
+    &.active {
+      opacity: 1;
+    }
+
+    /* 保证视频撑满容器且居中裁剪，彻底消除黑边 */
+    & :deep(video) {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      border-radius: 32rpx !important;
+    }
+
+    /* 隐藏插件自带的遮罩与控制层 */
+    & :deep(#qr-reader__scan_region) {
+      background: transparent !important;
+    }
+    & :deep(#qr-reader__dashboard),
+    & :deep(#qr-reader__dashboard_section),
+    & :deep(#qr-shaded-region) {
+      display: none !important;
+    }
+  }
+
+  .h5-scan-btns {
+    margin-top: 60rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 }
 
+/* 非 H5 端样式 */
 .scan-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 200rpx;
+  padding-top: 140rpx;
 
   .scan-icon-box {
-    width: 200rpx;
-    height: 200rpx;
-    background: rgba(0, 187, 136, 0.1);
+    width: 220rpx;
+    height: 220rpx;
+    background: rgba(0, 187, 136, 0.08);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 40rpx;
-    border: 2rpx dashed rgba(0, 187, 136, 0.3);
+    border: 2rpx dashed rgba(0, 187, 136, 0.4);
   }
 
   .scan-title {
-    color: var(--text-primary);
-    font-size: 36rpx;
-    font-weight: 600;
-    margin-bottom: 16rpx;
+    color: #FFFFFF;
+    font-size: 38rpx;
+    font-weight: 700;
+    margin-bottom: 12rpx;
   }
 
   .scan-desc {
-    color: var(--text-tertiary);
-    font-size: 28rpx;
-    margin-bottom: 80rpx;
-  }
-
-  .scan-btn {
-    background: linear-gradient(135deg, #00BB88 0%, #059669 100%);
-    padding: 24rpx 100rpx;
-    border-radius: 50rpx;
-    box-shadow: 0 8rpx 24rpx rgba(0, 187, 136, 0.3);
-
-    .scan-btn-text {
-      color: var(--text-primary);
-      font-size: 32rpx;
-      font-weight: 600;
-    }
-
-    &:active {
-      transform: scale(0.95);
-      opacity: 0.8;
-    }
+    color: #8E9AA8;
+    font-size: 26rpx;
+    margin-bottom: 70rpx;
   }
 }
 
-@keyframes glowPulse {
-  0%, 100% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(1.2); opacity: 0.8; }
-}
-.safe-area-floor {
-  height: constant(safe-area-inset-bottom);
-  height: env(safe-area-inset-bottom);
-}
-
-/* 加载状态 */
+/* 全局 Loading 蒙层 */
 .loading-mask {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 999;
 
   .loading-box {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 24rpx;
-    padding: 60rpx;
-    background: rgba(255, 255, 255, 0.1);
+    gap: 20rpx;
+    padding: 48rpx 64rpx;
+    background: rgba(30, 38, 44, 0.9);
     border-radius: 24rpx;
-    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 
     .loading-text {
-      color: var(--text-primary);
-      font-size: 28rpx;
+      color: #E2E8F0;
+      font-size: 26rpx;
     }
   }
+}
+
+.safe-area-floor {
+  height: env(safe-area-inset-bottom);
 }
 </style>

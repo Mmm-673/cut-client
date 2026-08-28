@@ -86,6 +86,21 @@ export function refreshToken(refreshToken) {
 }
 
 /**
+ * 获取社交授权跳转 URL（state 由后端生成并缓存，回调后须原样带回）
+ * @param {Object} params - 请求参数
+ * @param {number} params.type - 社交平台类型（微信公众号=31）
+ * @param {string} params.redirectUri - 授权完成后的回跳地址
+ * @returns {Promise<Object>} data 为完整的微信 OAuth 授权 URL
+ */
+export function getSocialAuthRedirect(params) {
+  return request({
+    url: '/app-api/member/auth/social-auth-redirect',
+    method: 'get',
+    params
+  })
+}
+
+/**
  * 退出登录
  */
 export function logout() {

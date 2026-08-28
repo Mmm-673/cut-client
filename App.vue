@@ -17,6 +17,9 @@ import { initPushService, syncPushForUser, retryPushSyncIfNeeded } from '@/utils
 import { shouldShowIosPrivacy, setPrivacyAgreedCallback } from '@/utils/privacy'
 import { isReviewMode } from '@/utils/review'
 import { extractCoachId } from '@/utils/common'
+// #ifdef H5
+import { handleWxPayBindCallback } from '@/utils/payment'
+// #endif
 
 const { proxy } = getCurrentInstance()
 
@@ -38,6 +41,14 @@ onLaunch((options) => {
   handleLaunchOptions(options)
   // #ifdef H5
   handleDeepLink()
+  // 微信浏览器网页授权回跳：绑定 openid 后自动续付
+  setTimeout(() => {
+    try {
+      handleWxPayBindCallback()
+    } catch (e) {
+      console.warn('[App] 微信支付绑定回跳处理失败:', e)
+    }
+  }, 300)
   // #endif
 })
 

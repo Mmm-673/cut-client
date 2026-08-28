@@ -39,6 +39,7 @@
     }
   },
   "dependencies": {
+    "html5-qrcode": "^2.3.8",
     "jsqr": "^1.4.0"
   }
 }

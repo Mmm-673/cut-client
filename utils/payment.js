@@ -7,6 +7,13 @@ import { isMPWeixin, isApp, isH5, isWechatBrowser } from '@/utils/platform'
 import { submitPayOrder, getEnableChannelCodeList, getPayOrder } from '@/api/billiard/pay'
 import { createOnsitePayment, getOnsitePaymentStatus } from '@/api/billiard/onsitePay'
 import { bindWX } from '@/api/billiard/user'
+import { getSocialAuthRedirect } from '@/api/auth'
+
+// 社交平台类型：微信公众号（后端 JustAuth 的 WECHAT_MP）
+const SOCIAL_TYPE_WECHAT_MP = 31
+// H5 微信支付「绑定后自动续付」的上下文缓存 key
+const WX_PAY_BIND_CONTEXT_KEY = 'wx_pay_bind_context'
+
 // 支付请求状态管理，用于防止重复提交
 const payRequestStates = new Map()
 
@@ -384,12 +391,7 @@ function wechatJsapiPay(payParams) {
       signType: payParams.signType || 'RSA',
       paySign: payParams.paySign
     }
-    uni.showModal({
-      title: '【调试】支付参数',
-      content: JSON.stringify(debugPayParams, null, 2),
-      showCancel: false,
-      confirmText: '继续'
-    })
+
 
     if (typeof WeixinJSBridge === 'undefined') {
       uni.showModal({
@@ -405,13 +407,6 @@ function wechatJsapiPay(payParams) {
       'getBrandWCPayRequest',
       debugPayParams,
       (res) => {
-        // 调试：打印支付回调结果
-        uni.showModal({
-          title: '【调试】支付回调',
-          content: JSON.stringify(res, null, 2),
-          showCancel: false
-        })
-
         if (res.err_msg === 'get_brand_wcpay_request:ok') {
           resolve({ success: true, ...res })
         } else if (res.err_msg === 'get_brand_wcpay_request:cancel') {
@@ -503,6 +498,146 @@ const getWxCode = async () => {
   }
 }
 // #endif
+
+// #ifdef H5
+// 从 location.search 读取指定参数
+function getSearchParam(name) {
+  try {
+    const search = window.location.search || ''
+    const matched = new RegExp('[?&]' + name + '=([^&]+)').exec(search)
+    return matched ? decodeURIComponent(matched[1]) : null
+  } catch (e) {
+    return null
+  }
+}
+
+// 清除 URL 上的 code/state 参数，避免刷新页面时重复绑定
+function cleanWxAuthParamsFromUrl() {
+  try {
+    const url = new URL(window.location.href)
+    url.searchParams.delete('code')
+    url.searchParams.delete('state')
+    window.history.replaceState(null, '', url.toString())
+  } catch (e) {}
+}
+
+// 跳转到微信公众号网页授权
+// 授权 URL 必须由后端生成：state 由后端创建并缓存，回调时后端 JustAuth 会校验，
+// 前端自行拼接的 state 会报「Illegal state [WECHAT_MP]」
+async function redirectToWxOAuth() {
+  // redirect_uri 使用干净的基础地址（不带 hash / query），回跳后 code/state 会在 location.search
+  const redirectUri = window.location.origin + window.location.pathname
+  const res = await getSocialAuthRedirect({
+    type: SOCIAL_TYPE_WECHAT_MP,
+    redirectUri
+  })
+  const authUrl = res.data
+  if (!authUrl) {
+    throw new Error('获取微信授权链接失败')
+  }
+  window.location.href = authUrl
+}
+
+// 等待 WeixinJSBridge 就绪（回跳后自动续付时使用）
+function waitWeixinJSBridge(timeout = 3000) {
+  return new Promise((resolve) => {
+    if (typeof WeixinJSBridge !== 'undefined') {
+      resolve(true)
+      return
+    }
+    let done = false
+    const finish = (ok) => {
+      if (done) return
+      done = true
+      resolve(ok)
+    }
+    document.addEventListener('WeixinJSBridgeReady', () => finish(true), false)
+    setTimeout(() => finish(typeof WeixinJSBridge !== 'undefined'), timeout)
+  })
+}
+
+// 绑定成功后，使用缓存的上下文自动继续微信支付
+async function resumeWxPayAfterBind(context) {
+  const { payOrderId, payValue, channelCode, orderId } = context || {}
+  if (!payOrderId) return
+
+  await waitWeixinJSBridge()
+
+  await executePayment({
+    payOrderId,
+    payValue: payValue || 'wechat',
+    channelCode: channelCode || PAY_CHANNEL.WX_MINIPROGRAM,
+    orderId,
+    onSuccess: () => {
+      const successUrl = orderId
+        ? `/subpkg/booking/pay-success?orderId=${orderId}`
+        : `/subpkg/booking/pay-success?payOrderId=${payOrderId}`
+      uni.showToast({ title: '支付成功', icon: 'success' })
+      setTimeout(() => {
+        uni.redirectTo({ url: successUrl })
+      }, 1200)
+    },
+    onCancel: () => {
+      uni.showToast({ title: '支付已取消', icon: 'none' })
+    },
+    onError: (err) => {
+      if (!err || !err.pending) {
+        uni.showToast({ title: (err && err.message) || '支付失败，请重试', icon: 'none' })
+      }
+    }
+  })
+}
+
+/**
+ * H5 微信浏览器：处理网页授权回跳
+ * 在 App.vue onLaunch 中调用。若检测到微信授权 code 且存在待支付上下文，
+ * 则完成 openid 绑定并自动继续之前的微信支付。
+ * @returns {Promise<boolean>} 是否处理了绑定回跳
+ */
+export async function handleWxPayBindCallback() {
+  if (!isWechatBrowser()) return false
+
+  const code = getSearchParam('code')
+  const state = getSearchParam('state')
+  if (!code) return false
+
+  let context = null
+  try {
+    context = uni.getStorageSync(WX_PAY_BIND_CONTEXT_KEY)
+  } catch (e) {}
+
+  // 仅当存在本模块写入的待支付上下文时才处理，避免与其它 OAuth 流程冲突
+  if (!context || !context.payOrderId) {
+    return false
+  }
+
+  // 先清理，避免刷新/重复触发
+  try {
+    uni.removeStorageSync(WX_PAY_BIND_CONTEXT_KEY)
+  } catch (e) {}
+  cleanWxAuthParamsFromUrl()
+
+  try {
+    uni.showLoading({ title: '绑定微信中...', mask: true })
+    await bindWX({ code, state, platform: 'h5' })
+    uni.hideLoading()
+  } catch (e) {
+    uni.hideLoading()
+    const msg = typeof e === 'string' ? e : (e && e.message) || '微信绑定失败'
+    uni.showToast({ title: msg, icon: 'none' })
+    return false
+  }
+
+  try {
+    await resumeWxPayAfterBind(context)
+  } catch (e) {
+    // 续付异常已在 onError 中提示
+    console.error('绑定后续付失败:', e)
+  }
+  return true
+}
+// #endif
+
 async function confirmPayOrderPaid(payOrderId) {
   const res = await getPayOrder({ id: payOrderId, sync: true })
   const data = res.data || {}
@@ -591,16 +726,6 @@ export async function executePayment(options) {
     const submitRes = await submitPayOrder(submitParams)
 
     // 调试：打印接口完整返回
-    // #ifdef H5
-    if (isH5()) {
-      uni.showModal({
-        title: '【调试】submitPayOrder 返回',
-        content: JSON.stringify(submitRes, null, 2),
-        showCancel: false,
-        confirmText: '继续'
-      })
-    }
-    // #endif
 
     const resultData = submitRes.data || {}
     const payStatus = resultData.status
@@ -632,19 +757,6 @@ export async function executePayment(options) {
     }
 
     // 调试：打印后端返回的原始支付数据
-    // #ifdef H5
-    if (isH5()) {
-      uni.showModal({
-        title: '【调试】后端原始返回',
-        content: 'channelCode: ' + channelCode + '\n' +
-                 'displayMode: ' + (resultData.displayMode || '-') + '\n' +
-                 'displayContent 类型: ' + typeof displayContent + '\n' +
-                 'displayContent:\n' + (typeof displayContent === 'string' ? displayContent : JSON.stringify(displayContent, null, 2)),
-        showCancel: false,
-        confirmText: '继续'
-      })
-    }
-    // #endif
 
     // 5. 根据支付方式和平台执行支付
     if (isMPWeixin() && payValue === 'wechat') {
@@ -736,6 +848,44 @@ export async function executePayment(options) {
       })
     }
     // #endif
+
+    // #ifdef H5
+    // 微信内置浏览器：JSAPI 支付需要先绑定 openid，引导网页授权后自动续付
+    if (typeof error === 'string' && error.includes('绑定微信') && isWechatBrowser()) {
+      return new Promise((resolve, reject) => {
+        uni.showModal({
+          title: '提示',
+          content: '需要绑定微信后才能继续支付，是否立即绑定？',
+          success: (modalRes) => {
+            if (modalRes.confirm) {
+              // 缓存待支付上下文，网页授权回跳后自动继续支付
+              try {
+                uni.setStorageSync(WX_PAY_BIND_CONTEXT_KEY, {
+                  payOrderId,
+                  payValue,
+                  channelCode,
+                  orderId: orderId || '',
+                  ts: Date.now()
+                })
+              } catch (e) {}
+              // 跳转微信授权，成功后页面离开，不再 resolve/reject
+              redirectToWxOAuth().catch((e) => {
+                const msg = typeof e === 'string' ? e : (e && e.message) || '获取微信授权链接失败'
+                uni.showToast({ title: msg, icon: 'none' })
+                reject(error)
+              })
+            } else {
+              reject(error)
+            }
+          },
+          fail: () => {
+            reject(error)
+          }
+        })
+      })
+    }
+    // #endif
+
     console.error('支付出错:', error)
 
     // 更新支付请求状态
