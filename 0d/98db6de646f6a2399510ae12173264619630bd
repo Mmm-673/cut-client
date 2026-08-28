@@ -1,0 +1,42 @@
+pages/scan/index.vue
+  e4e1dcf8f56b2767 4-38,53-54,69,77-98,106-199,432-433,474,547,549,553,557-560,562,564-566,569,571-578,581,583,587-591,593,598,600,602-603,606-607,612-616,618-622,624-626,629-630,634,638-647
+utils/payment.js
+  3782236374ae7707 10,13-16,394,501-524,527,529-533,537
+api/auth.js
+  3782236374ae7707 94-99
+package.json
+  e4e1dcf8f56b2767 42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "0d98db6de646f6a2399510ae12173264619630bd",
+  "prompts": {
+    "3782236374ae7707": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "42395494-e872-43ad-81ce-5566bfe6f57b",
+        "model": "doubao-seed-2-1-turbo"
+      },
+      "human_author": "carson.ma",
+      "messages": [],
+      "total_additions": 37,
+      "total_deletions": 16,
+      "accepted_lines": 18,
+      "overriden_lines": 6
+    },
+    "e4e1dcf8f56b2767": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fec283b6-b390-4410-b6f7-368087a9b5ee",
+        "model": "doubao-seed-2-1-turbo"
+      },
+      "human_author": "carson.ma",
+      "messages": [],
+      "total_additions": 485,
+      "total_deletions": 215,
+      "accepted_lines": 275,
+      "overriden_lines": 38
+    }
+  }
+}
