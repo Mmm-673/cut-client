@@ -1,0 +1,23 @@
+utils/payment.js
+  e4e1dcf8f56b2767 112-113,204-205,661
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "9468909aad742c4cace240b03ec91dd04a78696b",
+  "prompts": {
+    "e4e1dcf8f56b2767": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fec283b6-b390-4410-b6f7-368087a9b5ee",
+        "model": "doubao-seed-2-1-turbo"
+      },
+      "human_author": "carson.ma",
+      "messages": [],
+      "total_additions": 27,
+      "total_deletions": 6,
+      "accepted_lines": 1058,
+      "overriden_lines": 118
+    }
+  }
+}
