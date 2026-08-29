@@ -1,0 +1,23 @@
+static/scss/global.scss
+  a44b5a2c384bff54 7-20,22-88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "31ed672833f6f6ac7f8ab506cf264498caed1e55",
+  "prompts": {
+    "a44b5a2c384bff54": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "595ab2a2-53c9-4008-9c65-aecd6bc9d66d",
+        "model": "doubao-seed-2-1-turbo"
+      },
+      "human_author": "carson.ma",
+      "messages": [],
+      "total_additions": 148,
+      "total_deletions": 66,
+      "accepted_lines": 188,
+      "overriden_lines": 1
+    }
+  }
+}
