@@ -102,6 +102,38 @@
         </view>
       </view>
 
+      <!-- 教学视频（App/H5 使用 DomVideoPlayer，小程序暂不支持） -->
+      <!-- #ifdef APP-PLUS || H5 -->
+      <view class="section" v-if="coachInfo.videoUrl && videoVisible">
+        <view class="section-title">
+          <uni-icons type="videocam" size="18" color="#00c896"></uni-icons>
+          <text>教学视频</text>
+        </view>
+        <view class="video-wrap">
+          <DomVideoPlayer
+            v-if="coachInfo.videoUrl"
+            ref="videoPlayerRef"
+            :src="coachInfo.videoUrl"
+            :autoplay="false"
+            :controls="true"
+            :loop="false"
+            object-fit="contain"
+            :is-loading="false"
+            @play="onVideoPlay"
+            @pause="onVideoPause"
+            @ended="onVideoEnded"
+            @error="onVideoError"
+            @canplay="onVideoCanPlay"
+            @loadedmetadata="onVideoLoadedMeta"
+            @timeupdate="onVideoTimeUpdate"
+            @durationchange="onVideoDurationChange"
+            @fullscreenchange="onVideoFullscreenChange"
+            class="coach-video-player"
+          />
+        </view>
+      </view>
+      <!-- #endif -->
+
       <!-- 个人相册 -->
       <view class="section" v-if="albumList.length > 0">
         <view class="section-title">
@@ -247,7 +279,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
-import { onLoad, onShow } from "@dcloudio/uni-app"
+import { onLoad, onShow, onHide, onUnload } from "@dcloudio/uni-app"
 import { getCoachDetail, toggleCoachFavorite, getCoachReviews } from '@/api/billiard/coach'
 import { createOrder } from '@/api/billiard/order'
 import { getRewardSwitch } from '@/api/billiard/user'
@@ -314,8 +346,68 @@ const coachInfo = reactive({
   tags: [],
   intro: '',
   introduction: '',
-  serviceStatus: 0
+  serviceStatus: 0,
+  videoUrl: '',
+  videoFileName: '',
+  videoFileSize: 0,
+  videoMimeType: ''
 })
+
+// #ifdef APP-PLUS || H5
+import DomVideoPlayer from '@/components/DomVideoPlayer/DomVideoPlayer.vue'
+// #endif
+
+// 视频播放器可见性（错误时隐藏）
+const videoVisible = ref(true)
+const videoPlayerRef = ref(null)
+
+// 视频播放错误处理
+const onVideoError = () => {
+  uni.showToast({ title: '视频加载失败', icon: 'none' })
+  videoVisible.value = false
+}
+
+const onVideoPlay = () => {
+  // console.log('视频开始播放')
+}
+
+const onVideoPause = () => {
+  // console.log('视频暂停')
+}
+
+const onVideoEnded = () => {
+  // 视频播放结束
+}
+
+const onVideoCanPlay = () => {
+  // 视频可以播放了
+}
+
+const onVideoLoadedMeta = (data) => {
+  // 视频元数据加载完成
+}
+
+const onVideoTimeUpdate = (time) => {
+  // 播放进度更新
+}
+
+const onVideoDurationChange = (duration) => {
+  // 视频总时长
+}
+
+// 暂停视频播放
+const pauseVideo = () => {
+  if (videoPlayerRef.value) {
+    videoPlayerRef.value.pause()
+  }
+}
+
+// 视频全屏状态（仅供事件监听使用）
+const isVideoFullscreen = ref(false)
+
+const onVideoFullscreenChange = (isFull) => {
+  isVideoFullscreen.value = isFull
+}
 
 // 服务项目
 const services = ref([])
@@ -381,6 +473,9 @@ const getServiceIcon = (type) => {
 const loadCoachData = async () => {
   if (!coachId.value) return
 
+  // 重置视频可见状态
+  videoVisible.value = true
+
   loading.value = true
   try {
     const res = await getCoachDetail({ id: coachId.value })
@@ -408,7 +503,11 @@ const loadCoachData = async () => {
       tags: data.tags || [],
       intro: data.introduction || data.intro || '这位裁教很神秘，什么都没写~',
       introduction: data.introduction || data.intro || '这位裁教很神秘，什么都没写~',
-      serviceStatus: data.serviceStatus ?? 0
+      serviceStatus: data.serviceStatus ?? 0,
+      videoUrl: data.videoUrl || '',
+      videoFileName: data.videoFileName || '',
+      videoFileSize: data.videoFileSize || 0,
+      videoMimeType: data.videoMimeType || ''
     })
 
 
@@ -830,6 +929,18 @@ onMounted(() => {
   // 加载是否显示按钮
   loadCountdownEnabled()
 })
+
+onHide(() => {
+  // #ifdef APP-PLUS || H5
+  pauseVideo()
+  // #endif
+})
+
+onUnload(() => {
+  // #ifdef APP-PLUS || H5
+  pauseVideo()
+  // #endif
+})
 </script>
 
 <style lang="scss" scoped>
@@ -1064,6 +1175,23 @@ onMounted(() => {
       font-size: 28rpx;
       color: var(--text-secondary);
       line-height: 1.8;
+    }
+  }
+
+  .video-wrap {
+    background-color: var(--bg-card);
+    border-radius: 32rpx;
+    padding: 24rpx;
+    margin-top: 24rpx;
+    overflow: hidden;
+    position: relative;
+
+    .coach-video-player {
+      width: 100%;
+      height: 380rpx;
+      border-radius: 16rpx;
+      display: block;
+      background-color: #000;
     }
   }
 

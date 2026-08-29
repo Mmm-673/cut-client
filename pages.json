@@ -199,6 +199,24 @@
           "style": {
             "navigationBarTitleText": "交易记录"
           }
+        },
+        {
+          "path": "notification/index",
+          "style": {
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white",
+            "navigationBarTitleText": "消息通知",
+            "backgroundColor": "#121619"
+          }
+        },
+        {
+          "path": "notification/detail",
+          "style": {
+            "navigationBarBackgroundColor": "#121619",
+            "navigationBarTextStyle": "white",
+            "navigationBarTitleText": "通知详情",
+            "backgroundColor": "#121619"
+          }
         }
       ]
     },

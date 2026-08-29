@@ -42,6 +42,8 @@ async function refreshTokenRequest() {
     const response = await refreshToken(refreshTokenValue)
     if (response.data) {
       setAuthInfo(response.data)
+      // 通知 WebSocket 用新 token 重连
+      uni.$emit('token-refreshed', response.data.accessToken)
       return response.data.accessToken
     }
     return Promise.reject(new Error('Refresh token failed'))
@@ -156,6 +158,7 @@ const request = async config => {
       const resultData = res.data || {};
       const code = resultData.code ?? 0; // 使用 ?? 处理 0 的情况
       const msg = getErrorMessage(code, resultData.msg);
+      resultData.message = msg;
 
       console.log('当前Code:', code, '返回数据:', resultData);
 

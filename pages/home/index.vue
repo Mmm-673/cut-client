@@ -188,6 +188,36 @@
 
 <!--      <view class="safe-bottom"></view>-->
     </scroll-view>
+
+    <!-- 重大通知弹窗 -->
+    <view class="notify-modal" v-if="showNotifyModal" @click="closeNotifyModal('cancel')">
+      <view class="notify-modal-content" @click.stop>
+        <!-- 顶部装饰 -->
+        <view class="notify-modal-header">
+          <view class="notify-modal-icon">
+            <uni-icons type="sound" size="28" color="#fff" />
+          </view>
+          <text class="notify-modal-badge">重大通知</text>
+        </view>
+
+        <!-- 内容区 -->
+        <view class="notify-modal-body">
+          <text class="notify-modal-title">{{ currentNotify.title }}</text>
+          <text class="notify-modal-desc">{{ currentNotify.summary }}</text>
+        </view>
+
+        <!-- 按钮区 -->
+        <view class="notify-modal-footer">
+          <view class="notify-btn notify-btn-cancel" @click="closeNotifyModal('cancel')">
+            <text>我知道了</text>
+          </view>
+          <view class="notify-btn notify-btn-confirm" @click="closeNotifyModal('confirm')">
+            <text>查看详情</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <!-- #ifdef APP-PLUS -->
     <ios-privacy-dialog ref="privacyDialogRef" @agree="handlePrivacyAgreed" />
     <!-- #endif -->
@@ -198,9 +228,11 @@
 import {ref, computed, onMounted, nextTick, watch} from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getNewCoachList, getHotCoachList, getBannerList } from '@/api/billiard/coach'
+import { getNotificationPage, markAsRead } from '@/api/billiard/notification'
 import { shouldShowIosPrivacy, hasPrivacyRefused } from '@/utils/privacy'
 import { isIOS, isMPWeixin } from '@/utils/platform'
 import { isLoggedIn } from '@/utils/token'
+import wsManager from '@/utils/websocket'
 import {
   useConfigStore, useThemeStore
 } from '@/store'
@@ -419,6 +451,98 @@ const toScan = () => {
   })
 }
 
+// ==================== 重大通知弹窗 ====================
+const notificationQueue = ref([])
+const showNotifyModal = ref(false)
+const currentNotify = ref({ id: 0, title: '', summary: '' })
+let wsUnsubscribe = null
+
+// 拉取未读重大通知
+const fetchMajorNotifications = async () => {
+  if (!isLoggedIn()) return
+  try {
+    const res = await getNotificationPage({
+      pageNo: 1,
+      pageSize: 20,
+      readStatus: 0
+    })
+    const records = res.data?.list || res.data?.records || []
+    // 筛选 type=1 重大通知，且未在去重池中
+    const majorList = records.filter(item => {
+      const isMajor = item.type === 1
+      const notProcessed = !wsManager.hasProcessed(item.id)
+      return isMajor && notProcessed
+    })
+    if (majorList.length > 0) {
+      majorList.forEach(item => {
+        wsManager.markProcessed(item.id)
+        notificationQueue.value.push(item)
+      })
+      showNextNotification()
+    }
+  } catch (e) {
+    console.error('[首页] 获取重大通知失败', e)
+  }
+}
+
+// 显示下一条通知弹窗
+const showNextNotification = () => {
+  if (showNotifyModal.value) return
+  if (notificationQueue.value.length === 0) return
+
+  const item = notificationQueue.value.shift()
+  currentNotify.value = item
+  showNotifyModal.value = true
+}
+
+// 关闭通知弹窗
+const closeNotifyModal = async (action) => {
+  const item = currentNotify.value
+
+  // 标记已读
+  try {
+    await markAsRead(item.id)
+  } catch (e) {
+    console.error('[首页] 标记通知已读失败', e)
+  }
+
+  showNotifyModal.value = false
+
+  if (action === 'confirm') {
+    // 跳通知详情页
+    setTimeout(() => {
+      uni.navigateTo({
+        url: `/subpkg/mine/notification/detail?id=${item.id}`
+      })
+    }, 300)
+  }
+
+  // 继续弹下一条
+  setTimeout(() => {
+    showNextNotification()
+  }, 350)
+}
+
+// 监听 WebSocket 推送的重大通知
+const listenMajorNotification = () => {
+  if (wsUnsubscribe) return
+  wsUnsubscribe = wsManager.onMajorNotification((notification) => {
+    const item = {
+      id: notification.notificationId,
+      type: notification.notificationType,
+      title: notification.title,
+      summary: notification.summary,
+      coverUrl: notification.coverUrl,
+      publishTime: notification.publishTime,
+      actionType: notification.actionType,
+      actionValue: notification.actionValue
+    }
+    notificationQueue.value.push(item)
+    showNextNotification()
+  })
+}
+// ====================================================
+
 const initData = async () => {
   // 开关未就绪时先等待，避免审核模式下误加载教练数据
   if (!reviewLoaded.value) {
@@ -441,6 +565,8 @@ const initData = async () => {
 
 onLoad(() => {
   initData()
+  // 首次加载拉取未读重大通知
+  fetchMajorNotifications()
 })
 
 onMounted(() => {
@@ -473,6 +599,13 @@ onShow(() => {
   initData()
   // 更新自定义 TabBar 选中状态
   updateCustomTabBar()
+
+  // 监听 WebSocket 推送（只注册一次）
+  listenMajorNotification()
+  // 如果队列有待弹窗且当前没在展示，继续弹
+  if (notificationQueue.value.length > 0 && !isShowingNotification.value) {
+    showNextNotification()
+  }
 })
 </script>
 
@@ -1386,5 +1519,158 @@ onShow(() => {
 
 .safe-bottom {
   height: 40rpx;
+}
+
+// ==================== 重大通知弹窗 ====================
+.notify-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: notifyFadeIn 0.3s ease;
+
+  .notify-modal-content {
+    width: 600rpx;
+    background: linear-gradient(180deg, #1e252b 0%, #1a2025 100%);
+    border-radius: 32rpx;
+    overflow: hidden;
+    position: relative;
+    animation: notifySlideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    .notify-modal-header {
+      height: 160rpx;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: -60rpx;
+        right: -40rpx;
+        width: 200rpx;
+        height: 200rpx;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 50%;
+      }
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -30rpx;
+        left: -20rpx;
+        width: 100rpx;
+        height: 100rpx;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+      }
+
+      .notify-modal-icon {
+        width: 80rpx;
+        height: 80rpx;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12rpx;
+        z-index: 1;
+        animation: notifyBellShake 2s ease-in-out infinite;
+      }
+
+      .notify-modal-badge {
+        font-size: 24rpx;
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 500;
+        z-index: 1;
+        letter-spacing: 4rpx;
+      }
+    }
+
+    .notify-modal-body {
+      padding: 48rpx 40rpx 40rpx;
+      text-align: center;
+
+      .notify-modal-title {
+        font-size: 34rpx;
+        font-weight: 600;
+        color: #fff;
+        line-height: 1.4;
+        display: block;
+        margin-bottom: 20rpx;
+      }
+
+      .notify-modal-desc {
+        font-size: 26rpx;
+        color: #999;
+        line-height: 1.6;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+    }
+
+    .notify-modal-footer {
+      display: flex;
+      padding: 0 30rpx 40rpx;
+      gap: 20rpx;
+
+      .notify-btn {
+        flex: 1;
+        height: 88rpx;
+        border-radius: 44rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28rpx;
+
+        &.notify-btn-cancel {
+          background: rgba(255, 255, 255, 0.08);
+          color: #999;
+        }
+
+        &.notify-btn-confirm {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: #fff;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+}
+
+@keyframes notifyFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes notifySlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40rpx) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes notifyBellShake {
+  0%, 100% { transform: rotate(0); }
+  10% { transform: rotate(-10deg); }
+  20% { transform: rotate(10deg); }
+  30% { transform: rotate(-10deg); }
+  40% { transform: rotate(10deg); }
+  50% { transform: rotate(0); }
 }
 </style>

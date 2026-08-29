@@ -103,7 +103,7 @@ const toggleFaq = (item) => {
 
 // 联系客服信息
 const serviceInfo = ref({
-  qrImage: '/static/images/qrImage.png',
+  qrImage: '/static/images/ScreenShot_2026-08-29_104127_023.png',
   qrTip: '微信扫码添加客服好友，一对一咨询',
   hotline: '15900560488'
 })
