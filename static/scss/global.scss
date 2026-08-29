@@ -4,6 +4,88 @@
   --nav-bar-height: 44px;
 }
 
+/* #ifdef H5 */
+// H5 端：增加导航栏和 TabBar 高度，让界面更舒适
+:root {
+  --nav-bar-height: 56px;
+}
+
+// 覆盖 UniApp 系统导航栏高度
+.uni-page-head {
+  height: calc(var(--status-bar-height) + 56px) !important;
+}
+
+// 标题：保持原有的居中方式（absolute/text-align），只调整高度和行高实现垂直居中
+.uni-page-head__title {
+  height: 56px !important;
+  line-height: 48px !important;
+}
+
+// 左右按钮区域：用 flex 垂直居中
+.uni-page-head .uni-page-head-btn,
+.uni-page-head__left,
+.uni-page-head__right {
+  height: 56px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+// 页面内容区域的 top 值需要同步增加（避免被增高的导航栏遮挡）
+.uni-page-wrapper {
+  top: calc(var(--status-bar-height) + 56px) !important;
+}
+
+// 覆盖 UniApp 原生 TabBar 高度
+.uni-tabbar {
+  height: 70px !important;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.uni-tabbar-placeholder {
+  height: 70px !important;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.uni-tabbar .uni-tabbar-item {
+  height: 70px !important;
+  padding-top: 6px !important;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 6px) !important;
+}
+
+.uni-tabbar .uni-tabbar-item .uni-tabbar__icon {
+  width: 28px !important;
+  height: 28px !important;
+  margin-bottom: 4px !important;
+}
+
+.uni-tabbar .uni-tabbar-item .uni-tabbar__label {
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+}
+
+// 统一加高各页面底部操作栏（bottom-bar）
+.bottom-bar {
+  padding-top: 14px !important;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom)) !important;
+}
+
+// 底部操作栏内的按钮也相应加高
+.bottom-bar button,
+.bottom-bar .btn,
+.bottom-bar .action-btn {
+  height: 44px !important;
+  line-height: 44px !important;
+  font-size: 15px !important;
+}
+
+// 页面底部安全距离占位元素同步加高（避免内容被 bottom-bar 遮挡）
+// 在原有的 safe-area 基础上，额外增加 bottom-bar 的内容高度
+.safe-area-bottom,
+.safe-bottom {
+  height: calc(env(safe-area-inset-bottom) + 36px) !important;
+}
+/* #endif */
+
 .text-center {
 	text-align: center;
 }

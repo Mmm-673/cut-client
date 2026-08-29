@@ -1,7 +1,7 @@
 <template>
   <view class="home-wrapper" :class="themeClass">
     <!-- 滚动区域 -->
-    <scroll-view scroll-y class="scroll-container" show-scrollbar="false" :style="{ paddingTop: navBarHeight + 'rpx', height: `calc(var(--vh, 1vh) * 100)` }">
+    <scroll-view scroll-y class="scroll-container" show-scrollbar="false" :style="{ paddingTop: 30 + 'rpx', height: `calc(var(--vh, 1vh) * 100)` }">
       <!-- 欢迎语 -->
       <view class="welcome-section">
         <view class="welcome-left">
@@ -603,7 +603,6 @@ onShow(() => {
   top: 0;
   background: var(--bg-page);
   z-index: 99;
-  padding-top: 20rpx;
 
   .welcome-left {
     display: flex;

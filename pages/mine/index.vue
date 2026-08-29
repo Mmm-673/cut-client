@@ -540,7 +540,7 @@ onShow(() => {
 .my-page-wrapper {
   min-height: calc(var(--vh, 1vh) * 100);
   background: var(--bg-page);
-  padding-top: 130rpx;
+  padding-top: 20rpx;
 }
 
 .page-content {

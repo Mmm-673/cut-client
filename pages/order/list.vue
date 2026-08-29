@@ -678,6 +678,7 @@ onShow(() => {
   background: var(--bg-card);
   padding: 20rpx 0;
   flex-shrink: 0;
+  margin-top: 15rpx;
   .tab-scroll {
     width: 100%;
     white-space: nowrap;
