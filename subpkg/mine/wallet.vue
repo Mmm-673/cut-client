@@ -59,6 +59,7 @@ import { ref, computed } from 'vue'
 import { onShow, onPullDownRefresh } from  "@dcloudio/uni-app"
 import { useThemeStore } from '@/store'
 import { getWalletTransactions, getWalletTransactionSummary } from '@/api/billiard/wallet'
+import { formatDate } from '@/utils/format'
 
 const themeStore = useThemeStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
@@ -106,26 +107,13 @@ const loadTransactions = async () => {
       pageSize: 10
     })
     const list = res.data?.list || []
-    // 时间格式化为 MM-dd HH:mm:ss (24小时制)
-    const formatTime = (ts) => {
-      if (!ts) return ''
-      const d = new Date(Number(ts))
-
-      const month = String(d.getMonth() + 1).padStart(2, '0') // 月份从0开始，必须加1
-      const date = String(d.getDate()).padStart(2, '0')
-      const hours = String(d.getHours()).padStart(2, '0')
-      const minutes = String(d.getMinutes()).padStart(2, '0')
-      const seconds = String(d.getSeconds()).padStart(2, '0')
-
-      return `${month}-${date} ${hours}:${minutes}:${seconds}`
-    }
     recordList.value = list.map(item => {
       const bizInfo = bizTypeMap[item.bizType] || bizTypeMap[3]
       const isIncome = item.bizType === 1 || item.bizType === 2 || item.bizType === 4 || item.bizType === 5
       return {
         id: item.id || Date.now(),
         title: item.title || bizInfo.title,
-        time: formatTime(item.createTime) || '',
+        time: formatDate(item.createTime, 'MM-DD HH:mm:ss'),
         icon: bizInfo.icon,
         iconBg: bizInfo.iconBg,
         iconColor: bizInfo.iconColor,

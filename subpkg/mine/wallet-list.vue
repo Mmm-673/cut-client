@@ -113,6 +113,7 @@ import { ref, computed, onMounted } from 'vue'
 import { onShow } from "@dcloudio/uni-app"
 import { useThemeStore } from '@/store'
 import { getWalletTransactions, getWalletTransactionSummary } from '@/api/billiard/wallet'
+import { formatDate } from '@/utils/format'
 
 const themeStore = useThemeStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
@@ -289,16 +290,10 @@ const loadTransactions = async (isRefresh = false) => {
     const formattedList = list.map(item => {
       const bizInfo = bizTypeMap[item.bizType] || bizTypeMap[3]
       const isIncome = incomeBizTypes.includes(item.bizType)
-      // 时间格式化为 HH:mm:ss
-      const formatTime = (ts) => {
-        if (!ts) return ''
-        const d = new Date(Number(ts))
-        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`
-      }
       return {
         id: item.id || Date.now(),
         title: item.title || bizInfo.title,
-        subtitle: formatTime(item.createTime),
+        subtitle: formatDate(item.createTime, 'HH:mm:ss'),
         icon: bizInfo.icon,
         iconBg: bizInfo.iconBg,
         iconColor: bizInfo.iconColor,

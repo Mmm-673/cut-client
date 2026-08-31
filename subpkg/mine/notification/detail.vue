@@ -20,6 +20,7 @@ import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useThemeStore } from '@/store'
 import { getNotificationDetail, markAsRead } from '@/api/billiard/notification'
+import { sanitizeHtml } from '@/utils/html-sanitizer'
 
 const themeStore = useThemeStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
@@ -38,8 +39,13 @@ const fetchDetail = async () => {
   loading.value = true
   try {
     const res = await getNotificationDetail(notificationId.value)
-    detail.value = res.data
-    isRichText.value = checkRichText(res.data?.content)
+    const data = res.data || {}
+    // 富文本内容先经过 XSS 过滤
+    if (data.content && checkRichText(data.content)) {
+      data.content = sanitizeHtml(data.content)
+    }
+    detail.value = data
+    isRichText.value = checkRichText(data.content)
     // 标记已读
     if (res.data?.readStatus === 0) {
       await markAsRead(notificationId.value)

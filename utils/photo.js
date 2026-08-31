@@ -2,52 +2,16 @@
  * 相机和相册相关工具函数
  * 相机和相册权限分开处理
  */
+import { showPermissionPurposeModal, openPermissionSettings } from '@/utils/platform'
 
 /**
  * 显示相机权限用途说明弹窗
  */
 export const showCameraPurposeModal = () => {
-  return new Promise((resolve, reject) => {
-
-   // iOS 环境下不显示自定义弹窗，直接使用系统 info.plist 弹窗
-    // #ifdef APP-PLUS
-    const systemInfo = uni.getSystemInfoSync()
-    if (systemInfo.platform === 'ios') {
-      resolve()
-      return
-    }
-    // #endif
-
-    const hasAgreedCameraPurpose = uni.getStorageSync('hasAgreedCameraPurpose')
-    console.log('hasAgreedCameraPurpose:', hasAgreedCameraPurpose)
-    if (hasAgreedCameraPurpose) {
-      resolve()
-      return
-    }
-
-    console.log('开始显示相机权限说明弹窗')
-
-    setTimeout(() => {
-      uni.showModal({
-        title: '相机权限说明',
-        content: '为了能够使用相机功能（拍摄照片、扫描二维码），我们需要获取您的相机访问权限。该权限仅用于拍摄和扫描功能，不会用于其他用途。',
-        confirmText: '同意',
-        cancelText: '取消',
-        success: (res) => {
-          console.log('showModal 回调:', res)
-          if (res.confirm) {
-            uni.setStorageSync('hasAgreedCameraPurpose', true)
-            resolve()
-          } else {
-            reject(new Error('user_cancelled'))
-          }
-        },
-        fail: (err) => {
-          console.error('showModal 失败:', err)
-          reject(err)
-        }
-      })
-    }, 100)
+  return showPermissionPurposeModal('hasAgreedCameraPurpose', {
+    title: '相机权限说明',
+    content: '为了能够使用相机功能（拍摄照片、扫描二维码），我们需要获取您的相机访问权限。该权限仅用于拍摄和扫描功能，不会用于其他用途。',
+    skipIOS: true
   })
 }
 
@@ -55,46 +19,10 @@ export const showCameraPurposeModal = () => {
  * 显示相册权限用途说明弹窗
  */
 export const showAlbumPurposeModal = () => {
-  return new Promise((resolve, reject) => {
-    // #ifdef APP-PLUS
-    // iOS 环境下不显示自定义弹窗，直接使用系统 info.plist 弹窗
-    const systemInfo = uni.getSystemInfoSync()
-    if (systemInfo.platform === 'ios') {
-      resolve()
-      return
-    }
-    // #endif
-
-    const hasAgreedAlbumPurpose = uni.getStorageSync('hasAgreedAlbumPurpose')
-    console.log('hasAgreedAlbumPurpose:', hasAgreedAlbumPurpose)
-    if (hasAgreedAlbumPurpose) {
-      resolve()
-      return
-    }
-
-    console.log('开始显示相册权限说明弹窗')
-
-    setTimeout(() => {
-      uni.showModal({
-        title: '相册权限说明',
-        content: '为了能够从相册选择图片（选择头像、选择二维码），我们需要获取您的相册访问权限。该权限仅用于选择图片功能，不会用于其他用途。',
-        confirmText: '同意',
-        cancelText: '取消',
-        success: (res) => {
-          console.log('showModal 回调:', res)
-          if (res.confirm) {
-            uni.setStorageSync('hasAgreedAlbumPurpose', true)
-            resolve()
-          } else {
-            reject(new Error('user_cancelled'))
-          }
-        },
-        fail: (err) => {
-          console.error('showModal 失败:', err)
-          reject(err)
-        }
-      })
-    }, 100)
+  return showPermissionPurposeModal('hasAgreedAlbumPurpose', {
+    title: '相册权限说明',
+    content: '为了能够从相册选择图片（选择头像、选择二维码），我们需要获取您的相册访问权限。该权限仅用于选择图片功能，不会用于其他用途。',
+    skipIOS: true
   })
 }
 
@@ -196,7 +124,7 @@ export const showCameraPermissionModal = (options = {}) => {
     confirmText: '前往系统设置',
     success: (res) => {
       if (res.confirm) {
-        openAppSetting()
+        openPermissionSettings()
         onSuccess && onSuccess()
       }
     }
@@ -250,44 +178,6 @@ export const showAlbumPermissionModal = (options = {}) => {
 
   // #ifdef H5
   uni.showToast({ title: '请检查浏览器相册权限', icon: 'none' })
-  // #endif
-}
-
-/**
-* 打开应用设置页面
-*/
-const openAppSetting = () => {
-  // #ifdef APP-PLUS
-  const systemInfo = uni.getSystemInfoSync()
-  const platform = systemInfo.platform
-  const osName = (systemInfo.osName || systemInfo.systemName || '').toLowerCase()
-  const isHarmony = osName.includes('harmony')
-
-  if (platform === 'ios') {
-    plus.runtime.openURL(plus.runtime.appid ? 'app-settings:' : 'prefs:root=Privacy')
-  } else if (platform === 'android' || isHarmony) {
-    const main = plus.android.runtimeMainActivity()
-    const Intent = plus.android.importClass('android.content.Intent')
-    const Settings = plus.android.importClass('android.provider.Settings')
-    const Uri = plus.android.importClass('android.net.Uri')
-    const packageName = main.getPackageName()
-
-    try {
-      const intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-      const uri = Uri.fromParts('package', packageName, null)
-      intent.setData(uri)
-      main.startActivity(intent)
-    } catch (e) {
-      try {
-        const intent = new Intent(Settings.ACTION_SETTINGS)
-        main.startActivity(intent)
-      } catch (e2) {
-        uni.showToast({ title: '打开设置失败', icon: 'none' })
-      }
-    }
-  } else {
-    uni.openSetting({ fail: () => uni.showToast({ title: '打开设置失败', icon: 'none' }) })
-  }
   // #endif
 }
 

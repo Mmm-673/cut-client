@@ -8,7 +8,7 @@ initThemeEarly()
 
 import config from './config'
 import { getAccessToken, getRefreshToken, getExpiresTime, setAuthInfo, clearAuthInfo } from '@/utils/token'
-import { useConfigStore, useThemeStore } from '@/store'
+import { useConfigStore, useThemeStore, useBookingStore } from '@/store'
 import { useUserStore } from '@/store/modules/user'
 import { applyThemeToPage, setWebviewBackground, getThemeStyleObject, styleObjectToString } from '@/utils/theme'
 import { getCurrentInstance, watch, computed } from "vue"
@@ -19,6 +19,19 @@ import { isReviewMode } from '@/utils/review'
 import { extractCoachId } from '@/utils/common'
 import { getNotificationPage, markAsRead } from '@/api/billiard/notification'
 import wsManager from '@/utils/websocket'
+import logger from '@/utils/logger'
+import { TIME_ONE_SECOND, DEFAULT_PAGE_SIZE, CODE_SUCCESS } from '@/utils/constants'
+
+/** 重复跳转防抖窗口（毫秒）— 短时间内相同 coachId 不重复跳转 */
+const COACH_NAV_DEBOUNCE_MS = 3 * TIME_ONE_SECOND
+/** 扫码/分享跳转延迟（毫秒）— 等页面初始化完成后再跳 */
+const COACH_NAV_DELAY_MS = 500
+/** 启动时刷新 token 请求超时（毫秒） */
+const REFRESH_TOKEN_TIMEOUT = 10 * TIME_ONE_SECOND
+/** 启动时拉取通知的每页数量 */
+const NOTIFICATION_PAGE_SIZE = DEFAULT_PAGE_SIZE
+/** 重大通知类型编码 */
+const NOTIFICATION_TYPE_IMPORTANT = 1
 
 const { proxy } = getCurrentInstance()
 
@@ -34,7 +47,7 @@ const themeStyle = computed(() => {
 })
 
 onLaunch((options) => {
-  console.log('[App] onLaunch, 当前主题:', themeStore.theme)
+  logger.debug('[App] onLaunch, 当前主题:', themeStore.theme)
 
   // 监听 token 刷新，刷新后 WebSocket 用新 token 重连
   uni.$on('token-refreshed', (newToken) => {
@@ -70,7 +83,7 @@ onShow((options) => {
         currentWebview.setStyle({ background: bgColor })
       }
     } catch (e) {
-      console.warn('[App] onShow 设置背景失败:', e)
+      logger.warn('[App] onShow 设置背景失败:', e)
     }
   }
   // #endif
@@ -102,7 +115,7 @@ let lastCoachNavId = null
 let lastCoachNavTime = 0
 
 const handleLaunchOptions = (options) => {
-  console.log('[App] 启动参数:', options)
+  logger.debug('[App] 启动参数:', options)
   // #ifdef MP-WEIXIN
   if (!options) return
 
@@ -113,25 +126,25 @@ const handleLaunchOptions = (options) => {
   } else if (options.query && options.query.id) {
     coachId = options.query.id
   } else if (options.query && options.query.scene) {
-    console.log('[App] query.scene 参数:', options.query.scene)
+    logger.debug('[App] query.scene 参数:', options.query.scene)
     coachId = extractCoachId(options.query.scene)
   } else if (options.query && options.query.q) {
-    console.log('[App] query.q 参数:', options.query.q)
+    logger.debug('[App] query.q 参数:', options.query.q)
     coachId = extractCoachId(options.query.q)
   } else if (options.path && options.path.includes('coachId=')) {
     coachId = getQueryParam(options.path, 'coachId') || getQueryParam(options.path, 'id')
   }
 
   if (coachId) {
-    console.log('[App] 检测到 coachId，跳转到详情页:', coachId)
+    logger.debug('[App] 检测到 coachId，跳转到详情页:', coachId)
     setTimeout(() => {
       if (isReviewMode()) {
-        console.log('[App] 审核模式开启，跳过教练详情跳转')
+        logger.debug('[App] 审核模式开启，跳过教练详情跳转')
         return
       }
       const now = Date.now()
-      if (lastCoachNavId === String(coachId) && now - lastCoachNavTime < 3000) {
-        console.log('[App] 短时间内重复触发，跳过跳转:', coachId)
+      if (lastCoachNavId === String(coachId) && now - lastCoachNavTime < COACH_NAV_DEBOUNCE_MS) {
+        logger.debug('[App] 短时间内重复触发，跳过跳转:', coachId)
         return
       }
       try {
@@ -142,7 +155,7 @@ const handleLaunchOptions = (options) => {
           const topOpts = top.options || {}
           const topId = extractCoachId(topOpts.id || topOpts.coachId || fullPath || topOpts.scene || topOpts.q)
           if (topId && String(topId) === String(coachId)) {
-            console.log('[App] 当前已在该教练详情页，跳过重复跳转:', coachId)
+            logger.debug('[App] 当前已在该教练详情页，跳过重复跳转:', coachId)
             return
           }
         }
@@ -150,7 +163,7 @@ const handleLaunchOptions = (options) => {
       lastCoachNavId = String(coachId)
       lastCoachNavTime = now
       uni.navigateTo({ url: `/subpkg/coach/detail?id=${coachId}` })
-    }, 500)
+    }, COACH_NAV_DELAY_MS)
   }
   // #endif
 }
@@ -170,7 +183,7 @@ function initApp() {
         currentWebview.setStyle({ background: bgColor })
       }
     } catch (e) {
-      console.warn('[App] init 设置背景失败:', e)
+      logger.warn('[App] init 设置背景失败:', e)
     }
   }
   // #endif
@@ -215,7 +228,7 @@ function setStatusBarHeight() {
 
 async function refreshTokenOnStartup() {
   const refreshToken = getRefreshToken()
-  console.log('[App] refreshToken:', refreshToken ? '存在' : '不存在')
+  logger.debug('[App] refreshToken:', refreshToken ? '存在' : '不存在')
   if (!refreshToken) {
     return false
   }
@@ -223,7 +236,7 @@ async function refreshTokenOnStartup() {
   return new Promise((resolve) => {
     uni.request({
       method: 'POST',
-      timeout: 10000,
+      timeout: REFRESH_TOKEN_TIMEOUT,
       url: config.baseUrl + '/app-api/member/auth/refresh-token',
       data: { refreshToken },
       header: {
@@ -233,8 +246,8 @@ async function refreshTokenOnStartup() {
       dataType: 'json',
       success: (response) => {
         const res = response.data
-        console.log('[App] 刷新 token 响应:', res)
-        if (res.code === 0 && res.data) {
+        logger.debug('[App] 刷新 token 响应，code:', res?.code)
+        if (res.code === CODE_SUCCESS && res.data) {
           setAuthInfo(res.data)
           resolve(true)
         } else {
@@ -243,7 +256,7 @@ async function refreshTokenOnStartup() {
         }
       },
       fail: (err) => {
-        console.log('[App] 刷新 token 失败:', err)
+        logger.debug('[App] 刷新 token 失败:', err)
         resolve(false)
       }
     })
@@ -268,7 +281,7 @@ const showNotificationModal = (item) => {
       try {
         await markAsRead(item.id)
       } catch (e) {
-        console.error('[App] 标记通知已读失败', e)
+        logger.error('[App] 标记通知已读失败', e)
       }
       isShowingNotification = false
       // 弹下一条
@@ -289,37 +302,32 @@ const checkImportantNotifications = async () => {
   try {
     const res = await getNotificationPage({
       pageNo: 1,
-      pageSize: 20,
+      pageSize: NOTIFICATION_PAGE_SIZE,
       readStatus: 0
     })
     const records = res.data?.records || []
     // 筛选 type=1 重大通知
-    const importantList = records.filter(item => item.type === 1)
+    const importantList = records.filter(item => item.type === NOTIFICATION_TYPE_IMPORTANT)
     if (importantList.length > 0) {
       notificationQueue = importantList
       showNextNotification()
     }
   } catch (e) {
-    console.error('[App] 获取重大通知失败', e)
+    logger.error('[App] 获取重大通知失败', e)
   }
 }
 
 function restoreUserState() {
-  console.log('[App] 恢复用户状态...')
+  logger.debug('[App] 恢复用户状态...')
   const userStore = useUserStore()
-  userStore.accessToken = getAccessToken()
-  userStore.refreshToken = getRefreshToken()
-  userStore.expiresTime = getExpiresTime()
-  userStore.userId = uni.getStorageSync('auth_user_id') || ''
-  userStore.nickname = uni.getStorageSync('auth_nickname') || ''
-  userStore.avatar = uni.getStorageSync('auth_avatar') || ''
-  userStore.mobile = uni.getStorageSync('auth_mobile') || ''
+  // 通过 action 恢复状态，保持单向数据流
+  userStore.restoreFromStorage()
 
-  console.log('[App] 用户信息:', {
-    userId: userStore.userId,
-    nickname: userStore.nickname,
-    mobile: userStore.mobile
-  })
+  // 恢复预约流程数据（Storage 兜底）
+  const bookingStore = useBookingStore()
+  bookingStore.restoreFromStorage()
+
+  logger.debug('[App] 用户状态已恢复，userId:', userStore.userId)
 
   // #ifdef APP-PLUS
   const userId = userStore.userId
@@ -339,12 +347,12 @@ function restoreUserState() {
 }
 
 async function checkLogin() {
-  console.log('[App] checkLogin 开始...')
+  logger.debug('[App] checkLogin 开始...')
 
   const token = getAccessToken()
   const expiresTime = getExpiresTime()
 
-  console.log('[App] 登录信息:', {
+  logger.debug('[App] 登录信息:', {
     hasToken: !!token,
     expiresTime: expiresTime,
     now: new Date(),
@@ -352,20 +360,20 @@ async function checkLogin() {
   })
 
   if (!token || !expiresTime) {
-    console.log('[App] 没有登录信息')
+    logger.debug('[App] 没有登录信息')
     return false
   }
 
   const now = new Date()
 
   if (now >= expiresTime) {
-    console.log('[App] Token 已过期，尝试刷新...')
+    logger.debug('[App] Token 已过期，尝试刷新...')
     const refreshSuccess = await refreshTokenOnStartup()
     if (!refreshSuccess) {
-      console.log('[App] 刷新失败')
+      logger.debug('[App] 刷新失败')
       return false
     }
-    console.log('[App] 刷新成功')
+    logger.debug('[App] 刷新成功')
   }
 
   restoreUserState()

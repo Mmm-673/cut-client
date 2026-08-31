@@ -153,6 +153,69 @@ export function getSafeArea() {
   }
 }
 
+/**
+ * 显示权限用途说明弹窗（通用）
+ * 带记忆功能：用户同意过则不再显示
+ *
+ * @param {string} storageKey - 同意状态存储的 key
+ * @param {Object} config - 弹窗配置
+ * @param {string} config.title - 标题
+ * @param {string} config.content - 内容
+ * @param {string} [config.confirmText='同意'] - 确认按钮文字
+ * @param {string} [config.cancelText='取消'] - 取消按钮文字
+ * @param {boolean} [config.skipIOS=false] - iOS 平台是否跳过（直接 resolve）
+ * @returns {Promise<void>} 用户点击确认时 resolve，取消时 reject Error('user_cancelled')
+ */
+export const showPermissionPurposeModal = (storageKey, config = {}) => {
+  return new Promise((resolve, reject) => {
+    const {
+      title,
+      content,
+      confirmText = '同意',
+      cancelText = '取消',
+      skipIOS = false
+    } = config
+
+    // iOS 平台跳过自定义弹窗（直接使用系统权限提示）
+    // #ifdef APP-PLUS
+    if (skipIOS) {
+      const systemInfo = uni.getSystemInfoSync()
+      if (systemInfo.platform === 'ios') {
+        resolve()
+        return
+      }
+    }
+    // #endif
+
+    // 已同意过则直接返回
+    if (uni.getStorageSync(storageKey)) {
+      resolve()
+      return
+    }
+
+    // 延迟显示确保 DOM 渲染完成
+    setTimeout(() => {
+      uni.showModal({
+        title,
+        content,
+        confirmText,
+        cancelText,
+        success: (res) => {
+          if (res.confirm) {
+            uni.setStorageSync(storageKey, true)
+            resolve()
+          } else {
+            reject(new Error('user_cancelled'))
+          }
+        },
+        fail: (err) => {
+          reject(err)
+        }
+      })
+    }, 100)
+  })
+}
+
 // 兼容旧代码 - 登录页面还在用这些函数
 export const openPermissionSettings = () => {
   // #ifdef APP-PLUS
@@ -276,6 +339,7 @@ export function openMapNavigation(options) {
 export default {
   isH5,
   openPermissionSettings,
+  showPermissionPurposeModal,
   isMP,
   isMPWeixin,
   isMPAlipay,

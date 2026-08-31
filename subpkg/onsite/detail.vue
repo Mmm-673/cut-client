@@ -183,6 +183,7 @@ import { usePageTheme } from '@/composables/usePageTheme'
 import { getOnsiteOrderDetail } from '@/api/billiard/onsiteOrder'
 import { executeOnsitePayment, getOnsitePayChannels, fetchEnabledChannels } from '@/utils/payment'
 import { guardReviewEntry } from '@/utils/review'
+import { formatAmount, formatDuration } from '@/utils/format'
 
 usePageTheme()
 
@@ -327,12 +328,6 @@ const getStatusSubtitle = (status) => {
   return subtitleMap[status] || ''
 }
 
-// 格式化金额（分转元）
-const formatAmount = (amount) => {
-  if (amount === null || amount === undefined) return '0.00'
-  return (Number(amount) / 100).toFixed(2)
-}
-
 // 解析时间（兼容数字时间戳和字符串格式）
 const parseDate = (time) => {
   if (!time) return null
@@ -362,21 +357,6 @@ const formatFullTime = (timeStr) => {
   const hour = String(date.getHours()).padStart(2, '0')
   const minute = String(date.getMinutes()).padStart(2, '0')
   return `${year}-${month}-${day} ${hour}:${minute}`
-}
-
-// 格式化时长（分钟 -> 中文）
-const formatDuration = (minutes) => {
-  if (!minutes || minutes <= 0) return '0分钟'
-  const mins = Number(minutes)
-  const hours = Math.floor(mins / 60)
-  const remainMins = mins % 60
-  if (hours > 0 && remainMins > 0) {
-    return `${hours}小时${remainMins}分钟`
-  }
-  if (hours > 0) {
-    return `${hours}小时`
-  }
-  return `${remainMins}分钟`
 }
 
 // 格式化秒数为 HH:MM:SS

@@ -36,7 +36,7 @@
       </view>
 
       <view v-if="coach.tags && coach.tags.length" class="ds-coach-card__tags">
-        <text v-for="(tag, i) in coach.tags.slice(0, 3)" :key="i" class="ds-coach-card__tag">
+        <text v-for="tag in coach.tags.slice(0, 3)" :key="tag" class="ds-coach-card__tag">
           {{ tag }}
         </text>
       </view>

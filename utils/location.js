@@ -1,10 +1,15 @@
 import { regeocode } from '@/api/billiard/amap'
 import { isLoggedIn } from '@/utils/token'
+import { TIME_ONE_SECOND } from '@/utils/constants'
+import { showPermissionPurposeModal, openPermissionSettings } from '@/utils/platform'
 
 /**
  * 统一的定位工具模块
  * 封装 uni.getLocation + 逆地址解析 + 权限处理
  */
+
+/** 定位超时时间（毫秒） */
+const LOCATION_TIMEOUT_MS = 15 * TIME_ONE_SECOND
 
 // 坐标获取中的共享 Promise，避免并发调用互相拒绝
 let coordinatesPromise = null
@@ -12,43 +17,12 @@ let coordinatesPromise = null
 let locationTimeout = null
 
 /**
- * 显示定位用途说明弹窗（自定义弹窗）
+ * 显示定位用途说明弹窗
  */
 export const showLocationPurposeModal = () => {
-  return new Promise((resolve, reject) => {
-    // 检查用户是否已经同意过定位权限用途说明
-    const hasAgreedLocationPurpose = uni.getStorageSync('hasAgreedLocationPurpose')
-    console.log('hasAgreedLocationPurpose:', hasAgreedLocationPurpose)
-    if (hasAgreedLocationPurpose) {
-      resolve()
-      return
-    }
-
-    console.log('开始显示定位权限说明弹窗')
-
-    // 使用 setTimeout 确保 DOM 渲染完成后再显示弹窗
-    setTimeout(() => {
-      uni.showModal({
-        title: '定位权限说明',
-        content: '为了向您推荐附近的台球教练/球厅，我们需要获取您的位置信息。该信息仅用于定位和推荐，不会用于其他用途。',
-        confirmText: '同意',
-        cancelText: '取消',
-        success: (res) => {
-          console.log('showModal 回调:', res)
-          if (res.confirm) {
-            // 存储用户同意状态
-            uni.setStorageSync('hasAgreedLocationPurpose', true)
-            resolve()
-          } else {
-            reject(new Error('user_cancelled'))
-          }
-        },
-        fail: (err) => {
-          console.error('showModal 失败:', err)
-          reject(err)
-        }
-      })
-    }, 100)
+  return showPermissionPurposeModal('hasAgreedLocationPurpose', {
+    title: '定位权限说明',
+    content: '为了向您推荐附近的台球教练/球厅，我们需要获取您的位置信息。该信息仅用于定位和推荐，不会用于其他用途。'
   })
 }
 
@@ -61,42 +35,9 @@ const clearLocationTimeout = () => {
 
 /**
  * 打开应用设置页面（兼容 iOS、Android、鸿蒙）
+ * 别名引用，统一使用 platform.js 的实现
  */
-export const openAppSetting = () => {
-  // #ifdef APP-PLUS
-  const systemInfo = uni.getSystemInfoSync()
-  const platform = systemInfo.platform
-  const osName = (systemInfo.osName || systemInfo.systemName || '').toLowerCase()
-  const isHarmony = osName.includes('harmony')
-
-  if (platform === 'ios') {
-    plus.runtime.openURL(plus.runtime.appid ? 'app-settings:' : 'prefs:root=LOCATION_SERVICES')
-  } else if (platform === 'android' || isHarmony) {
-    // Android 或鸿蒙系统
-    const main = plus.android.runtimeMainActivity()
-    const Intent = plus.android.importClass('android.content.Intent')
-    const Settings = plus.android.importClass('android.provider.Settings')
-    const Uri = plus.android.importClass('android.net.Uri')
-    const packageName = main.getPackageName()
-
-    try {
-      const intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-      const uri = Uri.fromParts('package', packageName, null)
-      intent.setData(uri)
-      main.startActivity(intent)
-    } catch (e) {
-      try {
-        const intent = new Intent(Settings.ACTION_SETTINGS)
-        main.startActivity(intent)
-      } catch (e2) {
-        uni.showToast({ title: '打开设置失败', icon: 'none' })
-      }
-    }
-  } else {
-    uni.openSetting({ fail: () => uni.showToast({ title: '打开设置失败', icon: 'none' }) })
-  }
-  // #endif
-}
+export const openAppSetting = openPermissionSettings
 
 /**
  * 显示定位权限引导弹窗
@@ -133,7 +74,7 @@ export const showPermissionModal = ({
     confirmText: '去开启',
     success: (res) => {
       if (res.confirm) {
-        openAppSetting()
+        openPermissionSettings()
         onSuccess && onSuccess()
       }
     }
@@ -157,7 +98,7 @@ export const prefetchLocation = (options = {}) => {
  */
 const fetchCoordinates = ({
                             type = 'gcj02',
-                            timeout = 15000
+                            timeout = LOCATION_TIMEOUT_MS
                           } = {}) => {
   if (coordinatesPromise) {
     return coordinatesPromise
@@ -253,7 +194,7 @@ const fetchCoordinates = ({
 export const getLocation = async ({
                                     needRegeocode = true,
                                     type = 'gcj02',
-                                    timeout = 15000,
+                                    timeout = LOCATION_TIMEOUT_MS,
                                     showPurposeModal = true
                                   } = {}) => {
   // 显示定位用途说明弹窗（iOS 不显示自定义弹窗，直接使用系统定位权限请求）

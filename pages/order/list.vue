@@ -109,10 +109,10 @@
 
               <!-- 裁教信息 -->
               <view class="coach-section">
-                <image class="coach-avatar" :src="getCoachAvatar(order) || '/static/images/profile.jpg'" mode="aspectFill"></image>
+                <image class="coach-avatar" :src="getCoachAvatar(order) || '/static/images/profile.jpg'" mode="aspectFill" lazy-load></image>
                 <view class="coach-info">
                   <text class="coach-name">{{ order.coachStageName }}</text>
-                  <text class="order-time">{{ isOnsiteOrder(order) ? '开始时间：' : '预约时间：' }}{{ formatBookingTime(isOnsiteOrder(order) ? order.startTime : order.bookingTime) }}</text>
+                  <text class="order-time">{{ isOnsiteOrder(order) ? '开始时间：' : '预约时间：' }}{{ formatDate(isOnsiteOrder(order) ? order.startTime : order.bookingTime, 'MM-DD HH:mm') }}</text>
                 </view>
                 <uni-icons type="right" size="20" color="#9CA3AF" />
               </view>
@@ -141,7 +141,7 @@
                 </view>
                 <view class="info-item">
                   <text class="info-label">下单时间</text>
-                  <text class="info-value">{{ formatCreateTime(order.createTime) }}</text>
+                  <text class="info-value">{{ formatDate(order.createTime) }}</text>
                 </view>
               </view>
 
@@ -217,6 +217,8 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getOrderList, cancelOrder as cancelOrderApi, deleteOrder } from '@/api/billiard/order'
 import { guardReviewEntry, isReviewMode } from '@/utils/review'
 import { useThemeStore } from '@/store'
+import { useGlobalEvent } from '@/composables/useGlobalEvent'
+import { formatDate, formatAmount, formatDuration } from '@/utils/format'
 
 const themeStore = useThemeStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
@@ -307,17 +309,6 @@ const getCoachAvatar = (order) => {
   return order.coachAvatar || order.coachMainPhoto
 }
 
-// 格式化分钟数为 X小时X分钟
-const formatDuration = (minutes) => {
-  if (!minutes) return '0分钟'
-  const mins = Number(minutes)
-  const h = Math.floor(mins / 60)
-  const m = mins % 60
-  if (h > 0 && m > 0) return `${h}小时${m}分钟`
-  if (h > 0) return `${h}小时`
-  return `${m}分钟`
-}
-
 // 获取状态文本
 const getStatusText = (status) => {
   return statusMap[status]?.text || '未知'
@@ -344,34 +335,6 @@ const getServiceTypeName = (type) => {
   if (type === 3) return '酒艺品鉴'
   if (type === 4) return '影视赏析'
   return '台球指导'
-}
-
-// 格式化预约时间
-const formatBookingTime = (timestamp) => {
-  if (!timestamp) return ''
-  const date = new Date(timestamp)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hour = String(date.getHours()).padStart(2, '0')
-  const minute = String(date.getMinutes()).padStart(2, '0')
-  return `${month}-${day} ${hour}:${minute}`
-}
-
-// 格式化下单时间
-const formatCreateTime = (timestamp) => {
-  if (!timestamp) return ''
-  const date = new Date(timestamp)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-// 格式化金额（分转元）
-const formatAmount = (amount) => {
-  if (amount === null || amount === undefined) return '0.00'
-  return (amount / 100).toFixed(2)
 }
 
 // 获取滑动变换
@@ -650,8 +613,8 @@ onLoad(() => {
   // 加载数据
   loadData(true)
 
-  // 监听评价完成事件
-  uni.$on('orderEvaluated', () => {
+  // 监听评价完成事件（自动清理，防止多次进出页面重复触发）
+  useGlobalEvent('orderEvaluated', () => {
     loadData(true)
   })
 })

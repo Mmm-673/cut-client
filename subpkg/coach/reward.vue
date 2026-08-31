@@ -28,8 +28,8 @@
       <view class="amount-section">
         <view class="amount-grid">
           <view
-              v-for="(item, index) in amountOptions"
-              :key="index"
+              v-for="item in amountOptions"
+              :key="item.value"
               class="amount-item"
               :class="{ active: selectedAmount === item.value && !isCustomAmount }"
               @click="selectAmount(item.value)"

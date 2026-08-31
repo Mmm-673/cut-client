@@ -1,6 +1,7 @@
 /**
  * 拨打电话相关工具函数
  */
+import { showPermissionPurposeModal } from '@/utils/platform'
 
 /**
  * 显示电话权限用途说明弹窗
@@ -8,40 +9,9 @@
  * @returns {Promise<void>}
  */
 export function showCallPermissionModal(content) {
-  return new Promise((resolve, reject) => {
-    // 检查用户是否已经同意过电话权限用途说明
-    const hasAgreedCallPermission = uni.getStorageSync('hasAgreedCallPermission')
-    console.log('hasAgreedCallPermission:', hasAgreedCallPermission)
-    if (hasAgreedCallPermission) {
-      resolve()
-      return
-    }
-
-    console.log('开始显示电话权限说明弹窗')
-
-    // 使用 setTimeout 确保 DOM 渲染完成后再显示弹窗
-    setTimeout(() => {
-      uni.showModal({
-        title: '电话权限说明',
-        content: content || '为了向您提供电话服务，我们需要获取您的拨打电话权限。该权限仅用于拨打电话，不会用于其他用途。',
-        confirmText: '同意',
-        cancelText: '取消',
-        success: (res) => {
-          console.log('showModal 回调:', res)
-          if (res.confirm) {
-            // 存储用户同意状态
-            uni.setStorageSync('hasAgreedCallPermission', true)
-            resolve()
-          } else {
-            reject(new Error('user_cancelled'))
-          }
-        },
-        fail: (err) => {
-          console.error('showModal 失败:', err)
-          reject(err)
-        }
-      })
-    }, 100)
+  return showPermissionPurposeModal('hasAgreedCallPermission', {
+    title: '电话权限说明',
+    content: content || '为了向您提供电话服务，我们需要获取您的拨打电话权限。该权限仅用于拨打电话，不会用于其他用途。'
   })
 }
 

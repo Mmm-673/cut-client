@@ -59,54 +59,38 @@ export const useUserStore = defineStore('user', () => {
   }
 
   // 发送短信验证码
-  const sendCodeAction = (mobile, scene = 1, options = {}) => {
-    return new Promise((resolve, reject) => {
-      sendSmsCode({ mobile, scene, ...options }).then(res => {
-        resolve(res.data)
-      }).catch(error => {
-        reject(error)
-      })
-    })
+  const sendCodeAction = async (mobile, scene = 1, options = {}) => {
+    const res = await sendSmsCode({ mobile, scene, ...options })
+    return res.data
   }
 
   // 短信验证码登录 先去校验 然后再去登录
-  const smsLoginAction = (loginData) => {
-    return new Promise((resolve, reject) => {
-      validateSmsCode({...loginData, scene: 1}).then(resp=>{
-        smsLogin(loginData).then(res => {
-          const data = res.data
-          setLoginInfo({
-            ...data,
-            userId: data.userId,
-            mobile: loginData.mobile
-          })
-          bindPushAfterLogin(data.userId)
-          resolve(data)
-        }).catch(error => {
-          reject(error)
-        })
-      }).catch(error => {
-        reject(error)
-      })
+  const smsLoginAction = async (loginData) => {
+    // 1. 校验验证码
+    await validateSmsCode({ ...loginData, scene: 1 })
+    // 2. 登录
+    const res = await smsLogin(loginData)
+    const data = res.data
+    setLoginInfo({
+      ...data,
+      userId: data.userId,
+      mobile: loginData.mobile
     })
+    bindPushAfterLogin(data.userId)
+    return data
   }
 
   // 账号密码登录
-  const passwordLoginAction = (loginData) => {
-    return new Promise((resolve, reject) => {
-      passwordLogin(loginData).then(res => {
-        const data = res.data
-        setLoginInfo({
-          ...data,
-          userId: data.userId,
-          mobile: loginData.mobile
-        })
-        bindPushAfterLogin(data.userId)
-        resolve(data)
-      }).catch(error => {
-        reject(error)
-      })
+  const passwordLoginAction = async (loginData) => {
+    const res = await passwordLogin(loginData)
+    const data = res.data
+    setLoginInfo({
+      ...data,
+      userId: data.userId,
+      mobile: loginData.mobile
     })
+    bindPushAfterLogin(data.userId)
+    return data
   }
 
   const bindPushAfterLogin = (id) => {
@@ -119,17 +103,15 @@ export const useUserStore = defineStore('user', () => {
   }
 
   // 退出登录
-  const logOutAction = () => {
-    return new Promise((resolve, reject) => {
-      logoutApi().then(() => {
-        clearLoginInfo()
-        resolve()
-      }).catch(error => {
-        // 即使退出接口失败，也要清除本地数据
-        clearLoginInfo()
-        reject(error)
-      })
-    })
+  const logOutAction = async () => {
+    try {
+      await logoutApi()
+    } catch (error) {
+      // 即使退出接口失败，也要清除本地数据
+      clearLoginInfo()
+      throw error
+    }
+    clearLoginInfo()
   }
 
   // 清除登录信息
@@ -148,39 +130,35 @@ export const useUserStore = defineStore('user', () => {
   }
 
   // 重置密码
-  const resetPasswordAction = (data) => {
-    return new Promise((resolve, reject) => {
-      resetPassword(data).then(res => {
-        resolve(res.data)
-      }).catch(error => {
-        reject(error)
-      })
-    })
+  const resetPasswordAction = async (data) => {
+    const res = await resetPassword(data)
+    return res.data
   }
 
   // 修改密码
-  const updatePasswordAction = (data) => {
-    return new Promise((resolve, reject) => {
-      updatePassword(data).then(res => {
-        resolve(res.data)
-      }).catch(error => {
-        reject(error)
-      })
-    })
+  const updatePasswordAction = async (data) => {
+    const res = await updatePassword(data)
+    return res.data
   }
 
   // 修改手机号
-  const updateMobileAction = (data) => {
-    return new Promise((resolve, reject) => {
-      updateMobile(data).then(res => {
-        if (data.mobile) {
-          mobile.value = data.mobile
-        }
-        resolve(res.data)
-      }).catch(error => {
-        reject(error)
-      })
-    })
+  const updateMobileAction = async (data) => {
+    const res = await updateMobile(data)
+    if (data.mobile) {
+      mobile.value = data.mobile
+    }
+    return res.data
+  }
+
+  // 从本地存储恢复用户状态（App启动时调用，替代直接修改state）
+  const restoreFromStorage = () => {
+    accessToken.value = getAccessToken()
+    refreshToken.value = getRefreshToken()
+    expiresTime.value = getExpiresTime()
+    userId.value = getUserId() || ''
+    nickname.value = getNickname() || ''
+    avatar.value = getAvatar() || defAva
+    mobile.value = getMobile() || ''
   }
 
   // 检查是否已登录
@@ -208,6 +186,7 @@ export const useUserStore = defineStore('user', () => {
     resetPassword: resetPasswordAction,
     updatePassword: updatePasswordAction,
     updateMobile: updateMobileAction,
-    checkLoggedIn
+    checkLoggedIn,
+    restoreFromStorage
   }
 })

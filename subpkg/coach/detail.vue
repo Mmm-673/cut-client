@@ -39,7 +39,7 @@
               </view>
             </view>
             <view class="tags-row">
-              <view class="tag" v-for="(tag, index) in coachInfo.tags.filter(t => t !== '活跃' && t !== '沉稳')" :key="index">{{ tag }}</view>
+              <view class="tag" v-for="tag in coachInfo.tags.filter(t => t !== '活跃' && t !== '沉稳')" :key="tag">{{ tag }}</view>
             </view>
           </view>
           <!-- #ifndef MP-WEIXIN -->
@@ -59,7 +59,7 @@
           <text>服务项目</text>
         </view>
         <view class="service-list">
-          <view class="service-item" :class="{selected: selectedService?.id === service.id}" v-for="(service, index) in services" :key="index">
+          <view class="service-item" :class="{selected: selectedService?.id === service.id}" v-for="service in services" :key="service.id">
             <view class="service-main">
               <view class="service-name-row">
                 <text class="service-icon">{{ getServiceIcon(service.type) }}</text>
@@ -145,7 +145,7 @@
             <image
                 class="album-item"
                 v-for="(item, index) in albumList"
-                :key="index"
+                :key="item"
                 :src="item"
                 mode="aspectFill"
                 @click="previewImage(index)"
@@ -164,9 +164,9 @@
 
         <!-- 默认显示前2条 -->
         <view class="review-list" v-if="!showAllReviews">
-          <view class="review-item" v-for="(review, index) in reviewList.slice(0, 2)" :key="index">
+          <view class="review-item" v-for="(review, index) in reviewList.slice(0, 2)" :key="review.id">
             <view class="review-header">
-              <image class="review-avatar" :src="review.avatar" mode="aspectFill"></image>
+              <image class="review-avatar" :src="review.avatar" mode="aspectFill" lazy-load></image>
               <view class="review-user">
                 <text class="review-name">{{ review.name }}</text>
                 <view class="review-stars">
@@ -181,7 +181,7 @@
               <image
                 class="review-image"
                 v-for="(img, imgIndex) in review.images.slice(0, 3)"
-                :key="imgIndex"
+                :key="img"
                 :src="img"
                 mode="aspectFill"
                 @click="previewReviewImage(index, imgIndex)"
@@ -191,7 +191,7 @@
               </view>
             </view>
             <view class="review-tags">
-              <view class="tag small" v-for="(tag, tagIndex) in review.tags" :key="tagIndex">{{ tag }}</view>
+              <view class="tag small" v-for="tag in review.tags" :key="tag">{{ tag }}</view>
             </view>
           </view>
         </view>
@@ -203,9 +203,9 @@
           v-else
           :style="{ height: '600rpx' }"
         >
-          <view class="review-item" v-for="(review, index) in reviewList" :key="index">
+          <view class="review-item" v-for="(review, index) in reviewList" :key="review.id">
             <view class="review-header">
-              <image class="review-avatar" :src="review.avatar" mode="aspectFill"></image>
+              <image class="review-avatar" :src="review.avatar" mode="aspectFill" lazy-load></image>
               <view class="review-user">
                 <text class="review-name">{{ review.name }}</text>
                 <view class="review-stars">
@@ -220,7 +220,7 @@
               <image
                 class="review-image"
                 v-for="(img, imgIndex) in review.images.slice(0, 3)"
-                :key="imgIndex"
+                :key="img"
                 :src="img"
                 mode="aspectFill"
                 @click="previewReviewImage(index, imgIndex)"
@@ -230,7 +230,7 @@
               </view>
             </view>
             <view class="review-tags">
-              <view class="tag small" v-for="(tag, tagIndex) in review.tags" :key="tagIndex">{{ tag }}</view>
+              <view class="tag small" v-for="tag in review.tags" :key="tag">{{ tag }}</view>
             </view>
           </view>
         </scroll-view>
@@ -287,9 +287,10 @@ import { formatPrice, extractCoachId } from '@/utils/common'
 import { isLoggedIn } from '@/utils/token'
 import { guardReviewEntry, isReviewMode } from '@/utils/review'
 import { isFixedPricing, canBookService as checkCanBookService, getPriceUnit } from '@/utils/pricing'
-import { useThemeStore } from '@/store'
+import { useThemeStore, useBookingStore } from '@/store'
 
 const themeStore = useThemeStore()
+const bookingStore = useBookingStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // 图片查看器
@@ -319,6 +320,10 @@ const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
 const coachId = ref(null)
 const loading = ref(false)
+// 数据缓存时间戳，onShow 中用于判断是否需要重新全量加载
+const lastLoadTimestamp = ref(0)
+// 缓存有效期（5分钟）
+const CACHE_DURATION = 5 * 60 * 1000
 
 // 下拉刷新状态
 const refreshing = ref(false)
@@ -599,6 +604,9 @@ const loadCoachData = async () => {
 
     // 加载真实评价数据
     loadReviews()
+
+    // 加载成功，更新缓存时间戳
+    lastLoadTimestamp.value = Date.now()
   } catch (error) {
     console.error('加载教练详情失败:', error)
     uni.showToast({
@@ -808,7 +816,7 @@ const bookNow = async () => {
   }
 
   // 保存教练信息和选中的服务
-  uni.setStorageSync('selectedCoach', {
+  bookingStore.setSelectedCoach({
     ...coachInfo,
     selectedService: selectedService.value
   })
@@ -862,8 +870,8 @@ const bookNow = async () => {
     orderInitData.quantity = quantity
   }
 
-  // 保存订单初始化数据到 storage
-  uni.setStorageSync('createdOrderData', orderInitData)
+  // 保存订单初始化数据
+  bookingStore.setCreatedOrder(orderInitData)
 
   // 判断服务类型：1=台球陪练(需要选择球厅)，其他=跳转到确认订单页面
   const isBilliardsService = selectedService.value.type === 1
@@ -901,17 +909,32 @@ onLoad((options) => {
     const parsed = extractCoachId(options.scene || options.q)
     if (parsed) coachId.value = parseInt(parsed)
   }
+  // 首次进入时全量加载数据
+  if (coachId.value) {
+    loadCoachData()
+  }
 })
 
 onShow(() => {
   // 页面显示时更新登录状态
   isUserLoggedIn.value = isLoggedIn()
-  // 每次页面显示时都重新加载数据，确保显示最新内容
+
   if (coachId.value) {
-    loadCoachData()
+    const now = Date.now()
+    const isCacheValid = lastLoadTimestamp.value > 0 &&
+      (now - lastLoadTimestamp.value) < CACHE_DURATION
+
+    if (isCacheValid) {
+      // 缓存有效期内，只刷新轻量数据（按钮状态），不全量加载
+      loadCountdownEnabled()
+    } else {
+      // 缓存过期，全量刷新教练详情
+      loadCoachData()
+    }
+  } else {
+    // 没有教练ID时只刷新按钮状态
+    loadCountdownEnabled()
   }
-  // 重新加载按钮状态
-  loadCountdownEnabled()
 })
 
 onMounted(() => {
@@ -922,10 +945,8 @@ onMounted(() => {
   statusBarHeight.value = systemInfo.statusBarHeight || 0
   safeAreaBottom.value = systemInfo.safeAreaInsets?.bottom || 0
 
-  // 加载数据
-  if (coachId.value) {
-    loadCoachData()
-  }
+  // 注意：教练详情数据在 onShow 中加载（onLoad 后 onShow 会执行）
+  // 这里不再重复加载，避免首次进入时重复请求
   // 加载是否显示按钮
   loadCountdownEnabled()
 })

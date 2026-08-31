@@ -136,7 +136,7 @@
         >
           <view class="coach-avatar">
             <image :src="coach.avatar || coach.mainPhotoUrl || '/static/default-avatar.png'" mode="aspectFill"
-                   class="avatar-img"></image>
+                   class="avatar-img" lazy-load></image>
           </view>
 
           <view class="coach-info">
@@ -166,8 +166,8 @@
               <text class="coach-desc">星座：{{ coach.constellation || '白羊座' }}</text>
               <view class="coach-tags">
                 <view
-                    v-for="(tag, tagIndex) in (coach.tags || []).filter(t => t !== '新人' && t !== '活跃' && t !== '沉稳')"
-                    :key="tagIndex"
+                    v-for="tag in (coach.tags || []).filter(t => t !== '新人' && t !== '活跃' && t !== '沉稳')"
+                    :key="tag"
                     class="coach-tag"
                     :class="getTagClass(tag)"
                 >{{ tag }}
@@ -238,12 +238,13 @@ import {debounce, formatPrice, showLoading, hideLoading} from '@/utils/common'
 import { getPriceUnit } from '@/utils/pricing'
 import {getLocation, extractCity, formatDistance, showPermissionModal} from '@/utils/location'
 import {isLoggedIn} from '@/utils/token'
-import {useConfigStore, useThemeStore} from '@/store'
+import {useConfigStore, useThemeStore, useBookingStore} from '@/store'
 import {REMOTE_CONFIG_KEYS} from '@/store/modules/config'
 import {usePageTheme} from '@/composables/usePageTheme'
 
 const configStore = useConfigStore()
 const themeStore = useThemeStore()
+const bookingStore = useBookingStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // 页面主题管理
@@ -843,7 +844,7 @@ const handleBook = (coach) => {
     return
   }
   // 保存选中的裁教信息
-  uni.setStorageSync('selectedCoach', coach)
+  bookingStore.setSelectedCoach(coach)
   uni.navigateTo({url: '/subpkg/booking/hall'})
 }
 

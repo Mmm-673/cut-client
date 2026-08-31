@@ -1,4 +1,18 @@
 import config from '@/config'
+import logger from '@/utils/logger'
+import { TIME_ONE_SECOND } from '@/utils/constants'
+
+/** 心跳间隔（毫秒） */
+const HEARTBEAT_INTERVAL = 30 * TIME_ONE_SECOND
+
+/**
+ * 重连延迟序列（秒）
+ * 指数退避：1s → 2s → 5s → 10s → 30s
+ */
+const RECONNECT_DELAYS = [1, 2, 5, 10, 30]
+
+/** 最大重连延迟（秒），超过延迟序列长度后使用 */
+const MAX_RECONNECT_DELAY = 30
 
 // WebSocket 单例管理器
 class WebSocketManager {
@@ -8,9 +22,6 @@ class WebSocketManager {
     this.isConnected = false
     this.reconnectAttempts = 0
     this.reconnectTimer = null
-    // 重连延迟（秒）：1、2、5、10、30
-    this.reconnectDelays = [1, 2, 5, 10, 30]
-    this.maxReconnectDelay = 30
     // 手动断开标记（避免主动断开后自动重连）
     this.manualClose = false
     // 消息回调集合
@@ -19,7 +30,6 @@ class WebSocketManager {
     this.processedIds = new Set()
     // 心跳
     this.heartbeatTimer = null
-    this.heartbeatInterval = 30000 // 30秒
   }
 
   /**
@@ -28,13 +38,13 @@ class WebSocketManager {
    */
   connect(token) {
     if (!token) {
-      console.warn('[WebSocket] token 为空，跳过连接')
+      logger.warn('[WebSocket] token 为空，跳过连接')
       return
     }
 
     // 如果已经连接且 token 相同，不重复连接
     if (this.isConnected && this.token === token && this.socketTask) {
-      console.log('[WebSocket] 已连接，跳过')
+      logger.debug('[WebSocket] 已连接，跳过')
       return
     }
 
@@ -48,7 +58,7 @@ class WebSocketManager {
     this.reconnectAttempts = 0
 
     const url = `${this._getWsBaseUrl()}/infra/ws?token=${encodeURIComponent(token)}`
-    console.log('[WebSocket] 开始连接:', url)
+    logger.debug('[WebSocket] 开始连接:', url)
 
     this.socketTask = uni.connectSocket({
       url: url,
@@ -56,7 +66,7 @@ class WebSocketManager {
     })
 
     this.socketTask.onOpen(() => {
-      console.log('[WebSocket] 连接成功')
+      logger.debug('[WebSocket] 连接成功')
       this.isConnected = true
       this.reconnectAttempts = 0
       this._startHeartbeat()
@@ -67,14 +77,14 @@ class WebSocketManager {
     })
 
     this.socketTask.onError((err) => {
-      console.error('[WebSocket] 连接错误:', err)
+      logger.error('[WebSocket] 连接错误:', err)
       this.isConnected = false
       this._stopHeartbeat()
       this._tryReconnect()
     })
 
     this.socketTask.onClose(() => {
-      console.log('[WebSocket] 连接关闭')
+      logger.debug('[WebSocket] 连接关闭')
       this.isConnected = false
       this._stopHeartbeat()
       if (!this.manualClose) {
@@ -102,7 +112,7 @@ class WebSocketManager {
       try {
         this.socketTask.close({})
       } catch (e) {
-        console.warn('[WebSocket] 关闭异常:', e)
+        logger.warn('[WebSocket] 关闭异常:', e)
       }
       this.socketTask = null
     }
@@ -114,7 +124,7 @@ class WebSocketManager {
    * @param {string} newToken - 新的 accessToken
    */
   reconnect(newToken) {
-    console.log('[WebSocket] 使用新 token 重连')
+    logger.debug('[WebSocket] 使用新 token 重连')
     this.close(false)
     this.connect(newToken)
   }
@@ -171,7 +181,7 @@ class WebSocketManager {
         const notification = JSON.parse(message.content)
         // 去重检查
         if (notification.notificationId && this.hasProcessed(notification.notificationId)) {
-          console.log('[WebSocket] 通知已处理过，跳过:', notification.notificationId)
+          logger.debug('[WebSocket] 通知已处理过，跳过:', notification.notificationId)
           return
         }
         if (notification.notificationId) {
@@ -182,7 +192,7 @@ class WebSocketManager {
         uni.$emit('major-notification', notification)
       }
     } catch (e) {
-      console.error('[WebSocket] 消息解析失败:', e, data)
+      logger.error('[WebSocket] 消息解析失败:', e, data)
     }
   }
 
@@ -190,11 +200,11 @@ class WebSocketManager {
     if (this.manualClose) return
     if (this.reconnectTimer) return
 
-    const delay = this.reconnectAttempts < this.reconnectDelays.length
-      ? this.reconnectDelays[this.reconnectAttempts]
-      : this.maxReconnectDelay
+    const delay = this.reconnectAttempts < RECONNECT_DELAYS.length
+      ? RECONNECT_DELAYS[this.reconnectAttempts]
+      : MAX_RECONNECT_DELAY
 
-    console.log(`[WebSocket] ${delay}秒后尝试第 ${this.reconnectAttempts + 1} 次重连`)
+    logger.debug(`[WebSocket] ${delay}秒后尝试第 ${this.reconnectAttempts + 1} 次重连`)
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null
@@ -202,7 +212,7 @@ class WebSocketManager {
       if (this.token) {
         this.connect(this.token)
       }
-    }, delay * 1000)
+    }, delay * TIME_ONE_SECOND)
   }
 
   _startHeartbeat() {
@@ -214,14 +224,14 @@ class WebSocketManager {
           this.socketTask.send({
             data: JSON.stringify({ type: 'ping' }),
             fail: (e) => {
-              console.warn('[WebSocket] 心跳发送失败:', e)
+              logger.warn('[WebSocket] 心跳发送失败:', e)
             }
           })
         } catch (e) {
-          console.warn('[WebSocket] 心跳异常:', e)
+          logger.warn('[WebSocket] 心跳异常:', e)
         }
       }
-    }, this.heartbeatInterval)
+    }, HEARTBEAT_INTERVAL)
   }
 
   _stopHeartbeat() {
@@ -248,7 +258,7 @@ class WebSocketManager {
       try {
         cb(data)
       } catch (e) {
-        console.error(`[WebSocket] ${event} 回调异常:`, e)
+        logger.error(`[WebSocket] ${event} 回调异常:`, e)
       }
     })
   }

@@ -42,7 +42,15 @@ export default function upload(config) {
 			header: config.header,
 			formData: config.formData,
 			success: (res) => {
-				let result = JSON.parse(res.data)
+				let result
+				try {
+					result = JSON.parse(res.data)
+				} catch (e) {
+					const msg = '上传响应解析失败'
+					toast(msg)
+					reject(msg)
+					return
+				}
 				const code = result.code || 0
 				const msg = getErrorMessage(code, result.msg)
 				if (code === 0) {

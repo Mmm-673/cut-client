@@ -107,6 +107,7 @@ import { useThemeStore } from '@/store'
 import { getUserInfo, updateUser, sendUpdateMobileSms, updateMobile, uploadFile } from '@/api/billiard/user'
 import { getAreaTree } from '@/api/billiard/area'
 import { showCameraPurposeModal, showAlbumPurposeModal, requestCameraPermission, requestAlbumPermission, showImageSourceModal, showCameraPermissionModal, showAlbumPermissionModal } from '@/utils/photo'
+import { formatDate } from '@/utils/format'
 
 // 主题相关
 const themeStore = useThemeStore()
@@ -166,16 +167,6 @@ const cityName = computed(() => {
   }
   return findName(areaTree.value, userInfo.value.areaId) || '选择地区'
 })
-
-// 格式化日期时间戳为 yyyy-MM-dd
-const formatDate = (timestamp) => {
-  if (!timestamp) return ''
-  const date = new Date(timestamp)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
 
 const loadUserInfo = async () => {
   try {

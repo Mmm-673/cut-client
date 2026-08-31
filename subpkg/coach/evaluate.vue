@@ -39,8 +39,8 @@
       <view class="section-title">选择评价标签（可多选）</view>
       <view class="tag-list">
         <view
-            v-for="(tag, index) in tagList"
-            :key="index"
+            v-for="tag in tagList"
+            :key="tag"
             class="tag-item"
             :class="{ 'tag-active': selectedTags.includes(tag) }"
             @click="handleTagClick(tag)"
@@ -66,7 +66,7 @@
         <view
             class="preview-item"
             v-for="(img, index) in uploadedImages"
-            :key="index"
+            :key="img"
         >
           <image :src="img" mode="aspectFill" class="preview-img" />
           <view class="remove-btn" @click="removeImage(index)">

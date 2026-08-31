@@ -140,6 +140,7 @@ import { onUnload, onHide, onShow } from '@dcloudio/uni-app';
 import { isLoggedIn } from '@/utils/token'
 import { bindWX } from '@/api/billiard/user'
 import { syncReviewAccount } from '@/utils/review'
+import { useInterval } from '@/composables/useInterval'
 
 const userStore = useUserStore()
 const configStore = useConfigStore()
@@ -176,7 +177,12 @@ const form = ref({
 
 // 验证码倒计时
 const codeCountdown = ref(0)
-let countdownTimer = null
+const { start: startCountdown, stop: stopCountdown } = useInterval(() => {
+  codeCountdown.value--
+  if (codeCountdown.value <= 0) {
+    stopCountdown()
+  }
+}, 1000)
 
 // 协议勾选
 const agree = ref(false)
@@ -243,12 +249,7 @@ const getCode = async () => {
 
     // 开始倒计时
     codeCountdown.value = 60
-    countdownTimer = setInterval(() => {
-      codeCountdown.value--
-      if (codeCountdown.value <= 0) {
-        clearInterval(countdownTimer)
-      }
-    }, 1000)
+    startCountdown()
   } catch (error) {
     uni.hideLoading()
     console.error('发送验证码失败:', error)
@@ -349,9 +350,9 @@ const goBackHome = () => {
   uni.switchTab({ url: '/pages/home/index' })
 }
 
-// 页面卸载清除计时器
+// 页面卸载清除计时器（useInterval 自动清理，这里保留 stop 作为双重保险）
 onUnload(() => {
-  if (countdownTimer) clearInterval(countdownTimer)
+  stopCountdown()
 })
 </script>
 

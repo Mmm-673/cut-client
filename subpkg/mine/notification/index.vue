@@ -25,52 +25,55 @@
     <scroll-view
       class="notification-scroll"
       scroll-y="true"
+      scroll-x="false"
       refresher-enabled="true"
       :refresher-triggered="refreshing"
       @refresherrefresh="onRefresh"
       @scrolltolower="loadMore"
     >
-      <view v-if="list.length === 0 && !loading" class="empty">
-        <text class="empty-text">暂无通知</text>
-      </view>
-
-      <view
-        class="notification-item"
-        v-for="item in list"
-        :key="item.id"
-        :class="{ 'is-top': item.topFlag, 'is-read': item.readStatus === 1, 'is-manage': isManageMode }"
-        @click="handleItemClick(item)"
-      >
-        <!-- 管理模式下的复选框 -->
-        <view class="item-checkbox" v-if="isManageMode" @click.stop="toggleSelect(item)">
-          <view class="checkbox" :class="{ checked: selectedIds.includes(item.id) }">
-            <uni-icons v-if="selectedIds.includes(item.id)" type="checkmarkempty" size="16" color="#fff" />
-          </view>
+      <view class="scroll-content">
+        <view v-if="list.length === 0 && !loading" class="empty">
+          <text class="empty-text">暂无通知</text>
         </view>
 
-        <view class="item-content">
-          <view class="item-header">
-            <view class="item-tags">
-              <text class="tag tag-top" v-if="item.topFlag">置顶</text>
-              <text class="tag" :class="'tag-type-' + item.type">{{ getTypeLabel(item.type) }}</text>
+        <view
+          class="notification-item"
+          v-for="item in list"
+          :key="item.id"
+          :class="{ 'is-top': item.topFlag, 'is-read': item.readStatus === 1, 'is-manage': isManageMode }"
+          @click="handleItemClick(item)"
+        >
+          <!-- 管理模式下的复选框 -->
+          <view class="item-checkbox" v-if="isManageMode" @click.stop="toggleSelect(item)">
+            <view class="checkbox" :class="{ checked: selectedIds.includes(item.id) }">
+              <uni-icons v-if="selectedIds.includes(item.id)" type="checkmarkempty" size="16" color="#fff" />
             </view>
-            <text class="item-title">{{ item.title }}</text>
-            <view class="unread-dot" v-if="item.readStatus === 0"></view>
           </view>
-          <text class="item-summary">{{ item.summary }}</text>
-          <text class="item-time">发布时间:{{ formatTime(item.publishTime) }}</text>
+
+          <view class="item-content">
+            <view class="item-header">
+              <view class="item-tags">
+                <text class="tag tag-top" v-if="item.topFlag">置顶</text>
+                <text class="tag" :class="'tag-type-' + item.type">{{ getTypeLabel(item.type) }}</text>
+              </view>
+              <text class="item-title">{{ item.title }}</text>
+              <view class="unread-dot" v-if="item.readStatus === 0"></view>
+            </view>
+            <text class="item-summary">{{ item.summary }}</text>
+            <text class="item-time">发布时间:{{ formatTime(item.publishTime) }}</text>
+          </view>
         </view>
-      </view>
 
-      <view class="load-more" v-if="loading && list.length > 0">
-        <text>加载中...</text>
-      </view>
-      <view class="load-more" v-if="noMore && list.length > 0">
-        <text>没有更多了</text>
-      </view>
+        <view class="load-more" v-if="loading && list.length > 0">
+          <text>加载中...</text>
+        </view>
+        <view class="load-more" v-if="noMore && list.length > 0">
+          <text>没有更多了</text>
+        </view>
 
-      <!-- 底部安全区域占位 -->
-      <view class="bottom-placeholder" v-if="showBottomBar"></view>
+        <!-- 底部安全区域占位 -->
+        <view class="bottom-placeholder" v-if="showBottomBar"></view>
+      </view>
     </scroll-view>
 
     <!-- 底部操作栏 -->
@@ -370,6 +373,7 @@ onUnload(() => {
   display: flex;
   flex-direction: column;
   background-color: #121619;
+  overflow-x: hidden;
 }
 
 .tab-bar {
@@ -446,7 +450,14 @@ onUnload(() => {
 
 .notification-scroll {
   flex: 1;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.scroll-content {
   padding: 0 24rpx;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .notification-item {
@@ -457,7 +468,9 @@ onUnload(() => {
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 20rpx;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 
   &.is-top {
     background-color: rgba(0, 187, 136, 0.08);
@@ -471,6 +484,7 @@ onUnload(() => {
   .item-checkbox {
     flex-shrink: 0;
     padding-top: 6rpx;
+    margin-right: 20rpx;
 
     .checkbox {
       width: 40rpx;
@@ -498,18 +512,24 @@ onUnload(() => {
     display: flex;
     align-items: center;
     margin-bottom: 12rpx;
+    min-width: 0;
+    width: 100%;
 
     .item-tags {
       margin-right: 12rpx;
       flex-shrink: 0;
       display: flex;
       align-items: center;
-      gap: 8rpx;
 
       .tag {
         font-size: 20rpx;
         padding: 4rpx 12rpx;
         border-radius: 6rpx;
+        margin-right: 8rpx;
+
+        &:last-child {
+          margin-right: 0;
+        }
 
         &.tag-top {
           background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
@@ -559,6 +579,7 @@ onUnload(() => {
   }
 
   .item-summary {
+    width: 100%;
     font-size: 26rpx;
     color: #999;
     line-height: 1.5;
@@ -566,12 +587,19 @@ onUnload(() => {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    word-break: break-all;
     margin-bottom: 12rpx;
+    box-sizing: border-box;
   }
 
   .item-time {
+    width: 100%;
     font-size: 24rpx;
     color: #666;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
   }
 }
 

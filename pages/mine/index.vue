@@ -379,7 +379,8 @@ const loadOrders = async () => {
       const list = []
       for (const status of statuses) {
         try {
-          const res = await getOrderList({ status, pageNo: 1, pageSize: 100 })
+          // 我的页面每个 tab 只展示前 3 条，请求 5 条足够（留余量应对多状态合并）
+          const res = await getOrderList({ status, pageNo: 1, pageSize: 5 })
           const data = res.data || {}
           const items = data.list || data.records || data.rows || []
           list.push(...items)

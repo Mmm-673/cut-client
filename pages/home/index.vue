@@ -27,7 +27,7 @@
             easing-function="easeInOutCubic"
             indicator-active-color="#00BB88"
         >
-          <swiper-item v-for="(item, index) in bannerList" :key="index" @click="handleBannerClick(item)">
+          <swiper-item v-for="item in bannerList" :key="item.id" @click="handleBannerClick(item)">
             <view class="banner-card">
               <image class="banner-img" :src="item.imageUrl" mode="aspectFill"></image>
 <!--              <view class="banner-overlay">-->
@@ -226,7 +226,7 @@
 
 <script setup>
 import {ref, computed, onMounted, nextTick, watch} from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
+import { onLoad, onShow, onUnload } from '@dcloudio/uni-app'
 import { getNewCoachList, getHotCoachList, getBannerList } from '@/api/billiard/coach'
 import { getNotificationPage, markAsRead } from '@/api/billiard/notification'
 import { shouldShowIosPrivacy, hasPrivacyRefused } from '@/utils/privacy'
@@ -603,8 +603,16 @@ onShow(() => {
   // 监听 WebSocket 推送（只注册一次）
   listenMajorNotification()
   // 如果队列有待弹窗且当前没在展示，继续弹
-  if (notificationQueue.value.length > 0 && !isShowingNotification.value) {
+  if (notificationQueue.value.length > 0 && !showNotifyModal.value) {
     showNextNotification()
+  }
+})
+
+// 页面卸载时取消 WebSocket 订阅，防止泄漏
+onUnload(() => {
+  if (wsUnsubscribe) {
+    wsUnsubscribe()
+    wsUnsubscribe = null
   }
 })
 </script>

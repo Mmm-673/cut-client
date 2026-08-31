@@ -18,7 +18,7 @@
         </view>
         <view class="info-row">
           <text class="label">支付金额</text>
-          <text class="value price">¥{{ formatPrice(orderDetail.payAmount) }}</text>
+          <text class="value price">¥{{ formatAmount(orderDetail.payAmount) }}</text>
         </view>
         <view class="info-row" v-if="orderDetail.coachStageName">
           <text class="label">裁教</text>
@@ -26,7 +26,7 @@
         </view>
         <view class="info-row" v-if="orderDetail.bookingTime">
           <text class="label">预约时间</text>
-          <text class="value">{{ formatTime(orderDetail.bookingTime) }}</text>
+          <text class="value">{{ formatDate(orderDetail.bookingTime, 'MM.DD HH:mm') }}</text>
         </view>
       </view>
 
@@ -51,6 +51,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { useThemeStore } from '@/store'
 import { getOrderDetail } from '@/api/billiard/order'
 import { guardReviewEntry } from '@/utils/review'
+import { formatDate, formatAmount } from '@/utils/format'
 
 // 主题相关
 const themeStore = useThemeStore()
@@ -58,23 +59,6 @@ const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 const orderId = ref(null)
 const orderDetail = ref(null)
-
-// 格式化价格
-const formatPrice = (price) => {
-  if (price === null || price === undefined) return '0.00'
-  return (price / 100).toFixed(2)
-}
-
-// 格式化时间
-const formatTime = (timestamp) => {
-  if (!timestamp) return ''
-  const date = new Date(timestamp)
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hour = String(date.getHours()).padStart(2, '0')
-  const minute = String(date.getMinutes()).padStart(2, '0')
-  return `${month}.${day} ${hour}:${minute}`
-}
 
 // 加载订单详情
 const loadOrderDetail = async () => {

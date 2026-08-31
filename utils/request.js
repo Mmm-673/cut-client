@@ -138,7 +138,8 @@ const request = async config => {
     uni.request({
       method: config.method || 'get',
       timeout: config.timeout || timeout,
-      url: config.baseUrl || baseUrl + config.url,
+      // 传了 config.baseUrl 则直接作为完整 URL 使用，否则用默认 baseUrl 拼接 config.url
+      url: config.baseUrl || (baseUrl + config.url),
       data: config.data,
       header: config.header,
       dataType: 'json',

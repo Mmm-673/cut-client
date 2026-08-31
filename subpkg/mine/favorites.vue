@@ -17,7 +17,7 @@
         >
           <view class="coach-avatar">
             <image :src="coach.mainPhotoUrl || coach.avatar || '/static/default-avatar.png'" mode="aspectFill"
-                   class="avatar-img"></image>
+                   class="avatar-img" lazy-load></image>
           </view>
 
           <view class="coach-info">
@@ -81,13 +81,14 @@
 
 <script setup>
 import {ref, onMounted, computed} from 'vue'
-import { useThemeStore } from '@/store'
+import { useThemeStore, useBookingStore } from '@/store'
 import {getFavoriteCoachPage} from '@/api/billiard/coach'
 import {guardReviewEntry} from '@/utils/review'
 import { getPriceUnit } from '@/utils/pricing'
 
 // 主题相关
 const themeStore = useThemeStore()
+const bookingStore = useBookingStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 const statusBarHeight = ref(0)
@@ -243,7 +244,7 @@ const goToReward = (id) => {
 
 // 预约
 const handleBook = (coach) => {
-  uni.setStorageSync('selectedCoach', coach)
+  bookingStore.setSelectedCoach(coach)
   uni.navigateTo({url: '/subpkg/booking/hall'})
 }
 

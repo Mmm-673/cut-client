@@ -4,6 +4,7 @@
 
 import {getAccessToken} from '@/utils/token'
 import { openPermissionSettings } from '@/utils/platform'
+import { TIME_ONE_SECOND } from '@/utils/constants'
 
 // #ifdef APP-PLUS
 const jpushModule = uni.requireNativePlugin('JG-JPush')
@@ -15,6 +16,17 @@ let jpushConnected = false
 
 const JPUSH_PACKAGE_NAME = 'com.aksjzt.qiuleme.user'
 const JPUSH_APP_KEY = '54ce33979670871f9952e1f5'
+
+/** 初始化延迟（毫秒）— 等原生插件就绪 */
+const JPUSH_INIT_DELAY_MS = 300
+/** 注册 ID 重试默认间隔（毫秒） */
+const JPUSH_RETRY_INTERVAL_MS = 3 * TIME_ONE_SECOND
+/** 注册 ID 重试默认最大次数 */
+const JPUSH_RETRY_MAX_ATTEMPTS = 5
+/** 同步别名延迟（毫秒）— 延迟执行避免 6022 冲突 */
+const JPUSH_SYNC_DELAY_MS = 200
+/** 推送同步重试延迟（毫秒） */
+const JPUSH_RESUME_SYNC_DELAY_MS = 5 * TIME_ONE_SECOND
 
 const LOG_TAG = '【极光-JPush】'
 
@@ -131,7 +143,7 @@ function fetchRegistrationIdOnce() {
   // #endif
 }
 
-async function fetchRegistrationIdWithRetry(maxAttempts = 5, intervalMs = 3000) {
+async function fetchRegistrationIdWithRetry(maxAttempts = JPUSH_RETRY_MAX_ATTEMPTS, intervalMs = JPUSH_RETRY_INTERVAL_MS) {
   // #ifdef APP-PLUS
   jpushLog('info', `开始获取 RegID，最多重试 ${maxAttempts} 次`)
 
@@ -321,7 +333,7 @@ export function initPushService() {
     fetchRegistrationIdWithRetry().catch((e) => {
       jpushLog('error', '拉取 RegID 流程异常', e)
     })
-  }, 5000)
+  }, JPUSH_RESUME_SYNC_DELAY_MS)
 
   jpushLog('info', '监听器注册流程结束', { appKey: JPUSH_APP_KEY, packageName: JPUSH_PACKAGE_NAME })
   // #endif
@@ -346,7 +358,7 @@ export function bindPushAlias(userId) {
     if (callJPushApi('setAlias', { alias: targetAlias, sequence: Date.now() })) {
       jpushLog('info', '已发起别名绑定请求', { alias: targetAlias })
     }
-  }, 200)
+  }, JPUSH_SYNC_DELAY_MS)
   // #endif
 }
 

@@ -14,8 +14,8 @@
       <view class="faq-card">
         <view
             class="faq-item"
-            v-for="(item, index) in faqList"
-            :key="index"
+            v-for="item in faqList"
+            :key="item.id"
             @click="toggleFaq(item)"
         >
           <view class="faq-header">

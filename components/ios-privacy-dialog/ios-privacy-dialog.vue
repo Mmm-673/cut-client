@@ -23,8 +23,8 @@
       <scroll-view scroll-y class="privacy-dialog__body">
         <template v-if="step === 'first'">
           <text
-            v-for="(paragraph, index) in PRIVACY_FIRST.paragraphs"
-            :key="index"
+            v-for="paragraph in PRIVACY_FIRST.paragraphs"
+            :key="paragraph"
             class="privacy-dialog__text"
           >
             {{ paragraph }}

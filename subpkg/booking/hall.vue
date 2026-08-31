@@ -152,8 +152,8 @@
             <view class="hall-tags" v-if="hall.facilityTags">
               <view
                 class="tag-item"
-                v-for="(tag, index) in hall.facilityTags.split(',')"
-                :key="index"
+                v-for="tag in hall.facilityTags.split(',')"
+                :key="tag"
               >
                 {{ tag }}
               </view>
@@ -214,8 +214,8 @@
           <!-- 日期列 -->
           <picker-view-column>
             <view
-                v-for="(item, index) in dateColumns"
-                :key="index"
+                v-for="item in dateColumns"
+                :key="item.dateText"
                 class="picker-item"
             >
               {{ item.dateText }}
@@ -224,8 +224,8 @@
           <!-- 小时列 -->
           <picker-view-column>
             <view
-                v-for="(item, index) in hourColumns"
-                :key="index"
+                v-for="item in hourColumns"
+                :key="item.hour"
                 class="picker-item"
             >
               {{ item.hourText }}
@@ -234,8 +234,8 @@
           <!-- 分钟列 -->
           <picker-view-column>
             <view
-                v-for="(item, index) in minuteColumns"
-                :key="index"
+                v-for="item in minuteColumns"
+                :key="item.minute"
                 class="picker-item"
             >
               {{ item.minuteText }}
@@ -253,7 +253,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
-import { useThemeStore } from '@/store'
+import { useThemeStore, useBookingStore } from '@/store'
 import { getVenueList } from '@/api/billiard/venue'
 import { createOrder } from '@/api/billiard/order'
 import { debounce, showLoading, hideLoading } from '@/utils/common'
@@ -263,6 +263,7 @@ import { showCallPermissionModal, requestCallPermission, doCallPhone as makePhon
 
 // 主题相关
 const themeStore = useThemeStore()
+const bookingStore = useBookingStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // ---------------------- 状态定义 ----------------------
@@ -916,8 +917,8 @@ const chooseHall = async (hall) => {
     // 调用创建订单接口
     const createRes = await createOrder(createParams)
 
-    // 保存订单数据到 storage，供 confirm.vue 使用
-    uni.setStorageSync('createdOrderData', {
+    // 保存订单数据，供 confirm.vue 使用
+    bookingStore.setCreatedOrder({
       ...createRes.data,
       coachInfo: coachInfo.value,
       hallInfo: hall,
@@ -954,17 +955,17 @@ onMounted(() => {
 
 onShow(() => {
   // 检查是否是重新选择
-  const reselectParams = uni.getStorageSync('reselectParams')
+  const reselectParams = bookingStore.reselectParams
   if (reselectParams) {
     isReselect.value = true
     coachInfo.value = reselectParams.coachInfo
     orderInfo.value.duration = reselectParams.quantity || 2
     orderInfo.value.timeText = reselectParams.timeText || '请选择服务时间'
     selectedBookingTime.value = reselectParams.bookingTime
-    uni.removeStorageSync('reselectParams')
+    bookingStore.setReselectParams(null)
   } else {
-    // 从 storage 获取教练信息
-    const coach = uni.getStorageSync('selectedCoach')
+    // 从 bookingStore 获取教练信息
+    const coach = bookingStore.selectedCoach
     if (coach) {
       coachInfo.value = coach
     } else {

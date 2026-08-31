@@ -48,7 +48,7 @@
           class="date-item"
           :class="{ active: selectedDate === index }"
           v-for="(item, index) in dateList"
-          :key="index"
+          :key="item.day"
           @click="selectedDate = index"
         >
           <text class="date-week">{{ item.week }}</text>
@@ -59,8 +59,8 @@
         <view
           class="time-item"
           :class="{ active: selectedTime === item.time, disabled: item.disabled }"
-          v-for="(item, index) in timeList"
-          :key="index"
+          v-for="item in timeList"
+          :key="item.time"
           @click="!item.disabled && (selectedTime = item.time)"
         >
           {{ item.time }}
@@ -109,9 +109,10 @@
 import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { guardReviewEntry } from '@/utils/review'
-import { useThemeStore } from '@/store'
+import { useThemeStore, useBookingStore } from '@/store'
 
 const themeStore = useThemeStore()
+const bookingStore = useBookingStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // 选中的教练
@@ -216,8 +217,8 @@ onLoad((options) => {
   selectedDate.value = 0
   selectedTime.value = ''
 
-  // 从storage读取之前可能保存的裁教信息
-  const savedCoach = uni.getStorageSync('selectedCoach')
+  // 从 bookingStore 读取之前可能保存的裁教信息
+  const savedCoach = bookingStore.selectedCoach
   if (savedCoach) {
     selectedCoach.value = savedCoach
   }
