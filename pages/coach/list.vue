@@ -159,6 +159,11 @@
               <uni-icons type="star-filled" size="14" color="#FFD700"></uni-icons>
               <text class="rating">评分: {{ coach.overallScore }}</text>
               <text class="review-count">({{ coach.serviceCount || coach.reviewCount || 0 }}单)</text>
+
+            </view>
+
+            <view class="desc-row">
+              <text class="coach-desc">星座：{{ coach.constellation || '白羊座' }}</text>
               <view class="coach-tags">
                 <view
                     v-for="(tag, tagIndex) in (coach.tags || []).filter(t => t !== '新人' && t !== '活跃' && t !== '沉稳')"
@@ -170,15 +175,11 @@
               </view>
             </view>
 
-            <view class="desc-row">
-              <text class="coach-desc">星座：{{ coach.constellation || '白羊座' }}</text>
-            </view>
-
             <view class="bottom-row">
               <view class="price-row">
                 <text class="price-symbol">¥</text>
-                <text class="price">{{ formatPrice(coach.hourlyPrice) }}</text>
-                <text class="price-unit">/小时</text>
+                <text class="price">{{ formatPrice(getCoachDisplayPrice(coach)) }}</text>
+                <text class="price-unit">/{{ getCoachPriceUnit(coach) }}起</text>
               </view>
               <view class="action-buttons">
                 <!-- #ifndef MP-WEIXIN -->
@@ -234,6 +235,7 @@ import {getCoachList} from '@/api/billiard/coach'
 import {getRewardSwitch} from '@/api/billiard/user'
 import {getAreaTree} from '@/api/billiard/area'
 import {debounce, formatPrice, showLoading, hideLoading} from '@/utils/common'
+import { getPriceUnit } from '@/utils/pricing'
 import {getLocation, extractCity, formatDistance, showPermissionModal} from '@/utils/location'
 import {isLoggedIn} from '@/utils/token'
 import {useConfigStore, useThemeStore} from '@/store'
@@ -794,6 +796,28 @@ const goToReward = (id) => {
   })
 }
 
+// 获取助教展示价格（优先 price，兜底 hourlyPrice）
+const getCoachDisplayPrice = (coach) => {
+  if (!coach) return 0
+  // 优先用 serviceItemList 中第一个服务的 price
+  const firstService = coach.serviceItemList?.[0]
+  if (firstService && firstService.price != null) {
+    return firstService.price
+  }
+  // 兜底助教顶层 price / hourlyPrice
+  return coach.price ?? coach.hourlyPrice ?? 0
+}
+
+// 获取助教价格单位
+const getCoachPriceUnit = (coach) => {
+  if (!coach) return '小时'
+  const firstService = coach.serviceItemList?.[0]
+  if (firstService) {
+    return getPriceUnit(firstService)
+  }
+  return '小时'
+}
+
 // 预约
 const handleBook = (coach) => {
   if (coach.serviceStatus === 1) {
@@ -1312,6 +1336,10 @@ onShow(() => {
         font-size: 22rpx;
       }
 
+
+    }
+    .desc-row {
+      display: flex;
       .coach-tags {
         display: flex;
         align-items: center;
@@ -1430,7 +1458,6 @@ onShow(() => {
         }
       }
     }
-
     .desc-row .coach-desc {
       font-size: 22rpx;
       color: var(--text-tertiary);

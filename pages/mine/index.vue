@@ -125,6 +125,9 @@
             <uni-icons :type="item.icon" size="22" :color="item.color" />
           </view>
           <text class="menu-title">{{ item.title }}</text>
+          <view v-if="item.key === 'notification' && notificationUnreadCount > 0" class="menu-badge">
+            {{ notificationUnreadCount > 99 ? '99+' : notificationUnreadCount }}
+          </view>
           <uni-icons type="right" size="18" color="#9CA3AF" />
         </view>
       </view>
@@ -162,9 +165,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { onShow, onPullDownRefresh } from  "@dcloudio/uni-app"
+import { onShow, onUnload, onPullDownRefresh } from  "@dcloudio/uni-app"
 import { getUserInfo } from '@/api/billiard/user'
 import { getOrderList } from '@/api/billiard/order'
+import { getUnreadCount } from '@/api/billiard/notification'
 import { useUserStore } from '@/store/modules/user'
 import { useConfigStore, useThemeStore } from '@/store'
 import { usePageTheme } from '@/composables/usePageTheme'
@@ -394,6 +398,7 @@ const loadOrders = async () => {
 
 // 功能菜单
 const menuList = ref([
+  { key: 'notification', title: '消息通知', icon: 'chatbubble', bgColor: 'rgba(0, 187, 136, 0.2)', color: '#00BB88', path: '/subpkg/mine/notification/index' },
   { key: 'wallet', title: '收支统计', icon: 'wallet-filled', bgColor: 'rgba(0, 187, 136, 0.2)', color: '#00BB88', path: '/subpkg/mine/wallet' },
   { key: 'collection', title: '我的收藏', icon: 'heart', bgColor: 'rgba(255, 77, 79, 0.2)', color: '#ff4d4f', path: '/subpkg/mine/favorites' },
   { key: 'help', title: '客服中心', icon: 'headphones', bgColor: 'rgba(107, 114, 128, 0.2)', color: '#6B7280', path: '/subpkg/mine/help' },
@@ -401,6 +406,9 @@ const menuList = ref([
   { key: 'download', title: '下载 APP', icon: 'download', bgColor: 'rgba(0, 122, 255, 0.2)', color: '#007AFF', path: '/subpkg/common/download' }
   // #endif
 ])
+
+// 通知未读数
+const notificationUnreadCount = ref(0)
 
 // 审核模式下隐藏陪玩相关入口（收支统计/我的收藏）
 const visibleMenuList = computed(() => {
@@ -523,6 +531,16 @@ onMounted(() => {
   }
 })
 
+// 获取通知未读数
+const fetchNotificationUnread = async () => {
+  try {
+    const res = await getUnreadCount()
+    notificationUnreadCount.value = res.data || 0
+  } catch (e) {
+    console.error('获取通知未读数失败', e)
+  }
+}
+
 onShow(() => {
   // 同步 tabBar 文案（setTabBarItem 仅 tab 页可调，启动时可能被跳过）
   configStore.syncTabBarLabel()
@@ -530,9 +548,22 @@ onShow(() => {
   if (isUserLoggedIn.value) {
     loadUserInfo()
     loadOrders()
+    fetchNotificationUnread()
   }
   // 更新自定义 TabBar 选中状态
   updateCustomTabBar()
+})
+
+// 监听 WebSocket 推送的重大通知，实时更新未读数
+const onMajorNotification = () => {
+  if (isUserLoggedIn.value) {
+    fetchNotificationUnread()
+  }
+}
+uni.$on('major-notification', onMajorNotification)
+
+onUnload(() => {
+  uni.$off('major-notification', onMajorNotification)
 })
 </script>
 
@@ -844,6 +875,20 @@ onShow(() => {
       color: var(--text-primary);
       font-size: 30rpx;
       font-weight: 500;
+    }
+    .menu-badge {
+      min-width: 36rpx;
+      height: 36rpx;
+      padding: 0 10rpx;
+      background-color: #ff4d4f;
+      color: #fff;
+      font-size: 22rpx;
+      border-radius: 18rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      margin-left: auto;
     }
   }
 }

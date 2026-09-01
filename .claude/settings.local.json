@@ -11,6 +11,7 @@
       "mcp__codegraph__codegraph_search",
       "Bash(npm audit *)",
       "Skill(superpowers:using-git-worktrees)",
+      "Bash(bash /Users/mmm/.claude/plugins/cache/claude-plugins-official/superpowers/6.3.0/skills/subagent-driven-development/scripts/sdd-workspace docs/superpowers/plans/2026-08-27-notification-video-plan.md)"
       "Bash(npm run *)",
       "Bash(node -e ' *)",
       "Bash(node -c utils/payment.js)",

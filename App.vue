@@ -17,6 +17,8 @@ import { initPushService, syncPushForUser, retryPushSyncIfNeeded } from '@/utils
 import { shouldShowIosPrivacy, setPrivacyAgreedCallback } from '@/utils/privacy'
 import { isReviewMode } from '@/utils/review'
 import { extractCoachId } from '@/utils/common'
+import { getNotificationPage, markAsRead } from '@/api/billiard/notification'
+import wsManager from '@/utils/websocket'
 // #ifdef H5
 import { handleWxPayBindCallback } from '@/utils/payment'
 // #endif
@@ -36,6 +38,14 @@ const themeStyle = computed(() => {
 
 onLaunch((options) => {
   console.log('[App] onLaunch, 当前主题:', themeStore.theme)
+
+  // 监听 token 刷新，刷新后 WebSocket 用新 token 重连
+  uni.$on('token-refreshed', (newToken) => {
+    if (newToken) {
+      wsManager.reconnect(newToken)
+    }
+  })
+
   setPrivacyAgreedCallback(continueAppInit)
   initApp()
   handleLaunchOptions(options)
@@ -350,6 +360,60 @@ async function refreshTokenOnStartup() {
   })
 }
 
+// 重大通知弹窗队列（仅启动时弹一次）
+let notificationQueue = []
+let isShowingNotification = false
+let hasCheckedImportantNotifications = false
+
+const showNotificationModal = (item) => {
+  isShowingNotification = true
+  uni.showModal({
+    title: item.title,
+    content: item.content || item.summary || '',
+    showCancel: false,
+    confirmText: '我知道了',
+    confirmColor: '#00BB88',
+    success: async () => {
+      // 标记已读
+      try {
+        await markAsRead(item.id)
+      } catch (e) {
+        console.error('[App] 标记通知已读失败', e)
+      }
+      isShowingNotification = false
+      // 弹下一条
+      showNextNotification()
+    }
+  })
+}
+
+const showNextNotification = () => {
+  if (notificationQueue.length === 0) return
+  const next = notificationQueue.shift()
+  showNotificationModal(next)
+}
+
+const checkImportantNotifications = async () => {
+  if (hasCheckedImportantNotifications) return
+  hasCheckedImportantNotifications = true
+  try {
+    const res = await getNotificationPage({
+      pageNo: 1,
+      pageSize: 20,
+      readStatus: 0
+    })
+    const records = res.data?.records || []
+    // 筛选 type=1 重大通知
+    const importantList = records.filter(item => item.type === 1)
+    if (importantList.length > 0) {
+      notificationQueue = importantList
+      showNextNotification()
+    }
+  } catch (e) {
+    console.error('[App] 获取重大通知失败', e)
+  }
+}
+
 function restoreUserState() {
   console.log('[App] 恢复用户状态...')
   const userStore = useUserStore()
@@ -373,6 +437,15 @@ function restoreUserState() {
     syncPushForUser(userId)
   }
   // #endif
+
+  // 检查重大通知（仅首次登录恢复后触发）
+  checkImportantNotifications()
+
+  // 建立 WebSocket 连接
+  const token = getAccessToken()
+  if (token) {
+    wsManager.connect(token)
+  }
 }
 
 async function checkLogin() {

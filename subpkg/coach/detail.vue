@@ -71,12 +71,18 @@
                 <view class="service-sales">已售{{ service.sales }}单</view>
                 <view class="service-action">
                   <view class="service-price">
-                    <text class="price-symbol">¥</text>
-                    <text class="price">{{ formatPrice(service.price) }}</text>
-                    <text class="price-unit">{{ service.unit }}</text>
+                    <template v-if="service.price != null">
+                      <text class="price-symbol">¥</text>
+                      <text class="price">{{ formatPrice(service.price) }}</text>
+                      <text class="price-unit">/{{ getServicePriceUnit(service) }}</text>
+                    </template>
+                    <text v-else class="price-none">暂无报价</text>
                   </view>
-                  <view class="select-btn" :class="{active: selectedService?.id === service.id}" @click="selectService(service)">
-                    {{ selectedService?.id === service.id ? '已选择' : '选择' }}
+                  <view
+                      class="select-btn"
+                      :class="{active: selectedService?.id === service.id, disabled: !canBookService(service)}"
+                      @click="selectService(service)">
+                    {{ !canBookService(service) ? '暂不可约' : (selectedService?.id === service.id ? '已选择' : '选择') }}
                   </view>
                 </view>
               </view>
@@ -95,6 +101,38 @@
           <text>{{ coachInfo.introduction || coachInfo.intro }}</text>
         </view>
       </view>
+
+      <!-- 教学视频（App/H5 使用 DomVideoPlayer，小程序暂不支持） -->
+      <!-- #ifdef APP-PLUS || H5 -->
+      <view class="section" v-if="coachInfo.videoUrl && videoVisible">
+        <view class="section-title">
+          <uni-icons type="videocam" size="18" color="#00c896"></uni-icons>
+          <text>教学视频</text>
+        </view>
+        <view class="video-wrap">
+          <DomVideoPlayer
+            v-if="coachInfo.videoUrl"
+            ref="videoPlayerRef"
+            :src="coachInfo.videoUrl"
+            :autoplay="false"
+            :controls="true"
+            :loop="false"
+            object-fit="contain"
+            :is-loading="false"
+            @play="onVideoPlay"
+            @pause="onVideoPause"
+            @ended="onVideoEnded"
+            @error="onVideoError"
+            @canplay="onVideoCanPlay"
+            @loadedmetadata="onVideoLoadedMeta"
+            @timeupdate="onVideoTimeUpdate"
+            @durationchange="onVideoDurationChange"
+            @fullscreenchange="onVideoFullscreenChange"
+            class="coach-video-player"
+          />
+        </view>
+      </view>
+      <!-- #endif -->
 
       <!-- 个人相册 -->
       <view class="section" v-if="albumList.length > 0">
@@ -223,10 +261,10 @@
     <view class="bottom-bar">
       <view class="price-info">
         <text class="price-symbol">¥</text>
-        <text class="price">{{ formatPrice(selectedService?.price || coachInfo.price) }}</text>
-        <text class="price-unit">/{{ selectedService?.unit || '小时' }}起</text>
+        <text class="price">{{ formatPrice(bottomPrice) }}</text>
+        <text class="price-unit">/{{ bottomPriceUnit }}{{ bottomShowQi ? '起' : '' }}</text>
       </view>
-      <view class="book-btn" @click="bookNow">立即预约</view>
+      <view class="book-btn" :class="{disabled: !canBookNow}" @click="bookNow">立即预约</view>
     </view>
   </view>
 
@@ -241,13 +279,14 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
-import { onLoad, onShow } from "@dcloudio/uni-app"
+import { onLoad, onShow, onHide, onUnload } from "@dcloudio/uni-app"
 import { getCoachDetail, toggleCoachFavorite, getCoachReviews } from '@/api/billiard/coach'
 import { createOrder } from '@/api/billiard/order'
 import { getRewardSwitch } from '@/api/billiard/user'
 import { formatPrice, extractCoachId } from '@/utils/common'
 import { isLoggedIn } from '@/utils/token'
 import { guardReviewEntry, isReviewMode } from '@/utils/review'
+import { isFixedPricing, canBookService as checkCanBookService, getPriceUnit } from '@/utils/pricing'
 import { useThemeStore } from '@/store'
 
 const themeStore = useThemeStore()
@@ -307,8 +346,68 @@ const coachInfo = reactive({
   tags: [],
   intro: '',
   introduction: '',
-  serviceStatus: 0
+  serviceStatus: 0,
+  videoUrl: '',
+  videoFileName: '',
+  videoFileSize: 0,
+  videoMimeType: ''
 })
+
+// #ifdef APP-PLUS || H5
+import DomVideoPlayer from '@/components/DomVideoPlayer/DomVideoPlayer.vue'
+// #endif
+
+// 视频播放器可见性（错误时隐藏）
+const videoVisible = ref(true)
+const videoPlayerRef = ref(null)
+
+// 视频播放错误处理
+const onVideoError = () => {
+  uni.showToast({ title: '视频加载失败', icon: 'none' })
+  videoVisible.value = false
+}
+
+const onVideoPlay = () => {
+  // console.log('视频开始播放')
+}
+
+const onVideoPause = () => {
+  // console.log('视频暂停')
+}
+
+const onVideoEnded = () => {
+  // 视频播放结束
+}
+
+const onVideoCanPlay = () => {
+  // 视频可以播放了
+}
+
+const onVideoLoadedMeta = (data) => {
+  // 视频元数据加载完成
+}
+
+const onVideoTimeUpdate = (time) => {
+  // 播放进度更新
+}
+
+const onVideoDurationChange = (duration) => {
+  // 视频总时长
+}
+
+// 暂停视频播放
+const pauseVideo = () => {
+  if (videoPlayerRef.value) {
+    videoPlayerRef.value.pause()
+  }
+}
+
+// 视频全屏状态（仅供事件监听使用）
+const isVideoFullscreen = ref(false)
+
+const onVideoFullscreenChange = (isFull) => {
+  isVideoFullscreen.value = isFull
+}
 
 // 服务项目
 const services = ref([])
@@ -374,6 +473,9 @@ const getServiceIcon = (type) => {
 const loadCoachData = async () => {
   if (!coachId.value) return
 
+  // 重置视频可见状态
+  videoVisible.value = true
+
   loading.value = true
   try {
     const res = await getCoachDetail({ id: coachId.value })
@@ -401,7 +503,11 @@ const loadCoachData = async () => {
       tags: data.tags || [],
       intro: data.introduction || data.intro || '这位裁教很神秘，什么都没写~',
       introduction: data.introduction || data.intro || '这位裁教很神秘，什么都没写~',
-      serviceStatus: data.serviceStatus ?? 0
+      serviceStatus: data.serviceStatus ?? 0,
+      videoUrl: data.videoUrl || '',
+      videoFileName: data.videoFileName || '',
+      videoFileSize: data.videoFileSize || 0,
+      videoMimeType: data.videoMimeType || ''
     })
 
 
@@ -414,9 +520,7 @@ const loadCoachData = async () => {
         name: '台球指导',
         desc: '提供台球基础姿势校正、击球线路规划及进阶战术对练服务。由专业助教协助提升台球技能，打造标准化的体育健身对练体验。',
         sales: 0,
-        unit: '',
         hot: true,
-        hourTime: 2,
       },
       {
         id: 2,
@@ -424,9 +528,7 @@ const loadCoachData = async () => {
         name: '潮玩领航',
         desc: '提供本地特色店铺打卡指引与特色路线规划服务。由本地达人引导体验特色场景，探索城市优质吃喝玩乐打卡点。',
         sales: 0,
-        unit: '',
         hot: false,
-        hourTime: 5,
       },
       {
         id: 3,
@@ -434,9 +536,7 @@ const loadCoachData = async () => {
         name: '酒艺品鉴',
         desc: '提供酒类历史文化宣讲、酿造工艺介绍及餐酒搭配指导。侧重酒文化知识分享与品鉴技巧交流，传播健康高雅的酒道文化。',
         sales: 0,
-        unit: '',
         hot: false,
-        hourTime: 7,
       },
       {
         id: 4,
@@ -444,9 +544,7 @@ const loadCoachData = async () => {
         name: '影视赏析',
         desc: '提供经典影视作品的背景解读、艺术风格赏析与剧本创作探讨。通过线下观影沙龙形式，开展光影艺术交流与影视文化导读。',
         sales: 0,
-        unit: '',
         hot: false,
-        hourTime: 7,
       }
     ]
 
@@ -460,8 +558,12 @@ const loadCoachData = async () => {
             ...localConfig,
             ...item,
             type: item.serviceType,
-            name: localConfig.name,
-            price: item.hourlyPrice * localConfig.hourTime
+            name: item.serviceName || localConfig.name,
+            // 新版以 price 字段为准，兼容旧数据兜底
+            price: item.price != null ? item.price : item.hourlyPrice,
+            // 兼容旧数据：没有 pricingMode 时根据 serviceType 默认判断
+            pricingMode: item.pricingMode || (item.serviceType === 1 ? 'HOURLY' : 'HOURLY'),
+            priceUnit: item.priceUnit || (item.serviceType === 1 ? '小时' : '小时')
           }
         })
         .filter(Boolean)
@@ -611,8 +713,48 @@ const goToReward = () => {
 // 选中的服务
 const selectedService = ref(null)
 
+// 底部展示价格
+const bottomPrice = computed(() => {
+  if (selectedService.value && selectedService.value.price != null) {
+    return selectedService.value.price
+  }
+  return coachInfo.price || 0
+})
+
+// 底部展示价格单位
+const bottomPriceUnit = computed(() => {
+  if (selectedService.value) {
+    return getPriceUnit(selectedService.value)
+  }
+  return '小时'
+})
+
+// 底部是否显示"起"字（小时价显示，固定价不显示）
+const bottomShowQi = computed(() => {
+  if (selectedService.value) {
+    return !isFixedPricing(selectedService.value.pricingMode)
+  }
+  return true // 兜底按小时价，显示"起"
+})
+
+// 当前选中的服务是否可预约
+const canBookNow = computed(() => {
+  if (!selectedService.value) return true // 没选时不置灰，点击时会提示选择
+  return checkCanBookService(selectedService.value)
+})
+
+// 判断服务是否可预约（模板中用）
+const canBookService = (service) => checkCanBookService(service)
+
+// 获取服务价格单位（模板中用）
+const getServicePriceUnit = (service) => getPriceUnit(service)
+
 // 选择服务
 const selectService = (service) => {
+  if (!checkCanBookService(service)) {
+    uni.showToast({ title: '该服务暂不可预约', icon: 'none' })
+    return
+  }
   selectedService.value = service
   uni.showToast({
     title: '已选择' + service.name,
@@ -660,6 +802,11 @@ const bookNow = async () => {
     return
   }
 
+  if (!checkCanBookService(selectedService.value)) {
+    uni.showToast({ title: '该服务暂不可预约', icon: 'none' })
+    return
+  }
+
   // 保存教练信息和选中的服务
   uni.setStorageSync('selectedCoach', {
     ...coachInfo,
@@ -668,24 +815,6 @@ const bookNow = async () => {
 
   // 计算默认预约时间（1小时后）
   const bookingTime = Date.now() + 3600000
-
-  // 根据服务类型确定默认时长
-  let serviceDuration = 120 // 默认2小时
-  let quantity = 2
-
-  if (selectedService.value.type === 2) {
-    // 达人带路：5小时
-    serviceDuration = 300
-    quantity = 5
-  } else if (selectedService.value.type === 3) {
-    // 酒文化讲解：7小时
-    serviceDuration = 420
-    quantity = 7
-  } else if (selectedService.value.type === 4) {
-    // 影视讲解分享：7小时
-    serviceDuration = 420
-    quantity = 7
-  }
 
   // 格式化时间显示
   const date = new Date(bookingTime)
@@ -697,16 +826,44 @@ const bookNow = async () => {
   const weekDay = weekDays[date.getDay()]
   const timeText = `${weekDay} ${month}.${day} ${hour}:${minute}`
 
-  // 保存订单初始化数据到 storage
-  uni.setStorageSync('createdOrderData', {
+  // 判断是否为固定价模式
+  const isFixed = isFixedPricing(selectedService.value.pricingMode)
+
+  // 构建订单初始化数据
+  const orderInitData = {
     coachInfo: coachInfo,
     selectedService: selectedService.value,
     serviceType: selectedService.value.type,
-    serviceDuration: serviceDuration,
-    quantity: quantity,
     bookingTime: bookingTime,
-    timeText: timeText
-  })
+    timeText: timeText,
+    pricingMode: selectedService.value.pricingMode
+  }
+
+  // 小时价模式才设置时长和数量
+  if (!isFixed) {
+    let serviceDuration = 120 // 默认2小时
+    let quantity = 2
+
+    if (selectedService.value.type === 2) {
+      // 达人带路（旧版小时价）：5小时
+      serviceDuration = 300
+      quantity = 5
+    } else if (selectedService.value.type === 3) {
+      // 酒文化讲解（旧版小时价）：7小时
+      serviceDuration = 420
+      quantity = 7
+    } else if (selectedService.value.type === 4) {
+      // 影视讲解分享（旧版小时价）：7小时
+      serviceDuration = 420
+      quantity = 7
+    }
+
+    orderInitData.serviceDuration = serviceDuration
+    orderInitData.quantity = quantity
+  }
+
+  // 保存订单初始化数据到 storage
+  uni.setStorageSync('createdOrderData', orderInitData)
 
   // 判断服务类型：1=台球陪练(需要选择球厅)，其他=跳转到确认订单页面
   const isBilliardsService = selectedService.value.type === 1
@@ -771,6 +928,18 @@ onMounted(() => {
   }
   // 加载是否显示按钮
   loadCountdownEnabled()
+})
+
+onHide(() => {
+  // #ifdef APP-PLUS || H5
+  pauseVideo()
+  // #endif
+})
+
+onUnload(() => {
+  // #ifdef APP-PLUS || H5
+  pauseVideo()
+  // #endif
 })
 </script>
 
@@ -1009,6 +1178,23 @@ onMounted(() => {
     }
   }
 
+  .video-wrap {
+    background-color: var(--bg-card);
+    border-radius: 32rpx;
+    padding: 24rpx;
+    margin-top: 24rpx;
+    overflow: hidden;
+    position: relative;
+
+    .coach-video-player {
+      width: 100%;
+      height: 380rpx;
+      border-radius: 16rpx;
+      display: block;
+      background-color: #000;
+    }
+  }
+
   .login-tip-box {
     background-color: var(--bg-card);
     border-radius: 32rpx;
@@ -1127,6 +1313,11 @@ onMounted(() => {
 
             &.active {
               background-color: #059669;
+            }
+
+            &.disabled {
+              background-color: #666;
+              opacity: 0.6;
             }
           }
         }
@@ -1319,6 +1510,12 @@ onMounted(() => {
     font-weight: 600;
     border-radius: 44rpx;
     box-shadow: 0 8rpx 30rpx rgba(0, 200, 150, 0.3);
+
+    &.disabled {
+      background: #666;
+      box-shadow: none;
+      opacity: 0.6;
+    }
   }
 }
 </style>

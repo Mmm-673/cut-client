@@ -10,6 +10,7 @@
         refresher-enabled
         :refresher-triggered="refreshing"
         @refresherrefresh="onRefresh"
+        @scrolltolower="onLoadMore"
     >
       <!-- 服务信息选择 -->
       <view class="info-card" v-if="!isReselect">
@@ -181,9 +182,15 @@
       </view>
 
       <!-- 空状态 -->
-      <view class="empty-state" v-if="!loading && hallList.length === 0">
+      <view class="empty-state" v-if="!loading && !refreshing && hallList.length === 0">
         <uni-icons type="info" size="80" color="#374151" />
         <text class="empty-text">暂无球厅</text>
+      </view>
+
+      <!-- 加载更多状态 -->
+      <view class="load-tip" v-if="hallList.length > 0">
+        <text v-if="loadingMore">加载中...</text>
+        <text v-else-if="noMore">没有更多了</text>
       </view>
 
       <!-- 底部安全区域 -->
@@ -262,6 +269,12 @@ const themeClass = computed(() => `theme-${themeStore.theme}`)
 // 刷新/加载状态
 const refreshing = ref(false)
 const loading = ref(false)
+const loadingMore = ref(false)
+const noMore = ref(false)
+
+// 分页
+const pageNo = ref(1)
+const pageSize = 25
 
 // 搜索关键词
 const searchKeyword = ref('')
@@ -408,19 +421,6 @@ const tabList = ref([
 // 球厅列表
 const hallList = ref([])
 
-// 模拟城市列表
-const cityList = ref([
-  { name: '北京市', code: '110000' },
-  { name: '上海市', code: '310000' },
-  { name: '广州市', code: '440100' },
-  { name: '深圳市', code: '440300' },
-  { name: '杭州市', code: '330100' },
-  { name: '南京市', code: '320100' },
-  { name: '成都市', code: '510100' },
-  { name: '重庆市', code: '500000' },
-  { name: '武汉市', code: '420100' },
-  { name: '西安市', code: '610100' }
-])
 
 // ---------------------- 计算属性 ----------------------
 // 获取当前选中的排序类型
@@ -567,6 +567,8 @@ const getCurrentLocation = async () => {
     currentLocation.value = { longitude, latitude }
     currentStreet.value = extractStreet(regeocodeData)
     locationDenied.value = false // 重置权限拒绝状态
+    pageNo.value = 1
+    noMore.value = false
     hallList.value = []
     loadHallList()
   } catch (err) {
@@ -600,11 +602,17 @@ const closeCityPicker = () => {
 
 // ---------------------- 搜索相关方法 ----------------------
 const handleSearch = debounce(() => {
+  pageNo.value = 1
+  noMore.value = false
+  hallList.value = []
   loadHallList()
 }, 300)
 
 const clearSearch = () => {
   searchKeyword.value = ''
+  pageNo.value = 1
+  noMore.value = false
+  hallList.value = []
   loadHallList()
 }
 
@@ -622,39 +630,51 @@ const getRandomDefaultImage = () => {
   return defaultImages[Math.floor(Math.random() * defaultImages.length)]
 }
 
-// 加载球厅列表
+// 构建请求参数
+const buildRequestParams = () => {
+  const params = {
+    pageNo: pageNo.value,
+    pageSize: pageSize.value
+  }
+
+  // 关键词搜索
+  if (searchKeyword.value) {
+    params.keyword = searchKeyword.value
+  }
+
+  // 定位参数（必须同时传或同时不传）
+  if (currentLocation.value.longitude && currentLocation.value.latitude) {
+    params.longitude = currentLocation.value.longitude
+    params.latitude = currentLocation.value.latitude
+    params.radius = radius.value
+  }
+
+  // 排序类型
+  params.sortType = currentSortType.value
+
+  return params
+}
+
+// 加载球厅列表（首次 / 刷新）
 const loadHallList = async () => {
   if (loading.value) return
 
   loading.value = true
   showLoading('加载中...')
   try {
-    const params = {
-      limit: 100
-    }
-
-    // 关键词搜索
-    if (searchKeyword.value) {
-      params.keyword = searchKeyword.value
-    }
-
-    // 定位参数（必须同时传或同时不传）
-    if (currentLocation.value.longitude && currentLocation.value.latitude) {
-      params.longitude = currentLocation.value.longitude
-      params.latitude = currentLocation.value.latitude
-      params.radius = radius.value
-    }
-
-    // 排序类型
-    params.sortType = currentSortType.value
-
-    console.log('=====参数',params)
+    pageNo.value = 1
+    const params = buildRequestParams()
     const res = await getVenueList(params)
-    // 给没有封面的场馆加随机默认图
-    hallList.value = (res.data || []).map(item => ({
+
+    const list = (res.data?.list || []).map(item => ({
       ...item,
       defaultImage: getRandomDefaultImage()
     }))
+    hallList.value = list
+
+    // 判断是否还有更多
+    const total = res.data?.total || 0
+    noMore.value = list.length >= total || list.length < pageSize.value
   } catch (error) {
     console.error('加载球厅列表失败:', error)
     uni.showToast({
@@ -668,16 +688,53 @@ const loadHallList = async () => {
   }
 }
 
+// 加载更多
+const loadMoreHallList = async () => {
+  if (loadingMore.value || noMore.value || loading.value) return
+
+  loadingMore.value = true
+  try {
+    pageNo.value += 1
+    const params = buildRequestParams()
+    const res = await getVenueList(params)
+
+    const list = (res.data?.list || []).map(item => ({
+      ...item,
+      defaultImage: getRandomDefaultImage()
+    }))
+    hallList.value = [...hallList.value, ...list]
+
+    // 判断是否还有更多
+    const total = res.data?.total || 0
+    noMore.value = hallList.value.length >= total || list.length < pageSize.value
+  } catch (error) {
+    console.error('加载更多失败:', error)
+    pageNo.value -= 1 // 回滚页码
+  } finally {
+    loadingMore.value = false
+  }
+}
+
 // 下拉刷新
 const onRefresh = () => {
+  if (loading.value) return
   refreshing.value = true
+  noMore.value = false
   loadHallList()
+}
+
+// 上拉加载更多
+const onLoadMore = () => {
+  if (loading.value || refreshing.value || loadingMore.value || noMore.value) return
+  loadMoreHallList()
 }
 
 // 切换筛选标签
 const switchTab = (val) => {
   currentTab.value = val
   hallList.value = []
+  noMore.value = false
+  pageNo.value = 1
 
   // 如果切换到"距离最近"且没有定位信息，先获取定位
   if (val === 'nearest' && (!currentLocation.value.longitude || !currentLocation.value.latitude)) {

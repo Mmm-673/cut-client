@@ -12,6 +12,7 @@ import {
   clearAuthInfo,
   isLoggedIn
 } from '@/utils/token'
+import wsManager from '@/utils/websocket'
 import {
   sendSmsCode,
   smsLogin,
@@ -165,6 +166,8 @@ export const useUserStore = defineStore('user', () => {
     mobile.value = ''
     clearAuthInfo()
     clearPushAlias()
+    // 断开 WebSocket
+    wsManager.disconnect()
   }
 
   // 重置密码

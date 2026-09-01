@@ -129,8 +129,8 @@ const loadVenueList = async () => {
   if (loading.value) return
   loading.value = true
   try {
-    const res = await getVenueList({ limit: 50 })
-    venueList.value = Array.isArray(res.data) ? res.data : []
+    const res = await getVenueList({ pageNo: 1, pageSize: 50 })
+    venueList.value = Array.isArray(res.data?.list) ? res.data.list : []
   } catch (error) {
     console.error('加载球厅列表失败:', error)
     venueList.value = []
