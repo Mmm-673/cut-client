@@ -379,7 +379,7 @@ onUnload(() => {
   padding: 0 20rpx 0 20rpx;
   border-bottom: 1rpx solid rgba(255, 255, 255, 0.05);
   flex-shrink: 0;
-
+  margin-top: 15rpx;
   .tab-items {
     flex: 1;
     display: flex;
