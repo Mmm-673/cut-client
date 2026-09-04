@@ -1,0 +1,227 @@
+utils/photo.js
+  acd58d02ad8a2b2b 1-3,11,13-18,22,24-29
+constants/index.js
+  a057b5f3ffc9cdfd 1-11
+subpkg/coach/evaluate.vue
+  df4030aa0b533f6c 69
+  a057b5f3ffc9cdfd 173
+components/coach-search-bar/coach-search-bar.vue
+  acd58d02ad8a2b2b 1-80
+components/user-profile-card/user-profile-card.vue
+  df4030aa0b533f6c 1-170
+constants/time.js
+  a057b5f3ffc9cdfd 1-55
+plugins/modal.js
+  acd58d02ad8a2b2b 73,75
+subpkg/booking/pay-success.vue
+  acd58d02ad8a2b2b 54
+components/location-picker/location-picker.vue
+  df4030aa0b533f6c 1-194
+store/modules/coach.js
+  df4030aa0b533f6c 1-144
+store/index.js
+  df4030aa0b533f6c 5-7,13-20
+components/review-item-card/review-item-card.vue
+  df4030aa0b533f6c 1-166
+components/review-section/review-section.vue
+  df4030aa0b533f6c 1-120
+subpkg/booking/confirm.vue
+  acd58d02ad8a2b2b 124,129,134,139,196,353,362-363,466,629,683,779,825,862,893,899,933,939,1086
+  df4030aa0b533f6c 278,350,367-368,804,964-965,1074,1076-1077,1128-1129,1135-1136
+  a057b5f3ffc9cdfd 58,70,86,352,354,378,506,524,1050-1051,1093-1127,1130,1134
+components/add-time-popup/add-time-popup.vue
+  df4030aa0b533f6c 1-292
+store/modules/notification.js
+  df4030aa0b533f6c 1-204
+docs/superpowers/specs/phase-1-design.md
+  a057b5f3ffc9cdfd 1-285
+utils/theme.js
+  a057b5f3ffc9cdfd 37-39
+components/welcome-bar/welcome-bar.vue
+  df4030aa0b533f6c 1-13,15-19,21-23,25-27,29-34,36-48,50-88
+utils/request.js
+  a057b5f3ffc9cdfd 141
+constants/pagination.js
+  a057b5f3ffc9cdfd 2-3,6-9,11-12,14-15,17-24,27-33
+utils/pricing.js
+  a057b5f3ffc9cdfd 9-12
+components/coach-detail-header/coach-detail-header.vue
+  df4030aa0b533f6c 1-241
+pages/coach/list.vue
+  df4030aa0b533f6c 59-65,68-69,83-84,86-87,89-91,129,132,136-137,141,237-304,306,308-319,504-505,507-508,511,513-514,520-523,526,530,535-536,542,655-656
+  acd58d02ad8a2b2b 24,93,95,133-135
+utils/permissionModal.js
+  acd58d02ad8a2b2b 1-84
+App.vue
+  a057b5f3ffc9cdfd 141-143
+components/coach-book-bar/coach-book-bar.vue
+  df4030aa0b533f6c 1-104
+constants/storageKeys.js
+  a057b5f3ffc9cdfd 1-62
+components/home-banner/home-banner.vue
+  acd58d02ad8a2b2b 1-72
+components/hot-coach-card/hot-coach-card.vue
+  acd58d02ad8a2b2b 1-3,5-218
+  df4030aa0b533f6c 4
+utils/token.js
+  a057b5f3ffc9cdfd 1-13,104,108
+utils/appSettings.js
+  acd58d02ad8a2b2b 1-50
+components/home-section-header/home-section-header.vue
+  acd58d02ad8a2b2b 1-135
+components/info-card/info-card.vue
+  df4030aa0b533f6c 1-91
+subpkg/coach/reward.vue
+  df4030aa0b533f6c 28-33,117,125,157-160
+components/order-status-header/order-status-header.vue
+  df4030aa0b533f6c 1-295
+composables/useCountdown.js
+  a057b5f3ffc9cdfd 1-126
+composables/useList.js
+  df4030aa0b533f6c 10-11,25-26,28-33,43-50,52-58,60-66,72,74-75,77-80,92,94-95,97-100,114,117-123,126-129,157
+  a057b5f3ffc9cdfd 1-9,12-24,27,34-42,51,59,67-71,73,76,81-91,93,96,101-113,115-116,124-125,130-156,158-164
+subpkg/booking/hall.vue
+  df4030aa0b533f6c 94,97-102,180-181,191,195-196,345-394,596-597,600,602,618,795-796,833-835,842,845-848
+  acd58d02ad8a2b2b 106-112,190
+  a057b5f3ffc9cdfd 182-183,243,287,800
+components/home-skeleton/home-skeleton.vue
+  df4030aa0b533f6c 1-59
+constants/orderStatus.js
+  a057b5f3ffc9cdfd 1-115
+utils/call.js
+  acd58d02ad8a2b2b 1-2,12-17,84,86
+subpkg/mine/wallet-list.vue
+  acd58d02ad8a2b2b 89,114
+components/coach-filter-tabs/coach-filter-tabs.vue
+  acd58d02ad8a2b2b 1-69
+pages/scan/index.vue
+  a057b5f3ffc9cdfd 243,251
+docs/优化清单-2026-09-01.md
+  a057b5f3ffc9cdfd 1-24,26-33,35-41,43-49,51-57,59-65,67-73,75-81,83-89,91-103,105-111,113-119,121-127,129-135,137-146,148-154,156,158-166,168-176,178-186,188-196,198-206,208-214,216-222,224-230,232-238,240-246,248-256,258-264,266-271,273-279,281-286,288-294,296-304,306-312,314-320,322-334,336-343,345-351,353-360,362-371,373-378,380,382-389,391-398,400-407,409-417,419-434,436-445,447-453,455-464,466-473,475-481,483-489,491-499,501-508,510-520,522-527,529-535,537-543,545-550,552-557,559-564,566-571,573-579,581-587,589-594,596-602,604-610,612-618,620-626,628-634,636-670
+subpkg/mine/favorites.vue
+  acd58d02ad8a2b2b 68,85
+  df4030aa0b533f6c 81,89,94-119,180,204,213
+components/reward-amount-picker/reward-amount-picker.vue
+  df4030aa0b533f6c 1-187
+pages/login/resetPassword.vue
+  df4030aa0b533f6c 99,102,116-122,173,230
+utils/payment.js
+  a057b5f3ffc9cdfd 1-2,41,364,424,444
+subpkg/mine/notification/index.vue
+  acd58d02ad8a2b2b 33,102
+components/service-item-card/service-item-card.vue
+  df4030aa0b533f6c 1-198
+components/order-bottom-bar/order-bottom-bar.vue
+  df4030aa0b533f6c 1-154
+components/notify-modal/notify-modal.vue
+  df4030aa0b533f6c 1-229
+subpkg/onsite/detail.vue
+  a057b5f3ffc9cdfd 182-183,188,209,282-283
+docs/superpowers/specs/2026-09-01-项目优化迭代-总体计划.md
+  a057b5f3ffc9cdfd 1-218,422
+  df4030aa0b533f6c 219-421,423
+components/order-card/order-card.vue
+  acd58d02ad8a2b2b 1-21,23-378
+  df4030aa0b533f6c 22
+constants/payStatus.js
+  a057b5f3ffc9cdfd 1-48
+constants/serviceType.js
+  a057b5f3ffc9cdfd 1-65
+components/new-coach-avatar/new-coach-avatar.vue
+  acd58d02ad8a2b2b 1-4,6-161
+  df4030aa0b533f6c 5
+components/empty-state/empty-state.vue
+  a057b5f3ffc9cdfd 1-51
+components/coach-list-card/coach-list-card.vue
+  df4030aa0b533f6c 1-478
+pages/login/index.vue
+  df4030aa0b533f6c 134,176-183,249,348
+components/hall-card/hall-card.vue
+  df4030aa0b533f6c 1-330
+utils/format.js
+  a057b5f3ffc9cdfd 1-123
+utils/location.js
+  acd58d02ad8a2b2b 3-6,19,21-26,193
+pages/home/index.vue
+  acd58d02ad8a2b2b 19,23-28,35,40-41,43-45,83-86
+  df4030aa0b533f6c 6,9,15,55-61,87-89
+components/mine-menu-list/mine-menu-list.vue
+  df4030aa0b533f6c 1-99
+components/order-quick-entry/order-quick-entry.vue
+  df4030aa0b533f6c 1-286
+store/modules/booking.js
+  df4030aa0b533f6c 1-203
+pages/mine/index.vue
+  a057b5f3ffc9cdfd 193
+  df4030aa0b533f6c 7-37,76-78,312-316
+components/pay-method-popup/pay-method-popup.vue
+  df4030aa0b533f6c 1-367
+docs/superpowers/specs/完整优化设计文档.md
+  a057b5f3ffc9cdfd 1-1101
+subpkg/mine/info.vue
+  acd58d02ad8a2b2b 110
+  a057b5f3ffc9cdfd 204-207
+pages/order/list.vue
+  df4030aa0b533f6c 131,164-165,167-207,298,312,319-320,354,413,417,425
+  a057b5f3ffc9cdfd 103
+  acd58d02ad8a2b2b 16-17,23-24,30-31,37-38,44-45,51-52,58-59,92-98,113,129-130,132-133,221-222,242
+api/billiard/index.js
+  a057b5f3ffc9cdfd 1-19
+subpkg/coach/detail.vue
+  df4030aa0b533f6c 14-18,28-35,93,103-108,128-134,156,159-162,165-166,308-318,665-666,688,716-717,720-721
+  a057b5f3ffc9cdfd 157-158,426-427,672
+subpkg/order/detail.vue
+  df4030aa0b533f6c 12-28,31,71,74,99,102-114,116,124,131-143,146-152,156-170,173-178,217-222,273,881,884-885,888,899,905,1098-1099,1104-1106,1117-1118,1251-1252
+  a057b5f3ffc9cdfd 200,208,331,340,651,654,1048,1067,1199
+  acd58d02ad8a2b2b 216,633-634
+components/report-popup/report-popup.vue
+  df4030aa0b533f6c 1-243
+vite.config.js
+  acd58d02ad8a2b2b 1-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "2bc91ecec1291ffa99c0f0b671d1bc1e57f1fa88",
+  "prompts": {
+    "a057b5f3ffc9cdfd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d41f63fc-6bbe-4259-b1a7-6eaa45066919",
+        "model": "doubao-seed-2-1-turbo"
+      },
+      "human_author": "carson.ma",
+      "messages": [],
+      "total_additions": 3330,
+      "total_deletions": 317,
+      "accepted_lines": 8308,
+      "overriden_lines": 73
+    },
+    "acd58d02ad8a2b2b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8b9601b0-451e-40fb-861d-684607d6323e",
+        "model": "doubao-seed-2-1-turbo"
+      },
+      "human_author": "carson.ma",
+      "messages": [],
+      "total_additions": 1417,
+      "total_deletions": 1446,
+      "accepted_lines": 2049,
+      "overriden_lines": 0
+    },
+    "df4030aa0b533f6c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9fc01751-9e92-4dc8-822d-38d96f9a5a7a",
+        "model": "doubao-seed-2-1-turbo"
+      },
+      "human_author": "carson.ma",
+      "messages": [],
+      "total_additions": 5972,
+      "total_deletions": 4057,
+      "accepted_lines": 6182,
+      "overriden_lines": 0
+    }
+  }
+}
