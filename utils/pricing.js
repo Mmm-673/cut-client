@@ -6,11 +6,10 @@
  *       两者不可直接比较，需要通过统一的工具函数判断。
  */
 
-// 订单/计时中的 pricingMode 整数编码
-export const ORDER_PRICING_MODE = {
-  HOURLY: 1,
-  FIXED: 2
-}
+import { PRICING_MODE } from '@/constants/serviceType'
+
+// 订单/计时中的 pricingMode 整数编码（复用常量，保持向后兼容别名）
+export const ORDER_PRICING_MODE = PRICING_MODE
 
 // 服务目录中的 pricingMode 字符串值
 export const CATALOG_PRICING_MODE = {

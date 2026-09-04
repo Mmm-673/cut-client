@@ -131,6 +131,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useCountdown } from '@/composables/useCountdown'
 import {
   useConfigStore,
   useUserStore,
@@ -153,13 +154,10 @@ const sloganText = computed(() => reviewMode.value ? '台球厅在线预约平�
 
 /** 检查是否已登录，已登录则跳转到首页 */
 function checkLoginAndRedirect() {
-  console.log('[LoginPage] 检查登录状态...')
   if (isLoggedIn()) {
-    console.log('[LoginPage] 已登录，跳转到首页')
     uni.switchTab({ url: '/pages/home/index' })
     return true
   }
-  console.log('[LoginPage] 未登录，留在登录页')
   return false
 }
 
@@ -175,8 +173,14 @@ const form = ref({
 })
 
 // 验证码倒计时
-const codeCountdown = ref(0)
-let countdownTimer = null
+const {
+  seconds: codeCountdown,
+  start: startCountdown,
+  stop: stopCountdown,
+} = useCountdown({
+  initialSeconds: 60,
+  direction: 'down',
+})
 
 // 协议勾选
 const agree = ref(false)
@@ -242,13 +246,7 @@ const getCode = async () => {
     uni.showToast({ title: '验证码已发送', icon: 'success' })
 
     // 开始倒计时
-    codeCountdown.value = 60
-    countdownTimer = setInterval(() => {
-      codeCountdown.value--
-      if (codeCountdown.value <= 0) {
-        clearInterval(countdownTimer)
-      }
-    }, 1000)
+    startCountdown(60)
   } catch (error) {
     uni.hideLoading()
     console.error('发送验证码失败:', error)
@@ -298,7 +296,6 @@ const handleSubmit = async () => {
       uni.removeStorageSync('loginRedirectParams')
 
       if (redirectPage) {
-        console.log('返回到原页面:', redirectPage, redirectParams)
         // 判断是否是tabbar页面
         const tabBarPages = ['pages/home/index', 'pages/coach/list', 'pages/order/list', 'pages/mine/index']
         if (tabBarPages.includes(redirectPage)) {
@@ -327,7 +324,6 @@ const handleSubmit = async () => {
 
 // 跳转到忘记密码
 const goToForgotPassword = () => {
-  console.log('跳转到重置密码页面')
   uni.navigateTo({ url: '/pages/login/resetPassword' })
 }
 
@@ -349,10 +345,7 @@ const goBackHome = () => {
   uni.switchTab({ url: '/pages/home/index' })
 }
 
-// 页面卸载清除计时器
-onUnload(() => {
-  if (countdownTimer) clearInterval(countdownTimer)
-})
+// 页面卸载时 useCountdown 会自动清理计时器
 </script>
 
 <style lang="scss" scoped>

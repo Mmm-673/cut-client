@@ -51,6 +51,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { useThemeStore } from '@/store'
 import { getOrderDetail } from '@/api/billiard/order'
 import { guardReviewEntry } from '@/utils/review'
+import { formatPrice } from '@/utils/format'
 
 // 主题相关
 const themeStore = useThemeStore()
@@ -58,12 +59,6 @@ const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 const orderId = ref(null)
 const orderDetail = ref(null)
-
-// 格式化价格
-const formatPrice = (price) => {
-  if (price === null || price === undefined) return '0.00'
-  return (price / 100).toFixed(2)
-}
 
 // 格式化时间
 const formatTime = (timestamp) => {

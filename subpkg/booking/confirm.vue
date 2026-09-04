@@ -1,13 +1,5 @@
 <template>
   <view class="confirm-order-wrapper" :class="themeClass">
-    <!-- 顶部导航 -->
-<!--    <view class="nav-header">-->
-<!--      <view class="nav-left" @click="goBack">-->
-<!--        <uni-icons type="left" size="22" color="#fff" />-->
-<!--      </view>-->
-<!--      <text class="nav-title">确认订单</text>-->
-<!--      <view class="nav-right"></view>-->
-<!--    </view>-->
     <view class="order-content">
 
     <!-- 教练信息 -->
@@ -63,7 +55,7 @@
           <text class="value">{{ orderData.timeText || formatTime(orderData.bookingTime) }}</text>
         </view>
 
-        <view class="info-row venue-row" v-if="serviceType === 1" @click="reselectHall">
+        <view class="info-row venue-row" v-if="serviceType === SERVICE_TYPE.BILLIARD_COACH" @click="reselectHall">
           <text class="label">服务地点</text>
           <view class="value-wrap venue-wrap">
             <view class="venue-info">
@@ -75,7 +67,7 @@
         </view>
 
         <!-- 服务类型 2/3/4 需要选择服务城市和服务地点 -->
-        <view class="info-row venue-row" v-if="[2, 3, 4].includes(serviceType)">
+        <view class="info-row venue-row" v-if="isNonBilliardService(serviceType)">
           <text class="label">服务城市</text>
           <view class="value-wrap venue-wrap location-picker-wrapper" @click="showCityPicker = true">
             <view class="location-box">
@@ -91,7 +83,7 @@
           </view>
         </view>
 
-        <view class="info-row venue-row" v-if="[2, 3, 4].includes(serviceType)">
+        <view class="info-row venue-row" v-if="isNonBilliardService(serviceType)">
           <text class="label">服务地点</text>
           <view class="value-wrap venue-wrap location-picker-wrapper" @click="showPlacePicker = true">
             <view class="location-box">
@@ -129,22 +121,22 @@
 
         <view class="fee-row">
           <text class="fee-label">{{ serviceTypeName }} {{ serviceFeeQuantityText }}</text>
-          <text class="fee-value">¥{{ (orderData.serviceAmount / 100).toFixed(2) }}</text>
+          <text class="fee-value">¥{{ formatAmount(orderData.serviceAmount) }}</text>
         </view>
 
         <view class="fee-row" v-if="orderData.travelAmount > 0">
           <text class="fee-label">车费</text>
-          <text class="fee-value">¥{{ (orderData.travelAmount / 100).toFixed(2) }}</text>
+          <text class="fee-value">¥{{ formatAmount(orderData.travelAmount) }}</text>
         </view>
 
         <view class="fee-row" v-if="orderData.travelDiscountAmount > 0">
           <text class="fee-label">车费优惠</text>
-          <text class="fee-value" style="color: #EF4444;">-¥{{ (orderData.travelDiscountAmount / 100).toFixed(2) }}</text>
+          <text class="fee-value" style="color: #EF4444;">-¥{{ formatAmount(orderData.travelDiscountAmount) }}</text>
         </view>
 
         <view class="fee-total">
           <text class="total-label">实付金额</text>
-          <text class="total-value">¥{{ (orderData.payAmount / 100).toFixed(2) }}</text>
+          <text class="total-value">¥{{ formatAmount(orderData.payAmount) }}</text>
         </view>
       </view>
 
@@ -201,7 +193,7 @@
     <view class="bottom-bar" v-if="showBottomBar">
       <view class="total-info" v-if="isOrderCreated">
         <text class="total-label">总计：</text>
-        <text class="total-price">¥{{ (orderData.payAmount / 100).toFixed(2) }}</text>
+        <text class="total-price">¥{{ formatAmount(orderData.payAmount) }}</text>
       </view>
       <button
           class="pay-btn"
@@ -283,7 +275,7 @@
           <view class="place-results" v-if="placeSearchResults.length > 0">
             <view
                 v-for="(place, index) in placeSearchResults"
-                :key="index"
+                :key="place.id || place.name + place.address"
                 :class="{active: selectedPlace?.name === place.name}"
                 class="place-item"
                 @click="selectPlace(place)"
@@ -311,7 +303,6 @@
         </view>
         <picker-view
             class="picker-view"
-            :indicator-style="indicatorStyle"
             :value="pickerValue"
             @change="onPickerChange"
             indicator-style="height: 80rpx; border-top: 1rpx solid rgba(255,255,255,0.1); border-bottom: 1rpx solid rgba(255,255,255,0.1);"
@@ -356,9 +347,11 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useThemeStore } from '@/store'
+import { useThemeStore, useCoachStore, useBookingStore } from '@/store'
 import { fetchEnabledChannels, executePayment } from '@/utils/payment'
-import { createOrder } from '@/api/billiard/order'
+import { createOrder, getOrderDetail } from '@/api/billiard/order'
+import { SERVICE_TYPE, getServiceTypeName, isNonBilliardService } from '@/constants/serviceType'
+import { TIME_MS } from '@/constants/time'
 import { isFixedPricing, getPriceUnit } from '@/utils/pricing'
 import { getCoachDetail } from '@/api/billiard/coach'
 import { searchServicePlace } from '@/api/billiard/venue'
@@ -366,10 +359,13 @@ import { getAreaTree } from '@/api/billiard/area'
 import { onLoad } from '@dcloudio/uni-app'
 import { getWallet } from '@/api/billiard/wallet'
 import { guardReviewEntry } from '@/utils/review'
-import { getLocation, extractStreet, extractCity, showPermissionModal, openAppSetting } from '@/utils/location'
+import { getLocation, extractCity, showPermissionModal } from '@/utils/location'
+import { formatAmount } from '@/utils/format'
 
 // 主题相关
 const themeStore = useThemeStore()
+const coachStore = useCoachStore()
+const bookingStore = useBookingStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // ---------------------- 状态定义 ----------------------
@@ -379,6 +375,7 @@ const selectedPay = ref('')
 const showTimePicker = ref(false)
 const createDirect = ref(false)
 const isOrderCreated = ref(false)
+const isOrderDetailLoading = ref(false)
 
 // 地点选择相关
 const placeSearchKeyword = ref('')
@@ -466,7 +463,7 @@ const displayCityName = computed(() => {
 const orderData = ref({})
 
 // 服务类型
-const serviceType = ref(1)
+const serviceType = ref(SERVICE_TYPE.BILLIARD_COACH)
 
 // 支付倒计时
 const countdownTimer = ref(null)
@@ -506,7 +503,7 @@ const initTimePickerData = () => {
   const now = new Date()
   const dates = []
   for (let i = 0; i < 7; i++) {
-    const date = new Date(now.getTime() + i * 24 * 60 * 60 * 1000)
+    const date = new Date(now.getTime() + i * TIME_MS.DAY)
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
     dates.push({ date, dateText: `${month}.${day}` })
@@ -524,7 +521,7 @@ const setDefaultPickerValue = (targetTime) => {
   // 计算日期索引
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const targetStartOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate())
-  const dateIndex = Math.floor((targetStartOfDay - startOfDay) / (24 * 60 * 60 * 1000))
+  const dateIndex = Math.floor((targetStartOfDay - startOfDay) / (TIME_MS.DAY))
 
   if (dateIndex < 0 || dateIndex >= dateColumns.value.length) return
 
@@ -629,13 +626,7 @@ const confirmTime = () => {
 }
 
 // 服务类型名称
-const serviceTypeName = computed(() => {
-  if (serviceType.value === 1) return '台球指导'
-  if (serviceType.value === 2) return '潮玩领航'
-  if (serviceType.value === 3) return '酒艺品鉴'
-  if (serviceType.value === 4) return '影视赏析'
-  return '台球指导'
-})
+const serviceTypeName = computed(() => getServiceTypeName(serviceType.value))
 
 // 是否为固定价订单
 const isFixedOrder = computed(() => {
@@ -671,7 +662,6 @@ const ensureSelectedPay = () => {
 const loadPayChannels = async () => {
   try {
     const channels = await fetchEnabledChannels(10)
-    console.log('获取到的支付渠道列表:', channels)
     payList.value = applyWalletBalance(channels)
     ensureSelectedPay()
   } catch (error) {
@@ -690,7 +680,7 @@ const canAction = computed(() => {
 
   if (!isOrderCreated.value) {
     // 服务类型 2/3/4 需要选择服务地点
-    if ([2, 3, 4].includes(serviceType.value)) {
+    if (isNonBilliardService(serviceType.value)) {
       return orderData.value.bookingTime !== undefined && selectedPlace.value
     }
     // 服务类型 1 需要选择球厅
@@ -730,16 +720,6 @@ const getCurrentLocation = async () => {
   }
 }
 
-// 选择城市
-const selectCity = (city) => {
-  currentCity.value = city
-  showCityList.value = false
-  // 重置地点搜索结果
-  placeSearchKeyword.value = ''
-  placeSearchResults.value = []
-  selectedPlace.value = null
-}
-
 // 加载地区树
 const loadAreaTree = async () => {
   try {
@@ -769,45 +749,6 @@ const loadAreaTree = async () => {
   }
 }
 
-// 从地区树中查找城市名
-const findCityNameById = (id) => {
-  if (!id) return ''
-  const findName = (list, targetId) => {
-    for (const area of list) {
-      if (area.id === targetId) return area.name
-      if (area.children) {
-        const found = findName(area.children, targetId)
-        if (found) return found
-      }
-    }
-    return null
-  }
-  return findName(areaTree.value, id) || ''
-}
-
-// 城市选择变化
-const onCityChange = async (e) => {
-  const selected = e.detail.value
-  if (selected && selected.length > 0) {
-    // 获取最后一级（城市级）
-    const selectedArea = selected[selected.length - 1]
-    selectedCityId.value = selectedArea.value
-    const cityName = findCityNameById(selectedCityId.value)
-    // 清空当前城市，使用选中的城市名
-    currentCity.value = cityName
-    // 重置地点搜索结果
-    placeSearchKeyword.value = ''
-    placeSearchResults.value = []
-    selectedPlace.value = null
-  }
-}
-
-// 重新定位
-const reLocate = async () => {
-  selectedCityId.value = null
-  await getCurrentLocation()
-}
-
 // 地点搜索
 const onPlaceSearch = async () => {
   if (!placeSearchKeyword.value.trim()) {
@@ -829,46 +770,14 @@ const onPlaceSearch = async () => {
   }
 }
 
-// 获取选中的城市名称
-const getSelectedCityName = () => {
-  if (selectedAreaIds.value.length === 0) return null
-
-  // 从 areaTree 中查找选中的城市名称
-  const findArea = (list, id) => {
-    for (const area of list) {
-      if (area.id === id) return area
-      if (area.children) {
-        const found = findArea(area.children, id)
-        if (found) return found
-      }
-    }
-    return null
-  }
-
-  const selectedAreaId = selectedAreaIds.value[selectedAreaIds.value.length - 1]
-  const area = findArea(areaTree.value, selectedAreaId)
-  return area?.name
-}
-
 // 清除搜索
 const clearSearch = () => {
   placeSearchKeyword.value = ''
   placeSearchResults.value = []
 }
 
-// 获取选中的城市名称（使用当前选择的城市）
-const selectedAreaName = computed(() => {
-  return currentCity.value
-})
-
-// 城市选择器显示和隐藏
+// 底部操作栏显示状态
 const showBottomBar = ref(true)
-const onPickerShow = () => {
-  showBottomBar.value = false
-}
-const onPickerHide = () => {
-  showBottomBar.value = true
-}
 
 // 格式化时间
 const formatTime = (timestamp) => {
@@ -892,13 +801,8 @@ const reselectHall = () => {
     timeText: orderData.value.timeText,
     isReselect: true
   }
-  uni.setStorageSync('reselectParams', reselectParams)
+  bookingStore.setReselectVenueParams(reselectParams)
   uni.navigateTo({ url: '/subpkg/booking/hall' })
-}
-
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack()
 }
 
 // 选择支付方式
@@ -918,7 +822,7 @@ const loadWalletBalance = async () => {
   try {
     const res = await getWallet()
     if (res.data && res.data.balance !== undefined) {
-      walletBalance.value = (res.data.balance / 100).toFixed(2)
+      walletBalance.value = formatAmount(res.data.balance)
       payList.value = applyWalletBalance(payList.value)
     }
   } catch (error) {
@@ -955,7 +859,7 @@ const handleAction = async () => {
   }
   if (!canAction.value) {
     // 检查是否缺少地点选择
-    if ([2, 3, 4].includes(serviceType.value) && !selectedPlace.value) {
+    if (isNonBilliardService(serviceType.value) && !selectedPlace.value) {
       uni.showToast({ title: '请选择服务地点', icon: 'none' })
     }
     return
@@ -970,7 +874,6 @@ const handleAction = async () => {
 
 // 创建订单
 const handleCreateOrder = async () => {
-  console.log(orderData.value)
   if (!orderData.value.coachInfo?.id) {
     uni.showToast({ title: '教练信息缺失', icon: 'none' })
     return
@@ -987,13 +890,13 @@ const handleCreateOrder = async () => {
   }
 
   // 服务类型 2/3/4 需要选择服务地点
-  if ([2, 3, 4].includes(serviceType.value) && !selectedPlace.value) {
+  if (isNonBilliardService(serviceType.value) && !selectedPlace.value) {
     uni.showToast({ title: '请选择服务地点', icon: 'none' })
     return
   }
 
   // 服务类型 1 需要球厅名称、地址和坐标
-  if (serviceType.value === 1) {
+  if (serviceType.value === SERVICE_TYPE.BILLIARD_COACH) {
     const venueName = orderData.value.hallInfo?.name || orderData.value.venueName
     const venueAddress = orderData.value.hallInfo?.address || orderData.value.venueAddress
     const venueLongitude = orderData.value.hallInfo?.longitude ?? orderData.value.venueLongitude
@@ -1027,13 +930,13 @@ const handleCreateOrder = async () => {
     }
 
     // 服务类型 1 使用球厅信息
-    if (serviceType.value === 1) {
+    if (serviceType.value === SERVICE_TYPE.BILLIARD_COACH) {
       createParams.venueId = (orderData.value.hallInfo?.id ?? orderData.value.venueId) ?? null
       createParams.venueName = orderData.value.hallInfo?.name || orderData.value.venueName
       createParams.venueAddress = orderData.value.hallInfo?.address || orderData.value.venueAddress
       createParams.venueLongitude = orderData.value.hallInfo?.longitude ?? orderData.value.venueLongitude
       createParams.venueLatitude = orderData.value.hallInfo?.latitude ?? orderData.value.venueLatitude
-    } else if ([2, 3, 4].includes(serviceType.value)) {
+    } else if (isNonBilliardService(serviceType.value)) {
       // 服务类型 2/3/4 使用服务地点凭证
       createParams.servicePlaceToken = selectedPlace.value.selectionToken
     }
@@ -1042,7 +945,6 @@ const handleCreateOrder = async () => {
     if (orderData.value.selectedService?.id) {
       createParams.serviceItemId = orderData.value.selectedService.id
     }
-    console.log(createParams,'======createParams=====')
     // 处理地点凭证失效的情况
     const createRes = await createOrder(createParams)
     const resultData = createRes.data || {}
@@ -1059,8 +961,8 @@ const handleCreateOrder = async () => {
     }
     isOrderCreated.value = true
 
-    // 保存到 storage
-    uni.setStorageSync('createdOrderData', orderData.value)
+    // 保存到 store
+    bookingStore.setOrderInitData(orderData.value)
     startCountdown()
     await loadPayChannels()
 
@@ -1145,8 +1047,8 @@ const startCountdown = () => {
       return
     }
 
-    const minutes = Math.floor(diff / 60000)
-    const seconds = Math.floor((diff % 60000) / 1000)
+    const minutes = Math.floor(diff / TIME_MS.MINUTE)
+    const seconds = Math.floor((diff % TIME_MS.MINUTE) / 1000)
     countdownText.value = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
   }
 
@@ -1169,10 +1071,10 @@ onMounted(async () => {
   // 自动获取当前位置和城市信息
   await getCurrentLocation()
 
-  // 从 storage 获取订单数据
+  // 从 store 获取订单数据，降级到 Storage
   try {
-    const createdOrder = uni.getStorageSync('createdOrderData')
-    console.log('确认订单页面获取到的订单数据:', createdOrder)
+    const createdOrder = bookingStore.orderInitData
+      || (() => { try { return uni.getStorageSync('createdOrderData') } catch(e) { return null } })()
 
     if (createdOrder && Object.keys(createdOrder).length > 0) {
       orderData.value = createdOrder
@@ -1181,17 +1083,57 @@ onMounted(async () => {
         serviceType.value = createdOrder.serviceType
       } else if (createdOrder.hallInfo) {
         // 如果有球厅信息，默认是台球陪练
-        serviceType.value = 1
+        serviceType.value = SERVICE_TYPE.BILLIARD_COACH
       }
-      uni.removeStorageSync('createdOrderData')
 
       // 判断订单是否已经创建（通过是否包含 orderId 或 orderNo 来判断）
       isOrderCreated.value = !!(createdOrder.orderId || createdOrder.orderNo)
 
       if (isOrderCreated.value) {
+        // 已创建的订单：从后端拉取详情，覆盖关键安全字段（金额、时长、状态等）
+        isOrderDetailLoading.value = true
+        try {
+          const detailRes = await getOrderDetail({ id: createdOrder.orderId })
+          if (detailRes.code === 0 && detailRes.data) {
+            const remoteData = detailRes.data
+            // 以后端数据为准，覆盖安全关键字段
+            orderData.value = {
+              ...orderData.value,
+              orderId: remoteData.id,
+              orderNo: remoteData.orderNo,
+              payAmount: remoteData.payAmount,
+              totalAmount: remoteData.totalAmount,
+              serviceDuration: remoteData.serviceDuration,
+              bookingTime: remoteData.bookingTime,
+              serviceType: remoteData.serviceType,
+              pricingMode: remoteData.pricingMode,
+              status: remoteData.status,
+              payStatus: remoteData.payStatus,
+              expireTime: remoteData.expireTime || orderData.value.expireTime,
+              venueName: remoteData.venueName || orderData.value.venueName,
+              venueAddress: remoteData.venueAddress || orderData.value.venueAddress,
+              venueLongitude: remoteData.venueLongitude ?? orderData.value.venueLongitude,
+              venueLatitude: remoteData.venueLatitude ?? orderData.value.venueLatitude,
+            }
+            // 更新 serviceType 响应式值
+            serviceType.value = remoteData.serviceType
+          }
+        } catch (detailErr) {
+          console.error('[confirm] 加载订单详情失败:', detailErr)
+          uni.showToast({ title: '订单数据加载失败，请重试', icon: 'none', duration: 2000 })
+        } finally {
+          isOrderDetailLoading.value = false
+        }
+
+        // 清除 store 中的订单数据（草稿数据用完即删）
+        bookingStore.clearOrderInitData()
+
         startCountdown()
         await loadWalletBalance()
         await loadPayChannels()
+      } else {
+        // 草稿状态，直接清除 store
+        bookingStore.clearOrderInitData()
       }
 
       // 重新获取教练详情以确保头像等信息最新

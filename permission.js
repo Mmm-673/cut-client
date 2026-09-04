@@ -6,7 +6,6 @@ list.forEach(item => {
   uni.addInterceptor(item, {
     invoke(e) {
       const url = e.url.split('?')[0]
-      console.log('[Permission] 访问页面:', url, '已登录:', isLoggedIn())
 
       // 已登录用户访问登录页时跳转到首页
       if (isLoggedIn() && url === '/pages/login/index') {
@@ -18,7 +17,6 @@ list.forEach(item => {
       return true
     },
     fail(err) {
-      console.log(err)
     }
   })
 })

@@ -70,9 +70,9 @@ export default {
   // 关闭遮罩层
   closeLoading() {
     try {
-        uni.hideLoading()
+      uni.hideLoading()
     } catch (e) {
-        console.log(e)
+      console.warn('[modal] closeLoading failed:', e)
     }
   }
 }

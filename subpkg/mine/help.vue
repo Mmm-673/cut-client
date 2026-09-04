@@ -141,7 +141,6 @@ const makeCall = async () => {
     console.error('处理拨打电话请求失败:', err)
     if (err?.message === 'user_cancelled') {
       // 用户取消了电话权限用途说明，不进行任何操作
-      console.log('用户取消了电话权限用途说明')
     } else {
       uni.showToast({
         title: '拨打电话失败，请重试',

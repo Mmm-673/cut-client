@@ -1,3 +1,5 @@
+import { createPurposeModal } from '@/utils/permissionModal'
+
 /**
  * 拨打电话相关工具函数
  */
@@ -7,43 +9,12 @@
  * @param {string} content 弹窗内容，可选，有默认值
  * @returns {Promise<void>}
  */
-export function showCallPermissionModal(content) {
-  return new Promise((resolve, reject) => {
-    // 检查用户是否已经同意过电话权限用途说明
-    const hasAgreedCallPermission = uni.getStorageSync('hasAgreedCallPermission')
-    console.log('hasAgreedCallPermission:', hasAgreedCallPermission)
-    if (hasAgreedCallPermission) {
-      resolve()
-      return
-    }
-
-    console.log('开始显示电话权限说明弹窗')
-
-    // 使用 setTimeout 确保 DOM 渲染完成后再显示弹窗
-    setTimeout(() => {
-      uni.showModal({
-        title: '电话权限说明',
-        content: content || '为了向您提供电话服务，我们需要获取您的拨打电话权限。该权限仅用于拨打电话，不会用于其他用途。',
-        confirmText: '同意',
-        cancelText: '取消',
-        success: (res) => {
-          console.log('showModal 回调:', res)
-          if (res.confirm) {
-            // 存储用户同意状态
-            uni.setStorageSync('hasAgreedCallPermission', true)
-            resolve()
-          } else {
-            reject(new Error('user_cancelled'))
-          }
-        },
-        fail: (err) => {
-          console.error('showModal 失败:', err)
-          reject(err)
-        }
-      })
-    }, 100)
-  })
-}
+export const showCallPermissionModal = createPurposeModal({
+  storageKey: 'hasAgreedCallPermission',
+  title: '电话权限说明',
+  content: '为了向您提供电话服务，我们需要获取您的拨打电话权限。该权限仅用于拨打电话，不会用于其他用途。',
+  skipOnIos: true,
+})
 
 /**
  * 请求系统拨号权限
@@ -58,7 +29,6 @@ export function requestCallPermission() {
       plus.android.requestPermissions(
         ['android.permission.CALL_PHONE'],
         (e) => {
-          console.log('Android 权限请求结果:', e)
           if (e.granted.length > 0) {
             // 有权限被授予
             resolve()
@@ -111,23 +81,10 @@ export function doCallPhone(phone) {
  * @param {string} content 权限说明弹窗内容，可选
  */
 export async function makeCall(phone, content) {
-  // iOS 不显示自定义弹窗，直接拨打电话
-  // #ifdef APP-PLUS
-  const systemInfo = uni.getSystemInfoSync()
-  if (systemInfo.platform !== 'ios') {
-    // 显示电话权限用途说明弹窗
-    await showCallPermissionModal(content)
-    // 请求系统拨号权限
-    await requestCallPermission()
-  }
-  // #endif
-
-  // #ifndef APP-PLUS
-  // 非 App 平台显示电话权限用途说明弹窗
+  // 显示电话权限用途说明弹窗（factory 内置 skipOnIos 逻辑）
   await showCallPermissionModal(content)
+  // 请求系统拨号权限
   await requestCallPermission()
-  // #endif
-
   // 执行拨打电话
   doCallPhone(phone)
 }

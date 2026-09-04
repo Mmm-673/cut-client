@@ -107,6 +107,7 @@ import { useThemeStore } from '@/store'
 import { getUserInfo, updateUser, sendUpdateMobileSms, updateMobile, uploadFile } from '@/api/billiard/user'
 import { getAreaTree } from '@/api/billiard/area'
 import { showCameraPurposeModal, showAlbumPurposeModal, requestCameraPermission, requestAlbumPermission, showImageSourceModal, showCameraPermissionModal, showAlbumPermissionModal } from '@/utils/photo'
+import { formatDate } from '@/utils/format'
 
 // 主题相关
 const themeStore = useThemeStore()
@@ -167,16 +168,6 @@ const cityName = computed(() => {
   return findName(areaTree.value, userInfo.value.areaId) || '选择地区'
 })
 
-// 格式化日期时间戳为 yyyy-MM-dd
-const formatDate = (timestamp) => {
-  if (!timestamp) return ''
-  const date = new Date(timestamp)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 const loadUserInfo = async () => {
   try {
     uni.showLoading({ title: '加载中...' })
@@ -210,7 +201,10 @@ const loadAreaTree = async () => {
       areaTree.value = res.data
       areaLocalData.value = res.data
     }
-  } catch (error) {}
+  } catch (error) {
+    console.error('[info] 加载地区数据失败:', error)
+    uni.showToast({ title: '加载地区数据失败', icon: 'none' })
+  }
 }
 
 const saveUserInfo = async (data) => {
@@ -309,7 +303,6 @@ const uploadAvatarAction = async () => {
     console.error('处理头像上传请求失败:', err)
     if (err?.message === 'user_cancelled') {
       // 用户取消了相册/相机权限用途说明，不进行任何操作
-      console.log('用户取消了相册/相机权限用途说明')
     } else {
       uni.showToast({
         title: '头像上传失败，请重试',
@@ -508,29 +501,6 @@ onMounted(() => {
     }
   }
 }
-//
-///* 弹出层样式适配暗黑模式 */
-//:deep(.uni-data-tree-dialog) {
-//  background-color: #1E252B !important;
-//  color: #fff !important;
-//  .uni-data-tree-header {
-//    background-color: #1E252B !important;
-//    border-bottom-color: #2a3338 !important;
-//  }
-//  .uni-data-tree-list {
-//    background-color: #1E252B !important;
-//  }
-//  .dialog-list-item {
-//    color: #fff !important;
-//    &.is-selected {
-//      color: #00BB88 !important;
-//    }
-//  }
-//  /* 选中态的文字颜色 */
-//  .selected-item {
-//    color: #00BB88 !important;
-//  }
-//}
 
 .safe-area-bottom {
   height: env(safe-area-inset-bottom);

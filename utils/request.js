@@ -138,7 +138,7 @@ const request = async config => {
     uni.request({
       method: config.method || 'get',
       timeout: config.timeout || timeout,
-      url: config.baseUrl || baseUrl + config.url,
+      url: (config.baseUrl || baseUrl) + config.url,
       data: config.data,
       header: config.header,
       dataType: 'json',
@@ -159,8 +159,6 @@ const request = async config => {
       const code = resultData.code ?? 0; // 使用 ?? 处理 0 的情况
       const msg = getErrorMessage(code, resultData.msg);
       resultData.message = msg;
-
-      console.log('当前Code:', code, '返回数据:', resultData);
 
       if (code === 401) {
         clearAuthInfo();

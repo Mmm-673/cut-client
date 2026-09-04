@@ -18,41 +18,10 @@
     <!-- 正常模式：教练列表 -->
     <template v-else>
     <view class="header-section">
-      <view class="search-bar">
-        <view class="search-input-wrapper">
-          <uni-icons type="search" size="18" color="#999"></uni-icons>
-          <input
-              class="search-input"
-              placeholder="搜索裁教姓名或特长"
-              placeholder-class="search-placeholder"
-              v-model="searchKeyword"
-              @confirm="handleSearch"
-          />
-          <uni-icons
-              v-if="searchKeyword"
-              type="clear"
-              size="16"
-              color="#999"
-              class="clear-icon"
-              @click="clearSearch"
-          ></uni-icons>
-        </view>
-      </view>
+      <coach-search-bar v-model="searchKeyword" @search="handleSearch" />
 
       <!-- 服务类型筛选 -->
-      <scroll-view class="service-type-scroll" scroll-x="true" :show-scrollbar="false">
-        <view class="service-type-list">
-          <view
-              v-for="(item, index) in serviceTypeList"
-              :key="item.value"
-              class="service-type-item"
-              :class="{ active: currentServiceType === item.value }"
-              @click="switchServiceType(item.value)"
-          >
-            {{ item.name }}
-          </view>
-        </view>
-      </scroll-view>
+      <coach-filter-tabs :tabs="serviceTypeList" v-model:activeValue="currentServiceType" @change="switchServiceType" />
 
       <!-- 风格标签筛选（暂隐藏，仅保留服务类型筛选）
       <scroll-view class="tab-scroll" scroll-x="true" :show-scrollbar="false">
@@ -87,34 +56,17 @@
     </view>
 
     <!-- 定位信息 -->
-    <view v-if="showCoachCity" class="location-picker-wrapper" style="margin: 24rpx 30rpx 0rpx;">
-      <uni-data-picker
-          class="location-picker"
-          :localdata="areaLocalData"
-          :clear-icon="false"
-          :border="false"
-          :map="{value:'id', text:'name', children:'children'}"
+    <view v-if="showCoachCity" style="margin: 24rpx 30rpx 0rpx;">
+      <location-picker
+          v-model="selectedCityId"
+          :area-data="areaLocalData"
+          :locating="locating"
+          :location-denied="locationDenied"
+          :display-text="displayCityName"
           popup-title="选择城市"
           @change="onCityChange"
-      >
-        <view class="location-box">
-          <uni-icons type="location" size="18" color="#00BB88" />
-          <text class="location-text">
-            <text v-if="locating">定位中...</text>
-            <text v-else-if="locationDenied">定位权限未开启</text>
-            <text v-else-if="displayCityName">{{ displayCityName }}</text>
-            <text v-else>选择城市</text>
-          </text>
-          <uni-icons type="right" size="16" color="#9CA3AF" />
-        </view>
-      </uni-data-picker>
-    </view>
-
-
-    <!-- 重新定位按钮 -->
-    <view v-if="showCoachCity && selectedCityId" class="relocate-box" @click="reLocate">
-      <uni-icons type="refresh" size="14" color="#00BB88" />
-      <text class="relocate-text">重新定位</text>
+          @relocate="reLocate"
+      />
     </view>
 
     <scroll-view
@@ -128,83 +80,19 @@
         @scroll="onScroll"
     >
       <view class="coach-list">
-        <view
-            v-for="(coach, index) in coachList"
+        <coach-list-card
+            v-for="coach in displayCoachList"
             :key="coach.id"
-            class="coach-card"
+            :coach="coach"
+            :show-reward="showRewardBtn"
             @click="goToDetail(coach.id)"
-        >
-          <view class="coach-avatar">
-            <image :src="coach.avatar || coach.mainPhotoUrl || '/static/default-avatar.png'" mode="aspectFill"
-                   class="avatar-img"></image>
-          </view>
+            @book="handleBook"
+            @reward="goToReward(coach.id)"
+        />
 
-          <view class="coach-info">
-            <view class="info-top">
-              <view class="name-row">
-                <text class="coach-name">{{ coach.stageName || coach.name }}</text>
-                <view class="level-tag" :class="getLevelClass(coach.level)">
-                  {{ getLevelText(coach.level) }}
-                </view>
-                <view v-if="coach.tags && coach.tags.includes('新人')" class="new-tag">新人</view>
-              </view>
-              <view class="right-info">
-                <view class="service-status-dot" :class="coach.serviceStatus === 0 ? 'status-idle' : 'status-busy'"></view>
-                <text class="service-status-text">{{ coach.serviceStatus === 0 ? '空闲' : '服务中' }}</text>
-                <text class="distance" >{{ formatDistance(coach.distance) }}</text>
-              </view>
-            </view>
-
-            <view class="rating-row">
-              <uni-icons type="star-filled" size="14" color="#FFD700"></uni-icons>
-              <text class="rating">评分: {{ coach.overallScore }}</text>
-              <text class="review-count">({{ coach.serviceCount || coach.reviewCount || 0 }}单)</text>
-
-            </view>
-
-            <view class="desc-row">
-              <text class="coach-desc">星座：{{ coach.constellation || '白羊座' }}</text>
-              <view class="coach-tags">
-                <view
-                    v-for="(tag, tagIndex) in (coach.tags || []).filter(t => t !== '新人' && t !== '活跃' && t !== '沉稳')"
-                    :key="tagIndex"
-                    class="coach-tag"
-                    :class="getTagClass(tag)"
-                >{{ tag }}
-                </view>
-              </view>
-            </view>
-
-            <view class="bottom-row">
-              <view class="price-row">
-                <text class="price-symbol">¥</text>
-                <text class="price">{{ formatPrice(getCoachDisplayPrice(coach)) }}</text>
-                <text class="price-unit">/{{ getCoachPriceUnit(coach) }}起</text>
-              </view>
-              <view class="action-buttons">
-                <!-- #ifndef MP-WEIXIN -->
-                  <button class="reward-btn" v-if="showRewardBtn" @click.stop="goToReward(coach.id)">
-                    <uni-icons type="gift" size="14" color="#FF9500"></uni-icons>
-                    <text>心意</text>
-                  </button>
-                <!-- #endif -->
-                <button
-                  class="book-btn"
-                  :class="{ disabled: coach.serviceStatus === 1 }"
-                  :disabled="coach.serviceStatus === 1"
-                  @click.stop="handleBook(coach)">
-                  {{ coach.serviceStatus === 1 ? '服务中' : '预约' }}
-                </button>
-              </view>
-            </view>
-          </view>
-        </view>
-
-        <view v-if="coachList.length === 0 && !loading && !refreshing" class="empty-state">
-          <uni-icons type="info" size="60" color="#666"></uni-icons>
-          <text class="empty-text">当前暂未开通，敬请期待</text>
+        <empty-state v-if="coachList.length === 0 && !loading && !refreshing" icon="info" text="当前暂未开通，敬请期待" :icon-size="60" icon-color="#666">
           <text class="empty-tip">有意合作请联系客服</text>
-        </view>
+        </empty-state>
 
         <view class="loading-status">
           <uni-load-more :status="loadMoreStatus"></uni-load-more>
@@ -238,12 +126,19 @@ import {debounce, formatPrice, showLoading, hideLoading} from '@/utils/common'
 import { getPriceUnit } from '@/utils/pricing'
 import {getLocation, extractCity, formatDistance, showPermissionModal} from '@/utils/location'
 import {isLoggedIn} from '@/utils/token'
-import {useConfigStore, useThemeStore} from '@/store'
+import {useConfigStore, useThemeStore, useCoachStore} from '@/store'
 import {REMOTE_CONFIG_KEYS} from '@/store/modules/config'
 import {usePageTheme} from '@/composables/usePageTheme'
+import { useList } from '@/composables/useList'
+import EmptyState from '@/components/empty-state/empty-state.vue'
+import CoachFilterTabs from '@/components/coach-filter-tabs/coach-filter-tabs.vue'
+import CoachSearchBar from '@/components/coach-search-bar/coach-search-bar.vue'
+import CoachListCard from '@/components/coach-list-card/coach-list-card.vue'
+import LocationPicker from '@/components/location-picker/location-picker.vue'
 
 const configStore = useConfigStore()
 const themeStore = useThemeStore()
+const coachStore = useCoachStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // 页面主题管理
@@ -269,16 +164,9 @@ const scrollHeight = ref(0)
 const currentTab = ref(0)
 const currentSort = ref(0)
 const currentServiceType = ref(null) // null = 全部
-const refreshing = ref(false)
-const loading = ref(false)
-const loadMoreStatus = ref('more') // more: loading前, loading: 加载中, noMore: 没有更多数据
 const showRewardBtn = ref(false)
 
-const pageNo = ref(1)
-const pageSize = ref(20)
 const searchKeyword = ref('')
-const coachList = ref([])
-const hasMore = ref(true)
 const listLoaded = ref(false) // 列表是否已加载，onShow 非首次不自动刷新
 
 // 返回顶部
@@ -346,72 +234,90 @@ const switchServiceType = (value) => {
   loadData(true)
 }
 
-// 等级映射
-const levelMap = {
-  0: {text: '初级', class: 'junior'},
-  1: {text: '中级', class: 'middle'},
-  2: {text: '高级', class: 'senior'},
-  3: {text: '星级', class: 'star'}
-}
-
-const getLevelText = (level) => {
-  if (typeof level === 'string') {
-    return level
+// 列表数据（useList 管理）
+const {
+  list: coachList,
+  loading,
+  refreshing,
+  loadingMore,
+  hasMore,
+  loadMoreStatus,
+  loadList: fetchCoachList,
+  refresh: refreshCoachList,
+  loadMore: loadMoreCoachList,
+  reset: resetCoachList,
+} = useList({
+  fetchApi: getCoachList,
+  pageSize: 20,
+  pageParamName: 'pageNum',
+  pageSizeParamName: 'pageSize',
+  getParams: () => {
+    const params = {}
+    // 关键词搜索
+    if (searchKeyword.value) {
+      params.keyword = searchKeyword.value
+    }
+    // tab 筛选：0=全部, 1=新人, 2=低碳出行, 3=活跃, 4=沉稳 (tag筛选)
+    if (currentTab.value === 1) {
+      params.tag = ['新人']
+    } else if (currentTab.value === 2) {
+      params.tag = ['低碳出行']
+    } else if (currentTab.value === 3) {
+      params.tag = ['活跃']
+    } else if (currentTab.value === 4) {
+      params.tag = ['沉稳']
+    }
+    // 等级筛选 (从索引5开始才是等级)
+    if (currentTab.value >= 5) {
+      params.level = currentTab.value - 5
+    }
+    // 排序：距离最近时添加经纬度
+    if (currentSort.value === 0 && currentLocation.value.longitude && currentLocation.value.latitude) {
+      params.longitude = currentLocation.value.longitude
+      params.latitude = currentLocation.value.latitude
+    }
+    // 服务类型筛选
+    if (currentServiceType.value !== null && currentServiceType.value !== undefined) {
+      params.serviceType = currentServiceType.value
+    }
+    // 城市筛选
+    if (showCoachCity.value && currentCity.value) {
+      params.city = currentCity.value
+    }
+    return params
+  },
+  transform: (res) => {
+    const data = res.data || {}
+    const list = data.list || data.records || data.rows || []
+    // 过滤特殊ID（测试用教练）
+    return list.filter(item => item.id !== 27)
+  },
+  getTotal: (res) => {
+    const data = res.data || {}
+    return data.total || data.totalCount || 0
+  },
+  onError: (error) => {
+    console.error('加载裁教列表失败:', error)
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  },
+  onSuccess: () => {
+    listLoaded.value = true
   }
-  return levelMap[level]?.text || '初级'
-}
+})
 
-const getLevelClass = (level) => {
-  if (typeof level === 'string') {
-    return level === '高级' ? 'senior' : 'middle'
-  }
-  return levelMap[level]?.class || 'junior'
-}
+// 预处理教练列表展示数据
+const displayCoachList = computed(() => {
+  return coachList.value.map(coach => {
+    const displayPrice = formatPrice(getCoachDisplayPrice(coach))
+    const priceUnit = getCoachPriceUnit(coach)
+    return {
+      ...coach,
+      displayPrice,
+      priceUnit
+    }
+  })
+})
 
-// 标签颜色映射
-const tagClassMap = {
-  '新人': 'tag-new',
-  '低碳出行': 'tag-free-travel',
-  '斯诺克': 'tag-snooker',
-  '中式八球': 'tag-eight-ball',
-  '初级': 'tag-junior',
-  '中级': 'tag-intermediate',
-  '高级': 'tag-senior',
-  '星级': 'tag-star'
-}
-
-// 预定义的随机颜色样式
-const randomTagColors = [
-  'tag-random-1',
-  'tag-random-2',
-  'tag-random-3',
-  'tag-random-4',
-  'tag-random-5',
-  'tag-random-6',
-  'tag-random-7',
-  'tag-random-8'
-]
-
-// 基于标签内容生成哈希值，确保相同标签总是得到相同颜色
-const hashTag = (tag) => {
-  let hash = 0
-  for (let i = 0; i < tag.length; i++) {
-    const char = tag.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash // Convert to 32bit integer
-  }
-  return Math.abs(hash)
-}
-
-const getTagClass = (tag) => {
-  if (tagClassMap[tag]) {
-    return tagClassMap[tag]
-  }
-  // 对于随机标签，基于内容分配固定颜色
-  const hash = hashTag(tag)
-  const colorIndex = hash % randomTagColors.length
-  return randomTagColors[colorIndex]
-}
 
 const LOCATION_RETRY_COUNT = 2
 const LOCATION_RETRY_DELAY = 600
@@ -450,7 +356,6 @@ const handleLocationError = (err, onRetry) => {
     return false
   } else if (err?.message === 'user_cancelled') {
     // 用户取消了定位用途说明
-    console.log('用户取消了定位')
     return false
   }
   return false
@@ -596,133 +501,45 @@ const getCurrentLocation = async () => {
   await refreshPageData()
 }
 
-// 请求裁教列表数据
-const fetchCoachList = async (isRefresh = false) => {
-  // 审核模式下不请求教练接口
-  if (reviewMode.value) return
-  if (loading.value) return
-
-  loading.value = true
-  if (!locating.value) {
-    showLoading('加载中...')
-  }
-  if (isRefresh) {
-    loadMoreStatus.value = 'more'
-    hasMore.value = true
-    pageNo.value = 1
-  } else {
-    loadMoreStatus.value = 'loading'
-  }
-
-  try {
-    const params = {
-      pageNo: pageNo.value,
-      pageSize: pageSize.value
-    }
-
-    // 添加关键词搜索
-    if (searchKeyword.value) {
-      params.keyword = searchKeyword.value
-    }
-
-    // 添加标签筛选
-    if (currentTab.value === 1) {
-      params.tag = ['新人']
-    } else if (currentTab.value === 2) {
-      params.tag = ['低碳出行']
-    } else if (currentTab.value === 3) {
-      params.tag = ['活跃']
-    } else if (currentTab.value === 4) {
-      params.tag = ['沉稳']
-    }
-
-    // 添加等级筛选 (从索引5开始才是等级)
-    if (currentTab.value >= 5) {
-      params.level = currentTab.value - 5
-    }
-
-    // 根据排序类型添加不同的参数
-    if (currentSort.value === 0) {
-      // 距离最近：添加经纬度（仅登录用户可用）
-      params.longitude = currentLocation.value.longitude
-      params.latitude = currentLocation.value.latitude
-    }
-
-    // 添加服务类型筛选
-    if (currentServiceType.value !== null && currentServiceType.value !== undefined) {
-      params.serviceType = currentServiceType.value
-    }
-    console.log(showCoachCity.value,'showCoachCity=======')
-    // 添加城市筛选参数
-    if (showCoachCity.value && currentCity.value) {
-      params.city = currentCity.value
-    }
-    console.log("🚀 ~ loadData ~ params:", params)
-    const res = await getCoachList(params)
-    console.log(res,'===res')
-    const data = res.data || {}
-    // 兼容不同的返回结构：list / records / rows
-    const list = data.list.filter(item => item.id !== 27) || data.records || data.rows || []
-
-    if (isRefresh) {
-      coachList.value = list
-    } else {
-      coachList.value = [...coachList.value, ...list]
-    }
-
-    // 判断是否还有更多数据：优先看 total，其次看返回数量
-    const total = data.total || data.totalCount || 0
-    if (total > 0) {
-      hasMore.value = coachList.value.length < total
-    } else {
-      hasMore.value = list.length >= pageSize.value
-    }
-    loadMoreStatus.value = hasMore.value ? 'more' : 'noMore'
-    // 标记列表已加载
-    listLoaded.value = true
-  } catch (error) {
-    console.error('加载裁教列表失败:', error)
-    loadMoreStatus.value = 'noMore'
-    uni.showToast({ title: '加载失败', icon: 'none' })
-  } finally {
-    loading.value = false
-    refreshing.value = false
-    if (!locating.value) {
-      hideLoading()
-    }
-  }
-}
-
+// 加载数据（包装 useList，处理定位和审核模式）
 const loadData = async (isRefresh = false) => {
+  if (reviewMode.value) return
   if (currentSort.value === 0 && !hasCoordinates()) {
     return refreshPageData()
   }
-  await fetchCoachList(isRefresh)
+  if (isRefresh) {
+    await fetchCoachList()
+  } else {
+    // useList 的 loadList 总是从第1页开始
+    // 这里不做任何事，因为刷新和加载更多由 useList 的方法处理
+  }
 }
 
 // 下拉刷新
 const onRefresh = () => {
-  refreshing.value = true
+  if (reviewMode.value) {
+    refreshing.value = false
+    return
+  }
   if (currentSort.value === 0 && !hasCoordinates()) {
     refreshPageData().finally(() => {
-      refreshing.value = false
+      // refreshPageData 内部会调用 loadData 并管理 refreshing
     })
     return
   }
-  loadData(true)
+  refreshCoachList()
 }
 
 // 上拉加载更多
 const loadMore = () => {
-  if (loading.value || !hasMore.value) return
-  pageNo.value++
-  loadData(false)
+  if (reviewMode.value) return
+  loadMoreCoachList()
 }
 
 // 切换标签
 const switchTab = (index) => {
   currentTab.value = index
-  loadData(true)
+  fetchCoachList()
 }
 
 // 切换排序
@@ -746,12 +563,6 @@ const handleSearch = debounce(() => {
   loadData(true)
 }, 300)
 
-// 清除搜索
-const clearSearch = () => {
-  searchKeyword.value = ''
-  loadData(true)
-}
-
 // 跳转详情
 const goToDetail = (id) => {
   uni.navigateTo({
@@ -765,7 +576,6 @@ const loadCountdownEnabled = async () => {
   if (reviewMode.value) return
   try {
     const res = await getRewardSwitch()
-    console.log(res.data ,'===res.data ')
     showRewardBtn.value = res.data === true
   } catch (error) {
     console.error('加载心意按钮状态失败:', error)
@@ -842,8 +652,8 @@ const handleBook = (coach) => {
     })
     return
   }
-  // 保存选中的裁教信息
-  uni.setStorageSync('selectedCoach', coach)
+  // 保存选中的裁教信息到 Store（同时同步到 Storage 作为降级）
+  coachStore.setSelectedCoach(coach)
   uni.navigateTo({url: '/subpkg/booking/hall'})
 }
 
@@ -857,7 +667,6 @@ onMounted(() => {
     query.select('.header-section').boundingClientRect()
     query.exec((res) => {
       const headerHeight = res[0]?.height || 0
-      console.log(systemInfo.windowHeight, headerHeight, (systemInfo.safeAreaInsets?.bottom))
 
       // 减去系统导航栏、header、底部安全区域
       scrollHeight.value = systemInfo.windowHeight - headerHeight - (systemInfo.safeAreaInsets?.bottom || 0)
@@ -952,66 +761,6 @@ onShow(() => {
   z-index: 100;
 }
 
-.search-bar {
-  padding: 20rpx 32rpx;
-
-  .search-input-wrapper {
-    display: flex;
-    align-items: center;
-    background-color: var(--bg-secondary);
-    border-radius: 48rpx;
-    padding: 16rpx 32rpx;
-
-    .search-input {
-      flex: 1;
-      margin-left: 16rpx;
-      color: var(--text-primary);
-      font-size: 28rpx;
-    }
-
-    .search-placeholder {
-      color: var(--text-placeholder);
-    }
-
-    .clear-icon {
-      margin-left: 10rpx;
-    }
-  }
-}
-
-/* 服务类型筛选（与下方 tab 同款胶囊样式） */
-.service-type-scroll {
-  white-space: nowrap;
-  overflow-x: scroll;
-  padding: 0 32rpx;
-  box-sizing: border-box;
-
-  .service-type-list {
-    display: flex;
-    padding: 10rpx 0 12rpx;
-
-    .service-type-item {
-      flex-shrink: 0;
-      padding: 12rpx 32rpx;
-      margin-right: 20rpx;
-      border-radius: 40rpx;
-      font-size: 26rpx;
-      color: var(--text-secondary);
-      background-color: var(--bg-secondary);
-      transition: all 0.2s;
-
-      &:last-child {
-        margin-right: 0;
-      }
-
-      &.active {
-        background-color: #00d4aa;
-        color: #fff;
-      }
-    }
-  }
-}
-
 .tab-scroll {
   white-space: nowrap;
   overflow-x: scroll;
@@ -1074,98 +823,6 @@ onShow(() => {
   }
 }
 
-/* 城市选择器外层容器 */
-.location-picker-wrapper {
-  margin: 0;
-  padding: 0;
-}
-
-/* 完全清除uni-data-picker的默认样式 */
-.location-picker {
-  display: block;
-  width: 100%;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none !important;
-  background: transparent !important;
-  min-height: auto !important;
-  height: auto !important;
-}
-
-.location-picker :deep(.uni-data-picker) {
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none !important;
-  background: transparent !important;
-  min-height: auto !important;
-  height: auto !important;
-}
-
-.location-picker :deep(.uni-data-picker__picker) {
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none !important;
-  background: transparent !important;
-  min-height: auto !important;
-  height: auto !important;
-}
-
-.location-picker :deep(.uni-data-picker__box) {
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none !important;
-  background: transparent !important;
-  min-height: auto !important;
-  height: auto !important;
-}
-
-.location-picker :deep(.uni-data-picker__placeholder) {
-  padding: 0 !important;
-  margin: 0 !important;
-  min-height: auto !important;
-  height: auto !important;
-  display: none !important;
-}
-
-.location-picker :deep(.uni-data-picker__input) {
-  padding: 0 !important;
-  margin: 0 !important;
-  min-height: auto !important;
-  height: auto !important;
-}
-
-/* 定位信息 */
-.location-box {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  padding: 20rpx;
-  background: var(--bg-card);
-  border-radius: 16rpx;
-  .location-text {
-    color: var(--text-primary);
-    font-size: 28rpx;
-    flex: 1;
-  }
-}
-
-/* 重新定位按钮 */
-.relocate-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8rpx;
-  margin: 16rpx 30rpx 0rpx;
-  padding: 12rpx 24rpx;
-  background: rgba(0, 187, 136, 0.1);
-  border-radius: 32rpx;
-  align-self: flex-start;
-  .relocate-text {
-    color: var(--brand-primary);
-    font-size: 24rpx;
-  }
-}
-
 /* 空状态 */
 .empty-state {
   display: flex;
@@ -1195,336 +852,6 @@ onShow(() => {
   height: env(safe-area-inset-bottom);
   width: 100%;
   background-color: var(--bg-page);
-}
-
-/* 裁教卡片样式优化 */
-.coach-card {
-  display: flex;
-  background-color: var(--bg-card);
-  border-radius: 20rpx;
-  padding: 20rpx;
-  margin-bottom: 20rpx;
-
-  .coach-avatar .avatar-img {
-    width: 140rpx;
-    height: 140rpx;
-    border-radius: 12rpx;
-  }
-
-  .coach-info {
-    flex: 1;
-    margin-left: 16rpx;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-
-    .info-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-
-      .name-row {
-        display: flex;
-        align-items: center;
-        gap: 8rpx;
-        flex-wrap: wrap;
-
-        .coach-name {
-          font-size: 28rpx;
-          color: var(--text-primary);
-          font-weight: bold;
-        }
-
-        .level-tag {
-          font-size: 18rpx;
-          padding: 2rpx 8rpx;
-          border-radius: 4rpx;
-
-          &.senior {
-            background: rgba(0, 212, 170, 0.2);
-            color: #00d4aa;
-          }
-
-          &.middle {
-            background: rgba(255, 149, 0, 0.2);
-            color: #FF9500;
-          }
-
-          &.junior {
-            background: rgba(102, 102, 102, 0.2);
-            color: #999;
-          }
-
-          &.star {
-            background: rgba(255, 215, 0, 0.2);
-            color: #FFD700;
-          }
-        }
-
-        .new-tag {
-          font-size: 18rpx;
-          background: #FF3B30;
-          color: #fff;
-          padding: 2rpx 8rpx;
-          border-radius: 4rpx;
-        }
-
-        .service-status-tag {
-          font-size: 18rpx;
-          padding: 2rpx 8rpx;
-          border-radius: 4rpx;
-
-          &.status-idle {
-            background: rgba(0, 212, 170, 0.2);
-            color: #00d4aa;
-          }
-
-          &.status-busy {
-            background: rgba(255, 59, 48, 0.2);
-            color: #FF3B30;
-          }
-        }
-      }
-
-      .right-info {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 8rpx;
-      }
-
-      .service-status-dot {
-        width: 12rpx;
-        height: 12rpx;
-        border-radius: 50%;
-      }
-
-      .service-status-dot.status-idle {
-        background-color: #00d4aa;
-        box-shadow: 0 0 8rpx rgba(0, 212, 170, 0.6);
-      }
-
-      .service-status-dot.status-busy {
-        background-color: #f5a623;
-        box-shadow: 0 0 8rpx rgba(245, 166, 35, 0.6);
-      }
-
-      .service-status-text {
-        font-size: 20rpx;
-        color: var(--text-tertiary);
-      }
-
-      .distance {
-        font-size: 22rpx;
-        color: var(--text-tertiary);
-      }
-    }
-
-    .rating-row {
-      display: flex;
-      align-items: center;
-      margin: 8rpx 0;
-
-      .rating {
-        color: var(--star-color);
-        font-size: 24rpx;
-        margin: 0 6rpx;
-      }
-
-      .review-count {
-        color: var(--text-tertiary);
-        font-size: 22rpx;
-      }
-
-
-    }
-    .desc-row {
-      display: flex;
-      .coach-tags {
-        display: flex;
-        align-items: center;
-        gap: 6rpx;
-        margin-left: 8rpx;
-        flex-wrap: wrap;
-
-        .coach-tag {
-          font-size: 18rpx;
-          padding: 0 8rpx;
-          border-radius: 4rpx;
-          white-space: nowrap;
-
-          &.tag-new {
-            background: rgba(255, 59, 48, 0.15);
-            color: #FF3B30;
-            border: 1rpx solid rgba(255, 59, 48, 0.3);
-          }
-
-          &.tag-free-travel {
-            background: rgba(0, 212, 170, 0.15);
-            color: #00d4aa;
-            border: 1rpx solid rgba(0, 212, 170, 0.3);
-          }
-
-          &.tag-snooker {
-            background: rgba(255, 59, 48, 0.15);
-            color: #FF3B30;
-            border: 1rpx solid rgba(255, 59, 48, 0.3);
-          }
-
-          &.tag-eight-ball {
-            background: rgba(0, 122, 255, 0.15);
-            color: #007AFF;
-            border: 1rpx solid rgba(0, 122, 255, 0.3);
-          }
-
-          &.tag-junior {
-            background: rgba(102, 102, 102, 0.15);
-            color: #999;
-            border: 1rpx solid rgba(102, 102, 102, 0.3);
-          }
-
-          &.tag-intermediate {
-            background: rgba(255, 149, 0, 0.15);
-            color: #FF9500;
-            border: 1rpx solid rgba(255, 149, 0, 0.3);
-          }
-
-          &.tag-senior {
-            background: rgba(0, 212, 170, 0.15);
-            color: #00d4aa;
-            border: 1rpx solid rgba(0, 212, 170, 0.3);
-          }
-
-          &.tag-star {
-            background: rgba(255, 215, 0, 0.15);
-            color: #FFD700;
-            border: 1rpx solid rgba(255, 215, 0, 0.3);
-          }
-
-          &.tag-default {
-            background: rgba(102, 102, 102, 0.15);
-            color: #999;
-            border: 1rpx solid rgba(102, 102, 102, 0.3);
-          }
-
-          /* 随机标签颜色 */
-          &.tag-random-1 {
-            background: rgba(255, 59, 48, 0.15);
-            color: #FF3B30;
-            border: 1rpx solid rgba(255, 59, 48, 0.3);
-          }
-
-          &.tag-random-2 {
-            background: rgba(255, 149, 0, 0.15);
-            color: #FF9500;
-            border: 1rpx solid rgba(255, 149, 0, 0.3);
-          }
-
-          &.tag-random-3 {
-            background: rgba(255, 204, 0, 0.15);
-            color: #FFCC00;
-            border: 1rpx solid rgba(255, 204, 0, 0.3);
-          }
-
-          &.tag-random-4 {
-            background: rgba(52, 199, 89, 0.15);
-            color: #34C759;
-            border: 1rpx solid rgba(52, 199, 89, 0.3);
-          }
-
-          &.tag-random-5 {
-            background: rgba(0, 212, 170, 0.15);
-            color: #00d4aa;
-            border: 1rpx solid rgba(0, 212, 170, 0.3);
-          }
-
-          &.tag-random-6 {
-            background: rgba(0, 122, 255, 0.15);
-            color: #007AFF;
-            border: 1rpx solid rgba(0, 122, 255, 0.3);
-          }
-
-          &.tag-random-7 {
-            background: rgba(88, 86, 214, 0.15);
-            color: #5856D6;
-            border: 1rpx solid rgba(88, 86, 214, 0.3);
-          }
-
-          &.tag-random-8 {
-            background: rgba(175, 82, 222, 0.15);
-            color: #AF52DE;
-            border: 1rpx solid rgba(175, 82, 222, 0.3);
-          }
-        }
-      }
-    }
-    .desc-row .coach-desc {
-      font-size: 22rpx;
-      color: var(--text-tertiary);
-      line-height: 1.4;
-      display: -webkit-box;
-      -webkit-line-clamp: 1;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .bottom-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 8rpx;
-
-      .price-row {
-        .price-symbol {
-          color: #00d4aa;
-          font-size: 22rpx;
-        }
-
-        .price {
-          color: #00d4aa;
-          font-size: 30rpx;
-          font-weight: bold;
-        }
-
-        .price-unit {
-          color: var(--text-tertiary);
-          font-size: 20rpx;
-        }
-      }
-
-      .action-buttons {
-        display: flex;
-        gap: 8rpx;
-
-        button {
-          border: none;
-          font-size: 22rpx;
-          border-radius: 24rpx;
-          padding: 0 20rpx;
-          height: 48rpx;
-          line-height: 48rpx;
-        }
-
-        .reward-btn {
-          background: var(--bg-secondary);
-          color: #FF9500;
-          display: flex;
-          align-items: center;
-          gap: 4rpx;
-        }
-
-        .book-btn {
-          background: #00d4aa;
-          color: #fff;
-
-          &.disabled {
-            background: var(--bg-secondary);
-            color: var(--text-tertiary);
-          }
-        }
-      }
-    }
-  }
 }
 
 .loading-status {

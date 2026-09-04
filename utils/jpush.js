@@ -28,7 +28,6 @@ function jpushLog(level, message, detail) {
     console.warn(text, detail !== undefined ? detail : '')
     return
   }
-  console.log(text, detail !== undefined ? detail : '')
 }
 
 function parseExtras(extras) {
@@ -98,7 +97,6 @@ function handleNotificationNavigation(extras) {
   // callJPushApi('setBadgeNumber', 0)
   // #endif
   setTimeout(() => {
-    console.log(data,'==========处理通知点击跳转')
     uni.navigateTo({ url: `/pages/home/index` })
   }, 300)
 }

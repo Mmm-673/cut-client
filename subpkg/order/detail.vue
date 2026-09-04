@@ -9,71 +9,26 @@
 
     <view v-else class="page-content">
       <!-- 顶部状态卡片 -->
-      <view class="status-card" :class="'status-' + orderInfo.status">
-        <view class="status-header">
-          <view class="status-info">
-            <text class="status-icon">{{ getStatusIcon(orderInfo.status) }}</text>
-            <view class="status-text-group">
-              <text class="status-title">{{ orderInfo.statusText }}</text>
-              <text class="status-subtitle">{{ getStatusSubtitle(orderInfo.status) }}</text>
-            </view>
-          </view>
-          <view class="status-actions">
-            <text class="order-no">订单号: {{ orderInfo.orderNo }}</text>
-            <view class="report-btn" v-if="orderInfo.status !== 10" @click="showReportPopup = true">
-              <uni-icons type="chatbubble" size="20" color="#9CA3AF" />
-            </view>
-          </view>
-        </view>
-        <!-- 倒计时（仅已接单状态显示） -->
-        <view class="countdown-timer" v-if="orderInfo.status === 30">
-          <view class="time-item">
-            <text class="time-num">{{ countdownHours }}</text>
-            <text class="time-label">小时</text>
-          </view>
-          <text class="time-colon">:</text>
-          <view class="time-item">
-            <text class="time-num">{{ countdownMinutes }}</text>
-            <text class="time-label">分钟</text>
-          </view>
-          <text class="time-colon">:</text>
-          <view class="time-item">
-            <text class="time-num">{{ countdownSeconds }}</text>
-            <text class="time-label">秒</text>
-          </view>
-        </view>
-
-        <!-- 计时状态（仅进行中状态显示） -->
-        <view class="service-timer" v-if="orderInfo.status === 40">
-          <!-- 固定价：只展示已服务时长 -->
-          <view class="timer-row fixed" v-if="isFixedOrder">
-            <view class="timer-item">
-              <text class="timer-label">已服务</text>
-              <text class="timer-value">{{ formatSeconds(timerInfo.elapsedSeconds) }}</text>
-            </view>
-          </view>
-          <!-- 小时价：已服务 + 剩余 -->
-          <view class="timer-row" v-else>
-            <view class="timer-item">
-              <text class="timer-label">已服务</text>
-              <text class="timer-value">{{ formatSeconds(timerInfo.elapsedSeconds) }}</text>
-            </view>
-            <view class="timer-divider"></view>
-            <view class="timer-item">
-              <text class="timer-label">剩余</text>
-              <text class="timer-value">{{ formatSeconds(timerInfo.remainingSeconds) }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
+      <order-status-header
+          :status="orderInfo.status"
+          :status-text="orderInfo.statusText"
+          :status-subtitle="getStatusSubtitle(orderInfo.status)"
+          :status-icon="getStatusIcon(orderInfo.status)"
+          :order-no="orderInfo.orderNo"
+          :show-report="orderInfo.status !== ORDER_STATUS.PENDING_PAYMENT"
+          :show-countdown="orderInfo.status === ORDER_STATUS.ACCEPTED"
+          :show-service-timer="orderInfo.status === ORDER_STATUS.IN_SERVICE"
+          :is-fixed="isFixedOrder"
+          :countdown-hours="countdownHours"
+          :countdown-minutes="countdownMinutes"
+          :countdown-seconds="countdownSeconds"
+          :elapsed-seconds="timerInfo.elapsedSeconds"
+          :remaining-seconds="timerInfo.remainingSeconds"
+          @report="showReportPopup = true"
+      />
 
       <!-- 订单信息卡片 -->
-      <view class="info-card">
-        <view class="card-title">
-          <text class="title-icon">🖥</text>
-          订单信息
-        </view>
-
+      <info-card title="订单信息" title-icon="🖥">
         <view class="info-row">
           <text class="label">服务时间</text>
           <text class="value">{{ orderInfo.serviceTime }}</text>
@@ -113,15 +68,10 @@
           <text class="label">加钟支付</text>
           <text class="value price">¥{{ formatAmount(orderInfo.extraPayAmount) }}</text>
         </view>
-      </view>
+      </info-card>
 
       <!-- 陪练教练卡片 -->
-      <view class="info-card coach-card">
-        <view class="card-title">
-          <text class="title-icon">👤</text>
-          裁教教练
-        </view>
-
+      <info-card title="裁教教练" title-icon="👤" card-class="coach-card">
         <view class="coach-info">
           <image class="coach-avatar" :src="orderInfo.coachAvatar || orderInfo.coachMainPhoto" mode="aspectFill"></image>
           <view class="coach-info-right">
@@ -146,22 +96,24 @@
             </view>
           </view>
         </view>
-      </view>
+      </info-card>
 
       <!-- 服务地点卡片 -->
-      <view class="info-card hall-card" v-if="orderInfo.venueName">
-        <view class="card-title-row">
-          <view class="card-title">
-            <text class="title-icon">📍</text>
-            {{ orderInfo.serviceType === 1 ? '球厅信息' : '服务地点' }}
+      <info-card card-class="hall-card" v-if="orderInfo.venueName">
+        <template #title>
+          <view class="card-title-row">
+            <view class="card-title">
+              <text class="title-icon">📍</text>
+              {{ orderInfo.serviceType === SERVICE_TYPE.BILLIARD_COACH ? '球厅信息' : '服务地点' }}
+            </view>
+            <view>
+              <button class="nav-btn" @click="openHallNavigate" v-if="orderInfo.venueLongitude && orderInfo.venueLatitude">
+                <uni-icons type="navigation" size="16" color="#fff" />
+                导航
+              </button>
+            </view>
           </view>
-          <view>
-            <button class="nav-btn" @click="openHallNavigate" v-if="orderInfo.venueLongitude && orderInfo.venueLatitude">
-              <uni-icons type="navigation" size="16" color="#fff" />
-              导航
-            </button>
-          </view>
-        </view>
+        </template>
 
         <text class="hall-name">{{ orderInfo.venueName }}</text>
         <view class="hall-address" v-if="orderInfo.venueAddress">
@@ -169,215 +121,61 @@
           <text>{{ orderInfo.venueAddress }}</text>
         </view>
         <image class="hall-img" :src="orderInfo.venuePhotoUrl" mode="aspectFill" />
-      </view>
+      </info-card>
     </view>
 
     <!-- 底部安全区域 -->
     <view class="safe-area-bottom"></view>
 
     <!-- 底部操作栏 -->
-    <view class="bottom-bar" v-if="orderInfo.status === 10">
-      <button class="action-btn cancel" @click="cancelOrderFunc">取消订单</button>
-      <button class="action-btn pay" @click="payOrder">去支付</button>
-    </view>
-
-    <!-- 待接单 -->
-    <view class="bottom-bar" v-if="orderInfo.status === 20">
-      <button class="action-btn cancel" @click="cancelOrderFunc">取消订单</button>
-    </view>
-
-    <!-- 已接单/即将开始 -->
-    <view class="bottom-bar" v-if="orderInfo.status === 30">
-      <button class="action-btn cancel" @click="cancelOrderFunc">取消订单</button>
-      <button class="action-btn contact-coach" @click="contactCoach">
-        <uni-icons type="phone" size="18" color="#00BB88" />
-        联系教练
-      </button>
-    </view>
-
-    <!-- 进行中（固定价不显示加钟） -->
-    <view class="bottom-bar" v-if="orderInfo.status === 40 && !isFixedOrder">
-      <button class="action-btn add-time" @click="addTime">加钟</button>
-    </view>
-
-    <!-- 待评价 -->
-    <view class="bottom-bar" v-if="orderInfo.status === 50">
-      <!-- #ifndef MP-WEIXIN -->
-      <button class="action-btn reward" v-if="showRewardBtn" @click="goToReward">
-        <uni-icons type="gift" size="18" color="#FF9500" />
-        心意表示
-      </button>
-      <!-- #endif -->
-      <button class="action-btn review" @click="goToReview">去评价</button>
-    </view>
-
-    <!-- 已完成 -->
-    <view class="bottom-bar" v-if="orderInfo.status === 60">
-      <button class="action-btn book-again" @click="bookAgain">再来一单</button>
-    </view>
-
-    <!-- 已取消 -->
-    <view class="bottom-bar" v-if="orderInfo.status === 70">
-      <button class="action-btn delete-order" @click="showDeleteConfirm = true">删除订单</button>
-      <button class="action-btn book-again" @click="bookAgain">再来一单</button>
-    </view>
+    <order-bottom-bar
+        :status="orderInfo.status"
+        :is-fixed-order="isFixedOrder"
+        :show-reward="showRewardBtn"
+        @cancel="cancelOrderFunc"
+        @pay="payOrder"
+        @contact="contactCoach"
+        @add-time="addTime"
+        @reward="goToReward"
+        @review="goToReview"
+        @book-again="bookAgain"
+        @delete="showDeleteConfirm = true"
+    />
 
     <!-- 加钟弹窗 -->
-    <view class="add-time-popup-mask" v-if="showAddTimePopup" @click="closeAddTimePopup">
-      <view class="add-time-popup-wrapper" @click.stop>
-        <!-- 头部 -->
-        <view class="add-time-popup-header">
-          <text class="close-btn" @click="closeAddTimePopup">取消</text>
-          <text class="add-time-popup-title">选择加钟时长</text>
-          <text class="confirm-btn" :class="{ disabled: isAddingTime }" @click="confirmAddTime">
-            {{ isAddingTime ? '处理中...' : '确认' }}
-          </text>
-        </view>
-        <!-- 时长选择 -->
-        <view class="add-time-popup-content">
-          <view class="add-time-tip">请选择需要延长的服务时长</view>
-          <view class="add-time-limit-tip">
-            最少加10分钟
-          </view>
-          <view class="add-time-options">
-            <view
-                v-for="option in addTimeOptions"
-                :key="option.value"
-                class="add-time-option"
-                :class="{ active: selectedAddMinutes === option.value || (option.value === 'custom' && showCustomInput) }"
-                @click="handleOptionSelect(option)">
-              <text class="option-label">{{ option.label }}</text>
-            </view>
-          </view>
-          <!-- 自定义输入框 -->
-          <view class="custom-input-wrapper" v-if="showCustomInput">
-            <view class="custom-input-row">
-              <input
-                  class="custom-input"
-                  type="number"
-                  v-model="customMinutes"
-                  placeholder="最少10分钟"
-                  placeholder-class="input-placeholder"
-                  @input="handleCustomInput"
-                  @blur="handleCustomBlur" />
-              <text class="custom-unit">分钟</text>
-            </view>
-          </view>
-        </view>
-      </view>
-    </view>
+    <add-time-popup
+        :visible="showAddTimePopup"
+        :options="addTimeOptions"
+        :loading="isAddingTime"
+        @close="closeAddTimePopup"
+        @confirm="confirmAddTime"
+    />
 
 
     <!-- 支付弹窗 -->
-    <view class="pay-popup-mask" v-if="showPayPopup" @click="closePayPopup">
-      <view class="pay-popup-wrapper" @click.stop>
-        <!-- 头部 -->
-        <view class="pay-popup-header">
-          <text class="pay-popup-title">选择支付方式</text>
-          <text class="pay-popup-close" @click="closePayPopup">×</text>
-        </view>
-        <view class="pay-popup-content">
-          <view class="pay-amount-row">
-            <text class="pay-label">支付金额</text>
-            <text class="pay-amount">¥{{ formatAmount(currentPayAmount) }}</text>
-          </view>
-          <!-- 倒计时提示 -->
-          <view v-if="addTimePayOrderId && !isAddTimeExpired && addTimeCountdownText" class="pay-countdown-tip">
-            <uni-icons type="clock" size="16" color="#00BB88" />
-            <text>请在 {{ addTimeCountdownText }} 内完成支付</text>
-          </view>
-          <!-- 过期提示 -->
-          <view v-if="addTimePayOrderId && isAddTimeExpired" class="pay-expire-tip">
-            <uni-icons type="info" size="16" color="#F59E0B" />
-            <text>该订单已过期，请重新发起加钟请求</text>
-          </view>
-          <view class="pay-method-list" v-if="payList.length > 0">
-            <view
-              v-for="item in payList"
-              :key="item.channelCode || item.value"
-              class="pay-method-item"
-              :class="{ active: selectedPay === item.value }"
-              @click="selectPay(item.value)">
-              <view class="pay-method-left">
-                <view class="pay-method-icon" :style="{ background: item.icon && item.icon.startsWith('/') ? 'transparent' : item.bgColor }">
-                  <image v-if="item.icon && item.icon.startsWith('/')" :src="item.icon" class="pay-method-icon-img" mode="aspectFit" />
-                  <uni-icons v-else :type="item.icon" size="20" color="#fff" />
-                </view>
-                <text class="pay-method-name">{{ item.label }}</text>
-              </view>
-              <view class="pay-method-radio">
-                <view class="radio-dot" v-if="selectedPay === item.value"></view>
-              </view>
-            </view>
-          </view>
-          <view v-else class="pay-empty-tip">暂无可用支付方式，请稍后重试</view>
-        </view>
-        <view class="pay-popup-footer">
-          <button
-            class="pay-submit-btn"
-            :class="{ disabled: isPaying || !selectedPayItem || !currentPayOrderId || isAddTimeExpired }"
-            :disabled="isPaying || !selectedPayItem || !currentPayOrderId || isAddTimeExpired"
-            @click="confirmPay">
-            {{ isPaying ? '支付中...' : (isAddTimeExpired ? '已过期' : '确认支付') }}
-          </button>
-        </view>
-      </view>
-    </view>
+    <pay-method-popup
+        :visible="showPayPopup"
+        :amount="currentPayAmount"
+        :pay-list="payList"
+        :selected-value="selectedPay"
+        :loading="isPaying"
+        :show-countdown="!!(addTimePayOrderId && !isAddTimeExpired && addTimeCountdownText)"
+        :countdown-text="addTimeCountdownText"
+        :is-expired="!!(addTimePayOrderId && isAddTimeExpired)"
+        :expired-text="'该订单已过期，请重新发起加钟请求'"
+        :submit-text="isPaying ? '支付中...' : (addTimePayOrderId && isAddTimeExpired ? '已过期' : '确认支付')"
+        @close="closePayPopup"
+        @select="selectPay"
+        @submit="confirmPay"
+    />
 
     <!-- 异常报告弹窗 -->
-    <view class="report-popup-mask" v-if="showReportPopup" @click="showReportPopup = false">
-      <view class="report-popup-wrapper" @click.stop>
-        <view class="report-popup-header">
-          <text class="close-btn" @click="showReportPopup = false">取消</text>
-          <text class="report-popup-title">报告异常</text>
-          <text class="confirm-btn" @click="handleReport">提交</text>
-        </view>
-        <view class="report-popup-content">
-          <!-- 异常类型选择 -->
-          <view class="type-section">
-            <text class="section-label">问题类型</text>
-            <view class="type-list">
-              <view
-                class="type-item"
-                :class="{active: exceptionType === 1}"
-                @click="exceptionType = 1">
-                用户投诉
-              </view>
-              <view
-                class="type-item"
-                :class="{active: exceptionType === 2}"
-                @click="exceptionType = 2">
-                教练超时
-              </view>
-              <view
-                class="type-item"
-                :class="{active: exceptionType === 3}"
-                @click="exceptionType = 3">
-                系统异常
-              </view>
-              <view
-                class="type-item"
-                :class="{active: exceptionType === 4}"
-                @click="exceptionType = 4">
-                其他
-              </view>
-            </view>
-          </view>
-
-          <!-- 问题描述 -->
-          <view class="reason-section">
-            <text class="section-label">问题描述</text>
-            <textarea
-              class="reason-input"
-              v-model="exceptionReason"
-              placeholder="请描述您遇到的问题（最多500字）"
-              placeholder-class="input-placeholder"
-              :maxlength="500" />
-            <text class="char-count">{{ exceptionReason.length }}/500</text>
-          </view>
-        </view>
-      </view>
-    </view>
+    <report-popup
+      :visible="showReportPopup"
+      :loading="isReporting"
+      @close="showReportPopup = false"
+      @confirm="handleReport"
+    />
 
     <!-- 删除确认弹窗 -->
     <view class="delete-popup-mask" v-if="showDeleteConfirm" @click="showDeleteConfirm = false">
@@ -399,6 +197,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { onLoad, onShow } from "@dcloudio/uni-app"
 import { useThemeStore } from '@/store'
+import { ORDER_STATUS, isFinalStatus, getStatusText, getStatusColor } from '@/constants/orderStatus'
 
 // 主题相关
 const themeStore = useThemeStore()
@@ -406,6 +205,7 @@ const themeClass = computed(() => `theme-${themeStore.theme}`)
 import { getOrderDetail, cancelOrder, addTimeOrder, deleteOrder } from '@/api/billiard/order'
 import { isFixedPricing } from '@/utils/pricing'
 import { getCoachDetail } from '@/api/billiard/coach'
+import { SERVICE_TYPE, getServiceTypeName } from '@/constants/serviceType'
 import { getRewardSwitch } from '@/api/billiard/user'
 import { getTimerStatus } from '@/api/billiard/timer'
 import { reportException } from '@/api/billiard/exception'
@@ -413,6 +213,13 @@ import { executePayment, fetchEnabledChannels } from '@/utils/payment'
 import {openMapNavigation} from "../../utils/platform"
 import { showCallPermissionModal, requestCallPermission, doCallPhone } from '@/utils/call'
 import { guardReviewEntry } from '@/utils/review'
+import { formatAmount, formatDateTime } from '@/utils/format'
+import OrderStatusHeader from '@/components/order-status-header/order-status-header.vue'
+import InfoCard from '@/components/info-card/info-card.vue'
+import OrderBottomBar from '@/components/order-bottom-bar/order-bottom-bar.vue'
+import AddTimePopup from '@/components/add-time-popup/add-time-popup.vue'
+import PayMethodPopup from '@/components/pay-method-popup/pay-method-popup.vue'
+import ReportPopup from '@/components/report-popup/report-popup.vue'
 
 // 订单ID
 const orderId = ref(null)
@@ -463,9 +270,7 @@ let localTimerInterval = null
 
 // 异常报告相关
 const showReportPopup = ref(false)
-const exceptionType = ref(1)
-const exceptionReason = ref('')
-const evidenceUrls = ref([])
+const isReporting = ref(false)
 
 // 加钟时长选项（单位：分钟）
 const addTimeOptions = ref([
@@ -523,7 +328,7 @@ const orderInfo = ref({
   venueLongitude: null,
   venueLatitude: null,
   venuePhotoUrl: '',
-  serviceType: 1,
+  serviceType: SERVICE_TYPE.BILLIARD_COACH,
   pricingMode: 1, // 1=小时价 2=固定价
   bookingTime: 0,
   serviceDuration: 0,
@@ -532,7 +337,7 @@ const orderInfo = ref({
   extraPayAmount: 0,
   totalAmount: 0,
   createTime: 0,
-  payStatus: 0,
+  payStatus: PAY_STATUS.UNPAID,
   payMethod: '', // 支付方式名称
   statusText: '',
   serviceTime: ''
@@ -607,59 +412,6 @@ const getStatusSubtitle = (status) => {
   return subtitleMap[status] || ''
 }
 
-/**
- * 支付状态映射
- */
-const payStatusMap = {
-  0: '未支付',
-  10: '支付成功',
-  20: '已退款',
-  30: '支付关闭'
-}
-
-// 获取服务类型名称
-const getServiceTypeName = (type) => {
-  if (type === 1) return '台球指导'
-  if (type === 2) return '潮玩领航'
-  if (type === 3) return '酒艺品鉴'
-  if (type === 4) return '影视赏析'
-  return '台球指导'
-}
-
-// 获取支付状态文本
-const getPayStatusText = (status) => {
-  return payStatusMap[status] || '未知'
-}
-
-// 格式化预约时间
-const formatBookingTime = (timestamp) => {
-  if (!timestamp) return ''
-  const date = new Date(timestamp)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hour = String(date.getHours()).padStart(2, '0')
-  const minute = String(date.getMinutes()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hour}:${minute}`
-}
-
-// 格式化下单时间
-const formatCreateTime = (timestamp) => {
-  if (!timestamp) return ''
-  const date = new Date(timestamp)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hour = String(date.getHours()).padStart(2, '0')
-  const minute = String(date.getMinutes()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hour}:${minute}`
-}
-
-// 格式化金额（分转元）
-const formatAmount = (amount) => {
-  if (amount === null || amount === undefined) return '0.00'
-  return (amount / 100).toFixed(2)
-}
 
 // 【新增】倒计时逻辑
 const startCountdown = () => {
@@ -766,7 +518,6 @@ const contactCoach = async () => {
 
     // 优先使用订单数据里的教练手机号
     const phone = orderInfo.value?.coachPhone || ''
-    console.log(phone,'====phone')
 
     if (!phone) {
       uni.showToast({ title: '暂无联系电话', icon: 'none' })
@@ -778,7 +529,6 @@ const contactCoach = async () => {
     console.error('处理拨打电话请求失败:', err)
     if (err?.message === 'user_cancelled') {
       // 用户取消了电话权限用途说明，不进行任何操作
-      console.log('用户取消了电话权限用途说明')
     } else {
       uni.showToast({
         title: '拨打电话失败，请重试',
@@ -880,8 +630,8 @@ const loadOrderDetail = async (silent = false) => {
       payStatus: data.payStatus,
       payMethod: data.payMethod || data.payChannelName || '',
       statusText: statusMap[data.status]?.text || '未知',
-      serviceTime: formatBookingTime(data.bookingTime),
-      createTime: formatCreateTime(data.createTime)
+      serviceTime: formatDateTime(data.bookingTime),
+      createTime: formatDateTime(data.createTime)
     })
 
     // 加载裁教详情
@@ -898,10 +648,10 @@ const loadOrderDetail = async (silent = false) => {
     }
 
     // 待开始状态启动倒计时
-    if (data.status === 30) {
+    if (data.status === ORDER_STATUS.ACCEPTED) {
       startCountdown()
       stopTimerPolling()
-    } else if (data.status === 40) {
+    } else if (data.status === ORDER_STATUS.IN_SERVICE) {
       // 进行中状态启动计时轮询
       stopCountdown()
       startTimerPolling()
@@ -1128,12 +878,14 @@ const handleCustomBlur = () => {
 
 
 // 确认加钟
-const confirmAddTime = async () => {
+const confirmAddTime = async ({ minutes } = {}) => {
   if (isAddingTime.value) return
+
+  const addMinutes = minutes ?? selectedAddMinutes.value
 
   // 验证时长
   const minMinutes = 10
-  if (selectedAddMinutes.value < minMinutes) {
+  if (addMinutes < minMinutes) {
     uni.showToast({
       title: '最少加10分钟',
       icon: 'none'
@@ -1144,13 +896,13 @@ const confirmAddTime = async () => {
   isAddingTime.value = true
   try {
     // 调用加钟接口（直接使用分钟数）
-    const res = await addTimeOrder({ orderId: orderId.value, addMinutes: selectedAddMinutes.value })
+    const res = await addTimeOrder({ orderId: orderId.value, addMinutes })
 
     // 获取加钟支付订单ID、金额和过期时间
     addTimePayOrderId.value = res.data.payOrderId
     pendingAddTimeAmount.value = res.data.addAmount
     addTimeExpireTime.value = res.data.expireTime
-    pendingAddTimeMinutes.value = selectedAddMinutes.value // 保存分钟数
+    pendingAddTimeMinutes.value = addMinutes // 保存分钟数
     currentOrderId.value = orderId.value
 
     // 关闭加钟弹窗
@@ -1293,7 +1045,7 @@ const getRandomDefaultImage = () => {
 
 // 加载计时状态
 const loadTimerStatus = async () => {
-  if (orderInfo.value.status !== 40) return
+  if (orderInfo.value.status !== ORDER_STATUS.IN_SERVICE) return
   try {
     const res = await getTimerStatus({ orderId: orderId.value })
     if (res.data) {
@@ -1312,7 +1064,7 @@ const loadTimerStatus = async () => {
 // 开始计时轮询
 const startTimerPolling = () => {
   stopTimerPolling()
-  if (orderInfo.value.status !== 40) return
+  if (orderInfo.value.status !== ORDER_STATUS.IN_SERVICE) return
 
   // 立即加载一次
   loadTimerStatus()
@@ -1343,37 +1095,27 @@ const stopTimerPolling = () => {
 }
 
 // 处理异常报告
-const handleReport = async () => {
-  if (!exceptionReason.value.trim()) {
-    uni.showToast({ title: '请描述您遇到的问题', icon: 'none' })
-    return
-  }
-
-  uni.showLoading({ title: '提交中...' })
+const handleReport = async ({ type, reason }) => {
+  isReporting.value = true
 
   try {
     await reportException({
       orderId: orderId.value,
-      exceptionType: exceptionType.value,
-      reason: exceptionReason.value,
-      evidenceUrls: evidenceUrls.value
+      exceptionType: type,
+      reason: reason,
+      evidenceUrls: []
     })
 
-    uni.hideLoading()
     uni.showToast({ title: '问题已提交，客服会尽快处理', icon: 'success' })
-
-    // 重置状态
     showReportPopup.value = false
-    exceptionType.value = 1
-    exceptionReason.value = ''
-    evidenceUrls.value = []
   } catch (error) {
-    uni.hideLoading()
     console.error('提交异常报告失败:', error)
     uni.showToast({
       title: error.message || '提交失败，请重试',
       icon: 'none'
     })
+  } finally {
+    isReporting.value = false
   }
 }
 
@@ -1454,10 +1196,7 @@ const stopPolling = () => {
   }
 }
 
-// 判断是否是终态（不需要轮训的状态）
-const isFinalStatus = (status) => {
-  return status === 50 || status === 60 || status === 70 || status === 80 // 已完成/已取消/已退款
-}
+// isFinalStatus 从 @/constants/orderStatus 导入
 
 // 记录上次状态
 let lastStatus = null
@@ -1509,16 +1248,8 @@ let lastStatus = null
   overscroll-behavior: none;
 }
 
-/* 顶部状态卡片 */
-.status-card {
-  margin: 0 30rpx 30rpx;
-  background: var(--bg-card);
-  border-radius: 24rpx;
-  padding: 30rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
-
+/* 顶部状态卡片样式已移至 components/order-status-header/order-status-header.vue */
+._unused-legacy-status {
   .status-header {
     display: flex;
     justify-content: space-between;
@@ -1799,410 +1530,6 @@ let lastStatus = null
   width: 100%;
 }
 
-/* 底部操作栏 */
-.bottom-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: var(--bg-card);
-  padding: 16rpx 32rpx;
-  padding-bottom: calc(16rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 100;
-  .action-btn {
-    flex: 1;
-    height: 72rpx;
-    line-height: 72rpx;
-    border-radius: 36rpx;
-    font-size: 26rpx;
-    font-weight: 500;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8rpx;
-    &::after { border: none; }
-    &.cancel {
-      background: rgba(107, 114, 128, 0.2);
-      color: var(--text-secondary);
-    }
-    &.pay {
-      background: #00BB88;
-      color: #fff;
-    }
-    &.review {
-      background: rgba(245, 158, 11, 0.2);
-      color: #F59E0B;
-    }
-    &.book-again {
-      background: #00BB88;
-      color: #fff;
-    }
-    &.contact-coach {
-      background: rgba(0, 187, 136, 0.2);
-      color: #00BB88;
-    }
-    &.add-time {
-      background: #00BB88;
-      color: #fff;
-    }
-    &.reward {
-      background: rgba(255, 149, 0, 0.2);
-      color: #FF9500;
-    }
-    &.delete-order {
-      background: rgba(239, 68, 68, 0.2);
-      color: #EF4444;
-    }
-  }
-}
-
-/* 支付弹窗遮罩 */
-.pay-popup-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 999;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-
-.pay-popup-wrapper {
-  background: var(--bg-card);
-  border-radius: 32rpx 32rpx 0 0;
-  animation: slideUp 0.3s ease;
-  max-height: 78vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-.pay-popup-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  padding: 28rpx 30rpx;
-  border-bottom: 1rpx solid var(--border-color);
-  flex-shrink: 0;
-  .pay-popup-title {
-    color: var(--text-primary);
-    font-size: 32rpx;
-    font-weight: 600;
-  }
-  .pay-popup-close {
-    position: absolute;
-    right: 30rpx;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 52rpx;
-    height: 52rpx;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-secondary);
-    font-size: 40rpx;
-    line-height: 1;
-    background: var(--border-color);
-  }
-}
-
-.pay-popup-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24rpx 30rpx 0;
-  -webkit-overflow-scrolling: touch;
-}
-
-.pay-amount-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 24rpx;
-  margin-bottom: 24rpx;
-  padding: 24rpx;
-  border-radius: 24rpx;
-  background: var(--border-color);
-  .pay-label {
-    color: var(--text-secondary);
-    font-size: 26rpx;
-  }
-  .pay-amount {
-    color: #00BB88;
-    font-size: 44rpx;
-    font-weight: 700;
-    line-height: 1;
-  }
-}
-
-.pay-countdown-tip {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  padding: 16rpx;
-  margin-bottom: 24rpx;
-  border-radius: 16rpx;
-  background: rgba(0, 187, 136, 0.1);
-  color: #00BB88;
-  font-size: 24rpx;
-}
-
-.pay-expire-tip {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  padding: 16rpx;
-  margin-bottom: 24rpx;
-  border-radius: 16rpx;
-  background: rgba(245, 158, 11, 0.1);
-  color: #F59E0B;
-  font-size: 24rpx;
-}
-
-.pay-method-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
-
-  .pay-method-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    min-height: 112rpx;
-    padding: 24rpx;
-    border-radius: 24rpx;
-    background: var(--bg-secondary);
-    border: 2rpx solid transparent;
-    box-sizing: border-box;
-
-    .pay-method-left {
-      display: flex;
-      align-items: center;
-      gap: 18rpx;
-      min-width: 0;
-      flex: 1;
-
-      .pay-method-icon {
-        width: 72rpx;
-        height: 72rpx;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        .pay-method-icon-img {
-          width: 56rpx;
-          height: 56rpx;
-        }
-      }
-
-      .pay-method-name {
-        color: var(--text-primary);
-        font-size: 30rpx;
-        font-weight: 500;
-        flex: 1;
-        min-width: 0;
-      }
-
-      .pay-method-balance {
-        color: var(--text-secondary);
-        font-size: 24rpx;
-      }
-    }
-
-    .pay-method-radio {
-      width: 40rpx;
-      height: 40rpx;
-      margin-left: 16rpx;
-      border: 3rpx solid #4B5563;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    &.active {
-      border-color: rgba(0, 187, 136, 0.9);
-      background: rgba(0, 187, 136, 0.14);
-
-      .pay-method-radio {
-        border-color: #00BB88;
-
-        .radio-dot {
-          width: 20rpx;
-          height: 20rpx;
-          border-radius: 50%;
-          background: #00BB88;
-        }
-      }
-    }
-  }
-}
-
-.pay-empty-tip {
-  padding: 48rpx 24rpx;
-  text-align: center;
-  color: var(--text-secondary);
-  font-size: 28rpx;
-}
-
-.pay-popup-footer {
-  flex-shrink: 0;
-  padding: 24rpx 30rpx;
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid var(--border-color);
-  background: var(--bg-card);
-}
-
-.pay-submit-btn {
-  width: 100%;
-  height: 88rpx;
-  line-height: 88rpx;
-  border-radius: 44rpx;
-  border: none;
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #fff;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-
-  &::after {
-    border: none;
-  }
-
-  &.disabled {
-    opacity: 0.5;
-  }
-}
-
-/* 加钟弹窗遮罩 */
-.add-time-popup-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 999;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-
-.add-time-popup-wrapper {
-  background: var(--bg-card);
-  border-radius: 32rpx 32rpx 0 0;
-  animation: slideUp 0.3s ease;
-}
-
-.add-time-popup-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 30rpx;
-  border-bottom: 1rpx solid var(--border-color);
-  .close-btn {
-    color: var(--text-secondary);
-    font-size: 30rpx;
-  }
-  .add-time-popup-title {
-    color: var(--text-primary);
-    font-size: 36rpx;
-    font-weight: 600;
-  }
-  .confirm-btn {
-    color: #00BB88;
-    font-size: 30rpx;
-    font-weight: 600;
-    &.disabled {
-      color: rgba(0, 187, 136, 0.5);
-      pointer-events: none;
-    }
-  }
-}
-
-.add-time-popup-content {
-  padding: 60rpx 40rpx;
-  padding-bottom: calc(60rpx + env(safe-area-inset-bottom));
-  padding-bottom: calc(60rpx + constant(safe-area-inset-bottom));
-  .add-time-tip {
-    color: var(--text-secondary);
-    font-size: 28rpx;
-    margin-bottom: 40rpx;
-    text-align: center;
-  }
-  .add-time-limit-tip {
-    color: #F59E0B;
-    font-size: 24rpx;
-    margin-bottom: 40rpx;
-    text-align: center;
-  }
-  .add-time-options {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24rpx;
-    .add-time-option {
-      background: var(--bg-secondary);
-      border-radius: 16rpx;
-      padding: 50rpx 20rpx;
-      text-align: center;
-      border: 2rpx solid transparent;
-      transition: all 0.2s ease;
-      .option-label {
-        color: var(--text-primary);
-        font-size: 32rpx;
-        font-weight: 500;
-      }
-      &.active {
-        border-color: #00BB88;
-        background: rgba(0, 187, 136, 0.1);
-        .option-label {
-          color: #00BB88;
-        }
-      }
-    }
-  }
-  .custom-input-wrapper {
-    margin-top: 40rpx;
-    .custom-input-row {
-      display: flex;
-      align-items: center;
-      gap: 20rpx;
-      background: var(--bg-secondary);
-      border-radius: 16rpx;
-      padding: 30rpx;
-      border: 2rpx solid #00BB88;
-      .custom-input {
-        flex: 1;
-        color: var(--text-primary);
-        font-size: 32rpx;
-      }
-      .custom-unit {
-        color: var(--text-secondary);
-        font-size: 28rpx;
-      }
-    }
-  }
-}
-
 /* 删除确认弹窗遮罩 */
 .delete-popup-mask {
   position: fixed;
@@ -2330,114 +1657,4 @@ let lastStatus = null
   background: var(--border-color);
 }
 
-/* 异常报告弹窗遮罩 */
-.report-popup-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 999;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-
-.report-popup-wrapper {
-  background: var(--bg-card);
-  border-radius: 32rpx 32rpx 0 0;
-  animation: slideUp 0.3s ease;
-  max-height: 80vh;
-}
-
-.report-popup-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 30rpx;
-  border-bottom: 1rpx solid var(--border-color);
-  .close-btn {
-    color: var(--text-secondary);
-    font-size: 30rpx;
-  }
-  .report-popup-title {
-    color: var(--text-primary);
-    font-size: 36rpx;
-    font-weight: 600;
-  }
-  .confirm-btn {
-    color: #00BB88;
-    font-size: 30rpx;
-    font-weight: 600;
-  }
-}
-
-.report-popup-content {
-  padding: 30rpx;
-  padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
-  padding-bottom: calc(30rpx + constant(safe-area-inset-bottom));
-}
-
-.type-section {
-  margin-bottom: 40rpx;
-}
-
-.section-label {
-  color: var(--text-primary);
-  font-size: 28rpx;
-  font-weight: 500;
-  display: block;
-  margin-bottom: 20rpx;
-}
-
-.type-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16rpx;
-}
-
-.type-item {
-  background: var(--bg-secondary);
-  border-radius: 12rpx;
-  padding: 24rpx 16rpx;
-  text-align: center;
-  color: var(--text-secondary);
-  font-size: 26rpx;
-  border: 2rpx solid transparent;
-  transition: all 0.2s;
-  &.active {
-    background: rgba(0, 187, 136, 0.1);
-    border-color: #00BB88;
-    color: #00BB88;
-  }
-}
-
-.reason-section {
-  position: relative;
-}
-
-.reason-input {
-  width: 100%;
-  min-height: 200rpx;
-  background: var(--bg-secondary);
-  border-radius: 16rpx;
-  padding: 24rpx;
-  color: var(--text-primary);
-  font-size: 28rpx;
-  line-height: 1.6;
-  box-sizing: border-box;
-}
-
-.input-placeholder {
-  color: var(--text-tertiary);
-}
-
-.char-count {
-  position: absolute;
-  right: 16rpx;
-  bottom: 16rpx;
-  color: var(--text-tertiary);
-  font-size: 22rpx;
-}
 </style>

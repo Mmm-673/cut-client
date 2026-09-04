@@ -65,10 +65,7 @@
           </view>
         </view>
 
-        <view v-if="coachList.length === 0 && !loading && !refreshing" class="empty-state">
-          <uni-icons type="heart" size="60" color="#666"></uni-icons>
-          <text class="empty-text">暂无收藏的裁教</text>
-        </view>
+        <empty-state v-if="coachList.length === 0 && !loading && !refreshing" icon="heart" text="暂无收藏的裁教" icon-size="60" icon-color="#666" />
 
         <view class="loading-status">
           <uni-load-more :status="loadMoreStatus"></uni-load-more>
@@ -81,24 +78,45 @@
 
 <script setup>
 import {ref, onMounted, computed} from 'vue'
-import { useThemeStore } from '@/store'
+import { useThemeStore, useCoachStore } from '@/store'
 import {getFavoriteCoachPage} from '@/api/billiard/coach'
 import {guardReviewEntry} from '@/utils/review'
 import { getPriceUnit } from '@/utils/pricing'
+import EmptyState from '@/components/empty-state/empty-state.vue'
 
 // 主题相关
 const themeStore = useThemeStore()
+const coachStore = useCoachStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 const statusBarHeight = ref(0)
-const refreshing = ref(false)
-const loading = ref(false)
-const loadMoreStatus = ref('more')
 
-const pageNo = ref(1)
-const pageSize = ref(20)
-const coachList = ref([])
-const hasMore = ref(true)
+// 使用 useList 管理分页
+const {
+  list: coachList,
+  loading,
+  refreshing,
+  hasMore,
+  loadMoreStatus,
+  loadList: loadData,
+  refresh,
+  loadMore,
+} = useList({
+  fetchApi: getFavoriteCoachPage,
+  pageSize: 20,
+  pageParamName: 'pageNo',
+  transform: (res) => {
+    const data = res.data || {}
+    return data.list || data.records || data.rows || []
+  },
+  getTotal: (res) => {
+    const data = res.data || {}
+    return data.total || data.totalCount || 0
+  },
+  onError: (error) => {
+    console.error('加载收藏列表失败:', error)
+  },
+})
 
 // 格式化价格
 const formatPrice = (price) => {
@@ -157,69 +175,9 @@ const formatTime = (time) => {
   return `${month}月${day}日收藏`
 }
 
-// 加载数据
-const loadData = async (isRefresh = false) => {
-  if (loading.value) return
-
-  loading.value = true
-  if (isRefresh) {
-    loadMoreStatus.value = 'more'
-    hasMore.value = true
-    pageNo.value = 1
-  } else {
-    loadMoreStatus.value = 'loading'
-  }
-
-  try {
-    const params = {
-      pageNo: pageNo.value,
-      pageSize: pageSize.value
-    }
-
-    const res = await getFavoriteCoachPage(params)
-    const data = res.data || {}
-    const list = data.list || data.records || data.rows || []
-
-    if (isRefresh) {
-      coachList.value = list
-    } else {
-      coachList.value = [...coachList.value, ...list]
-    }
-
-    const total = data.total || data.totalCount || 0
-    if (total > 0) {
-      hasMore.value = coachList.value.length < total
-    } else {
-      hasMore.value = list.length >= pageSize.value
-    }
-    loadMoreStatus.value = hasMore.value ? 'more' : 'noMore'
-
-    if (!hasMore.value && pageNo.value > 1) {
-      uni.showToast({
-        title: '没有更多了',
-        icon: 'none'
-      })
-    }
-  } catch (error) {
-    console.error('加载收藏列表失败:', error)
-    loadMoreStatus.value = 'more'
-  } finally {
-    loading.value = false
-    refreshing.value = false
-  }
-}
-
 // 下拉刷新
 const onRefresh = () => {
-  refreshing.value = true
-  loadData(true)
-}
-
-// 上拉加载更多
-const loadMore = () => {
-  if (loading.value || !hasMore.value) return
-  pageNo.value++
-  loadData(false)
+  refresh()
 }
 
 // 返回上一页
@@ -243,7 +201,7 @@ const goToReward = (id) => {
 
 // 预约
 const handleBook = (coach) => {
-  uni.setStorageSync('selectedCoach', coach)
+  coachStore.setSelectedCoach(coach)
   uni.navigateTo({url: '/subpkg/booking/hall'})
 }
 
@@ -252,7 +210,7 @@ onMounted(() => {
   if (guardReviewEntry()) return
   const systemInfo = uni.getSystemInfoSync()
   statusBarHeight.value = systemInfo.statusBarHeight || 0
-  loadData(true)
+  loadData()
 })
 </script>
 

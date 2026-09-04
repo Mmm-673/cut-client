@@ -115,9 +115,7 @@ export const useConfigStore = defineStore('config', () => {
 
   // 获取布尔类型配置值
   const getRemoteConfigBoolean = (key, defaultValue = false) => {
-    console.log('getRemoteConfigValue', key, defaultValue)
     const val = remoteConfig.value[key]
-    console.log(val,'=====val=======')
     if (val === undefined || val === null) return defaultValue
     return val === 'true' || val === true || val === '1' || val === 1
   }

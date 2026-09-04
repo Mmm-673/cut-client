@@ -86,9 +86,7 @@
       </view>
 
       <!-- 加载完成/加载中/空状态 -->
-      <view class="load-tip" v-if="showGroupList.length === 0 && !loading">
-        {{ emptyTip }}
-      </view>
+      <empty-state v-if="showGroupList.length === 0 && !loading" icon="list" :text="emptyTip" />
       <view class="load-tip loading" v-if="loading">
         <uni-icons type="spinner-cycle" size="20" color="#9CA3AF" style="animation: spin 1s linear infinite; margin-right: 12rpx;"></uni-icons>
         加载中...
@@ -113,6 +111,7 @@ import { ref, computed, onMounted } from 'vue'
 import { onShow } from "@dcloudio/uni-app"
 import { useThemeStore } from '@/store'
 import { getWalletTransactions, getWalletTransactionSummary } from '@/api/billiard/wallet'
+import EmptyState from '@/components/empty-state/empty-state.vue'
 
 const themeStore = useThemeStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
@@ -282,7 +281,6 @@ const loadTransactions = async (isRefresh = false) => {
     }
 
     const res = await getWalletTransactions(params)
-    console.log(res.data.list,'====const list = res?.list || [] ')
     const list = res.data.list || []
 
     // 转换数据格式

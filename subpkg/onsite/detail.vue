@@ -179,10 +179,13 @@
 import { ref, computed, onUnmounted } from 'vue'
 import { onLoad, onShow, onHide } from '@dcloudio/uni-app'
 import { useThemeStore } from '@/store'
+import { ORDER_STATUS } from '@/constants/orderStatus'
+import { SERVICE_TYPE, getServiceTypeName } from '@/constants/serviceType'
 import { usePageTheme } from '@/composables/usePageTheme'
 import { getOnsiteOrderDetail } from '@/api/billiard/onsiteOrder'
 import { executeOnsitePayment, getOnsitePayChannels, fetchEnabledChannels } from '@/utils/payment'
 import { guardReviewEntry } from '@/utils/review'
+import { formatAmount } from '@/utils/format'
 
 usePageTheme()
 
@@ -203,7 +206,7 @@ const orderDetail = ref({
   coachStageName: '',
   coachMainPhoto: '',
   customerType: 1,
-  serviceType: 1,
+  serviceType: SERVICE_TYPE.BILLIARD_COACH,
   status: 0,
   unitPrice: 0,
   billingMinutes: 0,
@@ -227,14 +230,6 @@ let paymentPoller = null
 const elapsedTimeText = ref('00:00:00')
 let timerInterval = null
 let pollInterval = null
-
-// 服务类型映射
-const SERVICE_TYPE_NAMES = {
-  1: '台球指导',
-  2: '潮玩领航',
-  3: '酒艺品鉴',
-  4: '影视赏析'
-}
 
 // 数字类型的订单状态（统一转为数字，兼容后端返回字符串）
 const orderStatus = computed(() => Number(orderDetail.value.status) || 0)
@@ -284,15 +279,10 @@ const billingTipText = computed(() => {
 // 是否显示底部栏
 const showBottomBar = computed(() => {
   const status = orderStatus.value
-  if (status === 45) return true
-  if (status === 50) return true
+  if (status === ORDER_STATUS.PENDING_SETTLEMENT) return true
+  if (status === ORDER_STATUS.PENDING_REVIEW) return true
   return false
 })
-
-// 获取服务类型名称
-const getServiceTypeName = (type) => {
-  return SERVICE_TYPE_NAMES[type] || '台球指导'
-}
 
 // 状态图标
 const getStatusIcon = (status) => {
@@ -325,12 +315,6 @@ const getStatusSubtitle = (status) => {
     60: '感谢您的使用'
   }
   return subtitleMap[status] || ''
-}
-
-// 格式化金额（分转元）
-const formatAmount = (amount) => {
-  if (amount === null || amount === undefined) return '0.00'
-  return (Number(amount) / 100).toFixed(2)
 }
 
 // 解析时间（兼容数字时间戳和字符串格式）
@@ -582,7 +566,6 @@ const goToEvaluate = () => {
 
 // 生命周期
 onLoad((options) => {
-  console.log('optionsoptions===',options)
   // 审核模式入口守卫
   if (guardReviewEntry()) return
   if (options.id) {

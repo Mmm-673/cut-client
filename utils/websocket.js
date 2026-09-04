@@ -34,7 +34,6 @@ class WebSocketManager {
 
     // 如果已经连接且 token 相同，不重复连接
     if (this.isConnected && this.token === token && this.socketTask) {
-      console.log('[WebSocket] 已连接，跳过')
       return
     }
 
@@ -48,7 +47,6 @@ class WebSocketManager {
     this.reconnectAttempts = 0
 
     const url = `${this._getWsBaseUrl()}/infra/ws?token=${encodeURIComponent(token)}`
-    console.log('[WebSocket] 开始连接:', url)
 
     this.socketTask = uni.connectSocket({
       url: url,
@@ -56,7 +54,6 @@ class WebSocketManager {
     })
 
     this.socketTask.onOpen(() => {
-      console.log('[WebSocket] 连接成功')
       this.isConnected = true
       this.reconnectAttempts = 0
       this._startHeartbeat()
@@ -74,7 +71,6 @@ class WebSocketManager {
     })
 
     this.socketTask.onClose(() => {
-      console.log('[WebSocket] 连接关闭')
       this.isConnected = false
       this._stopHeartbeat()
       if (!this.manualClose) {
@@ -114,7 +110,6 @@ class WebSocketManager {
    * @param {string} newToken - 新的 accessToken
    */
   reconnect(newToken) {
-    console.log('[WebSocket] 使用新 token 重连')
     this.close(false)
     this.connect(newToken)
   }
@@ -171,7 +166,6 @@ class WebSocketManager {
         const notification = JSON.parse(message.content)
         // 去重检查
         if (notification.notificationId && this.hasProcessed(notification.notificationId)) {
-          console.log('[WebSocket] 通知已处理过，跳过:', notification.notificationId)
           return
         }
         if (notification.notificationId) {
@@ -194,7 +188,6 @@ class WebSocketManager {
       ? this.reconnectDelays[this.reconnectAttempts]
       : this.maxReconnectDelay
 
-    console.log(`[WebSocket] ${delay}秒后尝试第 ${this.reconnectAttempts + 1} 次重连`)
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null

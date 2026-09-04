@@ -96,9 +96,10 @@
 </template>
 
 <script setup>
-import { ref, onUnmounted, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useUserStore } from '@/store/modules/user'
 import { useThemeStore } from '@/store'
+import { useCountdown } from '@/composables/useCountdown'
 
 const userStore = useUserStore()
 const themeStore = useThemeStore()
@@ -112,8 +113,13 @@ const form = ref({
 })
 
 // 验证码倒计时
-const codeCountdown = ref(0)
-let countdownTimer = null
+const {
+  seconds: codeCountdown,
+  start: startCountdown,
+} = useCountdown({
+  initialSeconds: 60,
+  direction: 'down',
+})
 
 // 协议勾选
 const agree = ref(true)
@@ -164,13 +170,7 @@ const getCode = async () => {
     uni.showToast({ title: '验证码已发送', icon: 'success' })
 
     // 开始倒计时
-    codeCountdown.value = 60
-    countdownTimer = setInterval(() => {
-      codeCountdown.value--
-      if (codeCountdown.value <= 0) {
-        clearInterval(countdownTimer)
-      }
-    }, 1000)
+    startCountdown(60)
   } catch (error) {
     uni.hideLoading()
     console.error('发送验证码失败:', error)
@@ -227,10 +227,7 @@ const goToAgree = (type) => {
   })
 }
 
-// 页面卸载清除计时器
-onUnmounted(() => {
-  if (countdownTimer) clearInterval(countdownTimer)
-})
+// 页面卸载时 useCountdown 会自动清理计时器
 </script>
 
 <style lang="scss" scoped>

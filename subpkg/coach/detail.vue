@@ -11,45 +11,11 @@
       </view>
 
       <!-- 头部信息区域 -->
-      <view class="header-section">
-        <image class="header-bg" :src="coachInfo.cover" mode="aspectFill"></image>
-        <view class="header-overlay"></view>
-        <view class="header-content">
-          <image class="avatar" :src="coachInfo.avatar" mode="aspectFill"></image>
-          <view class="info">
-            <view class="name-row">
-              <text class="name">{{ coachInfo.stageName || coachInfo.name }}</text>
-              <view class="tag level" :class="'level-' + coachInfo.level">
-                {{ getLevelText(coachInfo.level) }}
-              </view>
-              <view class="tag service-status" :class="coachInfo.serviceStatus === 0 ? 'status-idle' : 'status-busy'">
-                {{ coachInfo.serviceStatus === 0 ? '空闲' : '服务中' }}
-              </view>
-            </view>
-            <view class="stats-row">
-              <view class="stat-item">
-                <uni-icons type="star" size="14" color="#ffc107"></uni-icons>
-                <text>{{ coachInfo.overallScore || coachInfo.rating }}</text>
-              </view>
-              <view class="stat-item">
-                <text>{{ coachInfo.serviceCount }}单</text>
-              </view>
-              <view class="stat-item">
-                <text>{{ coachInfo.distance }}</text>
-              </view>
-            </view>
-            <view class="tags-row">
-              <view class="tag" v-for="(tag, index) in coachInfo.tags.filter(t => t !== '活跃' && t !== '沉稳')" :key="index">{{ tag }}</view>
-            </view>
-          </view>
-          <!-- #ifndef MP-WEIXIN -->
-          <view class="reward-btn" v-if="showRewardBtn" @click="goToReward">
-            <uni-icons type="gift" size="16" color="#ffc107"></uni-icons>
-            <text>教学心意</text>
-          </view>
-          <!-- #endif -->
-        </view>
-      </view>
+      <coach-detail-header
+          :coach="coachInfo"
+          :show-reward="showRewardBtn"
+          @reward="goToReward"
+      />
 
 
       <!-- 服务项目 -->
@@ -59,35 +25,14 @@
           <text>服务项目</text>
         </view>
         <view class="service-list">
-          <view class="service-item" :class="{selected: selectedService?.id === service.id}" v-for="(service, index) in services" :key="index">
-            <view class="service-main">
-              <view class="service-name-row">
-                <text class="service-icon">{{ getServiceIcon(service.type) }}</text>
-                <text class="service-name">{{ service.name }}</text>
-                <view class="tag hot" v-if="service.hot">热销</view>
-              </view>
-              <view class="service-desc">{{ service.desc }}</view>
-              <view class="service-bottom">
-                <view class="service-sales">已售{{ service.sales }}单</view>
-                <view class="service-action">
-                  <view class="service-price">
-                    <template v-if="service.price != null">
-                      <text class="price-symbol">¥</text>
-                      <text class="price">{{ formatPrice(service.price) }}</text>
-                      <text class="price-unit">/{{ getServicePriceUnit(service) }}</text>
-                    </template>
-                    <text v-else class="price-none">暂无报价</text>
-                  </view>
-                  <view
-                      class="select-btn"
-                      :class="{active: selectedService?.id === service.id, disabled: !canBookService(service)}"
-                      @click="selectService(service)">
-                    {{ !canBookService(service) ? '暂不可约' : (selectedService?.id === service.id ? '已选择' : '选择') }}
-                  </view>
-                </view>
-              </view>
-            </view>
-          </view>
+          <service-item-card
+              v-for="(service, index) in services"
+              :key="service.id || index"
+              :service="service"
+              :is-selected="selectedService?.id === service.id"
+              :can-book="canBookService(service)"
+              @select="selectService"
+          />
         </view>
       </view>
 
@@ -145,7 +90,7 @@
             <image
                 class="album-item"
                 v-for="(item, index) in albumList"
-                :key="index"
+                :key="item"
                 :src="item"
                 mode="aspectFill"
                 @click="previewImage(index)"
@@ -155,90 +100,12 @@
       </view>
 
       <!-- 用户评价 -->
-      <view class="section" v-if="isUserLoggedIn && reviewList.length > 0">
-        <view class="section-title">
-          <uni-icons type="star" size="18" color="#00c896"></uni-icons>
-          <text>用户评价 ({{ reviewList.length }})</text>
-          <text class="rating-text">{{ coachInfo.overallScore || coachInfo.rating }}分</text>
-        </view>
-
-        <!-- 默认显示前2条 -->
-        <view class="review-list" v-if="!showAllReviews">
-          <view class="review-item" v-for="(review, index) in reviewList.slice(0, 2)" :key="index">
-            <view class="review-header">
-              <image class="review-avatar" :src="review.avatar" mode="aspectFill"></image>
-              <view class="review-user">
-                <text class="review-name">{{ review.name }}</text>
-                <view class="review-stars">
-                  <uni-icons type="star-filled" size="12" color="#ffc107" v-for="n in review.rating" :key="n"></uni-icons>
-                </view>
-              </view>
-              <text class="review-time">{{ review.time }}</text>
-            </view>
-            <view class="review-content">{{ review.content }}</view>
-            <!-- 评价图片 -->
-            <view class="review-images" v-if="review.images && review.images.length > 0">
-              <image
-                class="review-image"
-                v-for="(img, imgIndex) in review.images.slice(0, 3)"
-                :key="imgIndex"
-                :src="img"
-                mode="aspectFill"
-                @click="previewReviewImage(index, imgIndex)"
-              ></image>
-              <view class="review-image-more" v-if="review.images.length > 3" @click="previewReviewImage(index, 0)">
-                <text>+{{ review.images.length - 3 }}</text>
-              </view>
-            </view>
-            <view class="review-tags">
-              <view class="tag small" v-for="(tag, tagIndex) in review.tags" :key="tagIndex">{{ tag }}</view>
-            </view>
-          </view>
-        </view>
-
-        <!-- 展开显示全部（可滚动） -->
-        <scroll-view
-          class="review-list-scroll"
-          scroll-y="true"
-          v-else
-          :style="{ height: '600rpx' }"
-        >
-          <view class="review-item" v-for="(review, index) in reviewList" :key="index">
-            <view class="review-header">
-              <image class="review-avatar" :src="review.avatar" mode="aspectFill"></image>
-              <view class="review-user">
-                <text class="review-name">{{ review.name }}</text>
-                <view class="review-stars">
-                  <uni-icons type="star-filled" size="12" color="#ffc107" v-for="n in review.rating" :key="n"></uni-icons>
-                </view>
-              </view>
-              <text class="review-time">{{ review.time }}</text>
-            </view>
-            <view class="review-content">{{ review.content }}</view>
-            <!-- 评价图片 -->
-            <view class="review-images" v-if="review.images && review.images.length > 0">
-              <image
-                class="review-image"
-                v-for="(img, imgIndex) in review.images.slice(0, 3)"
-                :key="imgIndex"
-                :src="img"
-                mode="aspectFill"
-                @click="previewReviewImage(index, imgIndex)"
-              ></image>
-              <view class="review-image-more" v-if="review.images.length > 3" @click="previewReviewImage(index, 0)">
-                <text>+{{ review.images.length - 3 }}</text>
-              </view>
-            </view>
-            <view class="review-tags">
-              <view class="tag small" v-for="(tag, tagIndex) in review.tags" :key="tagIndex">{{ tag }}</view>
-            </view>
-          </view>
-        </scroll-view>
-
-        <view class="more-reviews" @click="showAllReviews = !showAllReviews">
-          <text>{{ showAllReviews ? '收起评价' : '查看全部' + reviewList.length + '条评价' }}</text>
-        </view>
-      </view>
+      <review-section
+          v-if="isUserLoggedIn && reviewList.length > 0"
+          :reviews="reviewList"
+          :rating="coachInfo.overallScore || coachInfo.rating"
+          @image-click="({ reviewIndex, index: imgIndex }) => previewReviewImage(reviewIndex, imgIndex)"
+      />
 
       <!-- 未登录时显示评价提示 -->
       <view class="section" v-else-if="!isUserLoggedIn">
@@ -258,14 +125,13 @@
 
 
     <!-- 底部操作栏 -->
-    <view class="bottom-bar">
-      <view class="price-info">
-        <text class="price-symbol">¥</text>
-        <text class="price">{{ formatPrice(bottomPrice) }}</text>
-        <text class="price-unit">/{{ bottomPriceUnit }}{{ bottomShowQi ? '起' : '' }}</text>
-      </view>
-      <view class="book-btn" :class="{disabled: !canBookNow}" @click="bookNow">立即预约</view>
-    </view>
+    <coach-book-bar
+        :price="bottomPrice"
+        :price-unit="bottomPriceUnit"
+        :show-qi="bottomShowQi"
+        :can-book="canBookNow"
+        @book="bookNow"
+    />
   </view>
 
   <!-- 图片查看器 -->
@@ -287,9 +153,17 @@ import { formatPrice, extractCoachId } from '@/utils/common'
 import { isLoggedIn } from '@/utils/token'
 import { guardReviewEntry, isReviewMode } from '@/utils/review'
 import { isFixedPricing, canBookService as checkCanBookService, getPriceUnit } from '@/utils/pricing'
-import { useThemeStore } from '@/store'
+import { useThemeStore, useCoachStore, useBookingStore } from '@/store'
+import { SERVICE_TYPE } from '@/constants/serviceType'
+import { TIME_MS } from '@/constants/time'
+import CoachDetailHeader from '@/components/coach-detail-header/coach-detail-header.vue'
+import ServiceItemCard from '@/components/service-item-card/service-item-card.vue'
+import ReviewSection from '@/components/review-section/review-section.vue'
+import CoachBookBar from '@/components/coach-book-bar/coach-book-bar.vue'
 
 const themeStore = useThemeStore()
+const coachStore = useCoachStore()
+const bookingStore = useBookingStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // 图片查看器
@@ -368,11 +242,9 @@ const onVideoError = () => {
 }
 
 const onVideoPlay = () => {
-  // console.log('视频开始播放')
 }
 
 const onVideoPause = () => {
-  // console.log('视频暂停')
 }
 
 const onVideoEnded = () => {
@@ -417,8 +289,6 @@ const albumList = ref([])
 
 // 评价列表
 const reviewList = ref([])
-// 是否展开全部评价
-const showAllReviews = ref(false)
 
 // 等级映射
 const levelMap = {
@@ -435,6 +305,17 @@ const getLevelText = (level) => {
   return levelMap[level] || '初级教练'
 }
 
+// 格式化距离显示
+const formatDistance = (distance) => {
+  if (distance === null || distance === undefined || distance === '') {
+    return ''
+  }
+  if (typeof distance === 'number') {
+    return distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`
+  }
+  return distance
+}
+
 // 获取主图（从 photos 数组中找 isMain=true 的）
 const getMainPhoto = (photos) => {
   if (!photos || !Array.isArray(photos) || photos.length === 0) {
@@ -447,26 +328,6 @@ const getMainPhoto = (photos) => {
   // 如果没有主图，返回第一张
   const first = photos[0]
   return first.photoUrl || first.url || first
-}
-
-// 格式化距离显示
-const formatDistance = (distance) => {
-  if (distance === null || distance === undefined || distance === '') {
-    return ''
-  }
-  if (typeof distance === 'number') {
-    return distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`
-  }
-  return distance
-}
-
-// 获取服务图标
-const getServiceIcon = (type) => {
-  if (type === 1) return '🎱'
-  if (type === 2) return '🌆'
-  if (type === 3) return '🍷'
-  if (type === 4) return '🎬'
-  return '🎱'
 }
 
 // 加载教练详情
@@ -562,8 +423,8 @@ const loadCoachData = async () => {
             // 新版以 price 字段为准，兼容旧数据兜底
             price: item.price != null ? item.price : item.hourlyPrice,
             // 兼容旧数据：没有 pricingMode 时根据 serviceType 默认判断
-            pricingMode: item.pricingMode || (item.serviceType === 1 ? 'HOURLY' : 'HOURLY'),
-            priceUnit: item.priceUnit || (item.serviceType === 1 ? '小时' : '小时')
+            pricingMode: item.pricingMode || (item.serviceType === SERVICE_TYPE.BILLIARD_COACH ? 'HOURLY' : 'HOURLY'),
+            priceUnit: item.priceUnit || (item.serviceType === SERVICE_TYPE.BILLIARD_COACH ? '小时' : '小时')
           }
         })
         .filter(Boolean)
@@ -657,7 +518,6 @@ const onRefresh = () => {
 
 // 收藏/取消收藏
 const handleToggleFavorite = async () => {
-  console.log('收藏教练, id:', coachInfo.id)
   if (!coachInfo.id) {
     uni.showToast({ title: '教练信息加载中', icon: 'none' })
     return
@@ -668,9 +528,7 @@ const handleToggleFavorite = async () => {
 
   try {
     uni.showLoading({ title: '处理中...' })
-    console.log('发送收藏请求, coachId:', coachInfo.id)
     const res = await toggleCoachFavorite({ coachId: coachInfo.id })
-    console.log('收藏响应:', res)
     isFavorite.value = res.data
     uni.showToast({
       title: isFavorite.value ? '已收藏' : '已取消收藏',
@@ -746,9 +604,6 @@ const canBookNow = computed(() => {
 // 判断服务是否可预约（模板中用）
 const canBookService = (service) => checkCanBookService(service)
 
-// 获取服务价格单位（模板中用）
-const getServicePriceUnit = (service) => getPriceUnit(service)
-
 // 选择服务
 const selectService = (service) => {
   if (!checkCanBookService(service)) {
@@ -807,14 +662,14 @@ const bookNow = async () => {
     return
   }
 
-  // 保存教练信息和选中的服务
-  uni.setStorageSync('selectedCoach', {
+  // 保存教练信息和选中的服务到 Store（同时同步到 Storage 作为降级）
+  coachStore.setSelectedCoach({
     ...coachInfo,
     selectedService: selectedService.value
   })
 
   // 计算默认预约时间（1小时后）
-  const bookingTime = Date.now() + 3600000
+  const bookingTime = Date.now() + TIME_MS.HOUR
 
   // 格式化时间显示
   const date = new Date(bookingTime)
@@ -830,7 +685,7 @@ const bookNow = async () => {
   const isFixed = isFixedPricing(selectedService.value.pricingMode)
 
   // 构建订单初始化数据
-  const orderInitData = {
+  const orderData = {
     coachInfo: coachInfo,
     selectedService: selectedService.value,
     serviceType: selectedService.value.type,
@@ -858,12 +713,12 @@ const bookNow = async () => {
       quantity = 7
     }
 
-    orderInitData.serviceDuration = serviceDuration
-    orderInitData.quantity = quantity
+    orderData.serviceDuration = serviceDuration
+    orderData.quantity = quantity
   }
 
-  // 保存订单初始化数据到 storage
-  uni.setStorageSync('createdOrderData', orderInitData)
+  // 保存订单初始化数据到 Store（同时同步到 Storage 作为降级）
+  bookingStore.setOrderInitData(orderData)
 
   // 判断服务类型：1=台球陪练(需要选择球厅)，其他=跳转到确认订单页面
   const isBilliardsService = selectedService.value.type === 1
@@ -992,153 +847,6 @@ onUnload(() => {
   background-color: var(--bg-page);
 }
 
-.header-section {
-  position: relative;
-  height: 640rpx;
-  overflow: hidden;
-  //margin-top: -90rpx;
-
-  .header-bg {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-  }
-
-  .header-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(to bottom, rgba(26, 26, 26, 0.1) 0%, rgba(26, 26, 26, 0.9) 100%);
-  }
-
-  .header-content {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 10;
-    padding: 20rpx;
-    display: flex;
-    align-items: flex-start;
-    gap: 32rpx;
-
-    .avatar {
-      width: 160rpx;
-      height: 160rpx;
-      border-radius: 32rpx;
-      border: 6rpx solid var(--border-color);
-      flex-shrink: 0;
-    }
-
-    .info {
-      flex: 1;
-
-      .name-row {
-        display: flex;
-        align-items: center;
-        gap: 20rpx;
-        margin-bottom: 16rpx;
-
-        .name {
-          font-size: 48rpx;
-          font-weight: 700;
-          color: var(--text-primary);
-        }
-
-        .tag.level {
-          font-size: 22rpx;
-          padding: 8rpx 20rpx;
-          border-radius: 40rpx;
-
-          &.level-0 {
-            background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
-            color: var(--text-primary);
-          }
-
-          &.level-1 {
-            background: linear-gradient(135deg, #faad14 0%, #d48806 100%);
-            color: var(--text-primary);
-          }
-
-          &.level-2 {
-            background: linear-gradient(135deg, #f5222d 0%, #cf1322 100%);
-            color: var(--text-primary);
-          }
-
-          &.level-3 {
-            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-            color: #000000;
-          }
-        }
-
-        .tag.service-status {
-          border: none;
-
-          &.status-idle {
-            background: rgba(0, 212, 170, 0.2);
-            color: #00d4aa;
-          }
-
-          &.status-busy {
-            background: rgba(255, 59, 48, 0.2);
-            color: #FF3B30;
-          }
-        }
-      }
-
-      .stats-row {
-        display: flex;
-        align-items: center;
-        gap: 32rpx;
-        margin-bottom: 20rpx;
-
-        .stat-item {
-          display: flex;
-          align-items: center;
-          gap: 8rpx;
-          font-size: 28rpx;
-          color: var(--text-secondary);
-        }
-      }
-
-      .tags-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 16rpx;
-
-        .tag {
-          font-size: 24rpx;
-          padding: 8rpx 24rpx;
-          border-radius: 40rpx;
-          background-color: rgba(0, 200, 150, 0.2);
-          color: #00c896;
-          border: 2rpx solid rgba(0, 200, 150, 0.3);
-        }
-      }
-    }
-
-    .reward-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8rpx;
-      padding: 20rpx 32rpx;
-      background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 152, 0, 0.2) 100%);
-      border: 2rpx solid rgba(255, 193, 7, 0.4);
-      border-radius: 24rpx;
-
-      text {
-        font-size: 24rpx;
-        color: #ffc107;
-      }
-    }
-  }
-}
-
 .section {
   padding: 48rpx 40rpx;
 
@@ -1215,115 +923,6 @@ onUnload(() => {
   display: flex;
   flex-direction: column;
   gap: 24rpx;
-
-  .service-item {
-    background-color: var(--bg-card);
-    border-radius: 32rpx;
-    padding: 32rpx;
-    display: flex;
-    border: 4rpx solid transparent;
-    transition: all 0.3s;
-
-    &.selected {
-      border-color: #00c896;
-      background-color: rgba(0, 200, 150, 0.1);
-    }
-
-    .service-main {
-      flex: 1;
-
-      .service-name-row {
-        display: flex;
-        align-items: center;
-        gap: 20rpx;
-        margin-bottom: 12rpx;
-
-        .service-icon {
-          font-size: 36rpx;
-        }
-
-        .service-name {
-          font-size: 32rpx;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .tag.hot {
-          font-size: 20rpx;
-          padding: 4rpx 16rpx;
-          border-radius: 40rpx;
-          background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%);
-          color: var(--text-primary);
-        }
-      }
-
-      .service-desc {
-        font-size: 26rpx;
-        color: var(--text-tertiary);
-        margin-bottom: 16rpx;
-        line-height: 1.5;
-      }
-
-      .service-bottom {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-
-        .service-sales {
-          font-size: 24rpx;
-          color: var(--text-tertiary);
-        }
-
-        .service-action {
-          display: flex;
-          align-items: center;
-          gap: 20rpx;
-
-          .service-price {
-            display: flex;
-            align-items: baseline;
-
-            .price-symbol {
-              font-size: 28rpx;
-              color: #00c896;
-              font-weight: 600;
-            }
-
-            .price {
-              font-size: 48rpx;
-              color: #00c896;
-              font-weight: 700;
-            }
-
-            .price-unit {
-              font-size: 26rpx;
-              color: #999999;
-            }
-          }
-
-          .select-btn {
-            padding: 16rpx 32rpx;
-            border-radius: 40rpx;
-            font-size: 26rpx;
-            font-weight: 600;
-            color: #ffffff;
-            background-color: #00c896;
-            border: none;
-            transition: all 0.3s;
-
-            &.active {
-              background-color: #059669;
-            }
-
-            &.disabled {
-              background-color: #666;
-              opacity: 0.6;
-            }
-          }
-        }
-      }
-    }
-  }
 }
 
 .album-scroll {
@@ -1347,118 +946,6 @@ onUnload(() => {
   }
 }
 
-.review-list-scroll {
-  padding-bottom: 10rpx;
-  //padding: 0 40rpx 10rpx;
-  //margin: 0 -40rpx;
-}
-
-.review-item {
-  background-color: var(--bg-card);
-  border-radius: 32rpx;
-  padding: 32rpx;
-  flex-shrink: 0;
-  margin-bottom: 10rpx;
-  .review-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 24rpx;
-
-    .review-avatar {
-      width: 96rpx;
-      height: 96rpx;
-      border-radius: 50%;
-      margin-right: 24rpx;
-    }
-
-    .review-user {
-      flex: 1;
-
-      .review-name {
-        font-size: 30rpx;
-        font-weight: 600;
-        color: var(--text-primary);
-        display: block;
-        margin-bottom: 8rpx;
-      }
-
-      .review-stars {
-        display: flex;
-        gap: 4rpx;
-      }
-    }
-
-    .review-time {
-      font-size: 24rpx;
-      color: var(--text-tertiary);
-    }
-  }
-
-  .review-content {
-    font-size: 28rpx;
-    color: var(--text-secondary);
-    line-height: 1.6;
-    margin-bottom: 24rpx;
-  }
-
-  .review-images {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16rpx;
-    margin-bottom: 24rpx;
-
-    .review-image {
-      width: 160rpx;
-      height: 160rpx;
-      border-radius: 16rpx;
-      background-color: #333333;
-    }
-
-    .review-image-more {
-      width: 160rpx;
-      height: 160rpx;
-      border-radius: 16rpx;
-      background-color: rgba(0, 0, 0, 0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      text {
-        font-size: 36rpx;
-        color: var(--text-primary);
-        font-weight: 600;
-      }
-    }
-  }
-
-  .review-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16rpx;
-
-    .tag.small {
-      font-size: 22rpx;
-      padding: 6rpx 20rpx;
-      border-radius: 40rpx;
-      background-color: rgba(0, 200, 150, 0.15);
-      color: #00c896;
-    }
-  }
-}
-
-.more-reviews {
-  margin-top: 16rpx;
-  padding: 28rpx;
-  background-color: var(--bg-card);
-  border-radius: 24rpx;
-  text-align: center;
-
-  text {
-    font-size: 28rpx;
-    color: var(--text-tertiary);
-  }
-}
-
 /* 适配底部安全区 */
 .safe-area-bottom {
   height: constant(safe-area-inset-bottom);
@@ -1466,56 +953,4 @@ onUnload(() => {
   width: 100%;
 }
 
-.bottom-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: var(--bg-card);
-  padding: 16rpx 32rpx;
-  padding-bottom: calc(16rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 100;
-
-  .price-info {
-    display: flex;
-    align-items: baseline;
-
-    .price-symbol {
-      font-size: 28rpx;
-      color: #00c896;
-      font-weight: 600;
-    }
-
-    .price {
-      font-size: 44rpx;
-      color: #00c896;
-      font-weight: 700;
-    }
-
-    .price-unit {
-      font-size: 24rpx;
-      color: var(--text-tertiary);
-    }
-  }
-
-  .book-btn {
-    padding: 20rpx 56rpx;
-    background: linear-gradient(135deg, #00c896 0%, #00a87a 100%);
-    color: var(--text-primary);
-    font-size: 28rpx;
-    font-weight: 600;
-    border-radius: 44rpx;
-    box-shadow: 0 8rpx 30rpx rgba(0, 200, 150, 0.3);
-
-    &.disabled {
-      background: #666;
-      box-shadow: none;
-      opacity: 0.6;
-    }
-  }
-}
 </style>

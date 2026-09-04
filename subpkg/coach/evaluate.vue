@@ -66,7 +66,7 @@
         <view
             class="preview-item"
             v-for="(img, index) in uploadedImages"
-            :key="index"
+            :key="img"
         >
           <image :src="img" mode="aspectFill" class="preview-img" />
           <view class="remove-btn" @click="removeImage(index)">
@@ -170,6 +170,7 @@ const loadCoachDetail = async (id) => {
     coachInfo.avatar = data.avatar || getMainPhoto(data.photos)  || '';
     coachInfo.name = data.stageName || data.name || '';
   } catch (error) {
+    console.error('[evaluate] 加载教练详情失败:', error)
   }
 };
 
@@ -177,14 +178,12 @@ const loadCoachDetail = async (id) => {
 onLoad((options) => {
   // 审核模式入口守卫
   if (guardReviewEntry()) return
-  console.log('evaluate onLoad options:', options);
   // 从上一页传递的参数获取订单ID和教练ID
   if (options.orderId) {
     orderId.value = parseInt(options.orderId);
   }
   if (options.coachId) {
     coachId.value = parseInt(options.coachId);
-    console.log('开始加载教练详情, coachId:', coachId.value);
     loadCoachDetail(coachId.value);
   } else {
     console.warn('没有接收到 coachId 参数');
@@ -301,7 +300,6 @@ const handleUploadImage = async () => {
   } catch (err) {
     console.error('处理图片上传请求失败:', err)
     if (err?.message === 'user_cancelled') {
-      console.log('用户取消了图片选择')
     } else {
       uni.showToast({
         title: '图片上传失败，请重试',

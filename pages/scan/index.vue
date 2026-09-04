@@ -56,7 +56,6 @@ const getQueryParam = (url, param) => {
 
 // 处理扫码结果（扫码和相册共用）
 const processQrResult = (rawResult) => {
-  console.log('[processQrResult] 原始内容:', rawResult, '类型:', typeof rawResult)
 
   let coachId = null
 
@@ -115,7 +114,6 @@ const convertToNativePath = (tempPath) => {
 const decodeImage = async (filePath) => {
   try {
     // #ifdef APP-PLUS
-    console.log('[相册扫码] 原始临时路径:', filePath)
 
     // 尝试多种方式获取可用路径
     let scanPath = filePath
@@ -134,13 +132,11 @@ const decodeImage = async (filePath) => {
       scanPath = filePath
     }
 
-    console.log('[相册扫码] 最终扫描路径:', scanPath)
 
     const code = await new Promise((resolve, reject) => {
       plus.barcode.scan(
           scanPath,
           (type, result) => {
-            console.log('[相册扫码] 解码成功, type:', type, 'result:', result)
             resolve(result)
           },
           (err) => {
@@ -151,7 +147,6 @@ const decodeImage = async (filePath) => {
     })
 
     loading.value = false
-    console.log('[相册扫码] 最终解码内容:', code)
     if (code) {
       processQrResult(code)
     } else {
@@ -162,7 +157,6 @@ const decodeImage = async (filePath) => {
     // #ifdef H5
     // H5 平台：提示暂不支持
     loading.value = false
-    console.log('[相册扫码-H5] 路径:', filePath)
     uni.showToast({
       title: 'H5 相册扫码功能开发中，请使用直接扫码',
       icon: 'none'
@@ -185,7 +179,6 @@ const handleAlbumScan = async () => {
     uni.scanCode({
       scanType: ['qrCode'],
       success: (res) => {
-        console.log('[相册扫码-小程序] 成功:', res.result)
         processQrResult(res.result)
       },
       fail: (err) => {
@@ -226,7 +219,6 @@ const handleAlbumScan = async () => {
   } catch (err) {
     loading.value = false
     if (err?.message === 'user_cancelled') {
-      console.log('用户取消了相册权限用途说明')
     } else if (err?.errMsg?.includes('cancel')) {
       // 用户取消选图，不做处理
     } else {
@@ -243,16 +235,12 @@ const handleScan = async () => {
     uni.scanCode({
       onlyFromCamera: true,
       success: (res) => {
-        console.log('扫码结果:', res)
         processQrResult(res.result)
       },
       fail: (err) => {
         console.error('扫码失败:', err)
         if (err.errMsg && err.errMsg.includes('cancel')) {
-          // 用户取消，返回首页
-          // uni.switchTab({
-          //   url: '/pages/home/index'
-          // })
+          // 用户取消，不做处理
         } else if (err.errMsg && (err.errMsg.includes('auth deny') || err.errMsg.includes('authorize') || err.errMsg.includes('denied') || err.errMsg.includes('fail'))) {
           // 权限拒绝，显示引导弹窗
           showCameraPermissionModal()
@@ -260,14 +248,7 @@ const handleScan = async () => {
           uni.showToast({
             title: '扫码失败，请重试',
             icon: 'none',
-            duration: 1500,
-            complete: () => {
-              // setTimeout(() => {
-              //   uni.switchTab({
-              //     url: '/pages/home/index'
-              //   })
-              // }, 1500)
-            }
+            duration: 1500
           })
         }
       }
@@ -276,7 +257,6 @@ const handleScan = async () => {
     console.error('处理扫码请求失败:', err)
     if (err?.message === 'user_cancelled') {
       // 用户取消了相机权限用途说明，不进行任何操作
-      console.log('用户取消了相机权限用途说明')
     } else {
       uni.showToast({
         title: '扫码失败，请重试',

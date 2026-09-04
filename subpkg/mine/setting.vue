@@ -88,7 +88,6 @@ const handleThemeChange = () => {
   uni.vibrateShort?.({ type: 'light' })
 
   const newTheme = themeStore.toggleTheme()
-  console.log('[Setting] 切换主题到:', newTheme)
 
   applyTheme(newTheme)
 

@@ -3,184 +3,46 @@
     <!-- 滚动区域 -->
     <scroll-view scroll-y class="scroll-container" show-scrollbar="false" :style="{ paddingTop: navBarHeight + 'rpx', height: `calc(100vh)` }">
       <!-- 欢迎语 -->
-      <view class="welcome-section">
-        <view class="welcome-left">
-          <text class="greeting">你好 👋</text>
-          <text class="welcome-text">{{ welcomeText }}</text>
-        </view>
-        <view class="welcome-right">
-          <view class="scan-btn" @click="toScan">
-            <uni-icons type="scan" size="24" color="#00BB88" />
-          </view>
-        </view>
-      </view>
+      <welcome-bar :welcome-text="welcomeText" @scan-click="toScan" />
 
       <!-- 轮播图 -->
-      <view class="banner-section">
-        <swiper
-            class="banner-swiper"
-            indicator-dots
-            autoplay
-            circular
-            :interval="3500"
-            :duration="400"
-            easing-function="easeInOutCubic"
-            indicator-active-color="#00BB88"
-        >
-          <swiper-item v-for="(item, index) in bannerList" :key="index" @click="handleBannerClick(item)">
-            <view class="banner-card">
-              <image class="banner-img" :src="item.imageUrl" mode="aspectFill"></image>
-<!--              <view class="banner-overlay">-->
-<!--                <view class="banner-content">-->
-<!--                  <text class="banner-tag">{{ item.tag || '限时特惠' }}</text>-->
-<!--                  <text class="banner-title">{{ item.title || '新人首单立减50元' }}</text>-->
-<!--                </view>-->
-<!--              </view>-->
-            </view>
-          </swiper-item>
-        </swiper>
-      </view>
-
-<!--      &lt;!&ndash; 服务项目四宫格（紧凑版） &ndash;&gt;-->
-<!--      <view class="service-grid-section">-->
-<!--        <view class="section-header">-->
-<!--          <view class="title-left">-->
-<!--            <view class="title-decoration">-->
-<!--              <view class="title-dot"></view>-->
-<!--              <view class="title-line"></view>-->
-<!--            </view>-->
-<!--            <text class="title-text">特色服务</text>-->
-<!--            <view class="title-badge">NEW</view>-->
-<!--          </view>-->
-<!--        </view>-->
-
-<!--        <view class="service-grid">-->
-<!--          <view-->
-<!--            class="service-item"-->
-<!--            v-for="(item, index) in serviceList"-->
-<!--            :key="index"-->
-<!--            @click="handleServiceItemClick(item)"-->
-<!--            :style="{ background: item.bgColor }"-->
-<!--          >-->
-<!--            <view class="service-icon">-->
-<!--              <text class="service-emoji">{{ item.icon }}</text>-->
-<!--            </view>-->
-<!--            <view class="service-info">-->
-<!--              <text class="service-title">{{ item.title }}</text>-->
-<!--              <text class="service-desc">{{ item.desc }}</text>-->
-<!--            </view>-->
-<!--          </view>-->
-<!--        </view>-->
-<!--      </view>-->
+      <home-banner :banners="bannerList" @item-click="handleBannerClick" />
 
       <!-- 审核模式：球厅预约 -->
       <review-venue v-if="showVenueSection" />
 
       <!-- 开关加载中的中性骨架（避免泄露教练内容） -->
-      <view class="home-skeleton" v-if="!reviewLoaded">
-        <view class="skeleton-card" v-for="i in 3" :key="i">
-          <view class="skeleton-line title"></view>
-          <view class="skeleton-line"></view>
-          <view class="skeleton-line short"></view>
-        </view>
-      </view>
-
+      <home-skeleton v-if="!reviewLoaded" :count="3" />
 
       <!-- 热门裁教 -->
       <view class="section-container" v-if="showCoachSections">
-        <view class="section-header">
-          <view class="title-left">
-            <view class="title-decoration">
-              <view class="title-dot"></view>
-              <view class="title-line"></view>
-            </view>
-            <text class="title-text">热门裁教</text>
-            <view class="title-badge">TOP</view>
-          </view>
-          <view class="view-more" @click="viewAllHotCoach">
-            <text>全部</text>
-            <uni-icons type="right" size="14" color="#9CA3AF" />
-          </view>
-        </view>
+        <home-section-header title="热门裁教" badge="TOP" @more="viewAllHotCoach" />
 
         <scroll-view class="scroll-view-h" scroll-x="true" show-scrollbar="false">
           <view class="hot-coach-list">
-            <view class="hot-coach-card" v-for="item in hotCoachList" :key="item.id" @click="goCoachDetail(item)">
-              <view class="hot-img-box">
-                <image class="hot-avatar" :src="item.avatar" mode="aspectFill"></image>
-                <view v-if="item.online" class="online-status">
-                  <view class="dot-pulse">
-                    <view class="dot"></view>
-                    <view class="dot-ring"></view>
-                  </view>
-                  <text>在线</text>
-                </view>
-                <view class="score-tag">
-                  <uni-icons type="star-filled" size="10" color="#FFB800" />
-                  <text>{{item.score}}</text>
-                </view>
-              </view>
-              <view class="hot-info">
-                <text class="hot-name">{{item.name}}</text>
-                <!-- 新增：裁教简介 -->
-<!--                <text class="hot-desc" v-if="item.desc">{{item.desc}}</text>-->
-                <view class="hot-stats">
-                  <text class="stat-count">已接{{item.orderCount}}单</text>
-                  <view class="order-icon">
-                    <uni-icons type="checkbox-filled" size="12" color="#00BB88" />
-                  </view>
-                </view>
-                <!-- 新增：价格信息 -->
-                <view class="price-info" v-if="item.displayPrice">
-                  <text class="price-text">¥{{item.displayPrice}}</text>
-                  <text class="price-unit">/{{item.priceUnit}}起</text>
-                </view>
-              </view>
-            </view>
+            <hot-coach-card
+              v-for="item in hotCoachList"
+              :key="item.id"
+              :coach="item"
+              @click="goCoachDetail"
+            />
           </view>
         </scroll-view>
       </view>
 
       <!-- 新人推荐 -->
       <view class="section-container last-section" v-if="showCoachSections">
-        <view class="section-header">
-          <view class="title-left">
-            <view class="title-decoration">
-              <view class="title-dot blue"></view>
-              <view class="title-line blue"></view>
-            </view>
-            <text class="title-text">新人精选</text>
-            <view class="title-badge blue">NEW</view>
-          </view>
-          <view class="view-more" @click="viewAllNewCoach">
-            <text>全部</text>
-            <uni-icons type="right" size="14" color="#9CA3AF" />
-          </view>
-        </view>
+        <home-section-header title="新人精选" badge="NEW" badge-color="blue" @more="viewAllNewCoach" />
 
         <view class="new-coach-section">
           <scroll-view class="scroll-view-h" scroll-x="true" show-scrollbar="false">
             <view class="new-coach-list">
-              <view
-                  class="new-avatar-item"
-                  v-for="(item, index) in newCoachList"
+              <new-coach-avatar
+                  v-for="item in newCoachList"
                   :key="item.id"
-                  @click="goCoachDetail(item)"
-              >
-                <view class="new-img-wrap">
-                  <view class="avatar-ring"></view>
-                  <image class="new-img" :src="item.avatar" mode="aspectFill"></image>
-                  <view class="new-label">
-                    <text>NEW</text>
-                  </view>
-                  <view class="shine-overlay"></view>
-                  <!-- 新增：在线状态指示器 -->
-                  <view class="new-online-status" v-if="item.online">
-                    <view class="online-dot"></view>
-                  </view>
-                </view>
-                <text class="new-name">{{item.name}}</text>
-              </view>
+                  :coach="item"
+                  @click="goCoachDetail"
+              />
             </view>
           </scroll-view>
         </view>
@@ -190,33 +52,13 @@
     </scroll-view>
 
     <!-- 重大通知弹窗 -->
-    <view class="notify-modal" v-if="showNotifyModal" @click="closeNotifyModal('cancel')">
-      <view class="notify-modal-content" @click.stop>
-        <!-- 顶部装饰 -->
-        <view class="notify-modal-header">
-          <view class="notify-modal-icon">
-            <uni-icons type="sound" size="28" color="#fff" />
-          </view>
-          <text class="notify-modal-badge">重大通知</text>
-        </view>
-
-        <!-- 内容区 -->
-        <view class="notify-modal-body">
-          <text class="notify-modal-title">{{ currentNotify.title }}</text>
-          <text class="notify-modal-desc">{{ currentNotify.summary }}</text>
-        </view>
-
-        <!-- 按钮区 -->
-        <view class="notify-modal-footer">
-          <view class="notify-btn notify-btn-cancel" @click="closeNotifyModal('cancel')">
-            <text>我知道了</text>
-          </view>
-          <view class="notify-btn notify-btn-confirm" @click="closeNotifyModal('confirm')">
-            <text>查看详情</text>
-          </view>
-        </view>
-      </view>
-    </view>
+    <notify-modal
+      :visible="showNotifyModal"
+      :title="currentNotify.title"
+      :description="currentNotify.summary"
+      @cancel="closeNotifyModal('cancel')"
+      @confirm="closeNotifyModal('confirm')"
+    />
 
     <!-- #ifdef APP-PLUS -->
     <ios-privacy-dialog ref="privacyDialogRef" @agree="handlePrivacyAgreed" />
@@ -238,6 +80,13 @@ import {
 } from '@/store'
 import { usePageTheme } from '@/composables/usePageTheme'
 import IosPrivacyDialog from '@/components/ios-privacy-dialog/ios-privacy-dialog.vue'
+import NewCoachAvatar from '@/components/new-coach-avatar/new-coach-avatar.vue'
+import HotCoachCard from '@/components/hot-coach-card/hot-coach-card.vue'
+import HomeBanner from '@/components/home-banner/home-banner.vue'
+import HomeSectionHeader from '@/components/home-section-header/home-section-header.vue'
+import WelcomeBar from '@/components/welcome-bar/welcome-bar.vue'
+import HomeSkeleton from '@/components/home-skeleton/home-skeleton.vue'
+import NotifyModal from '@/components/notify-modal/notify-modal.vue'
 
 const configStore = useConfigStore()
 const themeStore = useThemeStore()
@@ -269,43 +118,6 @@ const hasQueriedVenue = ref(false) // 记录是否已查询过球厅列表
 const bannerList = ref([])
 const privacyDialogRef = ref(null)
 
-// 服务项目数据
-const serviceList = ref([
-  {
-    title: '台球教学',
-    desc: '专业教练一对一指导',
-    icon: '🎱',
-    bgColor: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)'
-  },
-  {
-    title: '达人带路',
-    desc: '资深球友带您玩转台球',
-    icon: '👥',
-    bgColor: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)'
-  },
-  {
-    title: '红酒鉴赏',
-    desc: '品味红酒文化，提升生活品质',
-    icon: '🍷',
-    bgColor: 'linear-gradient(135deg, #FFD166 0%, #FF6B6B 100%)'
-  },
-  {
-    title: '电影赏析',
-    desc: '深度解析经典影片',
-    icon: '🎬',
-    bgColor: 'linear-gradient(135deg, #6A0572 0%, #AB83A1 100%)'
-  }
-])
-
-// 处理服务项目点击
-const handleServiceItemClick = (item) => {
-  uni.showToast({
-    title: `即将进入${item.title}`,
-    icon: 'none',
-    duration: 1500
-  })
-}
-
 // 更新自定义 TabBar 选中状态
 const updateCustomTabBar = () => {
   if (uni.$updateCustomTabBar) {
@@ -316,7 +128,6 @@ const updateCustomTabBar = () => {
 
 /** 打开 iOS 隐私协议弹窗 */
 function openPrivacyDialogIfNeeded() {
-  console.log('openPrivacyDialogIfNeeded', shouldShowIosPrivacy(), hasPrivacyRefused())
   if (!shouldShowIosPrivacy() && !hasPrivacyRefused()) {
     return
   }
@@ -330,7 +141,6 @@ function openPrivacyDialogIfNeeded() {
 
 /** 隐私协议同意后的回调 */
 function handlePrivacyAgreed() {
-  console.log('隐私协议已同意，重新加载数据')
   initData()
 }
 
@@ -421,11 +231,9 @@ const handleServiceClick = (item) => {
   if (item.title === '沉稳耐心') {
     uni.setStorageSync('coachListDefaultTab', '沉稳')
     uni.setStorageSync('coachListTabTimestamp', Date.now())
-    console.log('设置默认tab: 沉稳')
   } else if (item.title === '活跃热情') {
     uni.setStorageSync('coachListDefaultTab', '活跃')
     uni.setStorageSync('coachListTabTimestamp', Date.now())
-    console.log('设置默认tab: 活跃')
   } else {
     uni.removeStorageSync('coachListDefaultTab')
     uni.removeStorageSync('coachListTabTimestamp')
@@ -583,9 +391,7 @@ onMounted(() => {
   navBarHeight.value = baseNavBarHeight
 
   // 检查登录状态并显示隐私弹窗（不阻塞数据加载）
-  console.log(isLoggedIn(), '====isLoggedIn')
   if (!isLoggedIn()) {
-    console.log(isLoggedIn(), '===============')
     openPrivacyDialogIfNeeded()
   }
 })
@@ -739,384 +545,9 @@ onShow(() => {
   95% { transform: scale(1.2); }
 }
 
-/* 欢迎语 */
-.welcome-section {
-  padding: 0 30rpx 32rpx;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  background: var(--bg-page);
-  z-index: 99;
-  padding-top: 20rpx;
-
-  .welcome-left {
-    display: flex;
-    flex-direction: column;
-    gap: 8rpx;
-
-    .greeting {
-      color: var(--text-secondary);
-      font-size: 26rpx;
-      font-weight: 500;
-    }
-
-    .welcome-text {
-      color: var(--text-primary);
-      font-size: 36rpx;
-      font-weight: 700;
-      letter-spacing: -1rpx;
-    }
-  }
-
-  .welcome-right {
-    .scan-btn {
-      width: 60rpx;
-      height: 60rpx;
-      background: var(--brand-light-bg);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1rpx solid rgba(0, 187, 136, 0.3);
-      transition: all 0.3s ease;
-
-      &:active {
-        background: rgba(0, 187, 136, 0.3);
-        transform: scale(0.95);
-      }
-    }
-  }
-}
-
-/* 服务项目四宫格（紧凑版） */
-.service-grid-section {
-  padding: 0 30rpx 40rpx;
-
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24rpx;
-
-    .title-left {
-      display: flex;
-      align-items: center;
-      gap: 12rpx;
-
-      .title-decoration {
-        display: flex;
-        align-items: center;
-        gap: 6rpx;
-
-        .title-dot {
-          width: 12rpx;
-          height: 12rpx;
-          background: var(--brand-primary);
-          border-radius: 50%;
-          box-shadow: 0 0 12rpx rgba(0, 187, 136, 0.5);
-
-          &.blue {
-            background: #3B82F6;
-            box-shadow: 0 0 12rpx rgba(59, 130, 246, 0.5);
-          }
-        }
-
-        .title-line {
-          width: 24rpx;
-          height: 4rpx;
-          background: linear-gradient(90deg, #00BB88, transparent);
-          border-radius: 2rpx;
-
-          &.blue {
-            background: linear-gradient(90deg, #3B82F6, transparent);
-          }
-        }
-      }
-
-      .title-text {
-        color: var(--text-primary);
-        font-size: 34rpx;
-        font-weight: 700;
-        letter-spacing: -0.5rpx;
-      }
-
-      .title-badge {
-        background: var(--brand-light-bg);
-        color: var(--brand-primary);
-        font-size: 18rpx;
-        font-weight: 700;
-        padding: 4rpx 10rpx;
-        border-radius: 8rpx;
-        border: 1rpx solid rgba(0, 187, 136, 0.3);
-
-        &.blue {
-          background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.08));
-          color: #3B82F6;
-          border-color: rgba(59, 130, 246, 0.3);
-        }
-      }
-    }
-  }
-}
-
-/* 确保grid布局正常工作 */
-.service-grid {
-  display: grid !important;
-  grid-template-columns: repeat(2, 1fr) !important;
-  gap: 16rpx !important;
-  width: 100% !important;
-
-  .service-item {
-    border-radius: 16rpx;
-    padding: 20rpx 16rpx;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    transition: all 0.3s ease;
-    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
-    position: relative;
-    overflow: hidden;
-
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(255, 255, 255, 0.1);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    &:active {
-      transform: scale(0.95);
-
-      &::before {
-        opacity: 1;
-      }
-    }
-
-    .service-icon {
-      margin-bottom: 12rpx;
-      width: 60rpx;
-      height: 60rpx;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      backdrop-filter: blur(10rpx);
-    }
-
-    .service-emoji {
-      font-size: 32rpx;
-      line-height: 1;
-    }
-
-    .service-info {
-      position: relative;
-      z-index: 1;
-    }
-
-    .service-title {
-      display: block;
-      color: #fff;
-      font-size: 26rpx;
-      font-weight: 700;
-      margin-bottom: 4rpx;
-      text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.3);
-    }
-
-    .service-desc {
-      display: block;
-      color: rgba(255, 255, 255, 0.85);
-      font-size: 18rpx;
-      line-height: 1.3;
-      text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.3);
-    }
-  }
-}
-
-/* 轮播图 */
-.banner-section {
-  margin: 0 30rpx 50rpx;
-  border-radius: 32rpx;
-  overflow: hidden;
-  box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.3);
-
-  .banner-swiper {
-    height: 360rpx;
-    border-radius: 32rpx;
-    overflow: hidden;
-
-    .banner-card {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #2a3338;
-      border-radius: 32rpx;
-    }
-    .banner-img {
-      width: 100%;
-      height: 100%;
-      transition: transform 0.4s ease;
-    }
-
-    .banner-overlay {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 60%;
-      background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
-      display: flex;
-      align-items: flex-end;
-      padding: 32rpx;
-    }
-
-    .banner-content {
-      display: flex;
-      flex-direction: column;
-      gap: 10rpx;
-
-      .banner-tag {
-        display: inline-block;
-        background: linear-gradient(135deg, #00BB88, #059669);
-        color: #fff;
-        font-size: 20rpx;
-        font-weight: 600;
-        padding: 6rpx 14rpx;
-        border-radius: 50rpx;
-        align-self: flex-start;
-      }
-
-      .banner-title {
-        color: #fff;
-        font-size: 32rpx;
-        font-weight: 700;
-      }
-    }
-  }
-}
-
-/* 服务入口 */
-.service-section {
-  padding: 0 30rpx 40rpx;
-
-  .section-title-wrap {
-    display: flex;
-    flex-direction: column;
-    gap: 6rpx;
-    margin-bottom: 24rpx;
-
-    .section-title {
-      color: var(--text-primary);
-      font-size: 32rpx;
-      font-weight: 700;
-    }
-
-    .section-desc {
-      color: var(--text-tertiary);
-      font-size: 24rpx;
-    }
-  }
-}
-
-
 /* 通用章节 */
 .section-container {
   padding: 0 30rpx 50rpx;
-
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 32rpx;
-
-    .title-left {
-      display: flex;
-      align-items: center;
-      gap: 12rpx;
-
-      .title-decoration {
-        display: flex;
-        align-items: center;
-        gap: 6rpx;
-
-        .title-dot {
-          width: 12rpx;
-          height: 12rpx;
-          background: var(--brand-primary);
-          border-radius: 50%;
-          box-shadow: 0 0 12rpx rgba(0, 187, 136, 0.5);
-
-          &.blue {
-            background: #3B82F6;
-            box-shadow: 0 0 12rpx rgba(59, 130, 246, 0.5);
-          }
-        }
-
-        .title-line {
-          width: 24rpx;
-          height: 4rpx;
-          background: linear-gradient(90deg, #00BB88, transparent);
-          border-radius: 2rpx;
-
-          &.blue {
-            background: linear-gradient(90deg, #3B82F6, transparent);
-          }
-        }
-      }
-
-      .title-text {
-        color: var(--text-primary);
-        font-size: 34rpx;
-        font-weight: 700;
-        letter-spacing: -0.5rpx;
-      }
-
-      .title-badge {
-        background: var(--brand-light-bg);
-        color: var(--brand-primary);
-        font-size: 18rpx;
-        font-weight: 700;
-        padding: 4rpx 10rpx;
-        border-radius: 8rpx;
-        border: 1rpx solid rgba(0, 187, 136, 0.3);
-
-        &.blue {
-          background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.08));
-          color: #3B82F6;
-          border-color: rgba(59, 130, 246, 0.3);
-        }
-      }
-    }
-
-    .view-more {
-      display: flex;
-      align-items: center;
-      gap: 6rpx;
-      padding: 8rpx 12rpx;
-      background: var(--bg-secondary);
-      border-radius: 50rpx;
-      transition: all 0.3s ease;
-
-      &:active {
-        background: rgba(255,255,255,0.08);
-      }
-
-      text {
-        color: var(--text-secondary);
-        font-size: 26rpx;
-        font-weight: 500;
-      }
-    }
-  }
 }
 
 .last-section {
@@ -1139,201 +570,6 @@ onShow(() => {
 /* 热门裁教 */
 .hot-coach-list {
   display: inline-flex;
-
-  .hot-coach-card {
-    width: 320rpx;
-    margin-right: 24rpx;
-    background: var(--bg-card);
-    border-radius: 32rpx;
-    overflow: hidden;
-    flex-shrink: 0;
-    box-shadow: var(--card-shadow);
-    border: 1rpx solid var(--border-color);
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-
-    &:active {
-      transform: translateY(6rpx) scale(0.98);
-      box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.3);
-    }
-
-    &:last-child {
-      margin-right: 0;
-    }
-
-    .hot-img-box {
-      position: relative;
-      width: 100%;
-      height: 320rpx;
-      overflow: hidden;
-
-      .hot-avatar {
-        width: 100%;
-        height: 100%;
-        background-color: var(--bg-secondary);
-        transition: transform 0.4s ease;
-      }
-
-      &:active .hot-avatar {
-        transform: scale(1.08);
-      }
-
-      .online-status {
-        position: absolute;
-        top: 16rpx;
-        left: 16rpx;
-        background: var(--online-bg);
-        backdrop-filter: blur(10rpx);
-        padding: 6rpx 14rpx;
-        border-radius: 50rpx;
-        display: flex;
-        align-items: center;
-        gap: 8rpx;
-        border: 1rpx solid rgba(0, 187, 136, 0.3);
-
-        .dot-pulse {
-          position: relative;
-
-          .dot {
-            width: 10rpx;
-            height: 10rpx;
-            background: var(--online-dot);
-            border-radius: 50%;
-            position: relative;
-            z-index: 1;
-          }
-
-          .dot-ring {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 10rpx;
-            height: 10rpx;
-            background: rgba(0, 187, 136, 0.3);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            animation: pulseRing 2s ease-out infinite;
-          }
-        }
-
-        text {
-          color: var(--text-primary);
-          font-size: 20rpx;
-          font-weight: 600;
-        }
-      }
-
-      .score-tag {
-        position: absolute;
-        bottom: 16rpx;
-        right: 16rpx;
-        background: var(--online-bg);
-        backdrop-filter: blur(10rpx);
-        padding: 6rpx 12rpx;
-        border-radius: 50rpx;
-        display: flex;
-        align-items: center;
-        gap: 6rpx;
-        border: 1rpx solid rgba(255, 184, 0, 0.25);
-
-        text {
-          color: var(--star-color);
-          font-size: 22rpx;
-          font-weight: 700;
-        }
-      }
-
-      .level-tag {
-        position: absolute;
-        top: 16rpx;
-        right: 16rpx;
-        background: linear-gradient(135deg, #F59E0B, #D97706);
-        color: #fff;
-        font-size: 18rpx;
-        font-weight: 700;
-        padding: 4rpx 10rpx;
-        border-radius: 20rpx;
-        box-shadow: 0 2rpx 8rpx rgba(245, 158, 11, 0.3);
-      }
-    }
-
-    .hot-info {
-      padding: 24rpx;
-
-      .hot-name {
-        color: var(--text-primary);
-        font-size: 32rpx;
-        font-weight: 700;
-        margin-bottom: 8rpx;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: block;
-      }
-
-      .hot-desc {
-        color: var(--text-secondary);
-        font-size: 22rpx;
-        line-height: 1.4;
-        margin-bottom: 12rpx;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-      }
-
-      .hot-stats {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 12rpx;
-
-        .stat-count {
-          color: var(--text-secondary);
-          font-size: 22rpx;
-          font-weight: 500;
-        }
-
-        .order-icon {
-          width: 36rpx;
-          height: 36rpx;
-          background: var(--brand-light-bg);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-      }
-
-      .price-info {
-        display: flex;
-        align-items: baseline;
-        gap: 4rpx;
-
-        .price-text {
-          color: var(--brand-primary);
-          font-size: 36rpx;
-          font-weight: 800;
-        }
-
-        .price-unit {
-          color: var(--text-secondary);
-          font-size: 22rpx;
-          font-weight: 500;
-        }
-      }
-    }
-  }
-}
-
-@keyframes pulseRing {
-  0% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(3);
-    opacity: 0;
-  }
 }
 
 /* 新人推荐 */
@@ -1348,329 +584,10 @@ onShow(() => {
 .new-coach-list {
   display: inline-flex;
   white-space: nowrap;
-
-  .new-avatar-item {
-    margin-right: 32rpx;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    transition: all 0.3s ease;
-
-    &:active {
-      transform: scale(0.95);
-    }
-
-    .new-img-wrap {
-      position: relative;
-      width: 140rpx;
-      height: 140rpx;
-      padding: 6rpx;
-      background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #3B82F6 100%);
-      border-radius: 50%;
-      margin-bottom: 14rpx;
-      overflow: hidden;
-      animation: rotateGradient 8s linear infinite;
-
-      .avatar-ring {
-        position: absolute;
-        top: 4rpx;
-        left: 4rpx;
-        right: 4rpx;
-        bottom: 4rpx;
-        border-radius: 50%;
-        border: 2rpx dashed rgba(255, 255, 255, 0.3);
-        animation: rotateReverse 12s linear infinite;
-      }
-
-      .new-img {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        border: 4rpx solid var(--bg-page);
-        object-fit: cover;
-        position: relative;
-        z-index: 1;
-      }
-
-      .new-label {
-        position: absolute;
-        bottom: 4rpx;
-        right: -4rpx;
-        background: linear-gradient(90deg, #FF4D4D, #F63B82);
-        color: #fff;
-        font-size: 16rpx;
-        font-weight: 800;
-        padding: 5rpx 12rpx;
-        border-radius: 50rpx;
-        border: 2rpx solid var(--bg-page);
-        line-height: 1.2;
-        z-index: 2;
-        box-shadow: 0 4rpx 12rpx rgba(246, 59, 130, 0.4);
-      }
-
-      .shine-overlay {
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: linear-gradient(
-          45deg,
-          transparent 30%,
-          rgba(255, 255, 255, 0.2) 50%,
-          transparent 70%
-        );
-        animation: shine 3s ease-in-out infinite;
-        z-index: 3;
-      }
-
-      .new-online-status {
-        position: absolute;
-        bottom: 8rpx;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 4;
-      }
-
-      .online-dot {
-        width: 16rpx;
-        height: 16rpx;
-        background: #00BB88;
-        border-radius: 50%;
-        border: 1rpx solid var(--bg-page);
-        box-shadow: 0 0 8rpx rgba(0, 187, 136, 0.6);
-      }
-    }
-
-    .new-name {
-      color: var(--text-primary);
-      font-size: 28rpx;
-      font-weight: 600;
-      max-width: 140rpx;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      text-align: center;
-      margin-bottom: 6rpx;
-    }
-
-
-    &:last-child {
-      margin-right: 0;
-    }
-  }
-}
-
-@keyframes rotateGradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes rotateReverse {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(-360deg); }
-}
-
-@keyframes shine {
-  0% { transform: translateX(-100%) rotate(45deg); }
-  100% { transform: translateX(100%) rotate(45deg); }
-}
-
-/* 开关加载中的中性骨架 */
-.home-skeleton {
-  padding: 0 30rpx 40rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
-
-  .skeleton-card {
-    background: var(--bg-card);
-    border: 1rpx solid var(--border-color);
-    border-radius: 24rpx;
-    padding: 28rpx;
-    display: flex;
-    flex-direction: column;
-    gap: 16rpx;
-    box-shadow: var(--card-shadow);
-    animation: skeletonPulse 1.4s ease-in-out infinite;
-
-    .skeleton-line {
-      height: 24rpx;
-      border-radius: 12rpx;
-      background: var(--bg-secondary);
-
-      &.title {
-        width: 50%;
-        height: 30rpx;
-      }
-
-      &.short {
-        width: 70%;
-      }
-    }
-  }
-}
-
-@keyframes skeletonPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.55; }
 }
 
 .safe-bottom {
   height: 40rpx;
 }
 
-// ==================== 重大通知弹窗 ====================
-.notify-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: notifyFadeIn 0.3s ease;
-
-  .notify-modal-content {
-    width: 600rpx;
-    background: linear-gradient(180deg, #1e252b 0%, #1a2025 100%);
-    border-radius: 32rpx;
-    overflow: hidden;
-    position: relative;
-    animation: notifySlideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-
-    .notify-modal-header {
-      height: 160rpx;
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-
-      &::before {
-        content: '';
-        position: absolute;
-        top: -60rpx;
-        right: -40rpx;
-        width: 200rpx;
-        height: 200rpx;
-        background: rgba(255, 255, 255, 0.08);
-        border-radius: 50%;
-      }
-
-      &::after {
-        content: '';
-        position: absolute;
-        bottom: -30rpx;
-        left: -20rpx;
-        width: 100rpx;
-        height: 100rpx;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 50%;
-      }
-
-      .notify-modal-icon {
-        width: 80rpx;
-        height: 80rpx;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 12rpx;
-        z-index: 1;
-        animation: notifyBellShake 2s ease-in-out infinite;
-      }
-
-      .notify-modal-badge {
-        font-size: 24rpx;
-        color: rgba(255, 255, 255, 0.9);
-        font-weight: 500;
-        z-index: 1;
-        letter-spacing: 4rpx;
-      }
-    }
-
-    .notify-modal-body {
-      padding: 48rpx 40rpx 40rpx;
-      text-align: center;
-
-      .notify-modal-title {
-        font-size: 34rpx;
-        font-weight: 600;
-        color: #fff;
-        line-height: 1.4;
-        display: block;
-        margin-bottom: 20rpx;
-      }
-
-      .notify-modal-desc {
-        font-size: 26rpx;
-        color: #999;
-        line-height: 1.6;
-        display: -webkit-box;
-        -webkit-line-clamp: 4;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-      }
-    }
-
-    .notify-modal-footer {
-      display: flex;
-      padding: 0 30rpx 40rpx;
-      gap: 20rpx;
-
-      .notify-btn {
-        flex: 1;
-        height: 88rpx;
-        border-radius: 44rpx;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 28rpx;
-
-        &.notify-btn-cancel {
-          background: rgba(255, 255, 255, 0.08);
-          color: #999;
-        }
-
-        &.notify-btn-confirm {
-          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-          color: #fff;
-          font-weight: 500;
-        }
-      }
-    }
-  }
-}
-
-@keyframes notifyFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes notifySlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(40rpx) scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes notifyBellShake {
-  0%, 100% { transform: rotate(0); }
-  10% { transform: rotate(-10deg); }
-  20% { transform: rotate(10deg); }
-  30% { transform: rotate(-10deg); }
-  40% { transform: rotate(10deg); }
-  50% { transform: rotate(0); }
-}
 </style>

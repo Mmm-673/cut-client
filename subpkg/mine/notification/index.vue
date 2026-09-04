@@ -30,9 +30,7 @@
       @refresherrefresh="onRefresh"
       @scrolltolower="loadMore"
     >
-      <view v-if="list.length === 0 && !loading" class="empty">
-        <text class="empty-text">暂无通知</text>
-      </view>
+      <empty-state v-if="list.length === 0 && !loading" icon="notification" text="暂无通知" />
 
       <view
         class="notification-item"
@@ -101,6 +99,7 @@ import { ref, computed, onMounted } from 'vue'
 import { onShow, onUnload } from '@dcloudio/uni-app'
 import { useThemeStore } from '@/store'
 import { getNotificationPage, getUnreadCount, markAllAsRead, markAsRead } from '@/api/billiard/notification'
+import EmptyState from '@/components/empty-state/empty-state.vue'
 
 const themeStore = useThemeStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
@@ -234,7 +233,6 @@ const fetchList = async (isRefresh = false) => {
     if (currentTab.value === 'read') params.readStatus = 1
 
     const res = await getNotificationPage(params)
-    console.log('====getNotificationPage',res)
     const records = res.data?.list || []
     const totalCount = res.data?.total || 0
     total.value = totalCount

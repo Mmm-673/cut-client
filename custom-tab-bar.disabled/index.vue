@@ -94,7 +94,6 @@ export default {
     }
   },
   mounted() {
-    console.log('[TabBar] 组件已挂载')
     this.readTheme()
     this.updateCurrent()
 
@@ -109,7 +108,6 @@ export default {
 
     // 监听主题变更
     uni.$on('themeChanged', (theme) => {
-      console.log('[TabBar] 收到主题变更:', theme)
       if (theme === 'dark' || theme === 'light') {
         this.theme = theme
       }

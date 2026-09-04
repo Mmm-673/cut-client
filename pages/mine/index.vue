@@ -4,137 +4,37 @@
          2. 页面内容容器（普通布局自然滚动）
          ========================================== -->
     <view class="page-content" v-if="isUserLoggedIn">
-      <!-- ==========================================
-           3. 顶部个人信息卡片（统一渐变+安全间距）
-           ========================================== -->
-      <view class="user-card">
-        <view class="user-header">
-          <!-- 头像 -->
-          <image
-              class="user-avatar"
-              :src="userInfo.avatar || '/static/default-avatar.png'"
-              mode="aspectFill"
-              @click="previewAvatar"
-          ></image>
+      <!-- 顶部个人信息卡片 -->
+      <user-profile-card
+        :user-info="userInfo"
+        :stats="stats"
+        :show-stats="showOrderSections"
+        @avatar-click="previewAvatar"
+        @edit-click="toEditInfo"
+        @setting-click="toSetting"
+        @stats-click="toAllOrder"
+      />
 
-          <!-- 用户信息 -->
-          <view class="user-info">
-            <view class="user-name-row">
-              <text class="user-name">{{ userInfo.nickname }}</text>
-            </view>
-            <view class="user-phone">{{ userInfo.phone }}</view>
-            <text class="edit-btn" @click="toEditInfo">编辑资料</text>
-          </view>
+      <!-- 我的订单快捷入口（审核模式下隐藏） -->
+      <order-quick-entry
+        v-if="showOrderSections"
+        :tabs="orderTabs"
+        :active-tab="currentOrderTab"
+        :orders="showOrders"
+        empty-text="暂无对应订单"
+        @tab-change="switchOrderTab"
+        @view-all="toAllOrder"
+        @order-click="toOrderDetail"
+      />
 
-          <view class="setting-btn" @click="toSetting">
-            <uni-icons type="gear" size="22" color="#fff" />
-          </view>
-        </view>
+      <!-- 功能菜单列表 -->
+      <mine-menu-list
+        :menu-list="visibleMenuList"
+        :badge-map="menuBadgeMap"
+        @item-click="toMenuPage"
+      />
 
-        <!-- 统计数据（审核模式下隐藏） -->
-        <view class="user-stats" v-if="showOrderSections">
-          <view class="stats-item" @click="toAllOrder">
-            <text class="stats-num">{{ stats.totalOrder }}</text>
-            <text class="stats-label">总订单</text>
-          </view>
-          <view class="stats-divider"></view>
-          <view class="stats-item">
-            <text class="stats-num">{{ stats.finishOrder }}</text>
-            <text class="stats-label">已完成</text>
-          </view>
-        </view>
-      </view>
-
-
-      <!-- ==========================================
-           5. 我的订单模块（审核模式下隐藏）
-           ========================================== -->
-      <view class="func-card" v-if="showOrderSections">
-        <view class="card-header">
-          <text class="card-title">我的订单</text>
-          <text class="view-more" @click="toAllOrder">
-            查看全部
-            <uni-icons type="right" size="14" color="#9CA3AF" />
-          </text>
-        </view>
-
-        <!-- 订单分类标签 -->
-        <view class="order-tabs">
-          <view
-              class="tab-item"
-              :class="{active: currentOrderTab === tab.value}"
-              v-for="tab in orderTabs"
-              :key="tab.value"
-              @click="switchOrderTab(tab.value)"
-              >
-            <view class="tab-icon" :style="{color: tab.color}">
-              <uni-icons :type="tab.icon" size="24" :color="tab.color" />
-              <text class="badge" v-if="tab.hasBadge"></text>
-            </view>
-            <text :style="{color: currentOrderTab === tab.value ? tab.color : '#9CA3AF'}">{{ tab.label }}</text>
-          </view>
-        </view>
-
-        <!-- 订单列表 -->
-        <view class="order-list">
-          <view
-              class="order-card"
-              v-for="order in showOrders"
-              :key="order.key"
-              @click="toOrderDetail(order)"
-              >
-            <view class="order-left">
-              <image class="coach-avatar" :src="order.coachAvatar" mode="aspectFill"></image>
-              <view class="order-info">
-                <view class="order-title-row">
-                  <text class="order-title">{{ order.coachName }} · {{ order.coachLevel }}</text>
-                  <text
-                    class="order-type-tag"
-                    :class="order.type === 2 ? 'onsite' : 'normal'"
-                  >
-                    {{ order.type === 2 ? '现场订单' : '普通订单' }}
-                  </text>
-                </view>
-                <view class="order-subtitle">{{ order.serviceName }} · {{ order.duration }}小时</view>
-                <view class="order-time">{{ order.time }}</view>
-              </view>
-            </view>
-            <view class="order-right">
-              <text class="order-status" :style="{background: order.statusColor}">{{ order.statusText }}</text>
-            </view>
-          </view>
-
-          <!-- 空状态 -->
-          <view class="empty-tip" v-if="showOrders.length === 0">
-            暂无对应订单
-          </view>
-        </view>
-      </view>
-
-      <!-- ==========================================
-           6. 功能菜单列表
-           ========================================== -->
-      <view class="func-card menu-card">
-        <view
-            class="menu-item"
-            v-for="item in visibleMenuList"
-            :key="item.key"
-            @click="toMenuPage(item)"
-            >
-          <view class="menu-icon" :style="{background: item.bgColor}">
-            <uni-icons :type="item.icon" size="22" :color="item.color" />
-          </view>
-          <text class="menu-title">{{ item.title }}</text>
-          <view v-if="item.key === 'notification' && notificationUnreadCount > 0" class="menu-badge">
-            {{ notificationUnreadCount > 99 ? '99+' : notificationUnreadCount }}
-          </view>
-          <uni-icons type="right" size="18" color="#9CA3AF" />
-        </view>
-      </view>
-
-      <!-- ==========================================
-           7. 底部安全区域
-           ========================================== -->
+      <!-- 底部安全区域 -->
       <view class="safe-area-bottom"></view>
     </view>
 
@@ -173,6 +73,9 @@ import { useUserStore } from '@/store/modules/user'
 import { useConfigStore, useThemeStore } from '@/store'
 import { usePageTheme } from '@/composables/usePageTheme'
 import { isLoggedIn } from '@/utils/token'
+import UserProfileCard from '@/components/user-profile-card/user-profile-card.vue'
+import OrderQuickEntry from '@/components/order-quick-entry/order-quick-entry.vue'
+import MineMenuList from '@/components/mine-menu-list/mine-menu-list.vue'
 
 const themeStore = useThemeStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
@@ -229,13 +132,6 @@ const STATUS_COLOR = {
   [STATUS_MAP.CANCELLED]: '#DC2626'
 }
 
-// 服务类型映射
-const SERVICE_TYPE_TEXT = {
-  1: '台球指导',
-  2: '潮玩领航',
-  3: '酒艺品鉴',
-  4: '影视赏析'
-}
 
 // 格式化时间
 const formatTime = (timestamp) => {
@@ -294,7 +190,7 @@ const transformOrder = (item) => {
     coachAvatar: avatar,
     coachName: item.coachStageName || '裁教',
     coachLevel: '教练',
-    serviceName: SERVICE_TYPE_TEXT[item.serviceType] || '台球陪练',
+    serviceName: getServiceTypeName(item.serviceType),
     duration: durationHours,
     time: timeStr,
     statusText: STATUS_TEXT[item.status] || '未知',
@@ -412,6 +308,11 @@ const visibleMenuList = computed(() => {
   if (!reviewMode.value) return menuList.value
   return menuList.value.filter(item => !['wallet', 'collection'].includes(item.key))
 })
+
+// 菜单角标映射
+const menuBadgeMap = computed(() => ({
+  notification: notificationUnreadCount.value
+}))
 
 // ---------------------- 计算属性 ----------------------
 const showOrders = computed(() => {
@@ -574,320 +475,6 @@ onUnload(() => {
 .page-content {
   width: 100%;
   height: 100%;
-}
-
-.func-card {
-  margin: 0 30rpx 30rpx;
-  background: var(--bg-card);
-  border-radius: 24rpx;
-  padding: 30rpx;
-  box-shadow: var(--card-shadow);
-  border: 1rpx solid var(--border-color);
-  transition: all 0.3s ease;
-  transform: translateY(0);
-
-  &:active {
-    transform: translateY(2rpx);
-    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.2);
-  }
-
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24rpx;
-    .card-title {
-      color: var(--text-primary);
-      font-size: 32rpx;
-      font-weight: 600;
-    }
-    .view-more {
-      color: var(--text-secondary);
-      font-size: 26rpx;
-      display: flex;
-      align-items: center;
-      gap: 4rpx;
-      transition: color 0.3s ease;
-      &:active {
-        color: #00BB88;
-      }
-    }
-  }
-}
-
-.user-card {
-  margin: 20rpx 30rpx 30rpx;
-  background: linear-gradient(135deg, rgba(0, 187, 136, 0.2) 0%, var(--bg-card) 100%);
-  border-radius: 40rpx;
-  padding: 40rpx 30rpx;
-  .user-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 20rpx;
-    position: relative;
-    .user-avatar {
-      width: 120rpx;
-      height: 120rpx;
-      border-radius: 50%;
-      border: 4rpx solid var(--brand-primary);
-      flex-shrink: 0;
-    }
-    .user-info {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 0 20rpx;
-      .user-name-row {
-        display: flex;
-        align-items: center;
-        gap: 16rpx;
-        margin-bottom: 8rpx;
-        .user-name {
-          color: var(--text-primary);
-          font-size: 40rpx;
-          font-weight: 700;
-        }
-      }
-      .user-phone {
-        color: var(--text-secondary);
-        font-size: 28rpx;
-        margin-bottom: 12rpx;
-      }
-      .edit-btn {
-        color: var(--text-secondary);
-        font-size: 24rpx;
-      }
-    }
-    .setting-btn {
-      width: 56rpx;
-      height: 56rpx;
-      border-radius: 50%;
-      background: rgba(0, 187, 136, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      align-self: flex-start;
-    }
-  }
-
-  .user-stats {
-    display: flex;
-    margin-top: 40rpx;
-    .stats-item {
-      flex: 1;
-      text-align: center;
-      .stats-num {
-        display: block;
-        color: var(--text-primary);
-        font-size: 44rpx;
-        font-weight: bold;
-        margin-bottom: 8rpx;
-      }
-      .stats-label {
-        display: block;
-        color: var(--text-secondary);
-        font-size: 26rpx;
-      }
-    }
-    .stats-divider {
-      width: 2rpx;
-      background: var(--border-color);
-      margin-top: 8rpx;
-      margin-bottom: 8rpx;
-    }
-  }
-}
-
-.order-tabs {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 24rpx;
-  padding: 0 10rpx;
-  .tab-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8rpx;
-    flex: 1;
-    .tab-icon {
-      position: relative;
-      width: 44rpx;
-      height: 44rpx;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      .badge {
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: 16rpx;
-        height: 16rpx;
-        border-radius: 50%;
-        background: #EF4444;
-        border: 2rpx solid var(--bg-card);
-      }
-    }
-    text {
-      font-size: 26rpx;
-      white-space: nowrap;
-    }
-  }
-}
-
-.order-list {
-  .order-card {
-    background: var(--bg-secondary);
-    border-radius: 20rpx;
-    padding: 20rpx;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16rpx;
-    &:last-child {
-      margin-bottom: 0;
-    }
-    .order-left {
-      display: flex;
-      align-items: center;
-      gap: 16rpx;
-      flex: 1;
-      min-width: 0;
-      .coach-avatar {
-        width: 80rpx;
-        height: 80rpx;
-        border-radius: 12rpx;
-        flex-shrink: 0;
-      }
-      .order-info {
-        flex: 1;
-        min-width: 0;
-        .order-title-row {
-          display: flex;
-          align-items: center;
-          gap: 10rpx;
-          margin-bottom: 8rpx;
-          overflow: hidden;
-          .order-title {
-            color: var(--text-primary);
-            font-size: 28rpx;
-            font-weight: 600;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            flex-shrink: 1;
-            min-width: 0;
-          }
-          .order-type-tag {
-            font-size: 20rpx;
-            padding: 2rpx 10rpx;
-            border-radius: 12rpx;
-            font-weight: 500;
-            flex-shrink: 0;
-            line-height: 1.4;
-            &.normal {
-              background: rgba(0, 187, 136, 0.15);
-              color: var(--brand-primary, #00BB88);
-            }
-            &.onsite {
-              background: rgba(245, 166, 35, 0.15);
-              color: #f5a623;
-            }
-          }
-        }
-        .order-subtitle {
-          color: var(--text-secondary);
-          font-size: 24rpx;
-          margin-bottom: 12rpx;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-        .order-time {
-          color: var(--text-tertiary);
-          font-size: 24rpx;
-        }
-      }
-    }
-    .order-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 12rpx;
-      flex-shrink: 0;
-      margin-left: 16rpx;
-      .order-status {
-        padding: 4rpx 14rpx;
-        border-radius: 8rpx;
-        color: #fff;
-        font-size: 24rpx;
-        white-space: nowrap;
-      }
-      .order-action-btn {
-        width: 150rpx;
-        height: 56rpx;
-        line-height: 56rpx;
-        border-radius: 28rpx;
-        color: #fff;
-        font-size: 26rpx;
-        font-weight: 600;
-        padding: 0;
-        &::after {
-          border: none;
-        }
-      }
-    }
-  }
-  .empty-tip {
-    text-align: center;
-    color: var(--text-tertiary);
-    font-size: 26rpx;
-    padding: 60rpx 0 20rpx;
-  }
-}
-
-.menu-card {
-  padding: 0 !important;
-  .menu-item {
-    display: flex;
-    align-items: center;
-    gap: 20rpx;
-    padding: 28rpx 30rpx;
-    border-bottom: 1rpx solid var(--border-color);
-    &:last-child {
-      border-bottom: none;
-    }
-    .menu-icon {
-      width: 60rpx;
-      height: 60rpx;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    .menu-title {
-      flex: 1;
-      color: var(--text-primary);
-      font-size: 30rpx;
-      font-weight: 500;
-    }
-    .menu-badge {
-      min-width: 36rpx;
-      height: 36rpx;
-      padding: 0 10rpx;
-      background-color: #ff4d4f;
-      color: #fff;
-      font-size: 22rpx;
-      border-radius: 18rpx;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
-      margin-left: auto;
-    }
-  }
 }
 
 .safe-area-bottom {

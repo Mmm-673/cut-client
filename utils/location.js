@@ -1,5 +1,9 @@
 import { regeocode } from '@/api/billiard/amap'
 import { isLoggedIn } from '@/utils/token'
+import { openAppSetting } from '@/utils/appSettings'
+import { createPurposeModal } from '@/utils/permissionModal'
+
+export { openAppSetting }
 
 /**
  * 统一的定位工具模块
@@ -12,90 +16,20 @@ let coordinatesPromise = null
 let locationTimeout = null
 
 /**
- * 显示定位用途说明弹窗（自定义弹窗）
+ * 显示定位用途说明弹窗
  */
-export const showLocationPurposeModal = () => {
-  return new Promise((resolve, reject) => {
-    // 检查用户是否已经同意过定位权限用途说明
-    const hasAgreedLocationPurpose = uni.getStorageSync('hasAgreedLocationPurpose')
-    console.log('hasAgreedLocationPurpose:', hasAgreedLocationPurpose)
-    if (hasAgreedLocationPurpose) {
-      resolve()
-      return
-    }
-
-    console.log('开始显示定位权限说明弹窗')
-
-    // 使用 setTimeout 确保 DOM 渲染完成后再显示弹窗
-    setTimeout(() => {
-      uni.showModal({
-        title: '定位权限说明',
-        content: '为了向您推荐附近的台球教练/球厅，我们需要获取您的位置信息。该信息仅用于定位和推荐，不会用于其他用途。',
-        confirmText: '同意',
-        cancelText: '取消',
-        success: (res) => {
-          console.log('showModal 回调:', res)
-          if (res.confirm) {
-            // 存储用户同意状态
-            uni.setStorageSync('hasAgreedLocationPurpose', true)
-            resolve()
-          } else {
-            reject(new Error('user_cancelled'))
-          }
-        },
-        fail: (err) => {
-          console.error('showModal 失败:', err)
-          reject(err)
-        }
-      })
-    }, 100)
-  })
-}
+export const showLocationPurposeModal = createPurposeModal({
+  storageKey: 'hasAgreedLocationPurpose',
+  title: '定位权限说明',
+  content: '为了向您推荐附近的台球教练/球厅，我们需要获取您的位置信息。该信息仅用于定位和推荐，不会用于其他用途。',
+  skipOnIos: true,
+})
 
 const clearLocationTimeout = () => {
   if (locationTimeout) {
     clearTimeout(locationTimeout)
     locationTimeout = null
   }
-}
-
-/**
- * 打开应用设置页面（兼容 iOS、Android、鸿蒙）
- */
-export const openAppSetting = () => {
-  // #ifdef APP-PLUS
-  const systemInfo = uni.getSystemInfoSync()
-  const platform = systemInfo.platform
-  const osName = (systemInfo.osName || systemInfo.systemName || '').toLowerCase()
-  const isHarmony = osName.includes('harmony')
-
-  if (platform === 'ios') {
-    plus.runtime.openURL(plus.runtime.appid ? 'app-settings:' : 'prefs:root=LOCATION_SERVICES')
-  } else if (platform === 'android' || isHarmony) {
-    // Android 或鸿蒙系统
-    const main = plus.android.runtimeMainActivity()
-    const Intent = plus.android.importClass('android.content.Intent')
-    const Settings = plus.android.importClass('android.provider.Settings')
-    const Uri = plus.android.importClass('android.net.Uri')
-    const packageName = main.getPackageName()
-
-    try {
-      const intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-      const uri = Uri.fromParts('package', packageName, null)
-      intent.setData(uri)
-      main.startActivity(intent)
-    } catch (e) {
-      try {
-        const intent = new Intent(Settings.ACTION_SETTINGS)
-        main.startActivity(intent)
-      } catch (e2) {
-        uni.showToast({ title: '打开设置失败', icon: 'none' })
-      }
-    }
-  } else {
-    uni.openSetting({ fail: () => uni.showToast({ title: '打开设置失败', icon: 'none' }) })
-  }
-  // #endif
 }
 
 /**
@@ -256,25 +190,16 @@ export const getLocation = async ({
                                     timeout = 15000,
                                     showPurposeModal = true
                                   } = {}) => {
-  // 显示定位用途说明弹窗（iOS 不显示自定义弹窗，直接使用系统定位权限请求）
-  // #ifndef APP-PLUS
+  // 显示定位用途说明弹窗（factory 内置 skipOnIos 逻辑）
   if (showPurposeModal) {
     await showLocationPurposeModal()
   }
-  // #endif
-  // #ifdef APP-PLUS
-  const systemInfo = uni.getSystemInfoSync()
-  if (showPurposeModal && systemInfo.platform !== 'ios') {
-    await showLocationPurposeModal()
-  }
-  // #endif
 
   const location = await fetchCoordinates({ type, timeout })
 
   if (needRegeocode) {
     try {
       const geoRes = await regeocode(location)
-      console.log(geoRes,'======handlePrivacyAgreed')
       return {
         ...location,
         regeocodeData: geoRes.data

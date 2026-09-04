@@ -1,3 +1,5 @@
+import { isPaySuccess, PAY_STATUS } from '@/constants/payStatus'
+import { TIME_MS } from '@/constants/time'
 /**
  * 支付工具库
  * 支持多端支付：微信小程序支付、App微信支付、App支付宝支付、钱包支付
@@ -36,7 +38,7 @@ function setPayRequestState(payOrderId, channelCode, status) {
   const expiredKeys = []
   const now = Date.now()
   payRequestStates.forEach((value, k) => {
-    if (now - value.timestamp > 24 * 60 * 60 * 1000) {
+    if (now - value.timestamp > TIME_MS.DAY) {
       expiredKeys.push(k)
     }
   })
@@ -141,8 +143,6 @@ export function getPayChannelsByEnabled(enabledCodes) {
   }
 
   const currentPlatform = getCurrentPlatform()
-  console.log('getPayChannelsByEnabled - 当前平台:', currentPlatform)
-  console.log('getPayChannelsByEnabled - 后端返回的渠道编码:', enabledCodes)
 
   // 渠道编码映射
   const codeToChannel = {
@@ -162,14 +162,12 @@ export function getPayChannelsByEnabled(enabledCodes) {
     if (channel && channel.platforms && channel.platforms.includes(currentPlatform)) {
       // 避免重复添加相同 value 的渠道
       if (!addedValues.has(channel.value)) {
-        console.log('getPayChannelsByEnabled - 添加支付渠道:', channel)
         result.push(channel)
         addedValues.add(channel.value)
       }
     }
   })
 
-  console.log('getPayChannelsByEnabled - 最终返回的支付渠道:', result)
   return result
 }
 
@@ -287,18 +285,15 @@ function wechatAppPay(payParams) {
  * @returns {Promise} 支付结果
  */
 function alipayAppPay(payParams) {
-  console.log(payParams,'支付信息')
   return new Promise((resolve, reject) => {
     // #ifdef APP-PLUS
     uni.requestPayment({
       provider: 'alipay',
       orderInfo: payParams.orderString || payParams,
       success: (res) => {
-        console.log(res)
         resolve({ success: true, ...res })
       },
       fail: (err) => {
-        console.log(err)
         console.error('App支付宝支付失败:', err)
         if (err.errMsg && err.errMsg.includes('cancel')) {
           reject({ success: false, canceled: true, message: '支付已取消', ...err })
@@ -329,9 +324,6 @@ function walletPay(payParams) {
   })
 }
 
-function isPaySuccessStatus(status) {
-  return Number(status) === 10
-}
 // #ifdef MP-WEIXIN
 const getWxCode = async () => {
   try {
@@ -343,7 +335,6 @@ const getWxCode = async () => {
         fail: reject
       })
     })
-    console.log('🚀 ~ getWxCode ~ code:', loginRes.code)
     uni.showLoading({ title: '绑定中...', mask: true })
     let platform = 'miniapp'
     // #ifdef APP-PLUS
@@ -370,7 +361,7 @@ async function confirmPayOrderPaid(payOrderId) {
   const data = res.data || {}
   const status = data.status ?? data.payStatus
 
-  if (isPaySuccessStatus(status)) {
+  if (isPaySuccess(status)) {
     return { success: true, status, payOrder: data }
   }
 
@@ -395,7 +386,6 @@ async function confirmPayOrderPaid(payOrderId) {
 export async function executePayment(options) {
   const { payOrderId, payValue, channelCode: selectedChannelCode, orderId, onSuccess, onCancel, onError } = options
 
-  console.log('executePayment 调用参数:', options)
 
   // 提前定义 channelCode，确保在 catch 块中可用
   let channelCode = selectedChannelCode || getChannelCode(payValue)
@@ -408,7 +398,6 @@ export async function executePayment(options) {
     // 1. 获取支付渠道编码
     // channelCode = selectedChannelCode || getChannelCode(payValue)
 
-    console.log('支付渠道编码:', channelCode)
     if (!channelCode) {
       throw new Error('不支持的支付方式')
     }
@@ -425,7 +414,6 @@ export async function executePayment(options) {
     // 如果是 timeout 状态且未超过冷却期（30秒），优先查单确认
     if (currentState && currentState.status === PAY_REQUEST_STATUS.TIMEOUT && (now - currentState.timestamp < 30 * 1000)) {
       try {
-        console.log('支付超时，优先查单确认')
         const payResult = await confirmPayOrderPaid(payOrderId)
         if (onSuccess && typeof onSuccess === 'function') {
           onSuccess(payResult)
@@ -433,7 +421,7 @@ export async function executePayment(options) {
         setPayRequestState(payOrderId, channelCode, PAY_REQUEST_STATUS.SUCCESS)
         return payResult
       } catch (error) {
-        console.log('查单未确认支付成功，继续支付流程')
+        console.warn('[payment] 查单确认失败，继续支付流程:', error)
       }
     }
 
@@ -453,7 +441,7 @@ export async function executePayment(options) {
 
     // 3. 如果是钱包支付，后端直接处理完成
     if (payValue === 'wallet') {
-      if (isPaySuccessStatus(payStatus)) {
+      if (isPaySuccess(payStatus)) {
         const payResult = { success: true, status: payStatus }
         if (onSuccess && typeof onSuccess === 'function') {
           onSuccess(payResult)
@@ -475,7 +463,6 @@ export async function executePayment(options) {
     } catch (e) {
       payParams = displayContent
     }
-    console.log("🚀 ~ executePayment ~ payParams:", payParams)
 
     // 5. 根据支付方式和平台执行支付
     if (isMPWeixin() && payValue === 'wechat') {
@@ -497,7 +484,6 @@ export async function executePayment(options) {
 
     return payResult
   } catch (error) {
-    console.log("🚀 ~ error ~ error:", error)
     // #ifdef MP-WEIXIN
     if (error === '请先绑定微信后再发起微信支付') {
       return new Promise((resolve, reject) => {

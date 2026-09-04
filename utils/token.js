@@ -1,18 +1,20 @@
+import { TIME_MS } from '@/constants/time'
+import {
+  ACCESS_TOKEN_KEY,
+  REFRESH_TOKEN_KEY,
+  EXPIRES_TIME_KEY,
+  USER_ID_KEY,
+  NICKNAME_KEY,
+  AVATAR_KEY,
+  MOBILE_KEY,
+  LOGIN_TIME_KEY,
+  REVIEW_ACCOUNT_PHONE_KEY,
+} from '@/constants/storageKeys'
+
 /**
  * Token 管理工具
  * 支持 accessToken 和 refreshToken 双令牌机制
  */
-
-const ACCESS_TOKEN_KEY = 'auth_access_token'
-const REFRESH_TOKEN_KEY = 'auth_refresh_token'
-const EXPIRES_TIME_KEY = 'auth_expires_time'
-const USER_ID_KEY = 'auth_user_id'
-const NICKNAME_KEY = 'auth_nickname'
-const AVATAR_KEY = 'auth_avatar'
-const MOBILE_KEY = 'auth_mobile'
-const LOGIN_TIME_KEY = 'auth_login_time'
-// 审核白名单账号标记（与 utils/review.js 保持一致，此处仅做 storage 清理，不引入 store 避免循环依赖）
-const REVIEW_ACCOUNT_PHONE_KEY = 'review_account_phone'
 
 /**
  * 获取 accessToken
@@ -99,11 +101,11 @@ export function shouldRefreshToken() {
   const loginTime = getLoginTime()
 
   // 刚登录1分钟内，强制不刷新
-  if (loginTime && (now.getTime() - loginTime.getTime() < 60 * 1000)) {
+  if (loginTime && (now.getTime() - loginTime.getTime() < TIME_MS.MINUTE)) {
     return false
   }
 
-  const fiveMinutesBeforeExpire = new Date(expiresTime.getTime() - 5 * 60 * 1000)
+  const fiveMinutesBeforeExpire = new Date(expiresTime.getTime() - TIME_MS.FIVE_MINUTES)
   return now >= fiveMinutesBeforeExpire
 }
 

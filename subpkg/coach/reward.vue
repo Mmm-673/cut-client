@@ -25,42 +25,12 @@
       <view class="tip-text">感谢教练的优质服务，加鸡腿已表示鼓励吧~</view>
 
       <!-- 金额选择 -->
-      <view class="amount-section">
-        <view class="amount-grid">
-          <view
-              v-for="(item, index) in amountOptions"
-              :key="index"
-              class="amount-item"
-              :class="{ active: selectedAmount === item.value && !isCustomAmount }"
-              @click="selectAmount(item.value)"
-              >
-            <text class="amount-value">{{ item.value }}</text>
-            <text class="amount-label">{{ item.label }}</text>
-          </view>
-          <view
-              class="amount-item custom-item"
-              :class="{ active: isCustomAmount }"
-              @click="selectCustomAmount"
-              >
-            <text class="custom-icon">✏️</text>
-            <text class="amount-label">自定义</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 自定义金额输入 -->
-      <view class="custom-input-section" v-if="isCustomAmount">
-        <view class="input-wrapper">
-          <text class="currency-icon">¥</text>
-          <input
-              class="custom-input"
-              type="digit"
-              v-model="customAmount"
-              placeholder="请输入鸡腿数量"
-              @input="onCustomAmountInput"
-              />
-        </view>
-      </view>
+      <reward-amount-picker
+          v-model="currentAmount"
+          :options="amountOptions"
+          placeholder="请输入鸡腿数量"
+          @change="onAmountChange"
+      />
 
       <!-- 留言区域 -->
       <view class="message-section">
@@ -144,6 +114,7 @@ import { getCoachDetail, createRewardOrder } from '@/api/billiard/coach'
 import { executePayment, fetchEnabledChannels } from '@/utils/payment'
 import { guardReviewEntry } from '@/utils/review'
 import { useThemeStore } from '@/store'
+import RewardAmountPicker from '@/components/reward-amount-picker/reward-amount-picker.vue'
 
 const themeStore = useThemeStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
@@ -151,9 +122,7 @@ const themeClass = computed(() => `theme-${themeStore.theme}`)
 // 状态管理
 const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
-const isCustomAmount = ref(false)
-const selectedAmount = ref(10)
-const customAmount = ref('')
+const currentAmount = ref(10)
 const message = ref('')
 const loading = ref(false)
 const coachId = ref(null)
@@ -185,13 +154,10 @@ const amountOptions = ref([
   { value: 200, label: '大神级' }
 ])
 
-// 当前金额
-const currentAmount = computed(() => {
-  if (isCustomAmount.value) {
-    return parseFloat(customAmount.value) || 0
-  }
-  return selectedAmount.value
-})
+// 金额变化回调
+const onAmountChange = (val) => {
+  // 可选：做一些金额变更后的处理
+}
 
 // 页面生命周期
 onMounted(() => {
@@ -273,33 +239,10 @@ const loadCoachInfo = async (id) => {
   }
 }
 
-// 选择金额
-const selectAmount = (amount) => {
-  isCustomAmount.value = false
-  selectedAmount.value = amount
-}
-
-// 选择自定义金额
-const selectCustomAmount = () => {
-  isCustomAmount.value = true
-}
-
-// 自定义金额输入
-const onCustomAmountInput = (e) => {
-  let value = e.detail.value
-  // 限制小数点后两位
-  value = value.replace(/^\./g, '')
-  value = value.replace(/\.{2,}/g, '.')
-  value = value.replace('.', '$#$').replace(/\./g, '').replace('$#$', '.')
-  value = value.replace(/^(\-)*(\d+)\.(\d\d).*$/, '$1$2.$3')
-  customAmount.value = value
-}
-
 // 加载支付渠道
 const loadPayChannels = async () => {
   try {
     const channels = await fetchEnabledChannels(10)
-    console.log('打赏页面获取到的支付渠道:', channels)
     payList.value = channels
     if (channels.length > 0) {
       selectedPay.value = channels[0].value
@@ -336,7 +279,6 @@ const confirmPay = async () => {
     return
   }
 
-  console.log('打赏支付 - 选中的支付渠道:', payChannel)
 
   isPaying.value = true
   try {
@@ -403,7 +345,6 @@ const submitReward = async () => {
     })
 
     const orderId = createRes.data
-    console.log(createRes.data,'=====createRes.data')
     if (!orderId) {
       throw new Error('创建支付单失败')
     }
@@ -518,82 +459,6 @@ const submitReward = async () => {
   font-size: 26rpx;
   color: var(--text-primary);
   margin: 24rpx 0 40rpx;
-}
-
-/* 金额选择 */
-.amount-section {
-  margin-bottom: 32rpx;
-
-  .amount-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16rpx;
-
-    .amount-item {
-      background-color: var(--bg-card);
-      border-radius: 16rpx;
-      padding: 24rpx 16rpx;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      border: 4rpx solid transparent;
-      transition: all 0.3s;
-
-      &.active {
-        background-color: rgba(245, 166, 35, 0.15);
-        border-color: #f5a623;
-      }
-
-      .amount-value {
-        font-size: 36rpx;
-        font-weight: 700;
-        color: var(--text-primary);
-      }
-
-      .amount-label {
-        font-size: 22rpx;
-        color: var(--text-tertiary);
-        margin-top: 6rpx;
-      }
-
-      &.custom-item {
-        .custom-icon {
-          font-size: 36rpx;
-          margin-bottom: 6rpx;
-        }
-      }
-    }
-  }
-}
-
-/* 自定义金额输入 */
-.custom-input-section {
-  margin-bottom: 32rpx;
-
-  .input-wrapper {
-    display: flex;
-    align-items: center;
-    background-color: var(--bg-card);
-    border-radius: 16rpx;
-    padding: 24rpx 28rpx;
-
-    .currency-icon {
-      font-size: 32rpx;
-      color: #f5a623;
-      font-weight: 600;
-      margin-right: 16rpx;
-    }
-
-    .custom-input {
-      flex: 1;
-      font-size: 28rpx;
-      color: var(--text-primary);
-
-      &::placeholder {
-        color: var(--text-tertiary);
-      }
-    }
-  }
 }
 
 /* 留言区域 */

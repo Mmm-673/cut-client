@@ -8,7 +8,6 @@ export function initThemeEarly() {
     const stored = uni.getStorageSync('app_theme')
     const theme = (stored === 'dark' || stored === 'light') ? stored : 'dark'
 
-    console.log('[Theme] 早期初始化主题:', theme)
 
     // #ifdef H5
     // H5：立即给 html 和 body 添加主题类
@@ -35,7 +34,9 @@ export function initThemeEarly() {
         frontColor: systemStyle.textStyle === 'black' ? '#000000' : '#ffffff',
         backgroundColor: systemStyle.backgroundColor,
       })
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[Theme] 设置导航栏颜色失败:', e)
+    }
     // #endif
 
     return theme
@@ -161,7 +162,6 @@ export function updateNavigationBarStyle(theme) {
 // 更新 TabBar 样式
 export function updateTabBarStyle(theme) {
   const style = getTabBarStyle(theme)
-  console.log('[Theme] 更新 TabBar 样式:', style)
 
   try {
     uni.setTabBarStyle({
@@ -170,7 +170,6 @@ export function updateTabBarStyle(theme) {
       backgroundColor: style.backgroundColor,
       borderStyle: style.borderStyle,
       success: () => {
-        console.log('[Theme] TabBar 样式更新成功')
       },
       fail: (err) => {
         console.warn('[Theme] 更新 TabBar 样式失败:', err)
@@ -183,7 +182,6 @@ export function updateTabBarStyle(theme) {
 
 // 应用主题到当前页面
 export function applyThemeToPage(theme) {
-  console.log('[Theme] applyThemeToPage:', theme)
 
   // #ifdef H5
   try {
@@ -231,7 +229,6 @@ export function applyThemeToPage(theme) {
 
 // 应用主题（入口函数）
 export function applyTheme(theme) {
-  console.log('[Theme] applyTheme 入口:', theme)
   const themeStore = useThemeStore()
 
   if (themeStore.theme !== theme) {

@@ -91,101 +91,25 @@
 
       <!-- 球厅列表 -->
       <view class="hall-list" v-if="hallList.length > 0">
-        <view
-            class="hall-card"
+        <hall-card
             v-for="hall in hallList"
             :key="getHallKey(hall)"
-        >
-          <!-- 球厅图片 -->
-          <view class="hall-image-wrap">
-            <image
-              class="hall-image"
-              :src="hall.coverImageUrl || hall.defaultImage"
-              mode="aspectFill"
-            ></image>
-            <view
-              class="hall-tag"
-              v-if="hall.tags && hall.tags.split(',').length > 0"
-              :style="{background: hall.tagBg || '#00BB88'}"
-            >
-              {{ hall.tags.split(',')[0] }}
-            </view>
-            <view class="hall-distance" v-if="hall.distance != null">
-              {{ formatDistance(hall.distance) }}
-            </view>
-          </view>
-
-          <!-- 球厅信息 -->
-          <view class="hall-info">
-            <view class="hall-header">
-              <view class="hall-name-wrap">
-                <text class="hall-name">{{ hall.name }}</text>
-                <view
-                  class="hall-badge"
-                  v-if="hall.advantage"
-                  :style="{background: 'rgba(0, 187, 136, 0.2)'}"
-                >
-                  {{ hall.advantage }}
-                </view>
-              </view>
-              <view class="hall-price">
-                <text class="price-num">{{ hall.price > 0 ? '¥' + formatPrice(hall.price) : '暂无报价' }}</text>
-                <text class="price-unit" v-if="hall.price > 0">/小时起</text>
-              </view>
-            </view>
-
-            <view class="hall-meta">
-              <template v-if="hall.score != null || hall.reviewCount != null">
-                <uni-icons v-if="hall.score != null" type="star-filled" size="16" color="#FBBF24" />
-                <text v-if="hall.score != null" class="meta-text">{{ hall.score }}</text>
-                <text v-if="hall.score != null && hall.reviewCount != null" class="meta-divider">|</text>
-                <text v-if="hall.reviewCount != null" class="meta-text">{{ hall.reviewCount }}条评价</text>
-              </template>
-              <text v-else class="meta-text">暂无评分</text>
-            </view>
-
-            <view class="hall-address">
-              <uni-icons type="location" size="14" color="#9CA3AF" />
-              <text class="address-text">{{ hall.address }}</text>
-            </view>
-
-            <view class="hall-tags" v-if="hall.facilityTags">
-              <view
-                class="tag-item"
-                v-for="(tag, index) in hall.facilityTags.split(',')"
-                :key="index"
-              >
-                {{ tag }}
-              </view>
-            </view>
-
-            <view class="hall-promo" v-if="hall.promotionText">
-              <uni-icons type="gift" size="16" color="#00BB88" />
-              <text class="promo-text">{{ hall.promotionText }}</text>
-            </view>
-
-            <view class="hall-actions">
-              <view class="action-btn secondary" @click="navigateTo(hall)">
-                <uni-icons type="navigate" size="18" color="#9CA3AF" />
-                <text>导航</text>
-              </view>
-              <view class="action-btn secondary" @click="callPhone(hall)">
-                <uni-icons type="phone" size="18" color="#9CA3AF" />
-                <text>电话</text>
-              </view>
-              <view class="action-btn primary" @click="chooseHall(hall)">
-                <text>{{ creatingHallKey === getHallKey(hall) ? '创建中...' : '选择' }}</text>
-              </view>
-            </view>
-          </view>
-        </view>
+            :hall="hall"
+            :is-creating="creatingHallKey === getHallKey(hall)"
+            @choose="chooseHall"
+            @navigate="navigateTo"
+            @call="callPhone"
+        />
       </view>
 
       <!-- 空状态 -->
-      <view class="empty-state" v-if="!loading && !refreshing && hallList.length === 0">
-        <uni-icons type="info" size="80" color="#374151" />
-        <text class="empty-text">暂无球厅</text>
-      </view>
+      <empty-state
+        v-if="!loading && !refreshing && hallList.length === 0"
+        icon="info"
+        text="暂无球厅"
+        :icon-size="80"
+        icon-color="#374151"
+      />
 
       <!-- 加载更多状态 -->
       <view class="load-tip" v-if="hallList.length > 0">
@@ -253,27 +177,27 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { onShow } from  "@dcloudio/uni-app"
-import { useThemeStore } from '@/store'
+import { useList } from '@/composables/useList'
+import { useThemeStore, useCoachStore, useBookingStore } from '@/store'
+import { SERVICE_TYPE } from '@/constants/serviceType'
+import { TIME_MS } from '@/constants/time'
 import { getVenueList } from '@/api/billiard/venue'
 import { createOrder } from '@/api/billiard/order'
 import { debounce, showLoading, hideLoading } from '@/utils/common'
 import { getLocation, extractStreet, formatDistance, showPermissionModal, openAppSetting } from '@/utils/location'
 import {openMapNavigation} from "../../utils/platform";
 import { showCallPermissionModal, requestCallPermission, doCallPhone as makePhoneCall } from '@/utils/call';
+import EmptyState from '@/components/empty-state/empty-state.vue'
+import HallCard from '@/components/hall-card/hall-card.vue'
 
 // 主题相关
 const themeStore = useThemeStore()
+const coachStore = useCoachStore()
+const bookingStore = useBookingStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // ---------------------- 状态定义 ----------------------
-// 刷新/加载状态
-const refreshing = ref(false)
-const loading = ref(false)
-const loadingMore = ref(false)
-const noMore = ref(false)
-
 // 分页
-const pageNo = ref(1)
 const pageSize = 25
 
 // 搜索关键词
@@ -316,7 +240,7 @@ const minDuration = ref(2)
 
 // 订单信息
 const orderInfo = ref({
-  serviceType: 1, // 1=台球陪练 2=达人带路
+  serviceType: SERVICE_TYPE.BILLIARD_COACH, // 1=台球陪练 2=达人带路
   duration: 2,
   timeText: '请选择服务时间'
 })
@@ -360,7 +284,7 @@ const generateDateColumns = () => {
   const columns = []
   const now = new Date()
   for (let i = 0; i < 7; i++) {
-    const date = new Date(now.getTime() + i * 24 * 60 * 60 * 1000)
+    const date = new Date(now.getTime() + i * TIME_MS.DAY)
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
     const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
@@ -418,8 +342,56 @@ const tabList = ref([
   { value: 'score', label: '评分最高', sortType: 3 }
 ])
 
-// 球厅列表
-const hallList = ref([])
+// 球厅列表（useList 管理）
+const {
+  list: hallList,
+  loading,
+  refreshing,
+  loadingMore,
+  hasMore,
+  isEmpty,
+  loadMoreStatus,
+  loadList: loadHallList,
+  refresh: refreshHallList,
+  loadMore: loadMoreHallList,
+  reset: resetHallList,
+} = useList({
+  fetchApi: getVenueList,
+  pageSize: pageSize,
+  pageParamName: 'pageNo',
+  pageSizeParamName: 'pageSize',
+  getParams: () => {
+    const params = {}
+    if (searchKeyword.value) {
+      params.keyword = searchKeyword.value
+    }
+    if (currentLocation.value.longitude && currentLocation.value.latitude) {
+      params.longitude = currentLocation.value.longitude
+      params.latitude = currentLocation.value.latitude
+      params.radius = radius.value
+    }
+    params.sortType = currentSortType.value
+    return params
+  },
+  transform: (res) => {
+    const list = res.data?.list || []
+    return list.map(item => ({
+      ...item,
+      defaultImage: getRandomDefaultImage()
+    }))
+  },
+  getTotal: (res) => res.data?.total || 0,
+  onError: (error) => {
+    console.error('加载球厅列表失败:', error)
+    uni.showToast({
+      title: '加载失败，请重试',
+      icon: 'none'
+    })
+  },
+})
+
+// 兼容旧变量名
+const noMore = computed(() => !hasMore.value)
 
 
 // ---------------------- 计算属性 ----------------------
@@ -567,9 +539,6 @@ const getCurrentLocation = async () => {
     currentLocation.value = { longitude, latitude }
     currentStreet.value = extractStreet(regeocodeData)
     locationDenied.value = false // 重置权限拒绝状态
-    pageNo.value = 1
-    noMore.value = false
-    hallList.value = []
     loadHallList()
   } catch (err) {
     console.error('定位失败:', err)
@@ -602,17 +571,11 @@ const closeCityPicker = () => {
 
 // ---------------------- 搜索相关方法 ----------------------
 const handleSearch = debounce(() => {
-  pageNo.value = 1
-  noMore.value = false
-  hallList.value = []
   loadHallList()
 }, 300)
 
 const clearSearch = () => {
   searchKeyword.value = ''
-  pageNo.value = 1
-  noMore.value = false
-  hallList.value = []
   loadHallList()
 }
 
@@ -630,115 +593,29 @@ const getRandomDefaultImage = () => {
   return defaultImages[Math.floor(Math.random() * defaultImages.length)]
 }
 
-// 构建请求参数
-const buildRequestParams = () => {
-  const params = {
-    pageNo: pageNo.value,
-    pageSize: pageSize.value
-  }
-
-  // 关键词搜索
-  if (searchKeyword.value) {
-    params.keyword = searchKeyword.value
-  }
-
-  // 定位参数（必须同时传或同时不传）
-  if (currentLocation.value.longitude && currentLocation.value.latitude) {
-    params.longitude = currentLocation.value.longitude
-    params.latitude = currentLocation.value.latitude
-    params.radius = radius.value
-  }
-
-  // 排序类型
-  params.sortType = currentSortType.value
-
-  return params
-}
-
-// 加载球厅列表（首次 / 刷新）
-const loadHallList = async () => {
+// 下拉刷新（包装 useList.refresh，增加 loading 提示）
+const onRefresh = async () => {
   if (loading.value) return
-
-  loading.value = true
-  showLoading('加载中...')
   try {
-    pageNo.value = 1
-    const params = buildRequestParams()
-    const res = await getVenueList(params)
-
-    const list = (res.data?.list || []).map(item => ({
-      ...item,
-      defaultImage: getRandomDefaultImage()
-    }))
-    hallList.value = list
-
-    // 判断是否还有更多
-    const total = res.data?.total || 0
-    noMore.value = list.length >= total || list.length < pageSize.value
-  } catch (error) {
-    console.error('加载球厅列表失败:', error)
-    uni.showToast({
-      title: '加载失败，请重试',
-      icon: 'none'
-    })
+    await refreshHallList()
   } finally {
-    loading.value = false
-    refreshing.value = false
-    hideLoading()
+    // 注意：useList.refresh 内部已管理 refreshing 状态
   }
-}
-
-// 加载更多
-const loadMoreHallList = async () => {
-  if (loadingMore.value || noMore.value || loading.value) return
-
-  loadingMore.value = true
-  try {
-    pageNo.value += 1
-    const params = buildRequestParams()
-    const res = await getVenueList(params)
-
-    const list = (res.data?.list || []).map(item => ({
-      ...item,
-      defaultImage: getRandomDefaultImage()
-    }))
-    hallList.value = [...hallList.value, ...list]
-
-    // 判断是否还有更多
-    const total = res.data?.total || 0
-    noMore.value = hallList.value.length >= total || list.length < pageSize.value
-  } catch (error) {
-    console.error('加载更多失败:', error)
-    pageNo.value -= 1 // 回滚页码
-  } finally {
-    loadingMore.value = false
-  }
-}
-
-// 下拉刷新
-const onRefresh = () => {
-  if (loading.value) return
-  refreshing.value = true
-  noMore.value = false
-  loadHallList()
 }
 
 // 上拉加载更多
 const onLoadMore = () => {
-  if (loading.value || refreshing.value || loadingMore.value || noMore.value) return
   loadMoreHallList()
 }
 
 // 切换筛选标签
 const switchTab = (val) => {
   currentTab.value = val
-  hallList.value = []
-  noMore.value = false
-  pageNo.value = 1
 
   // 如果切换到"距离最近"且没有定位信息，先获取定位
   if (val === 'nearest' && (!currentLocation.value.longitude || !currentLocation.value.latitude)) {
     if (!locating.value) {
+      resetHallList()
       getCurrentLocation()
     }
   } else {
@@ -846,7 +723,6 @@ const callPhone = async (hall) => {
     console.error('处理拨打电话请求失败:', err)
     if (err?.message === 'user_cancelled') {
       // 用户取消了电话权限用途说明，不进行任何操作
-      console.log('用户取消了电话权限用途说明')
     } else {
       uni.showToast({
         title: '拨打电话失败，请重试',
@@ -916,12 +792,12 @@ const chooseHall = async (hall) => {
     // 调用创建订单接口
     const createRes = await createOrder(createParams)
 
-    // 保存订单数据到 storage，供 confirm.vue 使用
-    uni.setStorageSync('createdOrderData', {
+    // 保存订单数据到 store，供 confirm.vue 使用
+    bookingStore.setOrderInitData({
       ...createRes.data,
       coachInfo: coachInfo.value,
       hallInfo: hall,
-      serviceType: 1, // 台球陪练
+      serviceType: SERVICE_TYPE.BILLIARD_COACH, // 台球陪练
       serviceDuration: orderInfo.value.duration * 60,
       quantity: orderInfo.value.duration,
       bookingTime: selectedBookingTime.value,
@@ -954,17 +830,22 @@ onMounted(() => {
 
 onShow(() => {
   // 检查是否是重新选择
-  const reselectParams = uni.getStorageSync('reselectParams')
+  const reselectParams = bookingStore.consumeReselectVenueParams()
+    || (() => { try { return uni.getStorageSync('reselectParams') } catch(e) { return null } })()
+
   if (reselectParams) {
     isReselect.value = true
     coachInfo.value = reselectParams.coachInfo
     orderInfo.value.duration = reselectParams.quantity || 2
     orderInfo.value.timeText = reselectParams.timeText || '请选择服务时间'
     selectedBookingTime.value = reselectParams.bookingTime
+    // 清除 Storage 中的降级数据
     uni.removeStorageSync('reselectParams')
   } else {
-    // 从 storage 获取教练信息
-    const coach = uni.getStorageSync('selectedCoach')
+    // 从 store 获取教练信息，降级到 Storage
+    const coach = coachStore.selectedCoach
+      || (() => { try { return uni.getStorageSync('selectedCoach') } catch(e) { return null } })()
+
     if (coach) {
       coachInfo.value = coach
     } else {
@@ -1163,174 +1044,6 @@ onShow(() => {
 /* 球厅列表 */
 .hall-list {
   padding: 0 30rpx;
-  .hall-card {
-    background: var(--bg-card);
-    border-radius: 24rpx;
-    margin-bottom: 30rpx;
-    overflow: hidden;
-    .hall-image-wrap {
-      position: relative;
-      width: 100%;
-      height: 360rpx;
-      .hall-image {
-        width: 100%;
-        height: 100%;
-      }
-      .hall-tag {
-        position: absolute;
-        top: 20rpx;
-        left: 0;
-        padding: 8rpx 20rpx;
-        border-radius: 0 16rpx 16rpx 0;
-        color: var(--text-primary);
-        font-size: 24rpx;
-        font-weight: 600;
-      }
-      .hall-distance {
-        position: absolute;
-        top: 20rpx;
-        right: 20rpx;
-        background: rgba(0,0,0,0.6);
-        color: var(--text-primary);
-        font-size: 24rpx;
-        padding: 8rpx 16rpx;
-        border-radius: 16rpx;
-      }
-    }
-    .hall-info {
-      padding: 24rpx;
-      .hall-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 12rpx;
-        .hall-name-wrap {
-          display: flex;
-          align-items: center;
-          gap: 12rpx;
-          flex: 1;
-          .hall-name {
-            color: var(--text-primary);
-            font-size: 32rpx;
-            font-weight: 700;
-          }
-          .hall-badge {
-            padding: 4rpx 12rpx;
-            border-radius: 8rpx;
-            font-size: 22rpx;
-            color: #00BB88;
-            flex-shrink: 0;
-          }
-        }
-        .hall-price {
-          display: flex;
-          align-items: baseline;
-          gap: 4rpx;
-          .price-num {
-            color: #00BB88;
-            font-size: 36rpx;
-            font-weight: 700;
-          }
-          .price-unit {
-            color: var(--text-secondary);
-            font-size: 24rpx;
-          }
-        }
-      }
-      .hall-meta {
-        display: flex;
-        align-items: center;
-        gap: 8rpx;
-        margin-bottom: 12rpx;
-        .meta-text {
-          color: var(--text-secondary);
-          font-size: 24rpx;
-        }
-        .meta-divider {
-          color: var(--bg-secondary);
-        }
-      }
-      .hall-address {
-        display: flex;
-        align-items: center;
-        gap: 8rpx;
-        margin-bottom: 16rpx;
-        .address-text {
-          color: var(--text-secondary);
-          font-size: 24rpx;
-          flex: 1;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-      }
-      .hall-tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12rpx;
-        margin-bottom: 16rpx;
-        .tag-item {
-          background: var(--bg-secondary);
-          color: var(--text-secondary);
-          font-size: 22rpx;
-          padding: 6rpx 16rpx;
-          border-radius: 12rpx;
-        }
-      }
-      .hall-promo {
-        background: rgba(0, 187, 136, 0.1);
-        border-radius: 12rpx;
-        padding: 16rpx;
-        display: flex;
-        align-items: center;
-        gap: 12rpx;
-        margin-bottom: 20rpx;
-        .promo-text {
-          color: #00BB88;
-          font-size: 24rpx;
-          flex: 1;
-        }
-      }
-      .hall-actions {
-        display: flex;
-        gap: 16rpx;
-        .action-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8rpx;
-          height: 72rpx;
-          border-radius: 36rpx;
-          font-size: 28rpx;
-          font-weight: 600;
-          &.secondary {
-            flex: 1;
-            background: var(--bg-secondary);
-            color: var(--text-secondary);
-          }
-          &.primary {
-            flex: 1.5;
-            background: #00BB88;
-            color: var(--text-primary);
-          }
-        }
-      }
-    }
-  }
-}
-
-/* 空状态 */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 120rpx 0;
-  .empty-text {
-    color: var(--text-tertiary);
-    font-size: 28rpx;
-    margin-top: 20rpx;
-  }
 }
 
 /* 加载提示 */

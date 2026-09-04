@@ -23,7 +23,6 @@ const errorMessages = {
  * 获取友好的错误提示
  */
 const getErrorMessage = (code, defaultMsg = '') => {
-  console.log(code, defaultMsg, '==========defaultMsg')
 
   // 关键点：确保 code 能匹配上 key（强制转成数字或字符串试试）
   const message = errorMessages[code] || defaultMsg || errorMessages.default
