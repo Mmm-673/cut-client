@@ -859,8 +859,9 @@ export async function executePayment(options) {
 
     return payResult
   } catch (error) {
+
     // #ifdef MP-WEIXIN
-    if (error === '请先绑定微信后再发起微信支付') {
+    if (error.message === '请先绑定微信后再发起微信支付') {
       return new Promise((resolve, reject) => {
         uni.showModal({
           title: '提示',
@@ -882,7 +883,7 @@ export async function executePayment(options) {
 
     // #ifdef H5
     // 微信内置浏览器：JSAPI 支付需要先绑定 openid，引导网页授权后自动续付
-    if (typeof error === 'string' && error.includes('绑定微信') && isWechatBrowser()) {
+    if (typeof error !== 'string' && error.msg.includes('绑定微信') && isWechatBrowser()) {
       return new Promise((resolve, reject) => {
         uni.showModal({
           title: '提示',
