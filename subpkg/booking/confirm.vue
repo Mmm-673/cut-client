@@ -1590,10 +1590,13 @@ onUnmounted(() => {
     background: #00BB88;
     color: var(--text-primary);
     border-radius: 36rpx;
-    padding: 14rpx 44rpx;
+    padding: 0 44rpx;
+    height: 80rpx;
+    line-height: 80rpx;
     font-size: 28rpx;
     font-weight: 700;
     border: none;
+    box-sizing: border-box;
     &::after {
       border: none;
     }
@@ -1601,9 +1604,11 @@ onUnmounted(() => {
       background: rgba(0, 187, 136, 0.3);
     }
     &.fullWidth {
-      padding: 18rpx 0;
+      height: 88rpx;
+      line-height: 88rpx;
       font-size: 32rpx;
       width: 100%;
+      padding: 0;
     }
   }
 }
