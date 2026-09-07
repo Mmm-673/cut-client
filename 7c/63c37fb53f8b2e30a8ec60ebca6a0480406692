@@ -1,0 +1,23 @@
+subpkg/booking/confirm.vue
+  33ec1917c4719376 1593-1595,1599,1607-1608,1611
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "7c63c37fb53f8b2e30a8ec60ebca6a0480406692",
+  "prompts": {
+    "33ec1917c4719376": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "98ce5359-9fb9-455d-80e8-4565034b0ee7",
+        "model": "doubao-seed-2-1-turbo"
+      },
+      "human_author": "carson.ma",
+      "messages": [],
+      "total_additions": 7,
+      "total_deletions": 2,
+      "accepted_lines": 1960,
+      "overriden_lines": 0
+    }
+  }
+}
