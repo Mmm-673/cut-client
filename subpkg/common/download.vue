@@ -4,9 +4,8 @@
       <!-- Logo -->
       <view class="logo-box">
         <view class="logo-circle">
-          <text class="logo-text">初</text>
+          <image class="logo-img" :src="themeStore.theme === 'dark' ? globalConfig.appInfo.logoDark : globalConfig.appInfo.logoLight" mode="aspectFit"></image>
         </view>
-        <text class="app-name">初球</text>
         <text class="app-slogan">专业台球裁教预约平台</text>
       </view>
 
@@ -63,9 +62,11 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useThemeStore } from '@/store'
 import { isWechatBrowser as checkWechatBrowser } from '@/utils/platform'
+import { useConfigStore, useThemeStore} from '@/store'
+const configStore = useConfigStore()
 
+const globalConfig = configStore.config
 const themeStore = useThemeStore()
 const themeClass = computed(() => `theme-${themeStore.theme}`)
 
@@ -84,8 +85,8 @@ const isAndroidH5 = false
 // #endif
 
 // #ifdef H5
-const ANDROID_DOWNLOAD_URL = 'https://qiulem.com/app/chuqiu.apk'
-const IOS_DOWNLOAD_URL = 'https://apps.apple.com/cn/app/chuqiu/id6502468218'
+const ANDROID_DOWNLOAD_URL = 'https://www.qiulem.com/download/user.apk'
+const IOS_DOWNLOAD_URL = 'https://apps.apple.com/cn/app/%E5%88%9D%E7%90%83/id6787897149'
 // #endif
 
 const handleDownload = () => {
@@ -145,6 +146,10 @@ const handleDownload = () => {
     margin-bottom: 32rpx;
     box-shadow: 0 12rpx 32rpx rgba(0, 187, 136, 0.3);
 
+    .logo-img {
+      width: 140rpx;
+      height: 140rpx;
+    }
     .logo-text {
       font-size: 72rpx;
       font-weight: 800;
@@ -160,7 +165,7 @@ const handleDownload = () => {
   }
 
   .app-slogan {
-    font-size: 28rpx;
+    font-size: 32rpx;
     color: var(--text-secondary);
   }
 }
