@@ -372,11 +372,11 @@
         "sdkConfigs" : {
             "geolocation" : {
                 "type" : "amap",
-                "key" : "f66420f63919c84eda1b14e1cf8db73e"
+                "key" : "d70e1cdba2c2d52e93164055e78c9892"
             },
             "maps" : {
                 "type" : "amap",
-                "key" : "f66420f63919c84eda1b14e1cf8db73e"
+                "key" : "d70e1cdba2c2d52e93164055e78c9892"
             }
         },
         "pwa" : {
