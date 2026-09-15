@@ -39,9 +39,15 @@ const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 const statusBarHeight = ref(0)
 const loading = ref(false)
-// 从 URL 中提取参数
+// 从 URL 中提取参数（支持普通 query 和 hash 路由中的 query）
 const getQueryParam = (url, param) => {
-  const queryString = url.split('?')[1]
+  // 优先取 ? 后面的 query string
+  let queryString = url.split('?')[1]
+  // 如果没有 ?，尝试从 # 后面的 hash 中提取
+  if (!queryString && url.includes('#')) {
+    const hashPart = url.split('#')[1]
+    queryString = hashPart.split('?')[1]
+  }
   if (!queryString) return null
 
   const pairs = queryString.split('&')
@@ -72,11 +78,15 @@ const processQrResult = (rawResult) => {
 
   // 方式2：如果没有从 JSON 中获取到，尝试解析 URL 格式
   if (!coachId && typeof rawResult === 'string') {
-    // 检查是否是指定的 URL 格式
+    // 格式1：coach-link.html 或带 coachId 参数
     if (rawResult.includes('coach-link.html') || rawResult.includes('coachId=')) {
       coachId = getQueryParam(rawResult, 'coachId')
     }
-    // 兼容新格式：https://qiulem.com/scan?id=27&name=小帅
+    // 格式2：H5 详情页 hash 路由 https://qiulem.com/h5/#/subpkg/coach/detail?id=xxx
+    else if (rawResult.includes('/subpkg/coach/detail')) {
+      coachId = getQueryParam(rawResult, 'id')
+    }
+    // 格式3：旧版扫码页格式 https://qiulem.com/scan?id=27&name=小帅
     else if (rawResult.includes('/scan?id=') || rawResult.includes('qiulem.com')) {
       coachId = getQueryParam(rawResult, 'id')
     }
