@@ -21,6 +21,7 @@ import { getNotificationPage, markAsRead } from '@/api/billiard/notification'
 import wsManager from '@/utils/websocket'
 // #ifdef H5
 import { handleWxPayBindCallback } from '@/utils/payment'
+import { handleWxLoginCallback } from '@/utils/wechatAuth'
 // #endif
 
 const { proxy } = getCurrentInstance()
@@ -57,6 +58,14 @@ onLaunch((options) => {
       handleWxPayBindCallback()
     } catch (e) {
       console.warn('[App] 微信支付绑定回跳处理失败:', e)
+    }
+  }, 300)
+  // 微信快捷登录回跳处理
+  setTimeout(() => {
+    try {
+      handleWxLoginCallback()
+    } catch (e) {
+      console.warn('[App] 微信登录回跳处理失败:', e)
     }
   }, 300)
   // #endif

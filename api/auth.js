@@ -156,3 +156,22 @@ export function updateMobile(data) {
     data: data
   })
 }
+
+/**
+ * 社交账号快捷登录（微信公众号授权码换登录 Token）
+ * @param {Object} data - 请求参数
+ * @param {number} data.type - 社交平台类型（微信公众号=31）
+ * @param {string} data.code - 微信授权返回的 code
+ * @param {string} data.state - 授权时生成的 state
+ * @returns {Promise<Object>} 返回登录信息（accessToken, refreshToken, userId, nickname, avatar, mobile 等）
+ */
+export function socialLogin(data) {
+  return request({
+    url: '/app-api/member/auth/social-login',
+    headers: {
+      isToken: false
+    },
+    method: 'post',
+    data: data
+  })
+}

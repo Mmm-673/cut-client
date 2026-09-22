@@ -97,6 +97,19 @@
         {{ isSubmitting ? '登录中...' : '登录' }}
       </button>
 
+      <!-- 微信快捷登录按钮（H5 微信浏览器） -->
+      <!-- #ifdef H5 -->
+      <button
+        v-if="showWechatLogin"
+        class="btn-wechat-login"
+        @click="handleWechatLogin"
+        :disabled="wechatLoading"
+      >
+        <image class="wechat-icon" src="/static/images/wxLogin.png" mode="aspectFit"></image>
+        <text class="wechat-text">{{ wechatLoading ? '登录中...' : '微信快捷登录' }}</text>
+      </button>
+      <!-- #endif -->
+
       <!-- 返回首页 -->
       <button class="btn-back-home" @click="goBackHome">返回首页</button>
 
@@ -108,23 +121,23 @@
       <view class="guest-link-wrapper">
         <text class="guest-link" @click="handleGuestMode">游客模式</text>
       </view>
+    </view>
 
-      <!-- 底部协议 -->
-      <view class="agreement">
-        <view
-          class="checkbox"
-          :class="{ 'checkbox-checked': agree }"
-          @click="agree = !agree"
-        >
-          <uni-icons v-if="agree" type="check" size="16" color="#fff" />
-        </view>
-        <text class="agreement-text">
-          我已阅读并同意
-          <text class="link" @click="goToAgree('user')">《用户协议》</text>
-          和
-          <text class="link" @click="goToAgree('privacy')">《隐私政策》</text>
-        </text>
+    <!-- 底部固定协议栏 -->
+    <view class="agreement-fixed">
+      <view
+        class="checkbox"
+        :class="{ 'checkbox-checked': agree }"
+        @click="agree = !agree"
+      >
+        <uni-icons v-if="agree" type="check" size="16" color="#fff" />
       </view>
+      <text class="agreement-text">
+        我已阅读并同意
+        <text class="link" @click="goToAgree('user')">《用户协议》</text>
+        和
+        <text class="link" @click="goToAgree('privacy')">《隐私政策》</text>
+      </text>
     </view>
   </view>
 </template>
@@ -140,6 +153,10 @@ import { onUnload, onHide, onShow } from '@dcloudio/uni-app';
 import { isLoggedIn } from '@/utils/token'
 import { bindWX } from '@/api/billiard/user'
 import { syncReviewAccount } from '@/utils/review'
+// #ifdef H5
+import { isWechatBrowser } from '@/utils/platform'
+import { launchWechatLogin } from '@/utils/wechatAuth'
+// #endif
 
 const userStore = useUserStore()
 const configStore = useConfigStore()
@@ -191,6 +208,17 @@ const showPassword = ref(false)
 
 // 提交中状态
 const isSubmitting = ref(false)
+
+// 微信登录 loading
+const wechatLoading = ref(false)
+
+// #ifdef H5
+// 是否显示微信登录按钮
+const showWechatLogin = computed(() => isWechatBrowser())
+// #endif
+// #ifndef H5
+const showWechatLogin = computed(() => false)
+// #endif
 
 onMounted(() => {
   // 先检查登录状态
@@ -325,6 +353,40 @@ const handleSubmit = async () => {
   }
 }
 
+// 微信快捷登录
+const handleWechatLogin = async () => {
+  // #ifdef H5
+  if (!agree.value) {
+    uni.showToast({ title: '请先阅读并同意用户协议和隐私政策', icon: 'none' })
+    return
+  }
+  if (wechatLoading.value) return
+
+  try {
+    wechatLoading.value = true
+    // 保存当前登录跳转目标，登录成功后跳回
+    const redirectPage = uni.getStorageSync('loginRedirectPage')
+    let redirectUrl = '/pages/home/index'
+    if (redirectPage) {
+      const redirectParams = uni.getStorageSync('loginRedirectParams')
+      let url = '/' + redirectPage
+      if (redirectParams) {
+        const params = Object.keys(redirectParams)
+          .map(key => `${key}=${encodeURIComponent(redirectParams[key])}`)
+          .join('&')
+        url += '?' + params
+      }
+      redirectUrl = url
+    }
+    await launchWechatLogin(undefined, redirectUrl)
+  } catch (error) {
+    console.error('微信登录失败:', error)
+  } finally {
+    wechatLoading.value = false
+  }
+  // #endif
+}
+
 // 跳转到忘记密码
 const goToForgotPassword = () => {
   console.log('跳转到重置密码页面')
@@ -359,13 +421,13 @@ onUnload(() => {
 .login-wrapper {
   min-height: calc(var(--vh, 1vh) * 100);
   background: var(--bg-card);
-  padding: 180rpx 48rpx 40rpx;
+  padding: 140rpx 48rpx 40rpx;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding-top: calc(180rpx + var(--status-bar-height));
-  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
   position: relative;
 }
 
@@ -525,7 +587,7 @@ onUnload(() => {
     border-radius: 48rpx;
     font-size: 36rpx;
     font-weight: bold;
-    margin: 16rpx 0 48rpx;
+    margin: 8rpx 0 24rpx;
     border: none;
     box-shadow: 0 8rpx 24rpx rgba(0, 187, 136, 0.3);
     &::after { border: none; }
@@ -544,12 +606,41 @@ onUnload(() => {
     border-radius: 48rpx;
     font-size: 32rpx;
     font-weight: 600;
-    margin: -24rpx 0 48rpx;
+    margin: 0 0 24rpx;
     border: 2rpx solid rgba(0, 187, 136, 0.6);
     &::after { border: none; }
     &:active {
       background: rgba(0, 187, 136, 0.1);
     }
+  }
+
+  /* 微信快捷登录按钮 */
+  .btn-wechat-login {
+    width: 100%;
+    height: 96rpx;
+    line-height: 96rpx;
+    background: #fff;
+    color: #07C160;
+    border-radius: 48rpx;
+    font-size: 32rpx;
+    font-weight: 600;
+    margin-bottom: 24rpx;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12rpx;
+    &::after { border: none; }
+    &[disabled] {
+      opacity: 0.6;
+    }
+  }
+  .wechat-icon {
+    width: 40rpx;
+    height: 40rpx;
+  }
+  .wechat-text {
+    color: #07C160;
   }
 }
 
@@ -561,7 +652,6 @@ onUnload(() => {
   flex-direction: column;
   align-items: center;
   gap: 32rpx;
-  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* 游客模式链接 */
@@ -574,11 +664,19 @@ onUnload(() => {
   }
 }
 
-/* 底部协议 */
-.agreement {
+/* 底部固定协议栏 */
+.agreement-fixed {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 16rpx 48rpx calc(16rpx + env(safe-area-inset-bottom));
+  background: var(--bg-card);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12rpx;
+  z-index: 100;
   .checkbox {
     width: 32rpx;
     height: 32rpx;

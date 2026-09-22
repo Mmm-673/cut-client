@@ -351,6 +351,13 @@
       </view>
     </view>
 
+    <!-- 手机号绑定弹框 -->
+    <MobileBindPopup
+      v-model:visible="showMobileBind"
+      title="绑定手机号"
+      tip="预约需要验证手机号，请先绑定"
+      @success="onMobileBindSuccess"
+    />
   </view>
 </template>
 
@@ -367,6 +374,8 @@ import { onLoad } from '@dcloudio/uni-app'
 import { getWallet } from '@/api/billiard/wallet'
 import { guardReviewEntry } from '@/utils/review'
 import { getLocation, extractStreet, extractCity, showPermissionModal, openAppSetting } from '@/utils/location'
+import { useUserStore } from '@/store/modules/user'
+import MobileBindPopup from '@/components/MobileBindPopup/index.vue'
 
 // 主题相关
 const themeStore = useThemeStore()
@@ -374,6 +383,10 @@ const themeClass = computed(() => `theme-${themeStore.theme}`)
 
 // ---------------------- 状态定义 ----------------------
 const isSubmitting = ref(false)
+const userStore = useUserStore()
+
+// 手机号绑定弹框
+const showMobileBind = ref(false)
 const userAgree = ref(false)
 const selectedPay = ref('')
 const showTimePicker = ref(false)
@@ -949,6 +962,11 @@ const loadCoachDetail = async (coachId) => {
 
 // 处理操作：创建订单 或 支付
 const handleAction = async () => {
+  // 校验手机号（未绑定则弹框）
+  if (!userStore.mobile) {
+    showMobileBind.value = true
+    return
+  }
   if (!userAgree.value) {
     uni.showToast({ title: '请先阅读并同意服务协议和退款规则', icon: 'none' })
     return
@@ -966,6 +984,12 @@ const handleAction = async () => {
   } else {
     await submitPayment()
   }
+}
+
+// 手机号绑定成功回调
+function onMobileBindSuccess() {
+  // 绑定成功后自动继续下单
+  handleAction()
 }
 
 // 创建订单

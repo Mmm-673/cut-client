@@ -21,8 +21,14 @@ import {
   resetPassword,
   updatePassword,
   updateMobile,
-  validateSmsCode
+  validateSmsCode,
+  socialLogin as socialLoginApi
 } from '@/api/auth'
+import {
+  getUserInfo,
+  sendUpdateMobileSms as sendUpdateMobileSmsApi,
+  updateMobile as updateMobileFromUserApi
+} from '@/api/billiard/user'
 import defAva from '@/static/images/profile.jpg'
 import { syncPushForUser } from '@/utils/jpush'
 import {clearPushAlias} from "../../utils/jpush.js";
@@ -107,6 +113,92 @@ export const useUserStore = defineStore('user', () => {
         // H5 深链跳转
         redirectAfterLogin()
         resolve(data)
+      }).catch(error => {
+        reject(error)
+      })
+    })
+  }
+
+  // 微信快捷登录
+  const socialLoginAction = (loginData) => {
+    return new Promise((resolve, reject) => {
+      socialLoginApi(loginData).then(res => {
+        const data = res.data
+        setLoginInfo({
+          ...data,
+          userId: data.userId
+        })
+        bindPushAfterLogin(data.userId)
+        resolve(data)
+      }).catch(error => {
+        reject(error)
+      })
+    })
+  }
+
+  // 获取用户信息（用于登录后补充信息或绑定手机号后刷新）
+  const fetchUserInfoAction = () => {
+    return new Promise((resolve, reject) => {
+      getUserInfo().then(res => {
+        const data = res.data
+        if (data) {
+          if (data.nickname !== undefined) {
+            nickname.value = data.nickname
+          }
+          if (data.avatar !== undefined) {
+            avatar.value = data.avatar || defAva
+          }
+          if (data.mobile !== undefined) {
+            mobile.value = data.mobile
+          }
+          // 同步到本地存储
+          setAuthInfo({
+            accessToken: accessToken.value,
+            refreshToken: refreshToken.value,
+            expiresTime: expiresTime.value,
+            userId: userId.value,
+            nickname: nickname.value,
+            avatar: avatar.value,
+            mobile: mobile.value
+          })
+        }
+        resolve(data)
+      }).catch(error => {
+        reject(error)
+      })
+    })
+  }
+
+  // 发送绑定/修改手机号验证码
+  const sendUpdateMobileSmsAction = (mobile) => {
+    return new Promise((resolve, reject) => {
+      sendUpdateMobileSmsApi({ mobile }).then(res => {
+        resolve(res.data)
+      }).catch(error => {
+        reject(error)
+      })
+    })
+  }
+
+  // 绑定/修改手机号
+  const bindMobileAction = (data) => {
+    return new Promise((resolve, reject) => {
+      updateMobileFromUserApi(data).then(res => {
+        // 成功后更新本地 mobile
+        if (data.mobile) {
+          mobile.value = data.mobile
+          // 同步到本地存储
+          setAuthInfo({
+            accessToken: accessToken.value,
+            refreshToken: refreshToken.value,
+            expiresTime: expiresTime.value,
+            userId: userId.value,
+            nickname: nickname.value,
+            avatar: avatar.value,
+            mobile: data.mobile
+          })
+        }
+        resolve(res.data)
       }).catch(error => {
         reject(error)
       })
@@ -225,6 +317,10 @@ export const useUserStore = defineStore('user', () => {
     sendCode: sendCodeAction,
     smsLogin: smsLoginAction,
     passwordLogin: passwordLoginAction,
+    socialLogin: socialLoginAction,
+    fetchUserInfo: fetchUserInfoAction,
+    sendUpdateMobileSms: sendUpdateMobileSmsAction,
+    bindMobile: bindMobileAction,
     logOut: logOutAction,
     logout: logOutAction,
     clearLoginInfo,
