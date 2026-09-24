@@ -97,30 +97,28 @@
         {{ isSubmitting ? '登录中...' : '登录' }}
       </button>
 
-      <!-- 微信快捷登录按钮（H5 微信浏览器） -->
+      <!-- 返回首页 -->
+      <view class="back-home-wrapper">
+        <text class="back-home-text" @click="goBackHome">返回首页</text>
+      </view>
+
+      <!-- 微信快捷登录（圆形图标按钮） -->
       <!-- #ifdef H5 -->
-      <button
-        v-if="showWechatLogin"
-        class="btn-wechat-login"
-        @click="handleWechatLogin"
-        :disabled="wechatLoading"
-      >
-        <image class="wechat-icon" src="/static/images/wxLogin.png" mode="aspectFit"></image>
-        <text class="wechat-text">{{ wechatLoading ? '登录中...' : '微信快捷登录' }}</text>
-      </button>
+      <view v-if="showWechatLogin" class="wechat-circle-wrapper">
+        <view class="divider-line">
+          <text class="divider-text">其他登录方式</text>
+        </view>
+        <view
+          class="wechat-circle-btn"
+          @click="handleWechatLogin"
+          :class="{ 'wechat-loading': wechatLoading }"
+        >
+          <image class="wechat-circle-icon" src="/static/images/wxLogin.png" mode="aspectFit"></image>
+        </view>
+        <text class="wechat-circle-label">微信快捷登录</text>
+      </view>
       <!-- #endif -->
 
-      <!-- 返回首页 -->
-      <button class="btn-back-home" @click="goBackHome">返回首页</button>
-
-    </view>
-
-    <!-- 底部区域 -->
-    <view class="bottom-section">
-      <!-- 游客模式链接 -->
-      <view class="guest-link-wrapper">
-        <text class="guest-link" @click="handleGuestMode">游客模式</text>
-      </view>
     </view>
 
     <!-- 底部固定协议栏 -->
@@ -401,11 +399,6 @@ const goToAgree = (type) => {
   })
 }
 
-// 游客模式
-const handleGuestMode = () => {
-  uni.switchTab({ url: '/pages/home/index' })
-}
-
 // 返回首页
 const goBackHome = () => {
   uni.switchTab({ url: '/pages/home/index' })
@@ -421,36 +414,36 @@ onUnload(() => {
 .login-wrapper {
   min-height: calc(var(--vh, 1vh) * 100);
   background: var(--bg-card);
-  padding: 140rpx 48rpx 40rpx;
+  padding: 80rpx 48rpx 40rpx;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: calc(180rpx + var(--status-bar-height));
-  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
+  padding-top: calc(100rpx + var(--status-bar-height));
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
   position: relative;
 }
 
 /* Logo区域 */
 .logo-section {
   text-align: center;
-  margin-bottom: 60rpx;
+  margin-bottom: 48rpx;
   .logo-circle {
-    width: 140rpx;
-    height: 140rpx;
+    width: 110rpx;
+    height: 110rpx;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 32rpx;
+    margin: 0 auto 20rpx;
   }
   .logo-img {
-    width: 140rpx;
-    height: 140rpx;
+    width: 110rpx;
+    height: 110rpx;
   }
   .app-desc {
     display: block;
-    font-size: 32rpx;
+    font-size: 28rpx;
     color: var(--text-secondary);
   }
 }
@@ -460,19 +453,19 @@ onUnload(() => {
   display: flex;
   width: 100%;
   background: var(--bg-secondary);
-  border-radius: 48rpx;
-  padding: 8rpx;
-  margin-bottom: 40rpx;
+  border-radius: 40rpx;
+  padding: 6rpx;
+  margin-bottom: 32rpx;
   box-sizing: border-box;
 }
 .tab-item {
   flex: 1;
   text-align: center;
-  height: 80rpx;
-  line-height: 80rpx;
-  font-size: 28rpx;
+  height: 70rpx;
+  line-height: 70rpx;
+  font-size: 26rpx;
   color: var(--text-secondary);
-  border-radius: 40rpx;
+  border-radius: 35rpx;
   transition: all 0.3s;
 }
 .tab-active {
@@ -486,21 +479,21 @@ onUnload(() => {
   width: 100%;
   .input-group {
     width: 100%;
-    height: 96rpx;
+    height: 84rpx;
     background: var(--bg-secondary);
-    border-radius: 48rpx;
+    border-radius: 42rpx;
     display: flex;
     align-items: center;
-    padding: 0  0 0 32rpx ;
-    margin-bottom: 32rpx;
+    padding: 0  0 0 28rpx ;
+    margin-bottom: 24rpx;
     box-sizing: border-box;
     position: relative;
     .input-icon {
-      margin-right: 16rpx;
+      margin-right: 14rpx;
     }
     .input {
       flex: 1;
-      font-size: 32rpx;
+      font-size: 30rpx;
       color: var(--text-primary);
       line-height: 1;
     }
@@ -508,27 +501,26 @@ onUnload(() => {
       color: var(--text-secondary);
     }
     .password-eye {
-      margin-left: 16rpx;
-
+      margin-left: 14rpx;
     }
   }
   .input-group-eye {
     width: 100%;
-    height: 96rpx;
+    height: 84rpx;
     background: var(--bg-secondary);
-    border-radius: 48rpx;
+    border-radius: 42rpx;
     display: flex;
     align-items: center;
-    padding: 0 32rpx ;
-    margin-bottom: 32rpx;
+    padding: 0 28rpx ;
+    margin-bottom: 24rpx;
     box-sizing: border-box;
     position: relative;
     .input-icon {
-      margin-right: 16rpx;
+      margin-right: 14rpx;
     }
     .input {
       flex: 1;
-      font-size: 32rpx;
+      font-size: 30rpx;
       color: var(--text-primary);
       line-height: 1;
     }
@@ -536,14 +528,13 @@ onUnload(() => {
       color: var(--text-secondary);
     }
     .password-eye {
-      margin-left: 16rpx;
-
+      margin-left: 14rpx;
     }
   }
   /* 行内输入（验证码+按钮） */
   .input-group-row {
     display: flex;
-    gap: 16rpx;
+    gap: 14rpx;
     .input-wrap {
       flex: 1;
       display: flex;
@@ -551,13 +542,13 @@ onUnload(() => {
     }
   }
   .btn-code {
-    padding: 0 32rpx;
-    height: 96rpx;
-    line-height: 96rpx;
+    padding: 0 28rpx;
+    height: 84rpx;
+    line-height: 84rpx;
     background: #00BB88;
     color: var(--text-primary);
-    border-radius: 48rpx;
-    font-size: 28rpx;
+    border-radius: 42rpx;
+    font-size: 26rpx;
     white-space: nowrap;
     border: none;
     &::after { border: none; }
@@ -570,9 +561,9 @@ onUnload(() => {
   /* 忘记密码 */
   .forgot-password {
     text-align: right;
-    margin-bottom: 24rpx;
+    margin-bottom: 16rpx;
     .forgot-text {
-      font-size: 26rpx;
+      font-size: 24rpx;
       color: #00BB88;
     }
   }
@@ -580,87 +571,86 @@ onUnload(() => {
   /* 提交按钮 */
   .btn-submit {
     width: 100%;
-    height: 96rpx;
-    line-height: 96rpx;
+    height: 88rpx;
+    line-height: 88rpx;
     background: #00BB88;
     color: var(--text-primary);
-    border-radius: 48rpx;
-    font-size: 36rpx;
+    border-radius: 44rpx;
+    font-size: 32rpx;
     font-weight: bold;
-    margin: 8rpx 0 24rpx;
+    margin: 8rpx 0 20rpx;
     border: none;
-    box-shadow: 0 8rpx 24rpx rgba(0, 187, 136, 0.3);
+    box-shadow: 0 8rpx 20rpx rgba(0, 187, 136, 0.3);
     &::after { border: none; }
     &[disabled] {
       opacity: 0.6;
     }
   }
 
-  /* 返回首页（幽灵按钮） */
-  .btn-back-home {
-    width: 100%;
-    height: 96rpx;
-    line-height: 96rpx;
-    background: transparent;
-    color: #00BB88;
-    border-radius: 48rpx;
-    font-size: 32rpx;
-    font-weight: 600;
-    margin: 0 0 24rpx;
-    border: 2rpx solid rgba(0, 187, 136, 0.6);
-    &::after { border: none; }
-    &:active {
-      background: rgba(0, 187, 136, 0.1);
+  /* 返回首页（文字链接） */
+  .back-home-wrapper {
+    text-align: center;
+    margin-top: 8rpx;
+    .back-home-text {
+      font-size: 26rpx;
+      color: #00BB88;
+      padding: 12rpx 24rpx;
     }
   }
 
-  /* 微信快捷登录按钮 */
-  .btn-wechat-login {
-    width: 100%;
-    height: 96rpx;
-    line-height: 96rpx;
-    background: #fff;
-    color: #07C160;
-    border-radius: 48rpx;
-    font-size: 32rpx;
-    font-weight: 600;
-    margin-bottom: 24rpx;
-    border: none;
+  /* 微信圆形登录按钮 */
+  .wechat-circle-wrapper {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 12rpx;
-    &::after { border: none; }
-    &[disabled] {
-      opacity: 0.6;
+    margin-top: 48rpx;
+    .divider-line {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin-bottom: 32rpx;
+      &::before,
+      &::after {
+        content: '';
+        flex: 1;
+        height: 1rpx;
+        background: var(--border-color, rgba(255,255,255,0.1));
+      }
+      .divider-text {
+        padding: 0 24rpx;
+        font-size: 22rpx;
+        color: var(--text-secondary);
+        white-space: nowrap;
+      }
     }
-  }
-  .wechat-icon {
-    width: 40rpx;
-    height: 40rpx;
-  }
-  .wechat-text {
-    color: #07C160;
-  }
-}
-
-/* 底部区域 */
-.bottom-section {
-  margin-top: auto;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 32rpx;
-}
-
-/* 游客模式链接 */
-.guest-link-wrapper {
-  text-align: center;
-  .guest-link {
-    font-size: 28rpx;
-    color: #00BB88;
-    padding: 16rpx 32rpx;
+    .wechat-circle-btn {
+      width: 88rpx;
+      height: 88rpx;
+      border-radius: 50%;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+      transition: all 0.2s;
+      &:active {
+        transform: scale(0.95);
+      }
+      &.wechat-loading {
+        opacity: 0.6;
+      }
+      .wechat-circle-icon {
+        width: 48rpx;
+        height: 48rpx;
+      }
+    }
+    .wechat-circle-label {
+      margin-top: 12rpx;
+      font-size: 22rpx;
+      color: var(--text-secondary);
+    }
   }
 }
 
@@ -669,17 +659,17 @@ onUnload(() => {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
-  padding: 16rpx 48rpx calc(16rpx + env(safe-area-inset-bottom));
+  bottom: 50rpx;
+  padding: 20rpx 48rpx calc(24rpx + env(safe-area-inset-bottom));
   background: var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12rpx;
+  gap: 10rpx;
   z-index: 100;
   .checkbox {
-    width: 32rpx;
-    height: 32rpx;
+    width: 28rpx;
+    height: 28rpx;
     border: 2rpx solid #00BB88;
     border-radius: 6rpx;
     display: flex;
@@ -691,7 +681,7 @@ onUnload(() => {
     background: #00BB88;
   }
   .agreement-text {
-    font-size: 26rpx;
+    font-size: 22rpx;
     color: var(--text-secondary);
     line-height: 1.4;
   }

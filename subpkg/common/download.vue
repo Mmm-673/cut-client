@@ -11,10 +11,51 @@
 
       <!-- 下载按钮 -->
       <view class="download-btns">
-        <view class="btn primary" @click="handleDownload">
+        <!-- iOS 主按钮（iOS 设备时显示为主按钮） -->
+        <view
+          v-if="isIOSH5"
+          class="btn primary"
+          @click="handleDownload('ios')"
+        >
           <uni-icons type="download" size="20" color="#fff" />
-          <text class="btn-text">下载 APP</text>
+          <text class="btn-text">iOS 下载</text>
         </view>
+
+        <!-- Android 主按钮（Android 设备或未知设备时显示为主按钮） -->
+        <view
+          v-if="isAndroidH5 || !isIOSH5"
+          class="btn primary"
+          @click="handleDownload('android')"
+        >
+          <uni-icons type="download" size="20" color="#fff" />
+          <text class="btn-text">Android 下载</text>
+        </view>
+
+        <!-- 另一个平台的次按钮 -->
+        <view
+          v-if="isIOSH5"
+          class="btn secondary"
+          @click="handleDownload('android')"
+        >
+          <text class="btn-text">Android 版本下载</text>
+        </view>
+        <view
+          v-else-if="isAndroidH5"
+          class="btn secondary"
+          @click="handleDownload('ios')"
+        >
+          <text class="btn-text">iOS 版本下载</text>
+        </view>
+
+        <!-- 未知平台时同时显示两个按钮 -->
+        <view
+          v-if="!isIOSH5 && !isAndroidH5"
+          class="btn secondary"
+          @click="handleDownload('ios')"
+        >
+          <text class="btn-text">iOS 下载</text>
+        </view>
+
         <view v-if="isWechatBrowser" class="wechat-tip">
           <uni-icons type="info" size="16" color="#FBBF24" />
           <text class="tip-text">请点击右上角「…」选择浏览器中打开下载</text>
@@ -89,7 +130,7 @@ const ANDROID_DOWNLOAD_URL = 'https://www.qiulem.com/download/user.apk'
 const IOS_DOWNLOAD_URL = 'https://apps.apple.com/cn/app/%E5%88%9D%E7%90%83/id6787897149'
 // #endif
 
-const handleDownload = () => {
+const handleDownload = (platform) => {
   // #ifdef H5
   try {
     if (isWechatBrowser) {
@@ -101,7 +142,8 @@ const handleDownload = () => {
       return
     }
 
-    const downloadUrl = isIOSH5 ? IOS_DOWNLOAD_URL : ANDROID_DOWNLOAD_URL
+    const targetPlatform = platform || (isIOSH5 ? 'ios' : 'android')
+    const downloadUrl = targetPlatform === 'ios' ? IOS_DOWNLOAD_URL : ANDROID_DOWNLOAD_URL
     window.location.href = downloadUrl
   } catch (e) {
     console.error('[Download] 下载失败:', e)
@@ -182,6 +224,8 @@ const handleDownload = () => {
     align-items: center;
     justify-content: center;
     gap: 12rpx;
+    margin-bottom: 20rpx;
+    box-sizing: border-box;
 
     &.primary {
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -191,6 +235,17 @@ const handleDownload = () => {
         color: #fff;
         font-size: 32rpx;
         font-weight: 600;
+      }
+    }
+
+    &.secondary {
+      background: transparent;
+      border: 2rpx solid rgba(0, 187, 136, 0.5);
+
+      .btn-text {
+        color: #00BB88;
+        font-size: 28rpx;
+        font-weight: 500;
       }
     }
 
@@ -205,7 +260,7 @@ const handleDownload = () => {
     align-items: center;
     justify-content: center;
     gap: 8rpx;
-    margin-top: 24rpx;
+    margin-top: 8rpx;
 
     .tip-text {
       font-size: 24rpx;
